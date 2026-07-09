@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown';
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: ['./src/index.ts'],
@@ -7,4 +7,4 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   external: ['react', 'i18next', 'react-i18next'],
-});
+})

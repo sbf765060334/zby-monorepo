@@ -1,9 +1,9 @@
-import i18next, { type i18n } from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18next, { type i18n } from 'i18next'
+import { initReactI18next } from 'react-i18next'
 
-import { DEFAULT_LOCALE, DEFAULT_NAMESPACE } from './constants';
-import { normalizeResources } from './resources';
-import type { CreateI18nOptions } from './types';
+import { DEFAULT_LOCALE, DEFAULT_NAMESPACE } from './constants'
+import { normalizeResources } from './resources'
+import type { CreateI18nOptions } from './types'
 
 export function createI18n(options: CreateI18nOptions): i18n {
   const {
@@ -11,9 +11,9 @@ export function createI18n(options: CreateI18nOptions): i18n {
     fallbackLocale = DEFAULT_LOCALE,
     resources,
     defaultNamespace = DEFAULT_NAMESPACE,
-  } = options;
+  } = options
 
-  const instance = i18next.createInstance();
+  const instance = i18next.createInstance()
 
   instance.use(initReactI18next).init({
     lng: locale,
@@ -28,7 +28,7 @@ export function createI18n(options: CreateI18nOptions): i18n {
     },
     returnNull: false,
     initImmediate: false,
-  });
+  })
 
-  return instance;
+  return instance
 }
