@@ -3,7 +3,8 @@ import type React from 'react';
 
 export type Locale = string;
 
-export type LocaleMessageValue = string | number | boolean | null | LocaleMessages | LocaleMessageValue[];
+export type LocaleMessageValue =
+  string | number | boolean | null | LocaleMessages | LocaleMessageValue[];
 
 export interface LocaleMessages {
   [key: string]: LocaleMessageValue;
@@ -11,13 +12,17 @@ export interface LocaleMessages {
 
 export type IntlResources = Record<Locale, LocaleMessages>;
 
-export type FormatValues = Record<string, string | number | boolean | Date | null | undefined>;
+export type FormatValues = Record<string, string | number | boolean | Date | null | undefined> & {
+  context?: string;
+};
 
 export type DateInput = Date | string | number;
 
 export type ChangeLocale = (locale: Locale) => Promise<void>;
 
-export type TranslateOptions = TOptions & FormatValues;
+export type TranslateOptions = Omit<TOptions<Record<string, unknown>>, 'context'> & {
+  context?: string;
+};
 
 export type IntlShape = {
   locale: Locale;

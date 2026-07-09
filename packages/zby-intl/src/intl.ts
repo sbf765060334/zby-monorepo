@@ -17,15 +17,20 @@ export function createIntlShape(
 ): IntlShape {
   const getLocale = () => getCurrentLocale(instance, fallbackLocale);
 
-  const t = (id: string, options?: TranslateOptions) =>
-    instance.t(id, { ns: defaultNamespace, ...(options || {}) } as any) as string;
+  const t = (id: string, options?: TranslateOptions) => {
+    const translateOptions: TranslateOptions = { ns: defaultNamespace, ...(options || {}) };
 
-  const getMessage = (id: string, defaultMessage = id, values?: FormatValues) =>
-    instance.t(id, {
+    return instance.t(id, translateOptions) as string;
+  };
+
+  const getMessage = (id: string, defaultMessage = id, values?: FormatValues) => {
+    const translateOptions: FormatValues & { ns: string } = {
       ns: defaultNamespace,
-      defaultValue: defaultMessage,
       ...(values || {}),
-    } as any) as string;
+    };
+
+    return instance.t(id, defaultMessage, translateOptions) as string;
+  };
 
   const changeLocale = async (locale: string) => {
     await instance.changeLanguage(locale);

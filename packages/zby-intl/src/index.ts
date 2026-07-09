@@ -3,7 +3,6 @@ export { createI18n } from './createI18n';
 export { formatDate, formatNumber } from './format';
 export { createIntl, createIntlShape } from './intl';
 export { IntlProvider, ZbyIntlProvider } from './provider';
-export { useIntl } from './useIntl';
 export type {
   ChangeLocale,
   CreateI18nOptions,
@@ -18,3 +17,4 @@ export type {
   LocaleMessageValue,
   TranslateOptions,
 } from './types';
+export { useIntl } from './useIntl';

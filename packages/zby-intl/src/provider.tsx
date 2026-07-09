@@ -39,20 +39,16 @@ export function ZbyIntlProvider(props: IntlProviderProps) {
     onLocaleChange,
   } = props;
 
-  const i18nRef = React.useRef<i18n | null>(null);
-
-  if (!i18nRef.current) {
-    i18nRef.current =
-      customI18n ||
+  const [instance] = React.useState<i18n>(
+    () =>
+      customI18n ??
       createI18n({
         locale,
         fallbackLocale,
         resources,
         defaultNamespace,
-      });
-  }
-
-  const instance = i18nRef.current;
+      }),
+  );
 
   React.useEffect(() => {
     syncResources(instance, resources, defaultNamespace);
@@ -61,10 +57,6 @@ export function ZbyIntlProvider(props: IntlProviderProps) {
   React.useEffect(() => {
     instance.changeLanguage(locale);
   }, [instance, locale]);
-
-  React.useEffect(() => {
-    instance.options.fallbackLng = fallbackLocale;
-  }, [fallbackLocale, instance]);
 
   const contextValue = React.useMemo(
     () => ({ fallbackLocale, defaultNamespace, onLocaleChange }),

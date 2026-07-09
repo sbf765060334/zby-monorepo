@@ -1,33 +1,33 @@
 {
-    "name":  "@zby/ui",
-    "version":  "0.1.0",
-    "description":  "Ant Design v6 based supplemental UI components for ZBY React applications.",
-    "type":  "module",
-    "main":  "./dist/index.cjs",
-    "module":  "./dist/index.mjs",
-    "types":  "./dist/index.d.mts",
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.mts",
-                              "import":  "./dist/index.mjs",
-                              "require":  "./dist/index.cjs"
-                          },
-                    "./package.json":  "./package.json"
-                },
-    "files":  [
-                  "dist"
-              ],
-    "sideEffects":  false,
-    "scripts":  {
-                    "build":  "tsdown",
-                    "dev":  "tsdown --watch",
-                    "typecheck":  "tsc -p tsconfig.json --noEmit",
-                    "test":  "vitest run --passWithNoTests"
-                },
-    "peerDependencies":  {
-                             "@ant-design/cssinjs":  "\u003e=1.0.0",
-                             "antd":  "^6.0.0",
-                             "react":  "\u003e=18.0.0",
-                             "react-dom":  "\u003e=18.0.0"
-                         }
+  "name": "@zby/ui",
+  "version": "0.1.0",
+  "description": "Ant Design v6 based supplemental UI components for ZBY React applications.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@ant-design/cssinjs": "\u003e=1.0.0",
+    "antd": "^6.0.0",
+    "react": "\u003e=18.0.0",
+    "react-dom": "\u003e=18.0.0"
+  }
 }
