@@ -17,11 +17,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
-      "@zby/intl": ["packages/zby-intl/src/index.ts"],
-      "@zby/ui": ["packages/zby-ui/src/index.ts"],
-      "@zby/pro": ["packages/zby-pro/src/index.ts"]
+      "@zby/intl": ["./packages/zby-intl/src/index.ts"],
+      "@zby/ui": ["./packages/zby-ui/src/index.ts"],
+      "@zby/pro": ["./packages/zby-pro/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "dist", "coverage"]

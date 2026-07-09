@@ -4,12 +4,12 @@
   "description": "Shared internationalization utilities for ZBY React packages.",
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
@@ -21,6 +21,10 @@
     "dev": "tsdown --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "i18next": "^25.0.0",
+    "react-i18next": "^15.0.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
