@@ -3,7 +3,7 @@ import 'antd/dist/reset.css'
 import { Button, ConfigProvider, Space, Typography } from 'antd'
 import { mergeIntlResources, useIntl, ZbyIntlProvider } from '@zby/intl'
 import { zbyProLocales } from '@zby/pro'
-import { zbyUiLocales } from '@zby/ui'
+import { InputNumberRange, zbyUiLocales } from '@zby/ui'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -16,6 +16,9 @@ type PlaygroundLocale = 'zh-CN' | 'en-US'
 function IntlPreview() {
   const intl = useIntl()
   const nextLocale: PlaygroundLocale = intl.locale === 'zh-CN' ? 'en-US' : 'zh-CN'
+  const [rangeValue, setRangeValue] = React.useState<
+    [number | string | null, number | string | null]
+  >([10, 30])
 
   return (
     <main style={{ maxWidth: 720, padding: 24 }}>
@@ -32,6 +35,15 @@ function IntlPreview() {
             {intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', '最小值')} /{' '}
             {intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', '最大值')}
           </Text>
+          <div style={{ marginTop: 8 }}>
+            <InputNumberRange
+              value={rangeValue}
+              onChange={(nextValue) => setRangeValue(nextValue)}
+              allowClear
+              suffix="RMB"
+              style={{ width: 260 }}
+            />
+          </div>
         </section>
 
         <section>
