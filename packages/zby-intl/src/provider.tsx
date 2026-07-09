@@ -1,7 +1,6 @@
 import type { i18n } from 'i18next'
 import React from 'react'
 import { I18nextProvider } from 'react-i18next'
-
 import { DEFAULT_LOCALE, DEFAULT_NAMESPACE } from './constants'
 import { createI18n } from './createI18n'
 import { normalizeResources } from './resources'

@@ -1,6 +1,5 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-
 import { DEFAULT_NAMESPACE } from './constants'
 import { createIntlShape } from './intl'
 import { IntlConfigContext } from './provider'

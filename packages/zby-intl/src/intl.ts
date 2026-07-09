@@ -1,5 +1,4 @@
 import type { i18n } from 'i18next'
-
 import { DEFAULT_LOCALE, DEFAULT_NAMESPACE } from './constants'
 import { createI18n } from './createI18n'
 import { formatDate, formatNumber } from './format'

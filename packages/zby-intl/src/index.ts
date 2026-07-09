@@ -3,6 +3,7 @@ export { createI18n } from './createI18n'
 export { formatDate, formatNumber } from './format'
 export { createIntl, createIntlShape } from './intl'
 export { IntlProvider, ZbyIntlProvider } from './provider'
+export { mergeIntlResources, normalizeResources } from './resources'
 export type {
   ChangeLocale,
   CreateI18nOptions,
