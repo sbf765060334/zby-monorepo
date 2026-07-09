@@ -34,10 +34,10 @@
     "@zby/ui": "workspace:*"
   },
   "peerDependencies": {
-    "@ant-design/cssinjs": "\u003e=1.0.0",
+    "@ant-design/cssinjs": ">=1.0.0",
     "antd": "^6.0.0",
-    "react": "\u003e=18.0.0",
-    "react-dom": "\u003e=18.0.0",
-    "react-router-dom": "\u003e=6.0.0"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "react-router-dom": ">=6.0.0"
   }
 }
