@@ -12,6 +12,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./locales": {
+      "types": "./dist/locales/index.d.mts",
+      "import": "./dist/locales/index.mjs",
+      "require": "./dist/locales/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -23,6 +28,9 @@
     "dev": "tsdown --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@zby/intl": "workspace:*"
   },
   "peerDependencies": {
     "@ant-design/cssinjs": "\u003e=1.0.0",

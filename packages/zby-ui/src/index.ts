@@ -1,1 +1,1 @@
-export {}
+export { zbyUiEnUS, zbyUiLocales, zbyUiZhCN } from './locales'
