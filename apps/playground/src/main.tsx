@@ -393,10 +393,10 @@ function PlaygroundDebug({
               />,
             )}
             {renderCase(
-              '局部禁用右侧',
+              '整体禁用',
               <InputNumberRange
                 defaultValue={[100, 200]}
-                disabled={[false, true]}
+                disabled
                 allowClear
                 suffix="pcs"
                 style={{ width: '100%' }}

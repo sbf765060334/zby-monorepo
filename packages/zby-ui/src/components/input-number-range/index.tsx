@@ -54,18 +54,6 @@ type RangeFieldDataAttributes = {
 export type InputNumberRangeFieldProps<T extends ValueType = ValueType> = {
   /** 单侧 input 的 id。优先级高于组件级 id 自动生成出来的 id。 */
   id?: string
-  /**
-   * 禁用这一侧输入框。
-   *
-   * 禁用侧不能被用户输入修改，也不会被 allowClear 清空。
-   */
-  disabled?: boolean
-  /**
-   * 将这一侧输入框设为只读。
-   *
-   * 只读侧仍可聚焦和复制内容，但不能编辑，也不会被 allowClear 清空。
-   */
-  readOnly?: boolean
   /** 单侧占位文案。优先级高于组件级 placeholder 对应位置的文案。 */
   placeholder?: string
   /** 透传给单侧 InputNumber 的 prefix，显示在该侧输入框内部。 */
@@ -161,7 +149,7 @@ export interface InputNumberRangeProps<
   /**
    * 首次挂载后自动聚焦。
    *
-   * 优先聚焦 start；如果 start 被 disabled/readOnly，则尝试聚焦 end。
+   * 默认聚焦 start；组件 disabled/readOnly 时不会自动聚焦。
    */
   autoFocus?: boolean
   /**
@@ -206,21 +194,21 @@ export interface InputNumberRangeProps<
   /**
    * 是否显示清空入口。
    *
-   * true 使用默认关闭图标；对象形式可自定义 clearIcon。disabled/readOnly 的单侧
-   * 不会被清空，只有存在可清空值时才显示 clear。
+   * true 使用默认关闭图标；对象形式可自定义 clearIcon。组件 disabled/readOnly 时
+   * 不显示 clear；可编辑状态下点击 clear 会把 start/end 一起清空为 null。
    */
   allowClear?: boolean | { clearIcon?: React.ReactNode }
   /**
-   * 禁用状态。
+   * 整体禁用状态。
    *
-   * boolean 会同时控制两侧；数组形式 [startDisabled, endDisabled] 可分别控制。
-   * 单侧禁用后，该侧不能输入，也不会被 clear 清空。
+   * 该组件按一个完整范围输入控件处理，禁用会同时作用于 start/end 两侧，
+   * 不再支持半边禁用，避免 clear、order、提交值对禁用侧产生隐式改写。
    */
-  disabled?: boolean | [boolean, boolean]
+  disabled?: boolean
   /**
    * 整体只读。
    *
-   * 两侧仍可聚焦和复制内容，但不能编辑；只读侧也不会被 clear 清空。
+   * 两侧仍可聚焦和复制内容，但不能编辑；组件只读时不显示 clear。
    */
   readOnly?: boolean
   /**
@@ -419,15 +407,6 @@ function getAllowEmptyValue(value: boolean | [boolean, boolean] | undefined): [b
   return [!!value, !!value]
 }
 
-/** 从 boolean 或 [start, end] 配置里取出指定侧的值。 */
-function getSideValue(value: boolean | [boolean, boolean] | undefined, side: RangeSide) {
-  if (Array.isArray(value)) {
-    return value[side === 'start' ? 0 : 1]
-  }
-
-  return value
-}
-
 /** 只透传白名单字段，避免单侧 props 覆盖组件内部的受控值和视觉结构。 */
 function getRangeFieldForwardProps<T extends ValueType = ValueType>(
   props?: InputNumberRangeFieldProps<T>,
@@ -605,16 +584,9 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const displayValue = focused && draftValueInSync ? draftValueState.value : mergedCommittedValue
 
     const [allowEmptyStart, allowEmptyEnd] = getAllowEmptyValue(allowEmptyProp)
-    const baseDisabled = Array.isArray(disabledProp) ? disabledProp : (disabledProp ?? ctxDisabled)
-    const startDisabled = startProps?.disabled ?? getSideValue(baseDisabled, 'start') ?? false
-    const endDisabled = endProps?.disabled ?? getSideValue(baseDisabled, 'end') ?? false
-    const startReadOnly = !!(startProps?.readOnly ?? readOnly)
-    const endReadOnly = !!(endProps?.readOnly ?? readOnly)
-    /** clear 只允许清除可编辑侧；disabled/readOnly 侧的值必须保留。 */
-    const startClearDisabled = !!startDisabled || startReadOnly
-    const endClearDisabled = !!endDisabled || endReadOnly
-    const mergedDisabledAll = !!startDisabled && !!endDisabled
-    const mergedReadOnly = startReadOnly && endReadOnly
+    /** disabled/readOnly 作为范围控件的整体状态，统一作用于 start/end 两侧。 */
+    const mergedDisabled = disabledProp ?? ctxDisabled ?? false
+    const mergedReadOnly = !!readOnly
     const separator = customSeparator ?? <SwapRightOutlined />
 
     const startId =
@@ -629,23 +601,15 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [endProps],
     )
 
-    /** autoFocus 只在首次可执行时触发一次，避免 disabled/readOnly 状态变化后反复抢焦点。 */
+    /** autoFocus 只在首次可执行时触发一次，避免状态变化后反复抢焦点。 */
     React.useEffect(() => {
-      if (!autoFocus || autoFocusRef.current) {
+      if (!autoFocus || autoFocusRef.current || mergedDisabled || mergedReadOnly) {
         return
       }
 
       autoFocusRef.current = true
-
-      if (!startDisabled && !startReadOnly) {
-        startInputRef.current?.focus()
-        return
-      }
-
-      if (!endDisabled && !endReadOnly) {
-        endInputRef.current?.focus()
-      }
-    }, [autoFocus, endDisabled, endReadOnly, startDisabled, startReadOnly])
+      startInputRef.current?.focus()
+    }, [autoFocus, mergedDisabled, mergedReadOnly])
 
     /** 提交最终范围值，并同步非受控内部值和草稿基准。 */
     const emitChange = React.useCallback(
@@ -802,23 +766,15 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [onBlur, scheduleCommitOnBlur],
     )
 
-    /** 清空可编辑侧；disabled/readOnly 侧保持原值不变。 */
+    /** 清空整个范围；禁用或只读时不会展示 clear 入口，因此这里始终提交双侧 null。 */
     const handleClear = React.useCallback(() => {
-      const currentValue = mergedCommittedValueRef.current
-      const nextValue: InputNumberRangeValue = [
-        startClearDisabled ? currentValue[0] : null,
-        endClearDisabled ? currentValue[1] : null,
-      ]
-
-      emitChange(nextValue)
-    }, [emitChange, endClearDisabled, mergedCommittedValueRef, startClearDisabled])
+      emitChange([null, null])
+    }, [emitChange])
 
     const defaultClearIcon = <CloseCircleFilled />
     const mergedAllowClear = allowClear === true ? { clearIcon: defaultClearIcon } : allowClear
-    const hasClearableValue =
-      (!startClearDisabled && mergedCommittedValue[0] != null) ||
-      (!endClearDisabled && mergedCommittedValue[1] != null)
-    const showClear = !!mergedAllowClear && hasClearableValue
+    const hasClearableValue = mergedCommittedValue[0] != null || mergedCommittedValue[1] != null
+    const showClear = !!mergedAllowClear && !mergedDisabled && !mergedReadOnly && hasClearableValue
     const clearIconNode =
       typeof mergedAllowClear === 'object' && mergedAllowClear?.clearIcon != null
         ? mergedAllowClear.clearIcon
@@ -834,7 +790,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       rootClassName,
       enableVariantCls && `${prefixCls}-${variant}`,
       focused && `${prefixCls}-focused`,
-      mergedDisabledAll && `${prefixCls}-disabled`,
+      mergedDisabled && `${prefixCls}-disabled`,
       mergedReadOnly && `${prefixCls}-readonly`,
       mergedSize === 'large' && `${prefixCls}-lg`,
       mergedSize === 'small' && `${prefixCls}-sm`,
@@ -856,8 +812,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             id={startId}
             value={displayValue[0]}
             size={mergedSize}
-            disabled={startDisabled}
-            readOnly={startReadOnly}
+            disabled={mergedDisabled}
+            readOnly={mergedReadOnly}
             controls={false}
             variant="borderless"
             className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-start`)}
@@ -885,8 +841,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             id={endId}
             value={displayValue[1]}
             size={mergedSize}
-            disabled={endDisabled}
-            readOnly={endReadOnly}
+            disabled={mergedDisabled}
+            readOnly={mergedReadOnly}
             controls={false}
             variant="borderless"
             className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-end`)}
