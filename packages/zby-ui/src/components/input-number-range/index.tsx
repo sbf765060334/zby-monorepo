@@ -140,8 +140,8 @@ type SharedInputNumberProps<T extends ValueType = ValueType> = {
  * InputNumberRange 组件属性。
  *
  * 组件由两个 antd InputNumber 组成：左侧表示 start，右侧表示 end。
- * 输入中的临时值会先保存在内部草稿中，失焦离开整个组件或按 Enter 时才提交
- * 范围级 onChange。
+ * 输入中的临时值会先保存在内部草稿中，失焦离开整个组件或按 Enter 时才尝试提交；
+ * 点击 clear 是显式清空动作，会直接提交 [null, null]。
  */
 export interface InputNumberRangeProps<
   T extends ValueType = ValueType,
@@ -212,10 +212,11 @@ export interface InputNumberRangeProps<
    */
   readOnly?: boolean
   /**
-   * 是否允许提交空边界。
+   * 是否允许失焦或按 Enter 时提交空边界。
    *
    * boolean 会同时控制两侧；数组形式 [startAllowEmpty, endAllowEmpty] 可分别控制。
    * 例如 allowEmpty={[false, true]} 表示 end 可以为空，但 start 不能为空。
+   * 点击 clear 是明确清空动作，会直接清空两侧，不受 allowEmpty 拦截。
    */
   allowEmpty?: boolean | [boolean, boolean]
   /**
@@ -773,7 +774,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
     const defaultClearIcon = <CloseCircleFilled />
     const mergedAllowClear = allowClear === true ? { clearIcon: defaultClearIcon } : allowClear
-    const hasClearableValue = mergedCommittedValue[0] != null || mergedCommittedValue[1] != null
+    /** clear 跟随当前展示值：用户输入了未提交草稿时，也应该能立刻点清空。 */
+    const hasClearableValue = displayValue[0] != null || displayValue[1] != null
     const showClear = !!mergedAllowClear && !mergedDisabled && !mergedReadOnly && hasClearableValue
     const clearIconNode =
       typeof mergedAllowClear === 'object' && mergedAllowClear?.clearIcon != null
