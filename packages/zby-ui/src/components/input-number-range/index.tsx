@@ -295,10 +295,18 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       () => (isControlled ? normalizeRangeValue(controlledValue) : innerCommittedValue),
       [controlledValue, innerCommittedValue, isControlled],
     )
-    const [draftValue, setDraftValue] = React.useState<InputNumberRangeValue>(mergedCommittedValue)
+    const [draftValueState, setDraftValueState] = React.useState<{
+      value: InputNumberRangeValue
+      committedValue: InputNumberRangeValue
+    }>(() => ({
+      value: mergedCommittedValue,
+      committedValue: mergedCommittedValue,
+    }))
     const mergedCommittedValueRef = useLatestRef(mergedCommittedValue)
-    const draftValueRef = useLatestRef(draftValue)
-    const displayValue = focused ? draftValue : mergedCommittedValue
+    const draftValueRef = useLatestRef(draftValueState.value)
+    const draftCommittedValueRef = useLatestRef(draftValueState.committedValue)
+    const draftValueInSync = isSameValue(draftValueState.committedValue, mergedCommittedValue)
+    const displayValue = focused && draftValueInSync ? draftValueState.value : mergedCommittedValue
 
     const [allowEmptyStart, allowEmptyEnd] = getAllowEmptyValue(allowEmptyProp)
     const baseDisabled = Array.isArray(disabledProp) ? disabledProp : (disabledProp ?? ctxDisabled)
@@ -342,8 +350,9 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const emitChange = React.useCallback(
       (nextValue: InputNumberRangeValue) => {
         const prevValue = mergedCommittedValueRef.current
+        draftCommittedValueRef.current = nextValue
         draftValueRef.current = nextValue
-        setDraftValue(nextValue)
+        setDraftValueState({ value: nextValue, committedValue: nextValue })
 
         if (isSameValue(prevValue, nextValue)) {
           return
@@ -355,7 +364,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
         onChange?.(nextValue)
       },
-      [draftValueRef, isControlled, mergedCommittedValueRef, onChange],
+      [draftCommittedValueRef, draftValueRef, isControlled, mergedCommittedValueRef, onChange],
     )
 
     const getCommittedValue = React.useCallback(
@@ -383,30 +392,47 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     )
 
     const commitRange = React.useCallback(
-      (nextValue: InputNumberRangeValue = draftValueRef.current) => {
-        const committedValue = getCommittedValue(nextValue)
+      (nextValue?: InputNumberRangeValue) => {
+        const latestCommittedValue = mergedCommittedValueRef.current
+        const valueToCommit =
+          nextValue ??
+          (isSameValue(draftCommittedValueRef.current, latestCommittedValue)
+            ? draftValueRef.current
+            : latestCommittedValue)
+        const committedValue = getCommittedValue(valueToCommit)
 
         if (!committedValue) {
-          draftValueRef.current = mergedCommittedValueRef.current
-          setDraftValue(mergedCommittedValueRef.current)
+          draftCommittedValueRef.current = latestCommittedValue
+          draftValueRef.current = latestCommittedValue
+          setDraftValueState({ value: latestCommittedValue, committedValue: latestCommittedValue })
           return
         }
 
         emitChange(committedValue)
       },
-      [draftValueRef, emitChange, getCommittedValue, mergedCommittedValueRef],
+      [
+        draftCommittedValueRef,
+        draftValueRef,
+        emitChange,
+        getCommittedValue,
+        mergedCommittedValueRef,
+      ],
     )
 
     const updateDraftValue = React.useCallback(
       (side: RangeSide, next: ValueType | null) => {
-        setDraftValue((prev) => {
-          const nextValue: InputNumberRangeValue =
-            side === 'start' ? [next, prev[1]] : [prev[0], next]
-          draftValueRef.current = nextValue
-          return nextValue
-        })
+        const latestCommittedValue = mergedCommittedValueRef.current
+        const baseValue = isSameValue(draftCommittedValueRef.current, latestCommittedValue)
+          ? draftValueRef.current
+          : latestCommittedValue
+        const nextValue: InputNumberRangeValue =
+          side === 'start' ? [next, baseValue[1]] : [baseValue[0], next]
+
+        draftCommittedValueRef.current = latestCommittedValue
+        draftValueRef.current = nextValue
+        setDraftValueState({ value: nextValue, committedValue: latestCommittedValue })
       },
-      [draftValueRef],
+      [draftCommittedValueRef, draftValueRef, mergedCommittedValueRef],
     )
 
     const scheduleCommitOnBlur = React.useCallback(() => {
@@ -433,15 +459,16 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       ) => {
         if (!focused) {
           const latestCommittedValue = mergedCommittedValueRef.current
+          draftCommittedValueRef.current = latestCommittedValue
           draftValueRef.current = latestCommittedValue
-          setDraftValue(latestCommittedValue)
+          setDraftValueState({ value: latestCommittedValue, committedValue: latestCommittedValue })
         }
 
         setFocused(true)
         sideOnFocus?.(event)
         onFocus?.(event, { range: side })
       },
-      [draftValueRef, focused, mergedCommittedValueRef, onFocus],
+      [draftCommittedValueRef, draftValueRef, focused, mergedCommittedValueRef, onFocus],
     )
 
     const handleInputBlur = React.useCallback(
