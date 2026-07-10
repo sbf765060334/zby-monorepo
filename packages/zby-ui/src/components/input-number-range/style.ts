@@ -4,24 +4,25 @@ import { theme as antdTheme } from 'antd'
 const toCssUnit = (value: number | string) => (typeof value === 'number' ? `${value}px` : value)
 
 export function useInputNumberRangeStyle(prefixCls: string) {
-  const { theme, token, hashId } = antdTheme.useToken()
+  const { theme, token, hashId, cssVar } = antdTheme.useToken()
+  const styleToken = cssVar ?? token
 
   useStyleRegister(
     {
       theme,
-      token,
+      token: styleToken,
       hashId,
       path: ['zby-ui', 'input-number-range', prefixCls],
     },
     () => {
       const componentCls = `.${prefixCls}`
-      const border = `${toCssUnit(token.lineWidth)} ${token.lineType} ${token.colorBorder}`
-      const activeShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.controlOutline}`
-      const errorActiveShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.colorErrorOutline}`
-      const warningActiveShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.colorWarningOutline}`
-      const inputAffixPadding = token.paddingSM
-      const hoverBorderColor = token.colorPrimaryHover
-      const filledHoverBackground = token.colorFillQuaternary ?? token.colorFillSecondary
+      const border = `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorder}`
+      const activeShadow = `0 0 0 ${toCssUnit(styleToken.controlOutlineWidth)} ${styleToken.controlOutline}`
+      const errorActiveShadow = `0 0 0 ${toCssUnit(styleToken.controlOutlineWidth)} ${styleToken.colorErrorOutline}`
+      const warningActiveShadow = `0 0 0 ${toCssUnit(styleToken.controlOutlineWidth)} ${styleToken.colorWarningOutline}`
+      const inputAffixPadding = styleToken.paddingSM
+      const hoverBorderColor = styleToken.colorPrimaryHover
+      const filledHoverBackground = styleToken.colorFillSecondary
 
       return {
         [componentCls]: {
@@ -29,17 +30,17 @@ export function useInputNumberRangeStyle(prefixCls: string) {
           display: 'inline-flex',
           alignItems: 'center',
           width: '100%',
-          minHeight: token.controlHeight,
+          minHeight: styleToken.controlHeight,
           margin: 0,
           paddingInline: 0,
           paddingBlock: 0,
-          color: token.colorText,
-          fontSize: token.fontSize,
-          lineHeight: token.lineHeight,
-          background: token.colorBgContainer,
-          border: `${toCssUnit(token.lineWidth)} ${token.lineType} transparent`,
-          borderRadius: token.borderRadius,
-          transition: `all ${token.motionDurationMid}`,
+          color: styleToken.colorText,
+          fontSize: styleToken.fontSize,
+          lineHeight: styleToken.lineHeight,
+          background: styleToken.colorBgContainer,
+          border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
+          borderRadius: styleToken.borderRadius,
+          transition: `all ${styleToken.motionDurationMid}`,
 
           '&, *': {
             boxSizing: 'border-box',
@@ -105,8 +106,27 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               background: 'transparent',
               border: 0,
               boxShadow: 'none',
+              color: styleToken.colorText,
+              caretColor: 'currentColor',
               outline: 0,
               textAlign: 'start',
+
+              '&::-moz-placeholder': {
+                opacity: 1,
+              },
+
+              '&::placeholder': {
+                color: styleToken.colorTextPlaceholder,
+                userSelect: 'none',
+              },
+
+              '&:placeholder-shown': {
+                textOverflow: 'ellipsis',
+              },
+            },
+
+            '&.ant-input-number-disabled .ant-input-number-input': {
+              color: styleToken.colorTextDisabled,
             },
           },
 
@@ -114,8 +134,8 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             display: 'inline-flex',
             flex: 'none',
             alignItems: 'center',
-            paddingInline: token.paddingXS,
-            color: token.colorTextQuaternary,
+            paddingInline: styleToken.paddingXS,
+            color: styleToken.colorTextQuaternary,
             lineHeight: 1,
             userSelect: 'none',
           },
@@ -126,7 +146,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             alignItems: 'center',
             paddingInlineStart: inputAffixPadding,
             marginInlineEnd: inputAffixPadding,
-            color: token.colorTextQuaternary,
+            color: styleToken.colorTextQuaternary,
             lineHeight: 1,
           },
 
@@ -135,11 +155,11 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             flex: 'none',
             alignItems: 'center',
             alignSelf: 'center',
-            gap: token.paddingXS,
+            gap: styleToken.paddingXS,
             paddingInlineEnd: inputAffixPadding,
             marginInlineStart: inputAffixPadding,
-            color: token.colorTextQuaternary,
-            fontSize: token.fontSizeIcon,
+            color: styleToken.colorTextQuaternary,
+            fontSize: styleToken.fontSizeIcon,
             lineHeight: 1,
           },
 
@@ -147,8 +167,8 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             display: 'inline-flex',
             flex: 'none',
             alignItems: 'center',
-            color: token.colorTextQuaternary,
-            fontSize: token.fontSizeIcon,
+            color: styleToken.colorTextQuaternary,
+            fontSize: styleToken.fontSizeIcon,
             lineHeight: 1,
           },
 
@@ -157,21 +177,21 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             flex: 'none',
             alignItems: 'center',
             justifyContent: 'center',
-            width: token.fontSizeIcon,
-            height: token.fontSizeIcon,
-            color: token.colorTextQuaternary,
-            fontSize: token.fontSizeIcon,
+            width: styleToken.fontSizeIcon,
+            height: styleToken.fontSizeIcon,
+            color: styleToken.colorTextQuaternary,
+            fontSize: styleToken.fontSizeIcon,
             fontStyle: 'normal',
             lineHeight: 1,
             textAlign: 'center',
             cursor: 'pointer',
             opacity: 0,
-            transition: `color ${token.motionDurationMid} ease, opacity ${token.motionDurationMid} ease`,
+            transition: `color ${styleToken.motionDurationMid} ease, opacity ${styleToken.motionDurationMid} ease`,
             textRendering: 'auto',
             transform: 'translateZ(0)',
 
             '&:hover': {
-              color: token.colorIcon,
+              color: styleToken.colorIcon,
             },
           },
 
@@ -179,7 +199,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             borderColor: hoverBorderColor,
 
             [`${componentCls}-clear`]: {
-              background: token.colorBgBase,
+              background: styleToken.colorBgBase,
               borderRadius: '50%',
               opacity: 1,
             },
@@ -187,20 +207,20 @@ export function useInputNumberRangeStyle(prefixCls: string) {
 
           '@media (hover: none)': {
             [`${componentCls}-clear`]: {
-              background: token.colorBgBase,
+              background: styleToken.colorBgBase,
               borderRadius: '50%',
               opacity: 1,
             },
           },
 
           [`&${componentCls}-focused`]: {
-            borderColor: token.colorPrimary,
+            borderColor: styleToken.colorPrimary,
             boxShadow: activeShadow,
             outline: 0,
           },
 
           [`&${componentCls}-outlined`]: {
-            background: token.colorBgContainer,
+            background: styleToken.colorBgContainer,
             border,
 
             [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
@@ -209,21 +229,21 @@ export function useInputNumberRangeStyle(prefixCls: string) {
           },
 
           [`&${componentCls}-filled`]: {
-            background: token.colorFillTertiary,
-            border: `${toCssUnit(token.lineWidth)} ${token.lineType} transparent`,
+            background: styleToken.colorFillTertiary,
+            border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
 
             [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
               background: filledHoverBackground,
             },
 
             [`&${componentCls}-focused`]: {
-              background: token.colorBgContainer,
+              background: styleToken.colorBgContainer,
             },
           },
 
           [`&${componentCls}-borderless`]: {
             background: 'transparent',
-            border: `${toCssUnit(token.lineWidth)} ${token.lineType} transparent`,
+            border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
             boxShadow: 'none',
 
             [`&${componentCls}-focused`]: {
@@ -232,7 +252,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
           },
 
           [`&${componentCls}-underlined`]: {
-            background: 'transparent',
+            background: styleToken.colorBgContainer,
             borderInline: 0,
             borderBlockStart: 0,
             borderBlockEnd: border,
@@ -240,53 +260,53 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             boxShadow: 'none',
 
             [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
-              borderBlockEndColor: token.colorPrimaryHover,
+              borderBlockEndColor: styleToken.colorPrimaryHover,
             },
           },
 
           [`&${componentCls}-status-error`]: {
             '&, &:hover': {
-              borderColor: token.colorError,
+              borderColor: styleToken.colorError,
             },
 
             [`&${componentCls}-focused`]: {
-              borderColor: token.colorError,
+              borderColor: styleToken.colorError,
               boxShadow: errorActiveShadow,
             },
           },
 
           [`&${componentCls}-status-warning`]: {
             '&, &:hover': {
-              borderColor: token.colorWarning,
+              borderColor: styleToken.colorWarning,
             },
 
             [`&${componentCls}-focused`]: {
-              borderColor: token.colorWarning,
+              borderColor: styleToken.colorWarning,
               boxShadow: warningActiveShadow,
             },
           },
 
           [`&${componentCls}-sm`]: {
-            minHeight: token.controlHeightSM,
-            fontSize: token.fontSizeSM,
-            borderRadius: token.borderRadiusSM,
+            minHeight: styleToken.controlHeightSM,
+            fontSize: styleToken.fontSizeSM,
+            borderRadius: styleToken.borderRadiusSM,
           },
 
           [`&${componentCls}-lg`]: {
-            minHeight: token.controlHeightLG,
-            fontSize: token.fontSizeLG,
-            lineHeight: token.lineHeightLG,
-            borderRadius: token.borderRadiusLG,
+            minHeight: styleToken.controlHeightLG,
+            fontSize: styleToken.fontSizeLG,
+            lineHeight: styleToken.lineHeightLG,
+            borderRadius: styleToken.borderRadiusLG,
           },
 
           [`&${componentCls}-disabled`]: {
-            color: token.colorTextDisabled,
-            background: token.colorBgContainerDisabled,
-            borderColor: token.colorBorder,
+            color: styleToken.colorTextDisabled,
+            background: styleToken.colorBgContainerDisabled,
+            borderColor: styleToken.colorBorder,
             cursor: 'not-allowed',
 
             [`${componentCls}-separator`]: {
-              color: token.colorTextDisabled,
+              color: styleToken.colorTextDisabled,
             },
           },
 

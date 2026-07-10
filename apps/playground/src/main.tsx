@@ -5,6 +5,7 @@ import {
   ConfigProvider,
   Divider,
   Form,
+  InputNumber,
   Segmented,
   Space,
   Switch,
@@ -338,6 +339,7 @@ function PlaygroundDebug({
                 style={{ width: '100%' }}
               />,
             )}
+            {renderCase('inputNumber', <InputNumber style={{ width: '100%' }} />)}
           </div>
         </section>
       </Space>
