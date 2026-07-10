@@ -128,13 +128,103 @@ function normalizeRangeValue<T extends ValueType>(
   return [value[0] ?? null, value[1] ?? null]
 }
 
+type DecimalValueParts = {
+  negative: boolean
+  integer: string
+  fraction: string
+}
+
+function parseDecimalValue(value: ValueType): DecimalValueParts | null {
+  const match = String(value)
+    .trim()
+    .match(/^([+-])?(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/)
+
+  if (!match) {
+    return null
+  }
+
+  const [, sign, integerPart = '', fractionPart = '', leadingFractionPart = '', exponentPart] =
+    match
+  const integerDigits = integerPart || '0'
+  const fractionDigits = leadingFractionPart || fractionPart || ''
+  const exponent = exponentPart ? Number(exponentPart) : 0
+  const rawDigits = `${integerDigits}${fractionDigits}` || '0'
+  const decimalIndex = integerDigits.length + exponent
+  let integer: string
+  let fraction: string
+
+  if (decimalIndex <= 0) {
+    integer = '0'
+    fraction = `${'0'.repeat(Math.abs(decimalIndex))}${rawDigits}`
+  } else if (decimalIndex >= rawDigits.length) {
+    integer = `${rawDigits}${'0'.repeat(decimalIndex - rawDigits.length)}`
+    fraction = ''
+  } else {
+    integer = rawDigits.slice(0, decimalIndex)
+    fraction = rawDigits.slice(decimalIndex)
+  }
+
+  integer = integer.replace(/^0+/, '') || '0'
+  fraction = fraction.replace(/0+$/, '')
+
+  return {
+    negative: sign === '-' && !(integer === '0' && fraction === ''),
+    integer,
+    fraction,
+  }
+}
+
+function compareDecimalValue(left: DecimalValueParts, right: DecimalValueParts) {
+  if (left.negative !== right.negative) {
+    return left.negative ? -1 : 1
+  }
+
+  const direction = left.negative ? -1 : 1
+
+  if (left.integer.length !== right.integer.length) {
+    return left.integer.length > right.integer.length ? direction : -direction
+  }
+
+  if (left.integer !== right.integer) {
+    return left.integer > right.integer ? direction : -direction
+  }
+
+  const fractionLength = Math.max(left.fraction.length, right.fraction.length)
+  const leftFraction = left.fraction.padEnd(fractionLength, '0')
+  const rightFraction = right.fraction.padEnd(fractionLength, '0')
+
+  if (leftFraction === rightFraction) {
+    return 0
+  }
+
+  return leftFraction > rightFraction ? direction : -direction
+}
+
+function compareRangeValue(left: ValueType, right: ValueType) {
+  const leftDecimal = parseDecimalValue(left)
+  const rightDecimal = parseDecimalValue(right)
+
+  if (leftDecimal && rightDecimal) {
+    return compareDecimalValue(leftDecimal, rightDecimal)
+  }
+
+  const leftNumber = Number(left)
+  const rightNumber = Number(right)
+
+  if (!Number.isNaN(leftNumber) && !Number.isNaN(rightNumber)) {
+    return leftNumber === rightNumber ? 0 : leftNumber > rightNumber ? 1 : -1
+  }
+
+  return String(left).localeCompare(String(right))
+}
+
 function normalizeOrderedValue<T extends ValueType>(
   value: InputNumberRangeValue<T>,
   order: boolean,
 ): InputNumberRangeValue<T> {
   const [start, end] = value
 
-  if (order && start != null && end != null && Number(start) > Number(end)) {
+  if (order && start != null && end != null && compareRangeValue(start, end) > 0) {
     return [end, start]
   }
 
@@ -261,10 +351,32 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const startInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const endInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const autoFocusRef = React.useRef(false)
+    const scheduledBlurCommitRef = React.useRef<{
+      id: number
+      type: 'frame' | 'timeout'
+    } | null>(null)
     const [focused, setFocused] = React.useState(false)
     const isControlled = controlledValue !== undefined
 
     React.useImperativeHandle(ref, () => rangeRef.current!)
+
+    const cancelScheduledBlurCommit = React.useCallback(() => {
+      const scheduledBlurCommit = scheduledBlurCommitRef.current
+
+      if (!scheduledBlurCommit) {
+        return
+      }
+
+      if (scheduledBlurCommit.type === 'frame' && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(scheduledBlurCommit.id)
+      } else {
+        window.clearTimeout(scheduledBlurCommit.id)
+      }
+
+      scheduledBlurCommitRef.current = null
+    }, [])
+
+    React.useEffect(() => cancelScheduledBlurCommit, [cancelScheduledBlurCommit])
 
     const placeholder: [string, string] =
       placeholderProp ??
@@ -314,8 +426,10 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const endDisabled = endProps?.disabled ?? getSideValue(baseDisabled, 'end') ?? false
     const startReadOnly = !!(startProps?.readOnly ?? readOnly)
     const endReadOnly = !!(endProps?.readOnly ?? readOnly)
+    const startClearDisabled = !!startDisabled || startReadOnly
+    const endClearDisabled = !!endDisabled || endReadOnly
     const mergedDisabledAll = !!startDisabled && !!endDisabled
-    const mergedReadOnly = !!readOnly
+    const mergedReadOnly = startReadOnly && endReadOnly
     const separator = customSeparator ?? <SwapRightOutlined />
 
     const startId =
@@ -436,20 +550,32 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     )
 
     const scheduleCommitOnBlur = React.useCallback(() => {
-      const schedule =
-        typeof requestAnimationFrame === 'function'
-          ? requestAnimationFrame
-          : (callback: FrameRequestCallback) => window.setTimeout(callback, 0)
+      cancelScheduledBlurCommit()
 
-      schedule(() => {
-        if (rangeRef.current?.contains(document.activeElement)) {
+      const runCommit = () => {
+        scheduledBlurCommitRef.current = null
+
+        if (!rangeRef.current || rangeRef.current.contains(document.activeElement)) {
           return
         }
 
         setFocused(false)
         commitRange()
-      })
-    }, [commitRange])
+      }
+
+      if (typeof requestAnimationFrame === 'function') {
+        scheduledBlurCommitRef.current = {
+          id: requestAnimationFrame(runCommit),
+          type: 'frame',
+        }
+        return
+      }
+
+      scheduledBlurCommitRef.current = {
+        id: window.setTimeout(runCommit, 0),
+        type: 'timeout',
+      }
+    }, [cancelScheduledBlurCommit, commitRange])
 
     const handleInputFocus = React.useCallback(
       (
@@ -485,18 +611,21 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     )
 
     const handleClear = React.useCallback(() => {
-      const emptyValue: InputNumberRangeValue = [null, null]
-      draftValueRef.current = emptyValue
-      emitChange(emptyValue)
-    }, [draftValueRef, emitChange])
+      const currentValue = mergedCommittedValueRef.current
+      const nextValue: InputNumberRangeValue = [
+        startClearDisabled ? currentValue[0] : null,
+        endClearDisabled ? currentValue[1] : null,
+      ]
+
+      emitChange(nextValue)
+    }, [emitChange, endClearDisabled, mergedCommittedValueRef, startClearDisabled])
 
     const defaultClearIcon = <CloseCircleFilled />
     const mergedAllowClear = allowClear === true ? { clearIcon: defaultClearIcon } : allowClear
-    const showClear =
-      !!mergedAllowClear &&
-      !mergedDisabledAll &&
-      !mergedReadOnly &&
-      (mergedCommittedValue[0] != null || mergedCommittedValue[1] != null)
+    const hasClearableValue =
+      (!startClearDisabled && mergedCommittedValue[0] != null) ||
+      (!endClearDisabled && mergedCommittedValue[1] != null)
+    const showClear = !!mergedAllowClear && hasClearableValue
     const clearIconNode =
       typeof mergedAllowClear === 'object' && mergedAllowClear?.clearIcon != null
         ? mergedAllowClear.clearIcon
