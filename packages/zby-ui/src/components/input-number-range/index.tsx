@@ -10,41 +10,98 @@ import { useIntl } from '@zby/intl'
 import * as React from 'react'
 import { useInputNumberRangeStyle } from './style'
 
+/**
+ * 单个输入框允许承载的值类型。
+ *
+ * number 对应 antd InputNumber 的普通模式；string 通常来自 stringMode，
+ * 用于金额、超大整数或高精度小数，内部比较时不能直接转成 Number。
+ */
 type ValueType = string | number
+
+/** 范围输入的两侧标识，回调用它告诉调用方当前事件来自哪一侧。 */
 type RangeSide = 'start' | 'end'
+
+/** 复用 antd InputNumber 的外观、尺寸、状态类型，保证对外 API 语义一致。 */
 type RangeVariant = NonNullable<InputNumberProps['variant']>
 type RangeSize = InputNumberProps['size']
 type RangeStatus = InputNumberProps['status']
+
 type InputNumberFocusRef = {
   focus: () => void
 }
 
+/**
+ * InputNumberRange 的标准值结构。
+ *
+ * - 第 0 项是起始值 start，第 1 项是结束值 end。
+ * - null 表示该侧为空；不会用 undefined 表示空值。
+ * - T 会跟随 stringMode 等场景变成 string，调用方应按原类型保存。
+ */
 export type InputNumberRangeValue<T extends ValueType = ValueType> = [T | null, T | null]
 
+/** 允许透传到单侧输入框的 data-* 属性，方便测试选择器和业务埋点。 */
 type RangeFieldDataAttributes = {
   [key: `data-${string}`]: string | number | boolean | undefined
 }
 
+/**
+ * 单侧输入框的定制属性。
+ *
+ * startProps 只作用于左侧 start 输入框，endProps 只作用于右侧 end 输入框。
+ * 这里刻意只暴露安全的输入属性，避免调用方覆盖 value、variant、controls 等
+ * 会破坏范围组件整体行为的内部控制项。
+ */
 export type InputNumberRangeFieldProps<T extends ValueType = ValueType> = {
+  /** 单侧 input 的 id。优先级高于组件级 id 自动生成出来的 id。 */
   id?: string
+  /**
+   * 禁用这一侧输入框。
+   *
+   * 禁用侧不能被用户输入修改，也不会被 allowClear 清空。
+   */
   disabled?: boolean
+  /**
+   * 将这一侧输入框设为只读。
+   *
+   * 只读侧仍可聚焦和复制内容，但不能编辑，也不会被 allowClear 清空。
+   */
   readOnly?: boolean
+  /** 单侧占位文案。优先级高于组件级 placeholder 对应位置的文案。 */
   placeholder?: string
+  /** 透传给单侧 InputNumber 的 prefix，显示在该侧输入框内部。 */
   prefix?: React.ReactNode
+  /** 透传给单侧 InputNumber 的 suffix，显示在该侧输入框内部。 */
   suffix?: React.ReactNode
+  /** 单侧 input 的 tab 顺序。 */
   tabIndex?: number
+  /** 单侧 input 的 name，常用于原生表单或自动填充识别。 */
   name?: string
+  /** 单侧 input 的 autoComplete。 */
   autoComplete?: string
+  /** 单侧 input 的 inputMode，用于提示移动端键盘类型。 */
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']
+  /** 单侧 input 的 pattern。 */
   pattern?: string
+  /** 单侧 input 的无障碍标签。 */
   'aria-label'?: string
+  /**
+   * 单侧值变化回调。
+   *
+   * 这个回调只表示这一侧输入内容变化，不代表整个范围已经提交；
+   * 范围级提交结果请使用组件级 onChange。
+   */
   onChange?: (value: T | null) => void
+  /** 单侧聚焦回调，会先于组件级 onFocus 调用。 */
   onFocus?: React.FocusEventHandler<HTMLInputElement>
+  /** 单侧失焦回调，会先于组件级 onBlur 调用。 */
   onBlur?: React.FocusEventHandler<HTMLInputElement>
+  /** 单侧原始输入文本回调，透传 antd InputNumber 的 onInput。 */
   onInput?: (text: string) => void
+  /** 单侧回车回调；回车后组件还会尝试提交整个范围值。 */
   onPressEnter?: React.KeyboardEventHandler<HTMLInputElement>
 } & Partial<RangeFieldDataAttributes>
 
+/** 实际透传给 antd InputNumber 的单侧属性白名单。 */
 type RangeFieldForwardProps<T extends ValueType = ValueType> = Pick<
   InputNumberRangeFieldProps<T>,
   | 'tabIndex'
@@ -59,46 +116,155 @@ type RangeFieldForwardProps<T extends ValueType = ValueType> = Pick<
 > &
   Partial<RangeFieldDataAttributes>
 
-type SharedInputNumberProps<T extends ValueType = ValueType> = Pick<
-  InputNumberProps<T>,
-  | 'min'
-  | 'max'
-  | 'step'
-  | 'precision'
-  | 'formatter'
-  | 'parser'
-  | 'stringMode'
-  | 'changeOnWheel'
-  | 'keyboard'
->
+/**
+ * 同时透传给 start/end 两个 InputNumber 的数值输入能力。
+ *
+ * 这些属性会作用到两侧输入框，适合描述统一的数值规则；如果两侧规则不同，
+ * 当前组件没有开放分侧 min/max，需要在业务层拆成两个独立输入框处理。
+ */
+type SharedInputNumberProps<T extends ValueType = ValueType> = {
+  /** 两侧共同的最小值限制。 */
+  min?: InputNumberProps<T>['min']
+  /** 两侧共同的最大值限制。 */
+  max?: InputNumberProps<T>['max']
+  /** 两侧共同的步进值。 */
+  step?: InputNumberProps<T>['step']
+  /** 两侧共同的小数精度。 */
+  precision?: InputNumberProps<T>['precision']
+  /** 两侧共同的展示格式化函数，只影响展示文本。 */
+  formatter?: InputNumberProps<T>['formatter']
+  /** 两侧共同的输入解析函数，用于把展示文本解析回真实值。 */
+  parser?: InputNumberProps<T>['parser']
+  /**
+   * 是否以字符串形式保存数值。
+   *
+   * 高精度金额、超大整数、小数位很多的值建议开启；组件排序逻辑会避免
+   * 把这类字符串直接转成 Number 导致精度丢失。
+   */
+  stringMode?: InputNumberProps<T>['stringMode']
+  /** 是否允许鼠标滚轮改变数值，语义与 antd InputNumber 保持一致。 */
+  changeOnWheel?: InputNumberProps<T>['changeOnWheel']
+  /** 是否允许键盘上下键调整数值，语义与 antd InputNumber 保持一致。 */
+  keyboard?: InputNumberProps<T>['keyboard']
+}
 
+/**
+ * InputNumberRange 组件属性。
+ *
+ * 组件由两个 antd InputNumber 组成：左侧表示 start，右侧表示 end。
+ * 输入中的临时值会先保存在内部草稿中，失焦离开整个组件或按 Enter 时才提交
+ * 范围级 onChange。
+ */
 export interface InputNumberRangeProps<
   T extends ValueType = ValueType,
 > extends SharedInputNumberProps<T> {
+  /**
+   * 首次挂载后自动聚焦。
+   *
+   * 优先聚焦 start；如果 start 被 disabled/readOnly，则尝试聚焦 end。
+   */
   autoFocus?: boolean
+  /**
+   * 受控范围值。
+   *
+   * 传入该属性后，组件展示以 value 为准；外部更新 value 时，内部草稿会识别
+   * 旧草稿是否过期，避免 focused 状态下继续提交旧值。
+   */
   value?: InputNumberRangeValue<T>
+  /**
+   * 非受控默认值，仅在首次渲染时使用。
+   *
+   * 如果同时传 value，则 defaultValue 不再参与后续状态控制。
+   */
   defaultValue?: InputNumberRangeValue<T>
+  /**
+   * 范围提交后的回调。
+   *
+   * 用户输入某一侧时不会立即触发；当焦点离开整个范围、按 Enter、点击 clear，
+   * 且最终范围值确实发生变化时触发。
+   */
   onChange?: (value: InputNumberRangeValue<T>) => void
+  /**
+   * 是否自动保证 start <= end。
+   *
+   * 默认 true。提交时如果 start 大于 end，会自动交换两侧值；stringMode 下会使用
+   * 高精度字符串比较，避免大数被 Number 转换丢精度。
+   */
   order?: boolean
+  /**
+   * 两侧占位文案，数组第 0 项用于 start，第 1 项用于 end。
+   *
+   * 不传时使用国际化默认文案。
+   */
   placeholder?: [string, string]
+  /** 中间分隔符，默认是 SwapRightOutlined 图标。 */
   separator?: React.ReactNode
+  /** 整体左侧前缀，显示在两个输入框外侧。 */
   prefix?: React.ReactNode
+  /** 整体右侧后缀，显示在 clear 图标右侧。 */
   suffix?: React.ReactNode
+  /**
+   * 是否显示清空入口。
+   *
+   * true 使用默认关闭图标；对象形式可自定义 clearIcon。disabled/readOnly 的单侧
+   * 不会被清空，只有存在可清空值时才显示 clear。
+   */
   allowClear?: boolean | { clearIcon?: React.ReactNode }
+  /**
+   * 禁用状态。
+   *
+   * boolean 会同时控制两侧；数组形式 [startDisabled, endDisabled] 可分别控制。
+   * 单侧禁用后，该侧不能输入，也不会被 clear 清空。
+   */
   disabled?: boolean | [boolean, boolean]
+  /**
+   * 整体只读。
+   *
+   * 两侧仍可聚焦和复制内容，但不能编辑；只读侧也不会被 clear 清空。
+   */
   readOnly?: boolean
+  /**
+   * 是否允许提交空边界。
+   *
+   * boolean 会同时控制两侧；数组形式 [startAllowEmpty, endAllowEmpty] 可分别控制。
+   * 例如 allowEmpty={[false, true]} 表示 end 可以为空，但 start 不能为空。
+   */
   allowEmpty?: boolean | [boolean, boolean]
+  /**
+   * 输入框 id。
+   *
+   * 传字符串时会生成 `${id}-start` 和 `${id}-end`；对象形式可完全自定义两侧 id。
+   */
   id?: string | { start?: string; end?: string }
+  /** start 输入框的单侧定制属性，优先级高于组件级对应配置。 */
   startProps?: InputNumberRangeFieldProps<T>
+  /** end 输入框的单侧定制属性，优先级高于组件级对应配置。 */
   endProps?: InputNumberRangeFieldProps<T>
+  /**
+   * 任一侧聚焦时触发。
+   *
+   * info.range 用于区分当前聚焦的是 start 还是 end。
+   */
   onFocus?: (event: React.FocusEvent<HTMLInputElement>, info: { range: RangeSide }) => void
+  /**
+   * 任一侧失焦时触发。
+   *
+   * 真正提交会延迟到确认焦点离开整个范围组件之后，因此 start/end 之间切换不会提交。
+   */
   onBlur?: (event: React.FocusEvent<HTMLInputElement>, info: { range: RangeSide }) => void
+  /** 外层容器 className。 */
   className?: string
+  /** 外层容器 style。 */
   style?: React.CSSProperties
+  /** 外层根 className，通常用于主题或上层样式注入。 */
   rootClassName?: string
+  /** 自定义样式前缀，默认 zby-input-number-range。 */
   prefixCls?: string
+  /** 组件尺寸，支持 antd InputNumber 的 small/middle/large。 */
   size?: RangeSize
+  /** 表单状态，支持 error/warning，并会与 Form.Item 状态合并。 */
   status?: RangeStatus
+  /** antd v5/v6 输入类组件外观变体，如 outlined、filled、borderless、underlined。 */
   variant?: RangeVariant
 }
 
@@ -108,6 +274,7 @@ function composeClassName(...classNames: Array<string | false | null | undefined
   return classNames.filter(Boolean).join(' ')
 }
 
+/** 在异步回调里读取最新值，避免闭包拿到过期 props/state。 */
 function useLatestRef<T>(value: T) {
   const ref = React.useRef(value)
 
@@ -118,6 +285,7 @@ function useLatestRef<T>(value: T) {
   return ref
 }
 
+/** 将外部传入值统一整理成 [start, end]，空值一律归一成 null。 */
 function normalizeRangeValue<T extends ValueType>(
   value: InputNumberRangeValue<T> | null | undefined,
 ): InputNumberRangeValue<T> {
@@ -134,6 +302,7 @@ type DecimalValueParts = {
   fraction: string
 }
 
+/** 把数字字符串拆成可安全比较的十进制结构，避免 stringMode 高精度值丢失。 */
 function parseDecimalValue(value: ValueType): DecimalValueParts | null {
   const match = String(value)
     .trim()
@@ -174,6 +343,7 @@ function parseDecimalValue(value: ValueType): DecimalValueParts | null {
   }
 }
 
+/** 比较两个已标准化的十进制值，返回值语义与 Array.prototype.sort 的 compare 一致。 */
 function compareDecimalValue(left: DecimalValueParts, right: DecimalValueParts) {
   if (left.negative !== right.negative) {
     return left.negative ? -1 : 1
@@ -200,6 +370,7 @@ function compareDecimalValue(left: DecimalValueParts, right: DecimalValueParts) 
   return leftFraction > rightFraction ? direction : -direction
 }
 
+/** 优先按高精度十进制比较；无法解析为普通数值时再退回字符串比较。 */
 function compareRangeValue(left: ValueType, right: ValueType) {
   const leftDecimal = parseDecimalValue(left)
   const rightDecimal = parseDecimalValue(right)
@@ -218,6 +389,7 @@ function compareRangeValue(left: ValueType, right: ValueType) {
   return String(left).localeCompare(String(right))
 }
 
+/** 根据 order 配置决定是否在提交时交换 start/end。 */
 function normalizeOrderedValue<T extends ValueType>(
   value: InputNumberRangeValue<T>,
   order: boolean,
@@ -238,6 +410,7 @@ function isSameValue<T extends ValueType>(
   return prev[0] === next[0] && prev[1] === next[1]
 }
 
+/** 将 allowEmpty 统一展开成 [startAllowEmpty, endAllowEmpty]。 */
 function getAllowEmptyValue(value: boolean | [boolean, boolean] | undefined): [boolean, boolean] {
   if (Array.isArray(value)) {
     return [!!value[0], !!value[1]]
@@ -246,6 +419,7 @@ function getAllowEmptyValue(value: boolean | [boolean, boolean] | undefined): [b
   return [!!value, !!value]
 }
 
+/** 从 boolean 或 [start, end] 配置里取出指定侧的值。 */
 function getSideValue(value: boolean | [boolean, boolean] | undefined, side: RangeSide) {
   if (Array.isArray(value)) {
     return value[side === 'start' ? 0 : 1]
@@ -254,6 +428,7 @@ function getSideValue(value: boolean | [boolean, boolean] | undefined, side: Ran
   return value
 }
 
+/** 只透传白名单字段，避免单侧 props 覆盖组件内部的受控值和视觉结构。 */
 function getRangeFieldForwardProps<T extends ValueType = ValueType>(
   props?: InputNumberRangeFieldProps<T>,
 ): RangeFieldForwardProps<T> {
@@ -356,10 +531,12 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       type: 'frame' | 'timeout'
     } | null>(null)
     const [focused, setFocused] = React.useState(false)
+    /** 是否受控：只要 value 不是 undefined，就由调用方负责保存最终提交值。 */
     const isControlled = controlledValue !== undefined
 
     React.useImperativeHandle(ref, () => rangeRef.current!)
 
+    /** 取消失焦后延迟提交，避免组件卸载后继续 setState 或触发过期 onChange。 */
     const cancelScheduledBlurCommit = React.useCallback(() => {
       const scheduledBlurCommit = scheduledBlurCommitRef.current
 
@@ -385,6 +562,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
         intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', 'Max Value'),
       ] as [string, string])
 
+    /** 两侧输入框共享同一组数字规则，保证 start/end 的输入行为一致。 */
     const sharedInputProps = React.useMemo<SharedInputNumberProps>(
       () => ({
         min,
@@ -407,6 +585,12 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       () => (isControlled ? normalizeRangeValue(controlledValue) : innerCommittedValue),
       [controlledValue, innerCommittedValue, isControlled],
     )
+    /**
+     * focused 时展示草稿值；未 focused 时展示 committed 值。
+     *
+     * committedValue 记录这份草稿基于哪个外部值生成。外部受控 value 更新后，
+     * 如果草稿来源已经过期，就不再展示旧草稿，避免失焦时把旧值提交回父组件。
+     */
     const [draftValueState, setDraftValueState] = React.useState<{
       value: InputNumberRangeValue
       committedValue: InputNumberRangeValue
@@ -426,6 +610,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const endDisabled = endProps?.disabled ?? getSideValue(baseDisabled, 'end') ?? false
     const startReadOnly = !!(startProps?.readOnly ?? readOnly)
     const endReadOnly = !!(endProps?.readOnly ?? readOnly)
+    /** clear 只允许清除可编辑侧；disabled/readOnly 侧的值必须保留。 */
     const startClearDisabled = !!startDisabled || startReadOnly
     const endClearDisabled = !!endDisabled || endReadOnly
     const mergedDisabledAll = !!startDisabled && !!endDisabled
@@ -444,6 +629,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [endProps],
     )
 
+    /** autoFocus 只在首次可执行时触发一次，避免 disabled/readOnly 状态变化后反复抢焦点。 */
     React.useEffect(() => {
       if (!autoFocus || autoFocusRef.current) {
         return
@@ -461,6 +647,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       }
     }, [autoFocus, endDisabled, endReadOnly, startDisabled, startReadOnly])
 
+    /** 提交最终范围值，并同步非受控内部值和草稿基准。 */
     const emitChange = React.useCallback(
       (nextValue: InputNumberRangeValue) => {
         const prevValue = mergedCommittedValueRef.current
@@ -481,6 +668,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [draftCommittedValueRef, draftValueRef, isControlled, mergedCommittedValueRef, onChange],
     )
 
+    /** 校验草稿是否允许提交：空值规则由 allowEmpty 决定，完整范围再按 order 排序。 */
     const getCommittedValue = React.useCallback(
       (value: InputNumberRangeValue): InputNumberRangeValue | null => {
         const [start, end] = value
@@ -505,6 +693,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [allowEmptyEnd, allowEmptyStart, order],
     )
 
+    /** 将当前草稿提交为正式值；草稿过期时回退到最新 committed value。 */
     const commitRange = React.useCallback(
       (nextValue?: InputNumberRangeValue) => {
         const latestCommittedValue = mergedCommittedValueRef.current
@@ -533,6 +722,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       ],
     )
 
+    /** 更新单侧草稿；如果外部 value 已变化，则先以最新 committed value 作为编辑基准。 */
     const updateDraftValue = React.useCallback(
       (side: RangeSide, next: ValueType | null) => {
         const latestCommittedValue = mergedCommittedValueRef.current
@@ -549,6 +739,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [draftCommittedValueRef, draftValueRef, mergedCommittedValueRef],
     )
 
+    /** 延迟到下一帧判断焦点位置，避免 start/end 内部切换时误提交。 */
     const scheduleCommitOnBlur = React.useCallback(() => {
       cancelScheduledBlurCommit()
 
@@ -577,6 +768,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       }
     }, [cancelScheduledBlurCommit, commitRange])
 
+    /** 进入编辑态时，用最新 committed value 初始化草稿，保证本轮编辑从最新值开始。 */
     const handleInputFocus = React.useCallback(
       (
         side: RangeSide,
@@ -610,6 +802,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [onBlur, scheduleCommitOnBlur],
     )
 
+    /** 清空可编辑侧；disabled/readOnly 侧保持原值不变。 */
     const handleClear = React.useCallback(() => {
       const currentValue = mergedCommittedValueRef.current
       const nextValue: InputNumberRangeValue = [
@@ -634,6 +827,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
           : null
     const showAffix = showClear || !!suffix
 
+    /** 外层容器统一承接 antd 尺寸、状态、variant、disabled/readOnly 等视觉状态。 */
     const triggerClassName = composeClassName(
       prefixCls,
       hashId,
