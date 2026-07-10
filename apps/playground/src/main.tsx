@@ -24,6 +24,7 @@ import { createRoot } from 'react-dom/client'
 const { Text, Title } = Typography
 
 const resources = mergeIntlResources(zbyUiLocales, zbyProLocales)
+const THEME_VIEW_TRANSITION_NAME = 'zby-playground-theme'
 
 const antdLocales = {
   'zh-CN': antdZhCN,
@@ -126,29 +127,57 @@ function PlaygroundDebug({
       const enteringDark = nextThemeMode === 'dark'
       const styleElement = document.createElement('style')
       styleElement.textContent = `
+::view-transition {
+  background: ${token.colorBgLayout};
+}
+
+::view-transition-group(root) {
+  z-index: 0;
+}
+
+::view-transition-group(${THEME_VIEW_TRANSITION_NAME}) {
+  z-index: 1;
+}
+
+::view-transition-image-pair(root),
+::view-transition-image-pair(${THEME_VIEW_TRANSITION_NAME}) {
+  isolation: isolate;
+}
+
 ::view-transition-old(root),
-::view-transition-new(root) {
+::view-transition-new(root),
+::view-transition-old(${THEME_VIEW_TRANSITION_NAME}),
+::view-transition-new(${THEME_VIEW_TRANSITION_NAME}) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-::view-transition-old(root) {
+::view-transition-old(${THEME_VIEW_TRANSITION_NAME}) {
   z-index: ${enteringDark ? 1 : 999};
 }
 
-::view-transition-new(root) {
+::view-transition-new(${THEME_VIEW_TRANSITION_NAME}) {
   z-index: ${enteringDark ? 999 : 1};
 }
 `
       document.head.appendChild(styleElement)
 
-      const transition = viewTransitionDocument.startViewTransition(() => {
-        flushSync(() => onThemeModeChange(nextThemeMode))
-      })
+      let themeTransitionAnimation: Animation | undefined
+      let transition: ViewTransitionLike
+
+      try {
+        transition = viewTransitionDocument.startViewTransition(() => {
+          flushSync(() => onThemeModeChange(nextThemeMode))
+        })
+      } catch {
+        styleElement.remove()
+        onThemeModeChange(nextThemeMode)
+        return
+      }
 
       void transition.ready
         .then(() => {
-          document.documentElement.animate(
+          themeTransitionAnimation = document.documentElement.animate(
             {
               clipPath: enteringDark ? clipPath : [...clipPath].reverse(),
             },
@@ -156,7 +185,7 @@ function PlaygroundDebug({
               duration: 520,
               easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
               fill: 'forwards',
-              pseudoElement: `::view-transition-${enteringDark ? 'new' : 'old'}(root)`,
+              pseudoElement: `::view-transition-${enteringDark ? 'new' : 'old'}(${THEME_VIEW_TRANSITION_NAME})`,
             } as KeyframeAnimationOptions,
           )
         })
@@ -164,11 +193,12 @@ function PlaygroundDebug({
 
       void transition.finished
         .finally(() => {
+          themeTransitionAnimation?.cancel()
           styleElement.remove()
         })
         .catch(() => undefined)
     },
-    [onThemeModeChange, themeMode],
+    [onThemeModeChange, themeMode, token.colorBgLayout],
   )
 
   const status = formStatus === 'default' ? undefined : formStatus
@@ -210,6 +240,7 @@ function PlaygroundDebug({
         padding: 24,
         color: token.colorText,
         background: token.colorBgLayout,
+        viewTransitionName: THEME_VIEW_TRANSITION_NAME,
       }}
     >
       <Space orientation="vertical" size={24} style={{ width: '100%', maxWidth: 1120 }}>
