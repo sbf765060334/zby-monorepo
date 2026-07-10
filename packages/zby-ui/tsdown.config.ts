@@ -10,6 +10,13 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   deps: {
-    neverBundle: ['react', 'react-dom', 'antd', '@ant-design/cssinjs', '@zby/intl'],
+    neverBundle: [
+      'react',
+      'react-dom',
+      'antd',
+      '@ant-design/icons',
+      '@ant-design/cssinjs',
+      '@zby/intl',
+    ],
   },
 })

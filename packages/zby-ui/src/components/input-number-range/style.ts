@@ -19,6 +19,9 @@ export function useInputNumberRangeStyle(prefixCls: string) {
       const activeShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.controlOutline}`
       const errorActiveShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.colorErrorOutline}`
       const warningActiveShadow = `0 0 0 ${toCssUnit(token.controlOutlineWidth)} ${token.colorWarningOutline}`
+      const inputAffixPadding = token.paddingSM
+      const hoverBorderColor = token.colorPrimaryHover
+      const filledHoverBackground = token.colorFillQuaternary ?? token.colorFillSecondary
 
       return {
         [componentCls]: {
@@ -28,7 +31,8 @@ export function useInputNumberRangeStyle(prefixCls: string) {
           width: '100%',
           minHeight: token.controlHeight,
           margin: 0,
-          padding: 0,
+          paddingInline: 0,
+          paddingBlock: 0,
           color: token.colorText,
           fontSize: token.fontSize,
           lineHeight: token.lineHeight,
@@ -120,8 +124,8 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             display: 'inline-flex',
             flex: 'none',
             alignItems: 'center',
-            paddingInlineStart: token.paddingSM,
-            marginInlineEnd: token.paddingXXS,
+            paddingInlineStart: inputAffixPadding,
+            marginInlineEnd: inputAffixPadding,
             color: token.colorTextQuaternary,
             lineHeight: 1,
           },
@@ -132,8 +136,8 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             alignItems: 'center',
             alignSelf: 'center',
             gap: token.paddingXS,
-            paddingInlineEnd: token.paddingSM,
-            marginInlineStart: token.paddingXXS,
+            paddingInlineEnd: inputAffixPadding,
+            marginInlineStart: inputAffixPadding,
             color: token.colorTextQuaternary,
             fontSize: token.fontSizeIcon,
             lineHeight: 1,
@@ -162,7 +166,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             textAlign: 'center',
             cursor: 'pointer',
             opacity: 0,
-            transition: `color ${token.motionDurationMid}, opacity ${token.motionDurationMid}`,
+            transition: `color ${token.motionDurationMid} ease, opacity ${token.motionDurationMid} ease`,
             textRendering: 'auto',
             transform: 'translateZ(0)',
 
@@ -171,35 +175,9 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             },
           },
 
-          [`${componentCls}-clear-icon`]: {
-            position: 'relative',
-            display: 'block',
-            width: '1em',
-            height: '1em',
-            borderRadius: '50%',
-            background: 'currentColor',
-
-            '&::before, &::after': {
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: '0.55em',
-              height: 2,
-              background: token.colorBgContainer,
-              borderRadius: 1,
-              content: '""',
-            },
-
-            '&::before': {
-              transform: 'translate(-50%, -50%) rotate(45deg)',
-            },
-
-            '&::after': {
-              transform: 'translate(-50%, -50%) rotate(-45deg)',
-            },
-          },
-
           [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
+            borderColor: hoverBorderColor,
+
             [`${componentCls}-clear`]: {
               background: token.colorBgBase,
               borderRadius: '50%',
@@ -226,7 +204,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             border,
 
             [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
-              borderColor: token.colorPrimaryHover,
+              borderColor: hoverBorderColor,
             },
           },
 
@@ -235,7 +213,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             border: `${toCssUnit(token.lineWidth)} ${token.lineType} transparent`,
 
             [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
-              background: token.colorFillSecondary,
+              background: filledHoverBackground,
             },
 
             [`&${componentCls}-focused`]: {
@@ -297,6 +275,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
           [`&${componentCls}-lg`]: {
             minHeight: token.controlHeightLG,
             fontSize: token.fontSizeLG,
+            lineHeight: token.lineHeightLG,
             borderRadius: token.borderRadiusLG,
           },
 

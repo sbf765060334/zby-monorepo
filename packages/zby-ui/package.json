@@ -30,6 +30,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ant-design/icons": "6.3.2",
     "@zby/intl": "workspace:*"
   },
   "peerDependencies": {

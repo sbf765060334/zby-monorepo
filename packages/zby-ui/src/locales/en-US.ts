@@ -2,8 +2,8 @@ const enUS = {
   zby: {
     ui: {
       inputNumberRange: {
-        startPlaceholder: 'Min',
-        endPlaceholder: 'Max',
+        startPlaceholder: 'Min Value',
+        endPlaceholder: 'Max Value',
       },
     },
   },

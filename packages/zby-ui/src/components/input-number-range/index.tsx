@@ -1,5 +1,11 @@
+import { CloseCircleFilled, SwapRightOutlined } from '@ant-design/icons'
 import { InputNumber } from 'antd'
 import type { InputNumberProps } from 'antd'
+import { getMergedStatus, getStatusClassNames } from 'antd/es/_util/statusUtils'
+import DisabledContext from 'antd/es/config-provider/DisabledContext'
+import useSize from 'antd/es/config-provider/hooks/useSize'
+import { FormItemInputContext } from 'antd/es/form/context'
+import useVariant from 'antd/es/form/hooks/useVariants'
 import { useIntl } from '@zby/intl'
 import * as React from 'react'
 import { useInputNumberRangeStyle } from './style'
@@ -98,16 +104,8 @@ export interface InputNumberRangeProps<
 
 const DEFAULT_PREFIX_CLS = 'zby-input-number-range'
 
-function DefaultClearIcon({ prefixCls }: { prefixCls: string }) {
-  return <span className={`${prefixCls}-clear-icon`} aria-hidden="true" />
-}
-
 function composeClassName(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ')
-}
-
-function hasOwnValueProp(props: { value?: unknown }) {
-  return Object.prototype.hasOwnProperty.call(props, 'value')
 }
 
 function useLatestRef<T>(value: T) {
@@ -222,7 +220,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       onChange,
       order = true,
       placeholder: placeholderProp,
-      separator = '~',
+      separator: customSeparator,
       prefix,
       suffix,
       allowClear,
@@ -238,9 +236,9 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       style,
       rootClassName,
       prefixCls = DEFAULT_PREFIX_CLS,
-      size,
-      status,
-      variant = 'outlined',
+      size: customizeSize,
+      status: customStatus,
+      variant: customVariant,
       min,
       max,
       step,
@@ -254,20 +252,25 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
     const intl = useIntl()
     const hashId = useInputNumberRangeStyle(prefixCls)
+    const ctxDisabled = React.useContext(DisabledContext)
+    const { status: contextStatus, hasFeedback } = React.useContext(FormItemInputContext)
+    const mergedStatus = getMergedStatus(contextStatus, customStatus)
+    const mergedSize = useSize((ctx) => customizeSize ?? ctx)
+    const [variant, enableVariantCls] = useVariant('inputNumber', customVariant)
     const rangeRef = React.useRef<HTMLDivElement>(null)
     const startInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const endInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const autoFocusRef = React.useRef(false)
     const [focused, setFocused] = React.useState(false)
-    const isControlled = hasOwnValueProp(props)
+    const isControlled = controlledValue !== undefined
 
     React.useImperativeHandle(ref, () => rangeRef.current!)
 
     const placeholder: [string, string] =
       placeholderProp ??
       ([
-        intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', 'Min'),
-        intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', 'Max'),
+        intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', 'Min Value'),
+        intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', 'Max Value'),
       ] as [string, string])
 
     const sharedInputProps = React.useMemo<SharedInputNumberProps>(
@@ -298,12 +301,14 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const displayValue = focused ? draftValue : mergedCommittedValue
 
     const [allowEmptyStart, allowEmptyEnd] = getAllowEmptyValue(allowEmptyProp)
-    const startDisabled = startProps?.disabled ?? getSideValue(disabledProp, 'start') ?? false
-    const endDisabled = endProps?.disabled ?? getSideValue(disabledProp, 'end') ?? false
+    const baseDisabled = Array.isArray(disabledProp) ? disabledProp : (disabledProp ?? ctxDisabled)
+    const startDisabled = startProps?.disabled ?? getSideValue(baseDisabled, 'start') ?? false
+    const endDisabled = endProps?.disabled ?? getSideValue(baseDisabled, 'end') ?? false
     const startReadOnly = !!(startProps?.readOnly ?? readOnly)
     const endReadOnly = !!(endProps?.readOnly ?? readOnly)
     const mergedDisabledAll = !!startDisabled && !!endDisabled
     const mergedReadOnly = !!readOnly
+    const separator = customSeparator ?? <SwapRightOutlined />
 
     const startId =
       startProps?.id ?? (typeof id === 'object' ? id?.start : id ? `${id}-start` : undefined)
@@ -458,7 +463,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       emitChange(emptyValue)
     }, [draftValueRef, emitChange])
 
-    const defaultClearIcon = <DefaultClearIcon prefixCls={prefixCls} />
+    const defaultClearIcon = <CloseCircleFilled />
     const mergedAllowClear = allowClear === true ? { clearIcon: defaultClearIcon } : allowClear
     const showClear =
       !!mergedAllowClear &&
@@ -477,13 +482,13 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       prefixCls,
       hashId,
       rootClassName,
-      `${prefixCls}-${variant}`,
+      enableVariantCls && `${prefixCls}-${variant}`,
       focused && `${prefixCls}-focused`,
       mergedDisabledAll && `${prefixCls}-disabled`,
       mergedReadOnly && `${prefixCls}-readonly`,
-      size === 'large' && `${prefixCls}-lg`,
-      size === 'small' && `${prefixCls}-sm`,
-      status && `${prefixCls}-status-${status}`,
+      mergedSize === 'large' && `${prefixCls}-lg`,
+      mergedSize === 'small' && `${prefixCls}-sm`,
+      getStatusClassNames(prefixCls, mergedStatus, hasFeedback),
       className,
     )
 
@@ -500,7 +505,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             {...startFieldForwardProps}
             id={startId}
             value={displayValue[0]}
-            size={size}
+            size={mergedSize}
             disabled={startDisabled}
             readOnly={startReadOnly}
             controls={false}
@@ -529,7 +534,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             {...endFieldForwardProps}
             id={endId}
             value={displayValue[1]}
-            size={size}
+            size={mergedSize}
             disabled={endDisabled}
             readOnly={endReadOnly}
             controls={false}
