@@ -15,10 +15,9 @@ import {
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
 import { mergeIntlResources, useIntl, ZbyIntlProvider } from '@zby/intl'
-import { zbyProLocales } from '@zby/pro'
+import { useThemeModeTransition, zbyProLocales } from '@zby/pro'
 import { InputNumberRange, zbyUiLocales } from '@zby/ui'
 import React from 'react'
-import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
 const { Text, Title } = Typography
@@ -38,14 +37,6 @@ type ComponentSize = 'small' | 'middle' | 'large'
 type RangeVariant = 'outlined' | 'filled' | 'borderless' | 'underlined'
 type RangeStatus = 'default' | 'warning' | 'error'
 type RangeValue = [number | string | null, number | string | null]
-type ViewTransitionLike = {
-  ready: Promise<void>
-  finished: Promise<void>
-}
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (callback: () => void) => ViewTransitionLike
-}
-
 type PlaygroundDebugProps = {
   locale: PlaygroundLocale
   themeMode: ThemeMode
@@ -90,116 +81,12 @@ function PlaygroundDebug({
   const [allowClear, setAllowClear] = React.useState(true)
   const [allowEmpty, setAllowEmpty] = React.useState(true)
   const [order, setOrder] = React.useState(true)
-  const themeSwitchPointRef = React.useRef<{ x: number; y: number } | null>(null)
-
-  const recordThemeSwitchPoint = React.useCallback<React.PointerEventHandler<HTMLDivElement>>(
-    (event) => {
-      themeSwitchPointRef.current = { x: event.clientX, y: event.clientY }
-    },
-    [],
-  )
-
-  const handleThemeModeChange = React.useCallback(
-    (nextThemeMode: ThemeMode) => {
-      if (nextThemeMode === themeMode) {
-        return
-      }
-
-      const viewTransitionDocument = document as ViewTransitionDocument
-
-      if (
-        !viewTransitionDocument.startViewTransition ||
-        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      ) {
-        onThemeModeChange(nextThemeMode)
-        return
-      }
-
-      const { x, y } = themeSwitchPointRef.current ?? {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-      }
-      const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y),
-      )
-      const clipPath = [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`]
-      const enteringDark = nextThemeMode === 'dark'
-      const styleElement = document.createElement('style')
-      styleElement.textContent = `
-::view-transition {
-  background: ${token.colorBgLayout};
-}
-
-::view-transition-group(root) {
-  z-index: 0;
-}
-
-::view-transition-group(${THEME_VIEW_TRANSITION_NAME}) {
-  z-index: 1;
-}
-
-::view-transition-image-pair(root),
-::view-transition-image-pair(${THEME_VIEW_TRANSITION_NAME}) {
-  isolation: isolate;
-}
-
-::view-transition-old(root),
-::view-transition-new(root),
-::view-transition-old(${THEME_VIEW_TRANSITION_NAME}),
-::view-transition-new(${THEME_VIEW_TRANSITION_NAME}) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-::view-transition-old(${THEME_VIEW_TRANSITION_NAME}) {
-  z-index: ${enteringDark ? 1 : 999};
-}
-
-::view-transition-new(${THEME_VIEW_TRANSITION_NAME}) {
-  z-index: ${enteringDark ? 999 : 1};
-}
-`
-      document.head.appendChild(styleElement)
-
-      let themeTransitionAnimation: Animation | undefined
-      let transition: ViewTransitionLike
-
-      try {
-        transition = viewTransitionDocument.startViewTransition(() => {
-          flushSync(() => onThemeModeChange(nextThemeMode))
-        })
-      } catch {
-        styleElement.remove()
-        onThemeModeChange(nextThemeMode)
-        return
-      }
-
-      void transition.ready
-        .then(() => {
-          themeTransitionAnimation = document.documentElement.animate(
-            {
-              clipPath: enteringDark ? clipPath : [...clipPath].reverse(),
-            },
-            {
-              duration: 520,
-              easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-              fill: 'forwards',
-              pseudoElement: `::view-transition-${enteringDark ? 'new' : 'old'}(${THEME_VIEW_TRANSITION_NAME})`,
-            } as KeyframeAnimationOptions,
-          )
-        })
-        .catch(() => undefined)
-
-      void transition.finished
-        .finally(() => {
-          themeTransitionAnimation?.cancel()
-          styleElement.remove()
-        })
-        .catch(() => undefined)
-    },
-    [onThemeModeChange, themeMode, token.colorBgLayout],
-  )
+  const { handleThemeModeChange, recordThemeSwitchPoint } = useThemeModeTransition({
+    themeMode,
+    viewTransitionName: THEME_VIEW_TRANSITION_NAME,
+    background: token.colorBgLayout,
+    onThemeModeChange,
+  })
 
   const status = formStatus === 'default' ? undefined : formStatus
   const startPlaceholder = intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', '最小值')
