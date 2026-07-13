@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "6.3.2",
-    "@zby/intl": "workspace:*"
+    "@zby/intl": "workspace:*",
+    "clsx": "2.1.1"
   },
   "peerDependencies": {
     "@ant-design/cssinjs": ">=1.0.0",
