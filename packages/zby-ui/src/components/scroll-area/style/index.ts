@@ -76,7 +76,7 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
   const trackSize = unit(token.scrollAreaTrackSize)
   const trackInset = unit(token.paddingXXS)
   const trackOuterInset = 2
-  const thumbHitTargetSize = 12
+  const thumbHitTargetSize = `calc(${trackSize} + 4px)`
 
   return {
     [componentCls]: {

@@ -82,19 +82,22 @@ describe('ScrollArea', () => {
     expect(styleText).toMatch(/scroll-area-track\{[^}]*background:transparent/)
   })
 
-  it('uses a 10px thumb hit target across the track thickness', () => {
+  it('keeps the thumb hit target 4px larger than the configured track size', () => {
     const cache = createCache()
-
-    render(
+    const { container } = render(
       <StyleProvider cache={cache}>
-        <ScrollArea direction="both" scrollbar="always" />
+        <ConfigProvider theme={{ components: { ScrollArea: { trackSize: 20 } } }}>
+          <ScrollArea direction="both" scrollbar="always" />
+        </ConfigProvider>
       </StyleProvider>,
     )
 
+    const root = container.querySelector<HTMLElement>('.ant-scroll-area')!
     const styleText = extractStyle(cache)
 
-    expect(styleText).toContain('height:10px')
-    expect(styleText).toContain('width:10px')
+    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('20px')
+    expect(styleText).toContain('height:calc(var(--zby-scroll-area-track-size) + 4px)')
+    expect(styleText).toContain('width:calc(var(--zby-scroll-area-track-size) + 4px)')
     expect(styleText).not.toContain('min-width:44px')
     expect(styleText).not.toContain('min-height:44px')
   })
@@ -250,9 +253,7 @@ describe('ScrollArea', () => {
     const customScrollArea = getByTestId('custom-scroll-area')
     const styleText = extractStyle(cache)
 
-    expect(defaultScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe(
-      '5px',
-    )
+    expect(defaultScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('8px')
     expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('12px')
     expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')
     expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-hover-bg')).toBe(
