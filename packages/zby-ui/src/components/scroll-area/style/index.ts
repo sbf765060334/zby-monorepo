@@ -134,10 +134,6 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
           position: 'absolute',
           top: '50%',
           left: '50%',
-          width: '100%',
-          minWidth: 44,
-          height: '100%',
-          minHeight: 44,
           content: `''`,
           transform: 'translate(-50%, -50%)',
         },
@@ -155,6 +151,11 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
 
         [`> ${componentCls}-thumb`]: {
           height: '100%',
+
+          '&::before': {
+            width: '100%',
+            height: 'calc(100% + 8px)',
+          },
         },
       },
 
@@ -165,6 +166,11 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
 
         [`> ${componentCls}-thumb`]: {
           width: '100%',
+
+          '&::before': {
+            width: 'calc(100% + 8px)',
+            height: '100%',
+          },
         },
       },
 
@@ -177,6 +183,12 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
           opacity: 1,
           pointerEvents: 'auto',
         },
+
+      [`> ${componentCls}-track:not(:has(> ${componentCls}-thumb))`]: {
+        visibility: 'hidden',
+        opacity: 0,
+        pointerEvents: 'none',
+      },
 
       [`&${componentCls}-scrollbar-none > ${componentCls}-track, &${componentCls}-scrollbar-none > ${componentCls}-corner`]:
         {

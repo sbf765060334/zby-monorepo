@@ -73,8 +73,29 @@ describe('ScrollArea', () => {
       </StyleProvider>,
     )
 
+    const styleText = extractStyle(cache)
+
     expect(container.querySelector('.ant-scroll-area-track-vertical')).not.toBeNull()
-    expect(extractStyle(cache)).toContain('scrollbar-hover:hover')
+    expect(styleText).toContain('scrollbar-hover:hover')
+    expect(styleText).toContain(':not(:has(> .ant-scroll-area-thumb))')
+    expect(styleText).toContain('visibility:hidden')
+  })
+
+  it('expands the thumb hit target by 8px only across the track thickness', () => {
+    const cache = createCache()
+
+    render(
+      <StyleProvider cache={cache}>
+        <ScrollArea direction="both" scrollbar="always" />
+      </StyleProvider>,
+    )
+
+    const styleText = extractStyle(cache)
+
+    expect(styleText).toContain('height:calc(100% + 8px)')
+    expect(styleText).toContain('width:calc(100% + 8px)')
+    expect(styleText).not.toContain('min-width:44px')
+    expect(styleText).not.toContain('min-height:44px')
   })
 
   it('normalizes scrollbar visibility options into stable root classes', () => {
