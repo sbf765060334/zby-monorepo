@@ -12,7 +12,8 @@ const localPlugin = {
         fixable: 'whitespace',
         schema: [],
         messages: {
-          sameLine: 'Place the object opening brace on the same line as the assignment.',
+          closeCall: 'Place the call closing parenthesis on the same line as the object.',
+          sameLine: 'Place the object opening brace on the same line as its leading token.',
         },
       },
       create(context) {
@@ -26,31 +27,61 @@ const localPlugin = {
               (parent.type === 'AssignmentExpression' && parent.right === node) ||
               (parent.type === 'AssignmentPattern' && parent.right === node) ||
               (parent.type === 'PropertyDefinition' && parent.value === node)
+            const isSoleCallArgument =
+              (parent.type === 'CallExpression' || parent.type === 'NewExpression') &&
+              parent.arguments.length === 1 &&
+              parent.arguments[0] === node
 
-            if (!isAssignedObject) return
+            if (!isAssignedObject && !isSoleCallArgument) return
 
             const openBrace = sourceCode.getFirstToken(node)
-            const assignment = openBrace && sourceCode.getTokenBefore(openBrace)
+            const leadingToken = openBrace && sourceCode.getTokenBefore(openBrace)
+            const expectedLeadingToken = isAssignedObject ? '=' : '('
 
-            if (
-              !openBrace ||
-              !assignment ||
-              assignment.value !== '=' ||
-              assignment.loc.end.line === openBrace.loc.start.line
-            ) {
+            if (!openBrace || !leadingToken || leadingToken.value !== expectedLeadingToken) {
               return
             }
 
             const previousTokenOrComment = sourceCode.getTokenBefore(openBrace, {
               includeComments: true,
             })
-            if (previousTokenOrComment !== assignment) return
+            if (
+              previousTokenOrComment === leadingToken &&
+              leadingToken.loc.end.line !== openBrace.loc.start.line
+            ) {
+              context.report({
+                node: openBrace,
+                messageId: 'sameLine',
+                fix: (fixer) =>
+                  fixer.replaceTextRange(
+                    [leadingToken.range[1], openBrace.range[0]],
+                    isAssignedObject ? ' ' : '',
+                  ),
+              })
+            }
+
+            if (!isSoleCallArgument) return
+
+            const closeBrace = sourceCode.getLastToken(node)
+            const closingParenthesis = sourceCode.getLastToken(parent)
+            if (!closeBrace || !closingParenthesis || closingParenthesis.value !== ')') return
+
+            const tokensBetween = sourceCode.getTokensBetween(closeBrace, closingParenthesis, {
+              includeComments: true,
+            })
+            if (tokensBetween.some((token) => token.value !== ',')) return
+            if (
+              tokensBetween.length === 0 &&
+              closeBrace.loc.end.line === closingParenthesis.loc.start.line
+            ) {
+              return
+            }
 
             context.report({
-              node: openBrace,
-              messageId: 'sameLine',
+              node: closeBrace,
+              messageId: 'closeCall',
               fix: (fixer) =>
-                fixer.replaceTextRange([assignment.range[1], openBrace.range[0]], ' '),
+                fixer.replaceTextRange([closeBrace.range[1], closingParenthesis.range[0]], ''),
             })
           },
         }
