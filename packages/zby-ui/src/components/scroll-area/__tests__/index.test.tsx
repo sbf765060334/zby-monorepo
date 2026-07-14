@@ -6,7 +6,7 @@ import { ConfigProvider } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import ScrollArea from './index'
+import ScrollArea from '../index'
 
 const OriginalResizeObserver = globalThis.ResizeObserver
 
