@@ -1,13 +1,28 @@
 // @vitest-environment jsdom
 
 import { createCache, extractStyle, StyleProvider } from '@ant-design/cssinjs'
-import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { ConfigProvider } from 'antd'
 import * as React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import ScrollArea from './index'
-import { clampScrollOffset, getThumbOffset, getThumbSize } from './utils'
+
+const OriginalResizeObserver = globalThis.ResizeObserver
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+})
+
+afterAll(() => {
+  vi.stubGlobal('ResizeObserver', OriginalResizeObserver)
+})
 
 afterEach(() => {
   cleanup()
@@ -36,17 +51,8 @@ function mockScrollMetrics(
   })
 }
 
-async function fireScroll(element: HTMLElement) {
-  act(() => {
-    fireEvent.scroll(element)
-  })
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 24))
-  })
-}
-
 describe('ScrollArea', () => {
-  it('renders the root, viewport and content structure', () => {
+  it('renders root, viewport, content and the default vertical track immediately', () => {
     const { container } = render(
       <ScrollArea>
         <div>content</div>
@@ -56,9 +62,22 @@ describe('ScrollArea', () => {
     expect(container.querySelector('.ant-scroll-area')).not.toBeNull()
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(container.querySelector('.ant-scroll-area-content')).not.toBeNull()
+    expect(container.querySelector('.ant-scroll-area-track-vertical')).not.toBeNull()
   })
 
-  it('normalizes scrollbar visibility options', () => {
+  it('keeps the hover track mounted before any scroll event', () => {
+    const cache = createCache()
+    const { container } = render(
+      <StyleProvider cache={cache}>
+        <ScrollArea scrollbar="hover" />
+      </StyleProvider>,
+    )
+
+    expect(container.querySelector('.ant-scroll-area-track-vertical')).not.toBeNull()
+    expect(extractStyle(cache)).toContain('scrollbar-hover:hover')
+  })
+
+  it('normalizes scrollbar visibility options into stable root classes', () => {
     const { container, rerender } = render(
       <ScrollArea scrollbar={['hover', 'scrolling', 'hover']} />,
     )
@@ -74,19 +93,46 @@ describe('ScrollArea', () => {
     expect(root.classList.contains('ant-scroll-area-scrollbar-none')).toBe(true)
   })
 
-  it('shows and clears the scrolling state', () => {
-    vi.useFakeTimers()
+  it('uses an imperative scrolling class without updating component metrics', () => {
     const viewportRef = React.createRef<HTMLDivElement>()
     const { container } = render(
-      <ScrollArea direction="horizontal" scrollbar="scrolling" viewportRef={viewportRef} />,
+      <ScrollArea scrollbar="scrolling" viewportRef={viewportRef}>
+        <div style={{ height: 800 }} />
+      </ScrollArea>,
     )
     const root = container.querySelector('.ant-scroll-area')!
+    const track = container.querySelector('.ant-scroll-area-track-vertical')
 
-    act(() => fireEvent.scroll(viewportRef.current!))
+    mockScrollMetrics(viewportRef.current!, {
+      clientHeight: 100,
+      scrollHeight: 800,
+      scrollTop: 10,
+    })
+    fireEvent.scroll(viewportRef.current!)
+
     expect(root.classList.contains('ant-scroll-area-scrolling')).toBe(true)
+    expect(track).not.toBeNull()
+  })
 
-    act(() => vi.advanceTimersByTime(1200))
-    expect(root.classList.contains('ant-scroll-area-scrolling')).toBe(false)
+  it('renders only the tracks enabled by direction', () => {
+    const { container, rerender } = render(<ScrollArea direction="horizontal" scrollbar="always" />)
+
+    expect(container.querySelector('.ant-scroll-area-track-horizontal')).not.toBeNull()
+    expect(container.querySelector('.ant-scroll-area-track-vertical')).toBeNull()
+
+    rerender(<ScrollArea direction="both" scrollbar="always" />)
+    expect(container.querySelector('.ant-scroll-area-track-horizontal')).not.toBeNull()
+    expect(container.querySelector('.ant-scroll-area-track-vertical')).not.toBeNull()
+  })
+
+  it('uses a native viewport and omits custom tracks when nativeScrollbar is enabled', () => {
+    const { container } = render(<ScrollArea nativeScrollbar direction="both" />)
+    const root = container.querySelector('.ant-scroll-area')!
+    const viewport = container.querySelector<HTMLElement>('.ant-scroll-area-viewport')!
+
+    expect(root.classList.contains('ant-scroll-area-native')).toBe(true)
+    expect(viewport.hasAttribute('data-radix-scroll-area-viewport')).toBe(false)
+    expect(container.querySelector('.ant-scroll-area-track')).toBeNull()
   })
 
   it('generates native scrollbar hiding styles and consumes component token overrides', () => {
@@ -113,65 +159,56 @@ describe('ScrollArea', () => {
 
     const styleText = extractStyle(cache)
     expect(styleText).toContain('scrollbar-width:none')
-    expect(styleText).toContain('-ms-overflow-style:none')
     expect(styleText).toContain('::-webkit-scrollbar')
-    expect(styleText).toContain('height:10px')
     expect(styleText).toContain('width:10px')
     expect(styleText).toContain('background:#123456')
     expect(styleText).toContain('background:#654321')
     expect(styleText).toContain('z-index:99')
   })
 
-  it('renders and positions the horizontal thumb from native metrics', async () => {
-    const viewportRef = React.createRef<HTMLDivElement>()
-    const { container } = render(
-      <ScrollArea direction="horizontal" scrollbar="always" viewportRef={viewportRef} />,
+  it('isolates component token variables between nested cssVar ConfigProviders', () => {
+    const cache = createCache()
+    const { getByTestId } = render(
+      <StyleProvider cache={cache}>
+        <ConfigProvider theme={{ cssVar: { prefix: 'zby-test' } }}>
+          <ScrollArea data-testid="default-scroll-area" />
+          <ConfigProvider
+            theme={{
+              components: {
+                ScrollArea: {
+                  trackSize: 12,
+                  thumbBg: '#123456',
+                  thumbHoverBg: '#654321',
+                  zIndex: 88,
+                },
+              },
+            }}
+          >
+            <ScrollArea data-testid="custom-scroll-area" />
+          </ConfigProvider>
+        </ConfigProvider>
+      </StyleProvider>,
     )
 
-    mockScrollMetrics(viewportRef.current!, {
-      clientWidth: 200,
-      clientHeight: 100,
-      scrollWidth: 800,
-      scrollHeight: 100,
-      scrollLeft: 300,
-      scrollTop: 0,
-    })
-    await fireScroll(viewportRef.current!)
-
-    const thumb = container.querySelector<HTMLElement>('.ant-scroll-area-thumb')
-    expect(thumb).not.toBeNull()
-    expect(thumb?.style.width).toBe('50px')
-    expect(thumb?.style.transform).toBe('translate3d(75px, 0, 0)')
-  })
-
-  it('updates native scrollLeft while dragging the horizontal thumb', async () => {
-    const viewportRef = React.createRef<HTMLDivElement>()
-    const { container } = render(
-      <ScrollArea direction="horizontal" scrollbar="always" viewportRef={viewportRef} />,
+    const defaultCssVarClass = Array.from(getByTestId('default-scroll-area').classList).find(
+      (className) => className.startsWith('css-var-'),
     )
+    const customCssVarClass = Array.from(getByTestId('custom-scroll-area').classList).find(
+      (className) => className.startsWith('css-var-'),
+    )
+    const styleText = extractStyle(cache)
 
-    mockScrollMetrics(viewportRef.current!, {
-      clientWidth: 200,
-      clientHeight: 100,
-      scrollWidth: 800,
-      scrollHeight: 100,
-      scrollLeft: 0,
-      scrollTop: 0,
-    })
-    await fireScroll(viewportRef.current!)
-
-    const thumb = container.querySelector<HTMLElement>('.ant-scroll-area-thumb')!
-    fireEvent.mouseDown(thumb, { clientX: 0, pageX: 0 })
-    fireEvent.mouseMove(window, { clientX: 75, pageX: 75, buttons: 1 })
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 24))
-    })
-
-    expect(viewportRef.current?.scrollLeft).toBe(300)
-    expect(thumb.style.transform).toBe('translate3d(75px, 0, 0)')
+    expect(defaultCssVarClass).toBeTruthy()
+    expect(customCssVarClass).toBeTruthy()
+    expect(customCssVarClass).not.toBe(defaultCssVarClass)
+    expect(styleText).toContain('--zby-test-scroll-area-track-size:8px')
+    expect(styleText).toContain('--zby-test-scroll-area-track-size:12px')
+    expect(styleText).toContain('--zby-test-scroll-area-thumb-bg:#123456')
+    expect(styleText).toContain('--zby-test-scroll-area-z-index:88')
+    expect(styleText).toContain('width:var(--zby-test-scroll-area-track-size)')
   })
 
-  it('maps a vertical wheel to horizontal scrolling by default', async () => {
+  it('maps a vertical wheel to horizontal scrolling by default', () => {
     const viewportRef = React.createRef<HTMLDivElement>()
     render(<ScrollArea direction="horizontal" scrollbar={false} viewportRef={viewportRef} />)
 
@@ -183,13 +220,51 @@ describe('ScrollArea', () => {
       scrollLeft: 0,
       scrollTop: 0,
     })
-    await fireScroll(viewportRef.current!)
     fireEvent.wheel(viewportRef.current!, { deltaY: 120, deltaX: 0 })
 
     expect(viewportRef.current?.scrollLeft).toBe(120)
   })
 
-  it('keeps wheel behavior native when requested', async () => {
+  it('normalizes line-based wheel deltas and releases wheel events at the horizontal edge', () => {
+    const viewportRef = React.createRef<HTMLDivElement>()
+    render(<ScrollArea direction="horizontal" scrollbar={false} viewportRef={viewportRef} />)
+
+    mockScrollMetrics(viewportRef.current!, {
+      clientWidth: 200,
+      clientHeight: 100,
+      scrollWidth: 800,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+    })
+
+    const movingEvent = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 3,
+      deltaMode: WheelEvent.DOM_DELTA_LINE,
+    })
+    viewportRef.current!.dispatchEvent(movingEvent)
+
+    expect(viewportRef.current?.scrollLeft).toBe(48)
+    expect(movingEvent.defaultPrevented).toBe(true)
+
+    Object.defineProperty(viewportRef.current!, 'scrollLeft', {
+      configurable: true,
+      get: () => 600,
+      set: () => undefined,
+    })
+    const edgeEvent = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 120,
+    })
+    viewportRef.current!.dispatchEvent(edgeEvent)
+
+    expect(edgeEvent.defaultPrevented).toBe(false)
+  })
+
+  it('keeps wheel behavior native when requested', () => {
     const viewportRef = React.createRef<HTMLDivElement>()
     render(
       <ScrollArea
@@ -208,18 +283,22 @@ describe('ScrollArea', () => {
       scrollLeft: 0,
       scrollTop: 0,
     })
-    await fireScroll(viewportRef.current!)
     fireEvent.wheel(viewportRef.current!, { deltaY: 120, deltaX: 0 })
 
     expect(viewportRef.current?.scrollLeft).toBe(0)
   })
 
-  it('does not map wheel events emitted by a nested ScrollArea viewport', async () => {
+  it('does not map wheel events emitted by a nested ScrollArea with another prefix', () => {
     const outerRef = React.createRef<HTMLDivElement>()
     const innerRef = React.createRef<HTMLDivElement>()
     render(
       <ScrollArea direction="horizontal" scrollbar={false} viewportRef={outerRef}>
-        <ScrollArea direction="vertical" scrollbar={false} viewportRef={innerRef} />
+        <ScrollArea
+          prefixCls="inner-scroll-area"
+          direction="vertical"
+          scrollbar={false}
+          viewportRef={innerRef}
+        />
       </ScrollArea>,
     )
 
@@ -239,44 +318,62 @@ describe('ScrollArea', () => {
       scrollLeft: 0,
       scrollTop: 0,
     })
-    await fireScroll(outerRef.current!)
-    await fireScroll(innerRef.current!)
     fireEvent.wheel(innerRef.current!, { deltaY: 120, deltaX: 0 })
 
     expect(outerRef.current?.scrollLeft).toBe(0)
   })
 
-  it('supports semantic callbacks and viewport props', () => {
-    const onScroll = vi.fn()
+  it('supports semantic callbacks, viewport props and both public refs', () => {
+    const rootRef = React.createRef<HTMLDivElement>()
     const viewportRef = React.createRef<HTMLDivElement>()
+    const viewportPropsRef = React.createRef<HTMLDivElement>()
+    const onScroll = vi.fn()
     const { container } = render(
       <ScrollArea
+        ref={rootRef}
         direction="horizontal"
         viewportRef={viewportRef}
-        classNames={({ props }) => ({ root: 'root-' + props.direction })}
+        classNames={({ props }) => ({ root: `root-${props.direction}` })}
         styles={{ root: { height: 120 }, content: { minWidth: 300 } }}
-        viewportProps={{ className: 'custom-viewport', onScroll }}
+        viewportProps={{
+          ref: viewportPropsRef,
+          className: 'custom-viewport',
+          onScroll,
+        }}
       />,
     )
 
     fireEvent.scroll(viewportRef.current!)
 
-    expect(container.querySelector('.root-horizontal')).not.toBeNull()
+    expect(container.querySelector('.root-horizontal')).toBe(rootRef.current)
+    expect(viewportRef.current).toBe(viewportPropsRef.current)
+    expect(container.querySelector('.custom-viewport')).toBe(viewportRef.current)
     expect(container.querySelector<HTMLElement>('.root-horizontal')?.style.height).toBe('120px')
     expect(container.querySelector<HTMLElement>('.ant-scroll-area-content')?.style.minWidth).toBe(
       '300px',
     )
-    expect(container.querySelector('.custom-viewport')).toBe(viewportRef.current)
     expect(onScroll).toHaveBeenCalledTimes(1)
   })
-})
 
-describe('ScrollArea metrics', () => {
-  it('calculates thumb size, offset and clamped scroll offsets', () => {
-    expect(getThumbSize(200, 800)).toBe(50)
-    expect(getThumbSize(100, 100)).toBe(0)
-    expect(getThumbOffset(300, 200, 800)).toBe(75)
-    expect(clampScrollOffset(-10, 200, 800)).toBe(0)
-    expect(clampScrollOffset(900, 200, 800)).toBe(600)
+  it('uses normalized RTL direction for horizontal wheel mapping', () => {
+    const viewportRef = React.createRef<HTMLDivElement>()
+    const { container } = render(
+      <ConfigProvider direction="rtl">
+        <ScrollArea direction="horizontal" scrollbar={false} viewportRef={viewportRef} />
+      </ConfigProvider>,
+    )
+
+    mockScrollMetrics(viewportRef.current!, {
+      clientWidth: 200,
+      clientHeight: 100,
+      scrollWidth: 800,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+    })
+    fireEvent.wheel(viewportRef.current!, { deltaY: 120, deltaX: 0 })
+
+    expect(container.querySelector('.ant-scroll-area')?.getAttribute('dir')).toBe('rtl')
+    expect(viewportRef.current?.scrollLeft).toBe(-120)
   })
 })

@@ -41,11 +41,6 @@ type ScrollAreaToken = GlobalToken & {
   scrollAreaZIndex: number
 }
 
-/**
- * 复刻 antd resetComponent 在普通组件根节点上的基础重置。
- * 这里使用本地纯函数，避免为了一个无状态的样式对象再混入 antd/es 内部模块，
- * 从而保证 ConfigProvider、theme.useToken 和 ScrollArea 始终来自同一个 antd 根入口实例。
- */
 function resetComponent(token: GlobalToken): CSSObject {
   return {
     boxSizing: 'border-box',
@@ -59,10 +54,6 @@ function resetComponent(token: GlobalToken): CSSObject {
   }
 }
 
-/**
- * 生成 ScrollArea 的结构样式。滚动距离、滑块尺寸和位移由组件运行时计算，
- * 这里仅负责滚动容器、轨道、滑块以及不同展示状态对应的视觉规则。
- */
 const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
   const { componentCls } = token
   const trackSize = unit(token.scrollAreaTrackSize)
@@ -84,7 +75,6 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         WebkitOverflowScrolling: 'touch',
       },
 
-      // 自定义滚动条模式下仍由原生 viewport 承担滚动，只隐藏浏览器自带滚动条。
       [`&:not(${componentCls}-native) > ${componentCls}-viewport`]: {
         scrollbarWidth: 'none',
         ['-ms-overflow-style' as const]: 'none',
@@ -96,28 +86,44 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         },
       },
 
-      [`> ${componentCls}-viewport > ${componentCls}-content`]: {
-        minWidth: '100%',
-        minHeight: '100%',
-        boxSizing: 'border-box',
-      },
+      [`> ${componentCls}-viewport > ${componentCls}-content, > ${componentCls}-viewport > div > ${componentCls}-content`]:
+        {
+          minWidth: '100%',
+          minHeight: '100%',
+          boxSizing: 'border-box',
+        },
 
       [`> ${componentCls}-track`]: {
         position: 'absolute',
         zIndex: token.scrollAreaZIndex,
+        display: 'flex',
         borderRadius: token.borderRadiusSM,
         opacity: 0,
         pointerEvents: 'none',
+        touchAction: 'none',
+        userSelect: 'none',
         transition: `opacity ${token.motionDurationMid} ${token.motionEaseInOut}`,
       },
 
       [`> ${componentCls}-track > ${componentCls}-thumb`]: {
-        position: 'absolute',
+        position: 'relative',
+        flex: 1,
         borderRadius: token.borderRadiusLG,
         background: token.scrollAreaThumbBg,
         cursor: 'pointer',
-        userSelect: 'none',
         transition: `background ${token.motionDurationMid} ${token.motionEaseInOut}`,
+
+        '&::before': {
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: '100%',
+          minWidth: 44,
+          height: '100%',
+          minHeight: 44,
+          content: `''`,
+          transform: 'translate(-50%, -50%)',
+        },
 
         '&:hover': {
           background: token.scrollAreaThumbHoverBg,
@@ -125,10 +131,10 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       },
 
       [`> ${componentCls}-track-horizontal`]: {
-        insetInlineStart: trackInset,
-        insetInlineEnd: trackInset,
-        insetBlockEnd: trackInset,
+        flexDirection: 'column',
         height: trackSize,
+        marginInline: trackInset,
+        marginBlockEnd: trackInset,
 
         [`> ${componentCls}-thumb`]: {
           height: '100%',
@@ -136,21 +142,28 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       },
 
       [`> ${componentCls}-track-vertical`]: {
-        insetBlockStart: trackInset,
-        insetBlockEnd: trackInset,
-        insetInlineEnd: trackInset,
         width: trackSize,
+        marginBlock: trackInset,
+        marginInlineEnd: trackInset,
 
         [`> ${componentCls}-thumb`]: {
           width: '100%',
         },
       },
 
-      // always、hover、scrolling 和 dragging 最终都收敛为轨道可见且可交互。
+      [`> ${componentCls}-corner`]: {
+        background: 'transparent',
+      },
+
       [`&${componentCls}-scrollbar-always > ${componentCls}-track, &${componentCls}-scrollbar-hover:hover > ${componentCls}-track, &${componentCls}-scrolling > ${componentCls}-track, &${componentCls}-dragging > ${componentCls}-track`]:
         {
           opacity: 1,
           pointerEvents: 'auto',
+        },
+
+      [`&${componentCls}-scrollbar-none > ${componentCls}-track, &${componentCls}-scrollbar-none > ${componentCls}-corner`]:
+        {
+          display: 'none',
         },
 
       [`&${componentCls}-vertical > ${componentCls}-viewport`]: {
@@ -170,11 +183,6 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
   }
 }
 
-/**
- * 使用 antd 根入口暴露的 useToken 获取最终 GlobalToken。
- * antd 会把 theme.components.ScrollArea 保留在 token.ScrollArea 中，
- * 因此这里可以在不依赖 antd/es DesignTokenContext 的情况下消费自定义组件 token。
- */
 export default function useStyle(prefixCls: string) {
   const { theme, token, hashId } = antdTheme.useToken()
   const componentToken = token.ScrollArea
@@ -197,6 +205,5 @@ export default function useStyle(prefixCls: string) {
     () => genBaseStyle(mergedToken),
   )
 
-  // 与 antd genStyleHooks 的返回形态保持一致，便于组件继续统一拼接 hashId/cssVarCls。
   return [hashId, ''] as const
 }

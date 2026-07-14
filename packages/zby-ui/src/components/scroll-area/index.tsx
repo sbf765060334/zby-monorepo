@@ -1,9 +1,10 @@
 import * as React from 'react'
+import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area'
 import { ConfigProvider } from 'antd'
 import { clsx } from 'clsx'
 
 import useStyle from './style'
-import { clampScrollOffset, composeRef, getThumbOffset, getThumbSize, raf } from './utils'
+import { composeRef } from './utils'
 
 export type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both'
 export type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
@@ -57,7 +58,7 @@ export type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
 /**
  * ScrollArea 对外公开属性。
  *
- * 组件使用三层 DOM：最外层 root 负责布局和状态 class，viewport 承担浏览器原生滚动，
+ * 组件使用三层语义 DOM：最外层 root 负责布局和状态 class，viewport 承担浏览器原生滚动，
  * content 包裹实际内容。除 children 外继承的 HTMLDivElement 属性默认应用到 root；
  * forwardRef 同样指向 root。onWheel 是一个例外，它会在 viewport 的原生 wheel 监听流程中调用，
  * 以便在 axis-mapping 模式决定是否需要阻止默认纵向滚动前，让业务方先处理事件。
@@ -86,7 +87,7 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
    * - horizontal：仅允许横向滚动；
    * - both：横向和纵向都允许滚动。
    *
-   * 只有指定方向实际发生内容溢出时，组件才会渲染对应的自定义轨道。
+   * 只有指定方向实际发生内容溢出时，对应轨道中才会出现可操作的 thumb。
    *
    * @default 'vertical'
    */
@@ -96,8 +97,8 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
    * 自定义滚动条的展示策略。
    *
    * - true：等价于 'always'，轨道始终可见；
-   * - false：不渲染自定义轨道，但 viewport 仍可通过滚轮、触摸或代码正常滚动；
-   * - 'hover'：鼠标悬浮 root 时显示；
+   * - false：不展示自定义轨道，但 viewport 仍可通过滚轮、触摸或代码正常滚动；
+   * - 'hover'：鼠标或指针进入 root 时显示；
    * - 'scrolling'：滚动或拖拽时显示，停止滚动 1200ms 后隐藏；
    * - 'always'：始终显示；
    * - 数组：组合多种触发方式，例如 ['hover', 'scrolling']。
@@ -122,7 +123,7 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
   /**
    * 是否使用浏览器原生滚动条。
    *
-   * 为 false 时隐藏 viewport 的原生滚动条，并根据 scrollbar 配置渲染自定义轨道；
+   * 为 false 时隐藏 viewport 的原生滚动条，并根据 scrollbar 配置展示自定义轨道；
    * 为 true 时保留浏览器原生滚动条且不渲染自定义 track/thumb。
    * 该属性只改变滚动条外观，不改变 direction 对 overflow 方向的约束。
    *
@@ -143,7 +144,7 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
    *
    * className 会与内部 viewport 类名及 semantic classNames.viewport 合并；
    * style 在 semantic styles.viewport 之后合并，因此同名声明以 viewportProps.style 为准；
-   * onScroll 和 onWheel 会在保留 ScrollArea 指标更新及 wheel 映射逻辑的同时被调用。
+   * onScroll 和 onWheel 会在保留 ScrollArea 内部滚动逻辑的同时被调用。
    */
   viewportProps?: ScrollAreaViewportProps
 
@@ -161,54 +162,25 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
    * 为各语义 DOM 节点追加内联样式，节点范围与 classNames 相同。
    *
    * 可以直接传对象，也可以传基于最终 props 的回调。root 样式先于继承的 style 合并，
-   * viewport 样式先于 viewportProps.style 合并；track/thumb 样式最后合并，
-   * 因此可以按需覆盖组件计算出的轨道位置、滑块尺寸或 transform。
+   * viewport 样式先于 viewportProps.style 合并；track/thumb 样式最后交给底层 primitive，
+   * 可用于定制轨道位置、尺寸和颜色。
    */
   styles?: ScrollAreaStylesType
 
   /**
    * 需要滚动的内容。
    *
-   * 内容会被放入 viewport 下的 content 节点。content 默认至少占满 viewport，
-   * 并由 ResizeObserver 监听尺寸变化，以便重新计算溢出状态和滑块位置。
+   * 内容会被放入 viewport 下的 content 语义节点。底层 primitive 负责监听尺寸变化、
+   * 计算是否溢出以及以 DOM transform 同步滑块位置。
    */
   children?: React.ReactNode
 }
 
-/**
- * viewport 的原生滚动指标快照。
- *
- * 自定义轨道并不替代浏览器滚动机制：真正发生滚动的仍然是 viewport。
- * 组件只把这些原生指标转换为“是否溢出、是否显示轨道、滑块多大、滑块位于哪里”。
- */
-type ScrollMetrics = {
-  scrollLeft: number
-  scrollTop: number
-  clientWidth: number
-  clientHeight: number
-  scrollWidth: number
-  scrollHeight: number
-}
+type NormalizedScrollbar = false | ScrollAreaScrollbarTrigger[]
 
-const DEFAULT_METRICS: ScrollMetrics = {
-  scrollLeft: 0,
-  scrollTop: 0,
-  clientWidth: 0,
-  clientHeight: 0,
-  scrollWidth: 0,
-  scrollHeight: 0,
-}
-
-/** scrolling 模式停止滚动后继续显示滚动条的时间。 */
 const SCROLLBAR_VISIBLE_DURATION = 1200
 
-/**
- * 将外部较宽松的 scrollbar 配置统一为内部可直接判断的触发器数组。
- * 数组配置会去重，避免重复 className；true 等价于 always，false 表示完全关闭自定义轨道。
- */
-function normalizeScrollbar(
-  scrollbar: ScrollAreaScrollbar | undefined,
-): false | ScrollAreaScrollbarTrigger[] {
+function normalizeScrollbar(scrollbar: ScrollAreaScrollbar | undefined): NormalizedScrollbar {
   if (scrollbar === true) return ['always']
   if (scrollbar === false) return false
   if (Array.isArray(scrollbar)) return Array.from(new Set(scrollbar))
@@ -223,10 +195,6 @@ function canScrollVertical(direction: ScrollAreaDirection) {
   return direction === 'vertical' || direction === 'both'
 }
 
-/**
- * semantic classNames/styles 同时支持对象和回调。
- * 回调接收归一化后的 props，因此业务方看到的是组件最终采用的方向、滚动条和 wheel 配置。
- */
 function resolveSemanticValue<T>(
   value: ScrollAreaSemanticValue<T> | undefined,
   props: ScrollAreaProps,
@@ -243,6 +211,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     className,
     rootClassName,
     style,
+    dir: customizeDirectionMode,
     direction: customizeDirection,
     scrollbar: customizeScrollbar,
     wheelBehavior: customizeWheelBehavior,
@@ -258,6 +227,13 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   const { getPrefixCls, direction: contextDirection } = React.useContext(
     ConfigProvider.ConfigContext,
   )
+  const {
+    ref: viewportPropsRef,
+    className: viewportPropsClassName,
+    style: viewportPropsStyle,
+    onWheel: viewportPropsOnWheel,
+    ...restViewportProps
+  } = viewportProps ?? {}
 
   const prefixCls = getPrefixCls('scroll-area', customizePrefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls)
@@ -266,66 +242,38 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     () => normalizeScrollbar(customizeScrollbar),
     [customizeScrollbar],
   )
-  const hasScrollbarTrigger = React.useCallback(
-    (trigger: ScrollAreaScrollbarTrigger) => scrollbar !== false && scrollbar.includes(trigger),
-    [scrollbar],
-  )
   const wheelBehavior = customizeWheelBehavior ?? 'axis-mapping'
   const nativeScrollbar = customizeNativeScrollbar ?? false
-  const isRtl = contextDirection === 'rtl'
-
-  /**
-   * 三层 DOM 各司其职：
-   * - root：承载方向、展示状态和语义样式；
-   * - viewport：浏览器实际滚动的元素；
-   * - content：被测量的内容层，内容尺寸变化时触发指标更新。
-   */
+  const directionMode =
+    customizeDirectionMode === 'rtl' || customizeDirectionMode === 'ltr'
+      ? customizeDirectionMode
+      : (contextDirection ?? 'ltr')
   const rootRef = React.useRef<HTMLDivElement>(null)
   const internalViewportRef = React.useRef<HTMLDivElement>(null)
-  const contentRef = React.useRef<HTMLDivElement>(null)
-
-  // metrics 驱动轨道是否渲染以及滑块的尺寸、位置；scrolling/dragging 驱动可见状态。
-  const [metrics, setMetrics] = React.useState<ScrollMetrics>(DEFAULT_METRICS)
-  const [scrolling, setScrolling] = React.useState(false)
-  const [dragging, setDragging] = React.useState<'horizontal' | 'vertical' | null>(null)
-
-  // 定时器和 RAF 句柄都保存在 ref 中，避免高频滚动过程中触发额外渲染。
   const scrollEndTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  const rafRef = React.useRef<number | null>(null)
 
   /**
-   * 开始拖拽时冻结一份起点快照。后续 mousemove/touchmove 只需要计算指针位移，
-   * 不必每帧重新推导拖拽起点，避免滑块在连续更新后产生累计误差。
-   */
-  const dragStateRef = React.useRef({
-    pageOffset: 0,
-    scrollOffset: 0,
-    clientSize: 0,
-    scrollSize: 0,
-  })
-
-  /**
-   * wheel 监听器直接绑定在原生 DOM 上，以便使用 passive: false 调用 preventDefault。
-   * 最新 props 放在 ref 中，使监听器无需因每次 render 反复解绑和绑定。
+   * wheel 监听器必须使用 passive: false 才能在横向映射时阻止浏览器默认纵向滚动。
+   * 最新回调和配置保存在 ref 中，避免 props 更新时反复解绑原生监听器。
    */
   const wheelStateRef = React.useRef({
     onWheel,
-    viewportOnWheel: viewportProps?.onWheel,
+    viewportOnWheel: viewportPropsOnWheel,
     direction: mergedDirection,
     wheelBehavior,
-    isRtl,
+    isRtl: directionMode === 'rtl',
   })
   wheelStateRef.current = {
     onWheel,
-    viewportOnWheel: viewportProps?.onWheel,
+    viewportOnWheel: viewportPropsOnWheel,
     direction: mergedDirection,
     wheelBehavior,
-    isRtl,
+    isRtl: directionMode === 'rtl',
   }
 
-  // semantic 回调接收归一化后的最终配置，而不是调用方可能省略字段的原始 props。
   const mergedProps: ScrollAreaProps = {
     ...props,
+    dir: directionMode,
     direction: mergedDirection,
     scrollbar,
     wheelBehavior,
@@ -334,204 +282,30 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   const mergedClassNames = resolveSemanticValue(classNames, mergedProps)
   const mergedStyles = resolveSemanticValue(styles, mergedProps)
 
-  /**
-   * 从浏览器实际滚动元素读取完整指标。
-   * React 状态只保存快照，不反向控制 viewport，因此不会破坏原生滚动和惯性滚动。
-   */
-  const updateMetrics = React.useCallback(() => {
-    const viewport = internalViewportRef.current
-    if (!viewport) return
-
-    setMetrics({
-      scrollLeft: viewport.scrollLeft,
-      scrollTop: viewport.scrollTop,
-      clientWidth: viewport.clientWidth,
-      clientHeight: viewport.clientHeight,
-      scrollWidth: viewport.scrollWidth,
-      scrollHeight: viewport.scrollHeight,
-    })
-  }, [])
-
-  /**
-   * scroll、wheel、拖拽都可能在一帧内连续触发多次更新。
-   * 始终取消上一帧任务并只保留最新一次，将布局读取合并到下一动画帧。
-   */
-  const queueUpdateMetrics = React.useCallback(() => {
-    if (rafRef.current !== null) {
-      raf.cancel(rafRef.current)
-    }
-
-    rafRef.current = raf(() => {
-      rafRef.current = null
-      updateMetrics()
-    })
-  }, [updateMetrics])
-
-  /**
-   * scrolling 展示模式下，任何滚动行为都会刷新隐藏计时器。
-   * 用户停止操作 1200ms 后才移除状态，避免滚动条在连续滚动时闪烁。
-   */
-  const showScrollingState = React.useCallback(() => {
-    if (!hasScrollbarTrigger('scrolling')) return
-
-    setScrolling(true)
-    if (scrollEndTimerRef.current) {
-      clearTimeout(scrollEndTimerRef.current)
-    }
-    scrollEndTimerRef.current = setTimeout(() => {
-      setScrolling(false)
-      scrollEndTimerRef.current = null
-    }, SCROLLBAR_VISIBLE_DURATION)
-  }, [hasScrollbarTrigger])
-
-  // 先透传 viewportProps.onScroll，再同步内部指标和展示状态。
-  const onViewportScroll: React.UIEventHandler<HTMLDivElement> = (event) => {
-    viewportProps?.onScroll?.(event)
-    queueUpdateMetrics()
-    showScrollingState()
-  }
-
-  const startDrag = (
-    axis: 'horizontal' | 'vertical',
-    event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>,
-  ) => {
-    const viewport = internalViewportRef.current
-    if (!viewport) return
-
-    /**
-     * 拖拽换算使用同一套比例：
-     * 指针移动距离 / 滑块可移动距离 = 内容滚动距离 / 内容可滚动距离。
-     * 此处只记录起点，真正的比例换算在全局 move 监听器中完成。
-     */
-    const horizontal = axis === 'horizontal'
-    dragStateRef.current = {
-      pageOffset: getPageOffset(event, horizontal),
-      scrollOffset: horizontal ? viewport.scrollLeft : viewport.scrollTop,
-      clientSize: horizontal ? viewport.clientWidth : viewport.clientHeight,
-      scrollSize: horizontal ? viewport.scrollWidth : viewport.scrollHeight,
-    }
-    setDragging(axis)
-    setScrolling(hasScrollbarTrigger('scrolling'))
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
-  /**
-   * 拖拽开始后把 move/end 监听器挂到 window，而不是轨道节点。
-   * 这样即使指针移出滚动条区域也能继续拖拽，并能在任意位置正常结束操作。
-   */
-  React.useEffect(() => {
-    if (!dragging) return
-
-    const horizontal = dragging === 'horizontal'
-    let moveRaf: number | null = null
-    const onMove = (event: MouseEvent | TouchEvent) => {
-      if (event.cancelable) {
-        event.preventDefault()
-      }
-
-      const { pageOffset, scrollOffset, clientSize, scrollSize } = dragStateRef.current
-      const thumbSize = getThumbSize(clientSize, scrollSize)
-      const offsetRange = clientSize - thumbSize
-      const scrollRange = scrollSize - clientSize
-
-      // 没有可移动轨道或没有内容溢出时，不应更新滚动距离。
-      if (!offsetRange || !scrollRange) return
-
-      const pageDelta = getPageOffset(event, horizontal) - pageOffset
-      const scrollDelta = (pageDelta / offsetRange) * scrollRange
-
-      // RTL 横向滚动的视觉方向与 LTR 相反，因此需要反转拖拽增量。
-      const nextScrollOffset =
-        horizontal && isRtl ? scrollOffset - scrollDelta : scrollOffset + scrollDelta
-      const clampedScrollOffset = clampScrollOffset(nextScrollOffset, clientSize, scrollSize)
-
-      if (moveRaf !== null) {
-        raf.cancel(moveRaf)
-      }
-      moveRaf = raf(() => {
-        const viewport = internalViewportRef.current
-        if (!viewport) return
-
-        if (horizontal) {
-          viewport.scrollLeft = clampedScrollOffset
-        } else {
-          viewport.scrollTop = clampedScrollOffset
-        }
-
-        updateMetrics()
-      })
-    }
-    const onEnd = () => {
-      setDragging(null)
-      if (hasScrollbarTrigger('scrolling')) {
-        showScrollingState()
-      } else {
-        setScrolling(false)
-      }
-    }
-
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('touchmove', onMove, { passive: false })
-    window.addEventListener('mouseup', onEnd)
-    window.addEventListener('touchend', onEnd)
-
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('touchmove', onMove)
-      window.removeEventListener('mouseup', onEnd)
-      window.removeEventListener('touchend', onEnd)
-      if (moveRaf !== null) {
-        raf.cancel(moveRaf)
-      }
-    }
-  }, [dragging, hasScrollbarTrigger, isRtl, showScrollingState, updateMetrics])
-
-  /**
-   * 同时观察 viewport 和 content：
-   * - viewport 变化代表容器可视尺寸变化；
-   * - content 变化代表内容总尺寸变化。
-   * 不支持 ResizeObserver 的环境退化为 window.resize，并保留首次 RAF 测量。
-   */
-  React.useEffect(() => {
-    const initialRaf = raf(updateMetrics)
-
-    const viewport = internalViewportRef.current
-    const content = contentRef.current
-    if (typeof ResizeObserver === 'undefined' || (!viewport && !content)) {
-      window.addEventListener('resize', updateMetrics)
-      return () => {
-        raf.cancel(initialRaf)
-        window.removeEventListener('resize', updateMetrics)
-      }
-    }
-
-    const observer = new ResizeObserver(updateMetrics)
-    if (viewport) observer.observe(viewport)
-    if (content) observer.observe(content)
-
-    return () => {
-      raf.cancel(initialRaf)
-      observer.disconnect()
-    }
-  }, [updateMetrics])
-
-  /**
-   * 横向模式默认支持把纵向滚轮映射为 scrollLeft。
-   * 仅当内容确实横向溢出、没有纵向溢出、内部纵向容器也无法继续消费滚轮时才接管事件，
-   * 从而保留嵌套列表、弹层内容等真实纵向滚动区域的原生行为。
-   */
   React.useEffect(() => {
     const viewport = internalViewportRef.current
+    const root = rootRef.current
     if (!viewport) return undefined
 
+    const showScrollingState = () => {
+      if (scrollbar === false || !scrollbar.includes('scrolling')) return
+
+      root?.classList.add(`${prefixCls}-scrolling`)
+      if (scrollEndTimerRef.current) {
+        clearTimeout(scrollEndTimerRef.current)
+      }
+      scrollEndTimerRef.current = setTimeout(() => {
+        root?.classList.remove(`${prefixCls}-scrolling`)
+        scrollEndTimerRef.current = null
+      }, SCROLLBAR_VISIBLE_DURATION)
+    }
     const onNativeWheel = (event: WheelEvent) => {
       const {
         onWheel: latestOnWheel,
         viewportOnWheel,
         direction: latestDirection,
         wheelBehavior: latestWheelBehavior,
-        isRtl: latestIsRtl,
+        isRtl,
       } = wheelStateRef.current
 
       latestOnWheel?.(event as unknown as React.WheelEvent<HTMLDivElement>)
@@ -543,9 +317,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
       ) {
         return
       }
-
-      // 嵌套 ScrollArea 自己负责其 viewport，外层不得重复映射同一次 wheel。
-      if (hasNestedScrollAreaViewport(event.target, viewport, `${prefixCls}-viewport`)) return
+      if (hasNestedScrollAreaViewport(event.target, viewport)) return
 
       const hasHorizontalOverflow = viewport.scrollWidth > viewport.clientWidth
       const hasVerticalOverflow = viewport.scrollHeight > viewport.clientHeight
@@ -557,61 +329,82 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
 
       if (!shouldMapVerticalWheel) return
 
-      // RTL 下正向 deltaY 应映射为相反的 scrollLeft 增量。
-      viewport.scrollLeft += latestIsRtl ? -event.deltaY : event.deltaY
-      event.preventDefault()
-      queueUpdateMetrics()
-      showScrollingState()
+      /**
+       * 大多数触摸板和 Chromium 鼠标滚轮使用像素增量，但 Firefox 等环境也可能按行或按页上报。
+       * 先统一为像素距离，避免同一次滚轮操作在不同浏览器中的横向移动速度差异过大。
+       */
+      const mappedDelta = normalizeWheelDelta(event, viewport.clientWidth)
+      const previousScrollLeft = viewport.scrollLeft
+      viewport.scrollLeft += isRtl ? -mappedDelta : mappedDelta
+
+      /**
+       * 只有 viewport 确实移动时才拦截默认行为。到达横向边界后继续滚动应交还给页面或外层容器，
+       * 否则鼠标停在 ScrollArea 上时会形成滚动陷阱，用户无法继续纵向浏览页面。
+       */
+      if (viewport.scrollLeft !== previousScrollLeft) {
+        event.preventDefault()
+      }
     }
 
+    viewport.addEventListener('scroll', showScrollingState, { passive: true })
     viewport.addEventListener('wheel', onNativeWheel, { passive: false })
-    return () => viewport.removeEventListener('wheel', onNativeWheel)
-  }, [prefixCls, queueUpdateMetrics, showScrollingState])
-
-  // 组件卸载时统一清理仍在等待的计时器和动画帧，防止卸载后继续 setState。
-  React.useEffect(
-    () => () => {
+    return () => {
+      viewport.removeEventListener('scroll', showScrollingState)
+      viewport.removeEventListener('wheel', onNativeWheel)
+      root?.classList.remove(`${prefixCls}-scrolling`)
       if (scrollEndTimerRef.current) {
         clearTimeout(scrollEndTimerRef.current)
+        scrollEndTimerRef.current = null
       }
-      if (rafRef.current !== null) {
-        raf.cancel(rafRef.current)
-      }
-    },
-    [],
-  )
+    }
+  }, [nativeScrollbar, prefixCls, scrollbar])
 
-  /**
-   * 只有指定方向确实发生内容溢出时才渲染对应轨道。
-   * nativeScrollbar=true 时浏览器负责展示滚动条，自定义 track 不参与渲染。
-   */
-  const horizontalScrollable =
-    canScrollHorizontal(mergedDirection) && metrics.scrollWidth > metrics.clientWidth
-  const verticalScrollable =
-    canScrollVertical(mergedDirection) && metrics.scrollHeight > metrics.clientHeight
-  const shouldRenderHorizontalTrack =
-    !nativeScrollbar && scrollbar !== false && horizontalScrollable
-  const shouldRenderVerticalTrack = !nativeScrollbar && scrollbar !== false && verticalScrollable
+  const setDraggingState = (dragging: boolean) => {
+    rootRef.current?.classList.toggle(`${prefixCls}-dragging`, dragging)
+  }
+
   const scrollbarClassNames =
     scrollbar === false
       ? `${prefixCls}-scrollbar-none`
       : scrollbar.map((trigger) => `${prefixCls}-scrollbar-${trigger}`)
 
-  return (
+  const contentNode = (
     <div
+      className={clsx(`${prefixCls}-content`, mergedClassNames.content)}
+      style={mergedStyles.content}
+    >
+      {children}
+    </div>
+  )
+  const composedViewportRef = composeRef(
+    internalViewportRef,
+    viewportRef ?? null,
+    viewportPropsRef ?? null,
+  )
+  const viewportClassName = clsx(
+    `${prefixCls}-viewport`,
+    mergedClassNames.viewport,
+    viewportPropsClassName,
+  )
+  const viewportStyle = {
+    ...mergedStyles.viewport,
+    ...viewportPropsStyle,
+  }
+
+  return (
+    <ScrollAreaPrimitive.Root
       {...restProps}
       ref={composeRef(ref, rootRef)}
+      type="always"
+      dir={directionMode}
+      scrollHideDelay={SCROLLBAR_VISIBLE_DURATION}
       className={clsx(
         prefixCls,
         `${prefixCls}-${mergedDirection}`,
         scrollbarClassNames,
         hashId,
         cssVarCls,
-        {
-          [`${prefixCls}-native`]: nativeScrollbar,
-          [`${prefixCls}-scrolling`]: scrolling,
-          [`${prefixCls}-dragging`]: dragging,
-        },
+        { [`${prefixCls}-native`]: nativeScrollbar },
         className,
         rootClassName,
         mergedClassNames.root,
@@ -621,104 +414,82 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         ...style,
       }}
     >
-      <div
-        {...viewportProps}
-        ref={composeRef(internalViewportRef, viewportRef || null, viewportProps?.ref || null)}
-        className={clsx(
-          `${prefixCls}-viewport`,
-          mergedClassNames.viewport,
-          viewportProps?.className,
-        )}
-        style={{
-          ...mergedStyles.viewport,
-          ...viewportProps?.style,
-        }}
-        onScroll={onViewportScroll}
-        onWheel={undefined}
-      >
+      {nativeScrollbar ? (
         <div
-          ref={contentRef}
-          className={clsx(`${prefixCls}-content`, mergedClassNames.content)}
-          style={mergedStyles.content}
+          {...restViewportProps}
+          ref={composedViewportRef}
+          data-zby-scroll-area-viewport=""
+          className={viewportClassName}
+          style={viewportStyle}
+          onWheel={undefined}
         >
-          {children}
+          {contentNode}
         </div>
-      </div>
-      {shouldRenderHorizontalTrack ? (
-        <div
+      ) : (
+        <ScrollAreaPrimitive.Viewport
+          {...restViewportProps}
+          ref={composedViewportRef}
+          data-zby-scroll-area-viewport=""
+          className={viewportClassName}
+          style={viewportStyle}
+          onWheel={undefined}
+        >
+          {contentNode}
+        </ScrollAreaPrimitive.Viewport>
+      )}
+
+      {!nativeScrollbar && canScrollHorizontal(mergedDirection) ? (
+        <ScrollAreaPrimitive.Scrollbar
+          forceMount
+          orientation="horizontal"
           className={clsx(
             `${prefixCls}-track`,
             `${prefixCls}-track-horizontal`,
             mergedClassNames.horizontalTrack,
           )}
           style={mergedStyles.horizontalTrack}
+          onPointerDownCapture={() => setDraggingState(true)}
+          onPointerUpCapture={() => setDraggingState(false)}
+          onPointerCancel={() => setDraggingState(false)}
+          onLostPointerCapture={() => setDraggingState(false)}
         >
-          <div
+          <ScrollAreaPrimitive.Thumb
             aria-hidden="true"
             className={clsx(`${prefixCls}-thumb`, mergedClassNames.horizontalThumb)}
-            style={{
-              width: getThumbSize(metrics.clientWidth, metrics.scrollWidth),
-              transform: `translate3d(${getThumbOffset(
-                metrics.scrollLeft,
-                metrics.clientWidth,
-                metrics.scrollWidth,
-              )}px, 0, 0)`,
-              ...mergedStyles.horizontalThumb,
-            }}
-            onMouseDown={(event) => startDrag('horizontal', event)}
-            onTouchStart={(event) => startDrag('horizontal', event)}
+            style={mergedStyles.horizontalThumb}
           />
-        </div>
+        </ScrollAreaPrimitive.Scrollbar>
       ) : null}
-      {shouldRenderVerticalTrack ? (
-        <div
+
+      {!nativeScrollbar && canScrollVertical(mergedDirection) ? (
+        <ScrollAreaPrimitive.Scrollbar
+          forceMount
+          orientation="vertical"
           className={clsx(
             `${prefixCls}-track`,
             `${prefixCls}-track-vertical`,
             mergedClassNames.verticalTrack,
           )}
           style={mergedStyles.verticalTrack}
+          onPointerDownCapture={() => setDraggingState(true)}
+          onPointerUpCapture={() => setDraggingState(false)}
+          onPointerCancel={() => setDraggingState(false)}
+          onLostPointerCapture={() => setDraggingState(false)}
         >
-          <div
+          <ScrollAreaPrimitive.Thumb
             aria-hidden="true"
             className={clsx(`${prefixCls}-thumb`, mergedClassNames.verticalThumb)}
-            style={{
-              height: getThumbSize(metrics.clientHeight, metrics.scrollHeight),
-              transform: `translate3d(0, ${getThumbOffset(
-                metrics.scrollTop,
-                metrics.clientHeight,
-                metrics.scrollHeight,
-              )}px, 0)`,
-              ...mergedStyles.verticalThumb,
-            }}
-            onMouseDown={(event) => startDrag('vertical', event)}
-            onTouchStart={(event) => startDrag('vertical', event)}
+            style={mergedStyles.verticalThumb}
           />
-        </div>
+        </ScrollAreaPrimitive.Scrollbar>
       ) : null}
-    </div>
+
+      {!nativeScrollbar && mergedDirection === 'both' ? (
+        <ScrollAreaPrimitive.Corner className={`${prefixCls}-corner`} />
+      ) : null}
+    </ScrollAreaPrimitive.Root>
   )
 })
-
-function getPageOffset(
-  event: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent,
-  x: boolean,
-) {
-  /**
-   * startDrag 接收 React 合成事件，window move 监听器接收原生事件。
-   * 这里统一解包 nativeEvent，并优先读取触摸点，使鼠标和触摸拖拽共用同一套计算。
-   */
-  const nativeEvent = 'nativeEvent' in event ? event.nativeEvent : event
-  const touchEvent = nativeEvent as TouchEvent
-  const touch = touchEvent.touches?.[0] || touchEvent.changedTouches?.[0]
-
-  if (touch) {
-    return x ? touch.pageX : touch.pageY
-  }
-
-  const mouseEvent = nativeEvent as MouseEvent
-  return x ? mouseEvent.pageX || mouseEvent.clientX : mouseEvent.pageY || mouseEvent.clientY
-}
 
 function hasScrollableVerticalAncestor(
   target: EventTarget | null,
@@ -727,11 +498,6 @@ function hasScrollableVerticalAncestor(
 ) {
   if (!(target instanceof HTMLElement)) return false
 
-  /**
-   * 从事件目标向 viewport 边界逐层查找真正可滚动的纵向祖先。
-   * 不仅要求 overflowY 允许滚动，还要求该祖先在当前 deltaY 方向上尚未到达边界。
-   * 只有祖先无法继续滚动时，外层横向 ScrollArea 才能接管滚轮。
-   */
   let node: HTMLElement | null = target
 
   while (node && node !== boundary) {
@@ -753,25 +519,25 @@ function hasScrollableVerticalAncestor(
   return false
 }
 
-function hasNestedScrollAreaViewport(
-  target: EventTarget | null,
-  boundary: HTMLElement,
-  viewportCls: string,
-) {
+/**
+ * 将 WheelEvent 的行、页增量换算成像素。16px 对应浏览器常见的默认行高；
+ * 页模式使用当前 viewport 宽度，因为换算后的距离最终用于横向滚动。
+ */
+function normalizeWheelDelta(event: WheelEvent, pageSize: number) {
+  if (event.deltaMode === 1) return event.deltaY * 16
+  if (event.deltaMode === 2) return event.deltaY * pageSize
+  return event.deltaY
+}
+
+function hasNestedScrollAreaViewport(target: EventTarget | null, boundary: HTMLElement) {
   if (!(target instanceof HTMLElement)) return false
 
-  /**
-   * 使用 viewport class 而不是 root class 判断嵌套关系。
-   * wheel 可能从嵌套组件的任意后代发出，只要在到达外层 boundary 前遇到另一个 viewport，
-   * 就说明该事件属于内层 ScrollArea，外层必须保持不处理。
-   */
   let node: HTMLElement | null = target
 
   while (node && node !== boundary) {
-    if (node.classList.contains(viewportCls)) {
+    if (node.hasAttribute('data-zby-scroll-area-viewport')) {
       return true
     }
-
     node = node.parentElement
   }
 

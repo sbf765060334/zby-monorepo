@@ -14,6 +14,7 @@ export default defineConfig({
       'react',
       'react-dom',
       'antd',
+      '@radix-ui/react-scroll-area',
       '@ant-design/icons',
       '@ant-design/cssinjs',
       '@zby/intl',

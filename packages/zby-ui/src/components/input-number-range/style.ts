@@ -219,7 +219,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             outline: 0,
           },
 
-          [`&${componentCls}-outlined`]: {
+          [`&${componentCls}-outlined, &:has(${componentCls}-input.ant-input-number-outlined)`]: {
             background: styleToken.colorBgContainer,
             border,
 
@@ -228,7 +228,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             },
           },
 
-          [`&${componentCls}-filled`]: {
+          [`&${componentCls}-filled, &:has(${componentCls}-input.ant-input-number-filled)`]: {
             background: styleToken.colorFillTertiary,
             border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
 
@@ -241,50 +241,54 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             },
           },
 
-          [`&${componentCls}-borderless`]: {
-            background: 'transparent',
-            border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
-            boxShadow: 'none',
-
-            [`&${componentCls}-focused`]: {
+          [`&${componentCls}-borderless, &:has(${componentCls}-input.ant-input-number-borderless)`]:
+            {
+              background: 'transparent',
+              border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
               boxShadow: 'none',
-            },
-          },
 
-          [`&${componentCls}-underlined`]: {
-            background: styleToken.colorBgContainer,
-            borderInline: 0,
-            borderBlockStart: 0,
-            borderBlockEnd: border,
-            borderRadius: 0,
-            boxShadow: 'none',
-
-            [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
-              borderBlockEndColor: styleToken.colorPrimaryHover,
-            },
-          },
-
-          [`&${componentCls}-status-error`]: {
-            '&, &:hover': {
-              borderColor: styleToken.colorError,
+              [`&${componentCls}-focused`]: {
+                boxShadow: 'none',
+              },
             },
 
-            [`&${componentCls}-focused`]: {
-              borderColor: styleToken.colorError,
-              boxShadow: errorActiveShadow,
-            },
-          },
+          [`&${componentCls}-underlined, &:has(${componentCls}-input.ant-input-number-underlined)`]:
+            {
+              background: styleToken.colorBgContainer,
+              borderInline: 0,
+              borderBlockStart: 0,
+              borderBlockEnd: border,
+              borderRadius: 0,
+              boxShadow: 'none',
 
-          [`&${componentCls}-status-warning`]: {
-            '&, &:hover': {
-              borderColor: styleToken.colorWarning,
+              [`&:hover:not(${componentCls}-disabled):not(${componentCls}-readonly)`]: {
+                borderBlockEndColor: styleToken.colorPrimaryHover,
+              },
             },
 
-            [`&${componentCls}-focused`]: {
-              borderColor: styleToken.colorWarning,
-              boxShadow: warningActiveShadow,
+          [`&${componentCls}-status-error, &:has(${componentCls}-input.ant-input-number-status-error)`]:
+            {
+              '&, &:hover': {
+                borderColor: styleToken.colorError,
+              },
+
+              [`&${componentCls}-focused`]: {
+                borderColor: styleToken.colorError,
+                boxShadow: errorActiveShadow,
+              },
             },
-          },
+
+          [`&${componentCls}-status-warning, &:has(${componentCls}-input.ant-input-number-status-warning)`]:
+            {
+              '&, &:hover': {
+                borderColor: styleToken.colorWarning,
+              },
+
+              [`&${componentCls}-focused`]: {
+                borderColor: styleToken.colorWarning,
+                boxShadow: warningActiveShadow,
+              },
+            },
 
           [`&${componentCls}-sm`]: {
             minHeight: styleToken.controlHeightSM,

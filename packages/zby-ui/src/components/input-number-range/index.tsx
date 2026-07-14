@@ -1,11 +1,6 @@
 import { CloseCircleFilled, SwapRightOutlined } from '@ant-design/icons'
-import { InputNumber } from 'antd'
+import { ConfigProvider, InputNumber } from 'antd'
 import type { InputNumberProps } from 'antd'
-import { getMergedStatus, getStatusClassNames } from 'antd/es/_util/statusUtils'
-import DisabledContext from 'antd/es/config-provider/DisabledContext'
-import useSize from 'antd/es/config-provider/hooks/useSize'
-import { FormItemInputContext } from 'antd/es/form/context'
-import useVariant from 'antd/es/form/hooks/useVariants'
 import { useIntl } from '@zby/intl'
 import * as React from 'react'
 import { useInputNumberRangeStyle } from './style'
@@ -497,11 +492,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
     const intl = useIntl()
     const hashId = useInputNumberRangeStyle(prefixCls)
-    const ctxDisabled = React.useContext(DisabledContext)
-    const { status: contextStatus, hasFeedback } = React.useContext(FormItemInputContext)
-    const mergedStatus = getMergedStatus(contextStatus, customStatus)
-    const mergedSize = useSize((ctx) => customizeSize ?? ctx)
-    const [variant, enableVariantCls] = useVariant('inputNumber', customVariant)
+    const { componentDisabled, componentSize } = ConfigProvider.useConfig()
+    const mergedSize = customizeSize ?? componentSize
     const rangeRef = React.useRef<HTMLDivElement>(null)
     const startInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const endInputRef = React.useRef<InputNumberFocusRef | null>(null)
@@ -586,7 +578,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
     const [allowEmptyStart, allowEmptyEnd] = getAllowEmptyValue(allowEmptyProp)
     /** disabled/readOnly 作为范围控件的整体状态，统一作用于 start/end 两侧。 */
-    const mergedDisabled = disabledProp ?? ctxDisabled ?? false
+    const mergedDisabled = disabledProp ?? componentDisabled
     const mergedReadOnly = !!readOnly
     const separator = customSeparator ?? <SwapRightOutlined />
 
@@ -790,13 +782,13 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       prefixCls,
       hashId,
       rootClassName,
-      enableVariantCls && `${prefixCls}-${variant}`,
+      customVariant && `${prefixCls}-${customVariant}`,
       focused && `${prefixCls}-focused`,
       mergedDisabled && `${prefixCls}-disabled`,
       mergedReadOnly && `${prefixCls}-readonly`,
       mergedSize === 'large' && `${prefixCls}-lg`,
       mergedSize === 'small' && `${prefixCls}-sm`,
-      getStatusClassNames(prefixCls, mergedStatus, hasFeedback),
+      customStatus && `${prefixCls}-status-${customStatus}`,
       className,
     )
 
@@ -817,7 +809,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             disabled={mergedDisabled}
             readOnly={mergedReadOnly}
             controls={false}
-            variant="borderless"
+            variant={customVariant}
+            status={customStatus}
             className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-start`)}
             placeholder={startProps?.placeholder ?? placeholder[0]}
             onChange={(value) => {
@@ -846,7 +839,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             disabled={mergedDisabled}
             readOnly={mergedReadOnly}
             controls={false}
-            variant="borderless"
+            variant={customVariant}
+            status={customStatus}
             className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-end`)}
             placeholder={endProps?.placeholder ?? placeholder[1]}
             onChange={(value) => {

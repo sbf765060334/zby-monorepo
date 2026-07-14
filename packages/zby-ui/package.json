@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "6.3.2",
+    "@radix-ui/react-scroll-area": "1.2.14",
     "@zby/intl": "workspace:*",
     "clsx": "2.1.1"
   },
