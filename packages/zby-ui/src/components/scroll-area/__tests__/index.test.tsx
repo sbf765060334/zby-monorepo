@@ -98,6 +98,21 @@ describe('ScrollArea', () => {
     expect(styleText).not.toContain('min-height:44px')
   })
 
+  it('keeps horizontal and vertical tracks flush with the outer container edges', () => {
+    const cache = createCache()
+
+    render(
+      <StyleProvider cache={cache}>
+        <ScrollArea direction="both" scrollbar="always" />
+      </StyleProvider>,
+    )
+
+    const styleText = extractStyle(cache)
+
+    expect(styleText).toContain('margin-block-end:0')
+    expect(styleText).toContain('margin-inline-end:0')
+  })
+
   it('normalizes scrollbar visibility options into stable root classes', () => {
     const { container, rerender } = render(
       <ScrollArea scrollbar={['hover', 'scrolling', 'hover']} />,

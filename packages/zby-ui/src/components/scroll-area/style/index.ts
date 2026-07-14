@@ -147,7 +147,7 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         flexDirection: 'column',
         height: trackSize,
         marginInline: trackInset,
-        marginBlockEnd: trackInset,
+        marginBlockEnd: 0,
 
         [`> ${componentCls}-thumb`]: {
           height: '100%',
@@ -162,7 +162,7 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       [`> ${componentCls}-track-vertical`]: {
         width: trackSize,
         marginBlock: trackInset,
-        marginInlineEnd: trackInset,
+        marginInlineEnd: 0,
 
         [`> ${componentCls}-thumb`]: {
           width: '100%',
