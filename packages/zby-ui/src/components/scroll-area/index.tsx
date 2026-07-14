@@ -236,7 +236,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   } = viewportProps ?? {}
 
   const prefixCls = getPrefixCls('scroll-area', customizePrefixCls)
-  const [hashId, cssVarCls] = useStyle(prefixCls)
+  const [hashId, componentCSSVariables] = useStyle(prefixCls)
   const mergedDirection = customizeDirection ?? 'vertical'
   const scrollbar = React.useMemo(
     () => normalizeScrollbar(customizeScrollbar),
@@ -403,13 +403,13 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         `${prefixCls}-${mergedDirection}`,
         scrollbarClassNames,
         hashId,
-        cssVarCls,
         { [`${prefixCls}-native`]: nativeScrollbar },
         className,
         rootClassName,
         mergedClassNames.root,
       )}
       style={{
+        ...componentCSSVariables,
         ...mergedStyles.root,
         ...style,
       }}
@@ -546,4 +546,5 @@ function hasNestedScrollAreaViewport(target: EventTarget | null, boundary: HTMLE
 
 ScrollArea.displayName = 'ScrollArea'
 
+export type { ScrollAreaComponentToken } from './style'
 export default ScrollArea

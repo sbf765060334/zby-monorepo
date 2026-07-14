@@ -8,6 +8,7 @@ export { zbyUiEnUS, zbyUiLocales, zbyUiZhCN } from './locales'
 export { default as ScrollArea } from './components/scroll-area'
 export type {
   ScrollAreaClassNamesType,
+  ScrollAreaComponentToken,
   ScrollAreaDirection,
   ScrollAreaProps,
   ScrollAreaScrollbar,

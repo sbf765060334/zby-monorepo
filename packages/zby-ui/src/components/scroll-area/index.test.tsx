@@ -138,7 +138,7 @@ describe('ScrollArea', () => {
   it('generates native scrollbar hiding styles and consumes component token overrides', () => {
     const cache = createCache()
 
-    render(
+    const { container } = render(
       <StyleProvider cache={cache}>
         <ConfigProvider
           theme={{
@@ -157,13 +157,32 @@ describe('ScrollArea', () => {
       </StyleProvider>,
     )
 
+    const root = container.querySelector<HTMLElement>('.ant-scroll-area')!
     const styleText = extractStyle(cache)
     expect(styleText).toContain('scrollbar-width:none')
     expect(styleText).toContain('::-webkit-scrollbar')
-    expect(styleText).toContain('width:10px')
-    expect(styleText).toContain('background:#123456')
-    expect(styleText).toContain('background:#654321')
-    expect(styleText).toContain('z-index:99')
+    expect(styleText).toContain('width:var(--zby-scroll-area-track-size)')
+    expect(styleText).toContain('background:var(--zby-scroll-area-thumb-bg)')
+    expect(styleText).toContain('background:var(--zby-scroll-area-thumb-hover-bg)')
+    expect(styleText).toContain('z-index:var(--zby-scroll-area-z-index)')
+    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('10px')
+    expect(root.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')
+    expect(root.style.getPropertyValue('--zby-scroll-area-thumb-hover-bg')).toBe('#654321')
+    expect(root.style.getPropertyValue('--zby-scroll-area-z-index')).toBe('99')
+  })
+
+  it('uses ConfigProvider prefixCls for DOM classes without renaming component variables', () => {
+    const { container } = render(
+      <ConfigProvider prefixCls="custom">
+        <ScrollArea />
+      </ConfigProvider>,
+    )
+
+    const root = container.querySelector<HTMLElement>('.custom-scroll-area')!
+
+    expect(root).not.toBeNull()
+    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).not.toBe('')
+    expect(root.style.getPropertyValue('--custom-scroll-area-track-size')).toBe('')
   })
 
   it('isolates component token variables between nested cssVar ConfigProviders', () => {
@@ -190,22 +209,20 @@ describe('ScrollArea', () => {
       </StyleProvider>,
     )
 
-    const defaultCssVarClass = Array.from(getByTestId('default-scroll-area').classList).find(
-      (className) => className.startsWith('css-var-'),
-    )
-    const customCssVarClass = Array.from(getByTestId('custom-scroll-area').classList).find(
-      (className) => className.startsWith('css-var-'),
-    )
+    const defaultScrollArea = getByTestId('default-scroll-area')
+    const customScrollArea = getByTestId('custom-scroll-area')
     const styleText = extractStyle(cache)
 
-    expect(defaultCssVarClass).toBeTruthy()
-    expect(customCssVarClass).toBeTruthy()
-    expect(customCssVarClass).not.toBe(defaultCssVarClass)
-    expect(styleText).toContain('--zby-test-scroll-area-track-size:8px')
-    expect(styleText).toContain('--zby-test-scroll-area-track-size:12px')
-    expect(styleText).toContain('--zby-test-scroll-area-thumb-bg:#123456')
-    expect(styleText).toContain('--zby-test-scroll-area-z-index:88')
-    expect(styleText).toContain('width:var(--zby-test-scroll-area-track-size)')
+    expect(defaultScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe(
+      'var(--zby-test-size-xs)',
+    )
+    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('12px')
+    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')
+    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-hover-bg')).toBe(
+      '#654321',
+    )
+    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-z-index')).toBe('88')
+    expect(styleText).toContain('width:var(--zby-scroll-area-track-size)')
   })
 
   it('maps a vertical wheel to horizontal scrolling by default', () => {

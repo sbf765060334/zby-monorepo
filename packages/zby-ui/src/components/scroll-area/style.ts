@@ -1,8 +1,9 @@
 import { unit, useStyleRegister } from '@ant-design/cssinjs'
 import type { CSSObject } from '@ant-design/cssinjs'
 import { theme as antdTheme } from 'antd'
+import type { CSSProperties } from 'react'
 
-export interface ComponentToken {
+export interface ScrollAreaComponentToken {
   /**
    * @descCN 滚动条轨道尺寸
    * @descEN Size of scrollbar track
@@ -27,18 +28,34 @@ export interface ComponentToken {
 
 declare module 'antd/es/theme/interface/components' {
   interface ComponentTokenMap {
-    ScrollArea?: ComponentToken
+    ScrollArea?: ScrollAreaComponentToken
   }
 }
 
 type GlobalToken = ReturnType<typeof antdTheme.useToken>['token']
 
+const scrollAreaTrackSizeVar = '--zby-scroll-area-track-size'
+const scrollAreaThumbBgVar = '--zby-scroll-area-thumb-bg'
+const scrollAreaThumbHoverBgVar = '--zby-scroll-area-thumb-hover-bg'
+const scrollAreaZIndexVar = '--zby-scroll-area-z-index'
+
+type ScrollAreaCSSVariableStyle = CSSProperties & {
+  [scrollAreaTrackSizeVar]: string | number
+  [scrollAreaThumbBgVar]: string
+  [scrollAreaThumbHoverBgVar]: string
+  [scrollAreaZIndexVar]: string | number
+}
+
 type ScrollAreaToken = GlobalToken & {
   componentCls: string
-  scrollAreaTrackSize: number
+  scrollAreaTrackSize: string
   scrollAreaThumbBg: string
   scrollAreaThumbHoverBg: string
-  scrollAreaZIndex: number
+  scrollAreaZIndex: string
+}
+
+function incrementCSSValue(value: number | string) {
+  return typeof value === 'number' ? value + 1 : `calc(${value} + 1)`
 }
 
 function resetComponent(token: GlobalToken): CSSObject {
@@ -184,15 +201,22 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
 }
 
 export default function useStyle(prefixCls: string) {
-  const { theme, token, hashId } = antdTheme.useToken()
+  const { theme, token, hashId, cssVar } = antdTheme.useToken()
+  const styleToken = cssVar ?? token
   const componentToken = token.ScrollArea
+  const componentCSSVariables: ScrollAreaCSSVariableStyle = {
+    [scrollAreaTrackSizeVar]: unit(componentToken?.trackSize ?? styleToken.sizeXS),
+    [scrollAreaThumbBgVar]: componentToken?.thumbBg ?? styleToken.colorTextQuaternary,
+    [scrollAreaThumbHoverBgVar]: componentToken?.thumbHoverBg ?? styleToken.colorTextTertiary,
+    [scrollAreaZIndexVar]: componentToken?.zIndex ?? incrementCSSValue(styleToken.zIndexBase),
+  }
   const mergedToken: ScrollAreaToken = {
-    ...token,
+    ...styleToken,
     componentCls: `.${prefixCls}`,
-    scrollAreaTrackSize: componentToken?.trackSize ?? token.sizeXS,
-    scrollAreaThumbBg: componentToken?.thumbBg ?? token.colorTextQuaternary,
-    scrollAreaThumbHoverBg: componentToken?.thumbHoverBg ?? token.colorTextTertiary,
-    scrollAreaZIndex: componentToken?.zIndex ?? token.zIndexBase + 1,
+    scrollAreaTrackSize: `var(${scrollAreaTrackSizeVar})`,
+    scrollAreaThumbBg: `var(${scrollAreaThumbBgVar})`,
+    scrollAreaThumbHoverBg: `var(${scrollAreaThumbHoverBgVar})`,
+    scrollAreaZIndex: `var(${scrollAreaZIndexVar})`,
   }
 
   useStyleRegister(
@@ -205,5 +229,5 @@ export default function useStyle(prefixCls: string) {
     () => genBaseStyle(mergedToken),
   )
 
-  return [hashId, ''] as const
+  return [hashId, componentCSSVariables] as const
 }
