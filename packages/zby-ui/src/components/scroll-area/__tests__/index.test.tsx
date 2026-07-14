@@ -79,9 +79,10 @@ describe('ScrollArea', () => {
     expect(styleText).toContain('scrollbar-hover:hover')
     expect(styleText).toContain(':not(:has(> .ant-scroll-area-thumb))')
     expect(styleText).toContain('visibility:hidden')
+    expect(styleText).toMatch(/scroll-area-track\{[^}]*background:transparent/)
   })
 
-  it('expands the thumb hit target by 8px only across the track thickness', () => {
+  it('uses a 10px thumb hit target across the track thickness', () => {
     const cache = createCache()
 
     render(
@@ -92,13 +93,13 @@ describe('ScrollArea', () => {
 
     const styleText = extractStyle(cache)
 
-    expect(styleText).toContain('height:calc(100% + 8px)')
-    expect(styleText).toContain('width:calc(100% + 8px)')
+    expect(styleText).toContain('height:10px')
+    expect(styleText).toContain('width:10px')
     expect(styleText).not.toContain('min-width:44px')
     expect(styleText).not.toContain('min-height:44px')
   })
 
-  it('keeps horizontal and vertical tracks flush with the outer container edges', () => {
+  it('insets horizontal and vertical tracks 2px from the outer container edges', () => {
     const cache = createCache()
 
     render(
@@ -109,8 +110,8 @@ describe('ScrollArea', () => {
 
     const styleText = extractStyle(cache)
 
-    expect(styleText).toContain('margin-block-end:0')
-    expect(styleText).toContain('margin-inline-end:0')
+    expect(styleText).toContain('margin-block-end:2px')
+    expect(styleText).toContain('margin-inline-end:2px')
   })
 
   it('normalizes scrollbar visibility options into stable root classes', () => {
@@ -250,7 +251,7 @@ describe('ScrollArea', () => {
     const styleText = extractStyle(cache)
 
     expect(defaultScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe(
-      'var(--zby-test-size-xs)',
+      '5px',
     )
     expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('12px')
     expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')

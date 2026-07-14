@@ -75,6 +75,8 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
   const { componentCls } = token
   const trackSize = unit(token.scrollAreaTrackSize)
   const trackInset = unit(token.paddingXXS)
+  const trackOuterInset = 2
+  const thumbHitTargetSize = 12
 
   return {
     [componentCls]: {
@@ -104,17 +106,18 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       },
 
       [`> ${componentCls}-viewport > ${componentCls}-content, > ${componentCls}-viewport > div > ${componentCls}-content`]:
-        {
-          minWidth: '100%',
-          minHeight: '100%',
-          boxSizing: 'border-box',
-        },
+      {
+        minWidth: '100%',
+        minHeight: '100%',
+        boxSizing: 'border-box',
+      },
 
       [`> ${componentCls}-track`]: {
         position: 'absolute',
         zIndex: token.scrollAreaZIndex,
         display: 'flex',
         borderRadius: token.borderRadiusSM,
+        background: 'transparent',
         opacity: 0,
         pointerEvents: 'none',
         touchAction: 'none',
@@ -147,14 +150,14 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         flexDirection: 'column',
         height: trackSize,
         marginInline: trackInset,
-        marginBlockEnd: 0,
+        marginBlockEnd: trackOuterInset,
 
         [`> ${componentCls}-thumb`]: {
           height: '100%',
 
           '&::before': {
             width: '100%',
-            height: 'calc(100% + 8px)',
+            height: thumbHitTargetSize,
           },
         },
       },
@@ -162,13 +165,13 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       [`> ${componentCls}-track-vertical`]: {
         width: trackSize,
         marginBlock: trackInset,
-        marginInlineEnd: 0,
+        marginInlineEnd: trackOuterInset,
 
         [`> ${componentCls}-thumb`]: {
           width: '100%',
 
           '&::before': {
-            width: 'calc(100% + 8px)',
+            width: thumbHitTargetSize,
             height: '100%',
           },
         },
@@ -179,10 +182,10 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       },
 
       [`&${componentCls}-scrollbar-always > ${componentCls}-track, &${componentCls}-scrollbar-hover:hover > ${componentCls}-track, &${componentCls}-scrolling > ${componentCls}-track, &${componentCls}-dragging > ${componentCls}-track`]:
-        {
-          opacity: 1,
-          pointerEvents: 'auto',
-        },
+      {
+        opacity: 1,
+        pointerEvents: 'auto',
+      },
 
       [`> ${componentCls}-track:not(:has(> ${componentCls}-thumb))`]: {
         visibility: 'hidden',
@@ -191,9 +194,9 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
       },
 
       [`&${componentCls}-scrollbar-none > ${componentCls}-track, &${componentCls}-scrollbar-none > ${componentCls}-corner`]:
-        {
-          display: 'none',
-        },
+      {
+        display: 'none',
+      },
 
       [`&${componentCls}-vertical > ${componentCls}-viewport`]: {
         overflowX: 'hidden',
@@ -217,7 +220,7 @@ export default function useStyle(prefixCls: string) {
   const styleToken = cssVar ?? token
   const componentToken = token.ScrollArea
   const componentCSSVariables: ScrollAreaCSSVariableStyle = {
-    [scrollAreaTrackSizeVar]: unit(componentToken?.trackSize ?? styleToken.sizeXS),
+    [scrollAreaTrackSizeVar]: unit(componentToken?.trackSize ?? 8),
     [scrollAreaThumbBgVar]: componentToken?.thumbBg ?? styleToken.colorTextQuaternary,
     [scrollAreaThumbHoverBgVar]: componentToken?.thumbHoverBg ?? styleToken.colorTextTertiary,
     [scrollAreaZIndexVar]: componentToken?.zIndex ?? incrementCSSValue(styleToken.zIndexBase),
