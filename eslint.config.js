@@ -4,6 +4,61 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
+const localPlugin = {
+  rules: {
+    'object-expression-brace-same-line': {
+      meta: {
+        type: 'layout',
+        fixable: 'whitespace',
+        schema: [],
+        messages: {
+          sameLine: 'Place the object opening brace on the same line as the assignment.',
+        },
+      },
+      create(context) {
+        const sourceCode = context.sourceCode
+
+        return {
+          ObjectExpression(node) {
+            const { parent } = node
+            const isAssignedObject =
+              (parent.type === 'VariableDeclarator' && parent.init === node) ||
+              (parent.type === 'AssignmentExpression' && parent.right === node) ||
+              (parent.type === 'AssignmentPattern' && parent.right === node) ||
+              (parent.type === 'PropertyDefinition' && parent.value === node)
+
+            if (!isAssignedObject) return
+
+            const openBrace = sourceCode.getFirstToken(node)
+            const assignment = openBrace && sourceCode.getTokenBefore(openBrace)
+
+            if (
+              !openBrace ||
+              !assignment ||
+              assignment.value !== '=' ||
+              assignment.loc.end.line === openBrace.loc.start.line
+            ) {
+              return
+            }
+
+            const previousTokenOrComment = sourceCode.getTokenBefore(openBrace, {
+              includeComments: true,
+            })
+            if (previousTokenOrComment !== assignment) return
+
+            context.report({
+              node: openBrace,
+              messageId: 'sameLine',
+              fix: (fixer) =>
+                fixer.replaceTextRange([assignment.range[1], openBrace.range[0]], ' '),
+            })
+          },
+        }
+      },
+    },
+  },
+}
+
 export default tseslint.config(
   {
     ignores: [
@@ -73,6 +128,9 @@ export default tseslint.config(
     quoteProps: 'as-needed',
   }),
   {
+    plugins: {
+      local: localPlugin,
+    },
     rules: {
       '@stylistic/indent-binary-ops': 'off',
       '@stylistic/jsx-curly-newline': 'off',
@@ -80,6 +138,15 @@ export default tseslint.config(
       '@stylistic/linebreak-style': ['error', 'unix'],
       '@stylistic/member-delimiter-style': 'off',
       '@stylistic/multiline-ternary': 'off',
+      '@stylistic/object-curly-newline': [
+        'error',
+        {
+          ObjectExpression: {
+            consistent: true,
+            multiline: true,
+          },
+        },
+      ],
       '@stylistic/operator-linebreak': [
         'error',
         'after',
@@ -96,6 +163,7 @@ export default tseslint.config(
         'single',
         { allowTemplateLiterals: 'always', avoidEscape: true },
       ],
+      'local/object-expression-brace-same-line': 'error',
     },
   },
 )
