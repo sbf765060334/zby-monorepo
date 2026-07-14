@@ -6,7 +6,7 @@ import { ConfigProvider, Form } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import { InputNumberRange } from './index'
+import { InputNumberRange } from '../index'
 
 const originalMatchMedia = window.matchMedia
 
