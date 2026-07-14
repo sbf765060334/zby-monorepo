@@ -1,5 +1,5 @@
 import js from '@eslint/js'
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import stylistic from '@stylistic/eslint-plugin'
 import reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
@@ -61,5 +61,41 @@ export default tseslint.config(
       },
     },
   },
-  eslintPluginPrettierRecommended,
+  stylistic.configs['disable-legacy'],
+  stylistic.configs.customize({
+    indent: 2,
+    quotes: 'single',
+    semi: false,
+    jsx: true,
+    arrowParens: true,
+    braceStyle: '1tbs',
+    commaDangle: 'always-multiline',
+    quoteProps: 'as-needed',
+  }),
+  {
+    rules: {
+      '@stylistic/indent-binary-ops': 'off',
+      '@stylistic/jsx-curly-newline': 'off',
+      '@stylistic/jsx-one-expression-per-line': 'off',
+      '@stylistic/linebreak-style': ['error', 'unix'],
+      '@stylistic/member-delimiter-style': 'off',
+      '@stylistic/multiline-ternary': 'off',
+      '@stylistic/operator-linebreak': [
+        'error',
+        'after',
+        {
+          overrides: {
+            ':': 'before',
+            '?': 'before',
+            '|': 'before',
+          },
+        },
+      ],
+      '@stylistic/quotes': [
+        'error',
+        'single',
+        { allowTemplateLiterals: 'always', avoidEscape: true },
+      ],
+    },
+  },
 )
