@@ -74,6 +74,12 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - 带有 `element` 的 `ignore` 路由仍是可访问页面，可以通过 URL 和程序导航正常打开。
 - `ignore` 不参与权限路由过滤、页签身份、默认页面和页面渲染判断；菜单层必须显式过滤该字段。
 
+### 3.6 补全路由预加载异常处理
+
+- 页面组件的 `preload` 在 Promise 微任务中执行，同步 throw 和异步 rejection 统一转换为静默失败。
+- 推测性预加载失败不得打断 hover、focus 或页签交互；真正导航时仍由正常页面加载流程处理错误。
+- 保持 `preloadRouteElement` 的 `void` 返回值，不增加错误回调或其它公开 API。
+
 ## 4. 必须保留的功能范围
 
 ### 4.1 路由与导航
@@ -162,7 +168,7 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - [ ] 目录跳转到第一个可访问子页面。
 - [ ] `ignore` 路由从菜单隐藏但可通过 URL 访问，无 element 和 prompt 路由按既有规则处理。
 - [ ] `supportMultipleTabs` 生成独立 tab key。
-- [ ] preload 成功、失败和重复触发行为明确。
+- [ ] preload 成功、同步 throw、异步 rejection 和重复触发行为明确。
 
 ### 7.2 React Router Adapter
 

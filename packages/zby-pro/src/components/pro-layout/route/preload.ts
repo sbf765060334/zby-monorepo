@@ -31,20 +31,21 @@ interface PreloadableRouteComponent {
 /**
  * 在 hover、focus 等推测性预加载场景调用页面组件提供的 preload 方法。
  *
- * 没有 preload 的普通组件会被直接忽略。Promise rejection 会被静默处理，避免
- * 预加载失败打断用户当前交互；真正导航到页面时仍由正常加载流程处理错误。
- *
- * 当前表达式会先执行 preload 再交给 Promise.resolve，因此只会吞掉异步
- * rejection，同步 throw 仍会向调用方传播。这是当前既有行为，不应误认为
- * 所有形式的异常都已经被捕获。
+ * 没有 preload 的普通组件会被直接忽略。preload 在 Promise 微任务中执行，
+ * 同步 throw 会转换为 rejected Promise，并与异步 rejection 一起静默处理，
+ * 避免推测性加载失败打断用户当前交互。真正导航到页面时仍由正常加载流程
+ * 处理错误。
  */
 export function preloadRouteElement(route: ProLayoutRoute) {
   // route.element 也允许是 ReactElement；没有 preload 属性时读取结果为 undefined。
   const preload = (route.element as PreloadableRouteComponent | undefined)?.preload
 
-  // Promise.resolve 同时兼容返回 void 和返回 Promise 的 preload 实现。
-  if (typeof preload === 'function')
-    void Promise.resolve(preload()).catch(() => undefined)
+  if (typeof preload === 'function') {
+    // 先进入 Promise 链再调用 preload，统一捕获同步 throw 和异步 rejection。
+    void Promise.resolve()
+      .then(() => preload())
+      .catch(() => undefined)
+  }
 }
 
 /**
