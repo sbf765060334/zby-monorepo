@@ -56,6 +56,22 @@ describe('createRouteRegistry', () => {
     expect(registry.getCurrentSelectedPath('/docs')).toEqual(['/docs'])
   })
 
+  it('normalizes static paths without changing public mapping keys', () => {
+    const dashboardRoute = routes[0]?.routes?.[0]
+    const trailingSlashRoute: ProLayoutRoute = {
+      path: '/legacy/',
+      title: 'Legacy',
+      element: DashboardPage,
+    }
+    const registry = createRouteRegistry({ routes: [...routes, trailingSlashRoute] })
+
+    expect(registry.resolveLeafRoute('/workspace/dashboard/')?.route).toBe(dashboardRoute)
+    expect(registry.resolveLeafRoute('/legacy')?.route).toBe(trailingSlashRoute)
+    expect(registry.getTabKey('/workspace/dashboard/')).toBe('/workspace/dashboard')
+    expect(registry.fullRouteMapping['/legacy/']).toBe(trailingSlashRoute)
+    expect(registry.fullRouteMapping['/legacy']).toBeUndefined()
+  })
+
   it('allows protected routes when hasAuth is not provided', () => {
     const registry = createRouteRegistry({ routes })
 

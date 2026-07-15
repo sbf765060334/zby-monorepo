@@ -14,7 +14,7 @@ import type {
   ProLayoutRoute,
   ProLayoutRouteMapping,
 } from '../interface'
-import { matchRoutePath } from '../router/pathMatcher'
+import { matchRoutePath, normalizeRoutePath } from '../router/pathMatcher'
 
 interface DynamicRouteEntry {
   /**
@@ -31,6 +31,11 @@ interface ProLayoutRouteIndex {
    * key 是配置中的 path，不是带入真实参数后的 pathname。
    */
   mapping: ProLayoutRouteMapping
+  /**
+   * 以标准化路径为 key 的内部精确索引，用于统一处理静态路径末尾斜杠等差异。
+   * value 保留原始 routeKey，避免标准化过程改变对外暴露的路由注册路径。
+   */
+  normalizedMapping: Record<string, ResolvedLeafRoute>
   /**
    * 按路由树深度优先声明顺序保存的参数路由和通配符路由。
    * 精确查询失败后会顺序扫描该数组，因此先声明的动态模式优先匹配。
@@ -297,20 +302,28 @@ export function isPromptRoute(prompt: ProLayoutRoute['prompt']) {
 }
 
 /**
- * 深度优先遍历路由树并建立三类索引。
+ * 深度优先遍历路由树并建立四类索引。
  *
- * mapping 服务精确查询，dynamicRoutes 服务参数和通配符回退匹配，parentMap
- * 服务面包屑与菜单选中链。当前没有重复 path 校验：mapping 会被后声明项覆盖，
- * 而 dynamicRoutes 会保留所有动态项，因此调用方应保证 path 在整棵树中唯一。
+ * mapping 保留原始注册路径，normalizedMapping 服务标准化精确查询，
+ * dynamicRoutes 服务参数和通配符回退匹配，parentMap 服务面包屑与菜单选中链。
+ * 当前没有重复 path 校验：映射会被后声明项覆盖，而 dynamicRoutes 会保留所有
+ * 动态项，因此调用方应保证 path 在整棵树中唯一。
  */
 function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   const mapping: ProLayoutRouteMapping = {}
+  const normalizedMapping: Record<string, ResolvedLeafRoute> = {}
   const dynamicRoutes: DynamicRouteEntry[] = []
   const parentMap: Record<string, string> = {}
 
   const walk = (route: ProLayoutRoute, parentPath?: string) => {
     // 同一 path 重复注册时，这里会以最后一次赋值为准。
     mapping[route.path] = route
+
+    // 标准化索引只用于内部回退查询，routeKey 始终保留调用方注册的原始 path。
+    normalizedMapping[normalizeRoutePath(route.path)] = {
+      routeKey: route.path,
+      route,
+    }
 
     // 动态数组保持深度优先声明顺序，resolveRoute 不会再按具体程度重排。
     if (route.path.includes(':') || route.path.includes('*'))
@@ -324,15 +337,14 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   }
 
   routes.forEach((route) => walk(route))
-  return { mapping, dynamicRoutes, parentMap }
+  return { mapping, normalizedMapping, dynamicRoutes, parentMap }
 }
 
 /**
  * 在指定索引中解析 pathname。
  *
- * 精确注册路径始终优先；精确查询失败后，动态路由按照声明顺序逐个匹配。
- * 注意精确查询直接使用原始 pathname，因此静态路由不会自动获得
- * matchRoutePath 中去除末尾斜杠、query 和 hash 的标准化能力。
+ * 原始注册路径始终优先；原始精确查询失败后，使用与 matcher 相同的规则执行
+ * 标准化精确查询；仍未命中时，动态路由按照声明顺序逐个匹配。
  */
 function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLeafRoute | null {
   if (!pathname)
@@ -342,6 +354,11 @@ function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLea
   const exact = index.mapping[pathname]
   if (exact)
     return { routeKey: pathname, route: exact }
+
+  // 标准化回退同时兼容注册路径和实际 pathname 是否带有末尾斜杠。
+  const normalizedExact = index.normalizedMapping[normalizeRoutePath(pathname)]
+  if (normalizedExact)
+    return normalizedExact
 
   // 动态路由不计算 specificity；第一个成功匹配的声明项直接胜出。
   for (let indexPosition = 0; indexPosition < index.dynamicRoutes.length; indexPosition += 1) {
