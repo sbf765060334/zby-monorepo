@@ -72,6 +72,30 @@ describe('createRouteRegistry', () => {
     expect(registry.fullRouteMapping['/legacy']).toBeUndefined()
   })
 
+  it('rejects duplicate route paths before building ambiguous indexes', () => {
+    const duplicateRoutes: ProLayoutRoute[] = [
+      { path: '/orders/:orderId', title: 'Order A', element: ProjectPage },
+      { path: '/orders/:orderId', title: 'Order B', element: TaskPage },
+    ]
+
+    expect(() => createRouteRegistry({ routes: duplicateRoutes })).toThrowError(
+      '[ProLayout] Duplicate route paths "/orders/:orderId" and "/orders/:orderId" ' +
+      'resolve to "/orders/:orderId". Route paths must be unique.',
+    )
+  })
+
+  it('rejects route paths that conflict after normalization', () => {
+    const duplicateRoutes: ProLayoutRoute[] = [
+      { path: '/reports', title: 'Reports', element: ProjectPage },
+      { path: '/reports/', title: 'Reports with slash', element: TaskPage },
+    ]
+
+    expect(() => createRouteRegistry({ routes: duplicateRoutes })).toThrowError(
+      '[ProLayout] Duplicate route paths "/reports" and "/reports/" ' +
+      'resolve to "/reports". Route paths must be unique.',
+    )
+  })
+
   it('allows protected routes when hasAuth is not provided', () => {
     const registry = createRouteRegistry({ routes })
 

@@ -33,7 +33,8 @@ interface ProLayoutRouteIndex {
   mapping: ProLayoutRouteMapping
   /**
    * 以标准化路径为 key 的内部精确索引，用于统一处理静态路径末尾斜杠等差异。
-   * value 保留原始 routeKey，避免标准化过程改变对外暴露的路由注册路径。
+   * value 保留原始 routeKey，既用于检测语义重复，也避免标准化过程改变对外
+   * 暴露的路由注册路径。
    */
   normalizedMapping: Record<string, ResolvedLeafRoute>
   /**
@@ -146,7 +147,7 @@ export interface ProLayoutRouteRegistry {
  * 创建过程分为四步：
  *
  * 1. 根据 hasAuth 生成权限路由树；
- * 2. 分别为原始路由树和权限路由树建立扁平索引；
+ * 2. 校验路径唯一性，分别为原始路由树和权限路由树建立扁平索引；
  * 3. 计算根路径使用的默认跳转地址；
  * 4. 返回基于这两份快照工作的查询方法。
  */
@@ -306,8 +307,8 @@ export function isPromptRoute(prompt: ProLayoutRoute['prompt']) {
  *
  * mapping 保留原始注册路径，normalizedMapping 服务标准化精确查询，
  * dynamicRoutes 服务参数和通配符回退匹配，parentMap 服务面包屑与菜单选中链。
- * 当前没有重复 path 校验：映射会被后声明项覆盖，而 dynamicRoutes 会保留所有
- * 动态项，因此调用方应保证 path 在整棵树中唯一。
+ * path 在整棵树中必须保持语义唯一；完全相同或标准化后相同的 path 会在写入
+ * 索引前直接抛错，避免不同查询方式返回不同路由。
  */
 function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   const mapping: ProLayoutRouteMapping = {}
@@ -316,11 +317,20 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   const parentMap: Record<string, string> = {}
 
   const walk = (route: ProLayoutRoute, parentPath?: string) => {
-    // 同一 path 重复注册时，这里会以最后一次赋值为准。
+    const normalizedPath = normalizeRoutePath(route.path)
+    const conflict = normalizedMapping[normalizedPath]
+    if (conflict) {
+      throw new Error(
+        `[ProLayout] Duplicate route paths "${conflict.routeKey}" and "${route.path}" ` +
+        `resolve to "${normalizedPath}". Route paths must be unique.`,
+      )
+    }
+
+    // 完成唯一性校验后再写入公开原始映射，避免静默覆盖先声明的路由。
     mapping[route.path] = route
 
     // 标准化索引只用于内部回退查询，routeKey 始终保留调用方注册的原始 path。
-    normalizedMapping[normalizeRoutePath(route.path)] = {
+    normalizedMapping[normalizedPath] = {
       routeKey: route.path,
       route,
     }
