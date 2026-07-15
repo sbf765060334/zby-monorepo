@@ -166,7 +166,7 @@ describe('createRouteRegistry', () => {
     expect(customRegistry.isPageRoute(shellRoutes[0])).toBe(true)
   })
 
-  it('resolves overlapping dynamic routes by declaration order after exact matches', () => {
+  it('ranks overlapping dynamic routes by specificity after exact matches', () => {
     const WildcardPage = () => null
     const SettingsPage = () => null
     const overlapRoutes: ProLayoutRoute[] = [
@@ -175,8 +175,20 @@ describe('createRouteRegistry', () => {
     ]
     const registry = createRouteRegistry({ routes: overlapRoutes })
 
-    expect(registry.resolveLeafRoute('/files/42/settings')?.route).toBe(overlapRoutes[0])
+    expect(registry.resolveLeafRoute('/files/42/settings')?.route).toBe(overlapRoutes[1])
     expect(registry.resolveLeafRoute('/files/:fileId/settings')?.route).toBe(overlapRoutes[1])
+  })
+
+  it('preserves declaration order for equally specific dynamic routes', () => {
+    const SectionSettingsPage = () => null
+    const FilePage = () => null
+    const equalScoreRoutes: ProLayoutRoute[] = [
+      { path: '/:section/settings', title: 'Section settings', element: SectionSettingsPage },
+      { path: '/files/:page', title: 'File page', element: FilePage },
+    ]
+    const registry = createRouteRegistry({ routes: equalScoreRoutes })
+
+    expect(registry.resolveLeafRoute('/files/settings')?.route).toBe(equalScoreRoutes[0])
   })
 })
 

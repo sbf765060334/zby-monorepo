@@ -23,6 +23,10 @@ interface DynamicRouteEntry {
   path: string
   /** 路由模式对应的原始路由配置；匹配成功后直接作为查询结果返回。 */
   route: ProLayoutRoute
+  /** 按照 React Router 路径权重规则计算的具体程度分数。 */
+  score: number
+  /** 深度优先遍历路由树时的原始声明顺序，用作同分时的稳定排序依据。 */
+  declarationOrder: number
 }
 
 interface ProLayoutRouteIndex {
@@ -38,8 +42,8 @@ interface ProLayoutRouteIndex {
    */
   normalizedMapping: Record<string, ResolvedLeafRoute>
   /**
-   * 按路由树深度优先声明顺序保存的参数路由和通配符路由。
-   * 精确查询失败后会顺序扫描该数组，因此先声明的动态模式优先匹配。
+   * 按具体程度降序保存的参数路由和通配符路由。
+   * 分数相同时保留路由树的深度优先声明顺序。
    */
   dynamicRoutes: DynamicRouteEntry[]
   /**
@@ -307,7 +311,7 @@ export function isPromptRoute(prompt: ProLayoutRoute['prompt']) {
  * mapping 保留原始注册路径，normalizedMapping 服务标准化精确查询，
  * dynamicRoutes 服务参数和通配符回退匹配，parentMap 服务面包屑与菜单选中链。
  * path 在整棵树中必须保持语义唯一；完全相同或标准化后相同的 path 会在写入
- * 索引前直接抛错，避免不同查询方式返回不同路由。
+ * 索引前直接抛错。动态路由完成收集后按照具体程度排序，同分时保留声明顺序。
  */
 function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   const mapping: ProLayoutRouteMapping = {}
@@ -334,9 +338,14 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
       route,
     }
 
-    // 动态数组保持深度优先声明顺序，resolveRoute 不会再按具体程度重排。
-    if (route.path.includes(':') || route.path.includes('*'))
-      dynamicRoutes.push({ path: route.path, route })
+    if (route.path.includes(':') || route.path.includes('*')) {
+      dynamicRoutes.push({
+        path: route.path,
+        route,
+        score: computeRouteScore(route.path),
+        declarationOrder: dynamicRoutes.length,
+      })
+    }
 
     // parentMap 记录注册 path 之间的关系，而不是实际参数 pathname 之间的关系。
     if (parentPath)
@@ -346,14 +355,48 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
   }
 
   routes.forEach((route) => walk(route))
+
+  // 分数高的具体路由优先；分数相同时显式恢复原声明顺序，避免依赖 sort 稳定性。
+  dynamicRoutes.sort(
+    (left, right) =>
+      right.score - left.score || left.declarationOrder - right.declarationOrder,
+  )
+
   return { mapping, normalizedMapping, dynamicRoutes, parentMap }
+}
+
+/**
+ * 按照 React Router 的路径分支评分规则计算 ProLayout 路由具体程度。
+ *
+ * ProLayout 当前不支持 index route，因此只采用与现有路径语法相关的权重：
+ * 静态段为 10，参数段为 3，空段为 1，路径段数量计入基础分，包含 `*` 时
+ * 额外扣 2 分。最终得分越高，路由模式越具体，匹配优先级也越高。
+ */
+function computeRouteScore(path: string) {
+  const dynamicSegmentValue = 3
+  const emptySegmentValue = 1
+  const staticSegmentValue = 10
+  const splatPenalty = -2
+  const segments = normalizeRoutePath(path).split('/')
+  const initialScore = segments.length + (segments.includes('*') ? splatPenalty : 0)
+
+  return segments
+    .filter((segment) => segment !== '*')
+    .reduce((score, segment) => {
+      if (segment.startsWith(':'))
+        return score + dynamicSegmentValue
+      if (!segment)
+        return score + emptySegmentValue
+      return score + staticSegmentValue
+    }, initialScore)
 }
 
 /**
  * 在指定索引中解析 pathname。
  *
  * 原始注册路径始终优先；原始精确查询失败后，使用与 matcher 相同的规则执行
- * 标准化精确查询；仍未命中时，动态路由按照声明顺序逐个匹配。
+ * 标准化精确查询；仍未命中时，动态路由按照具体程度降序逐个匹配，同分路由
+ * 保留声明顺序。
  */
 function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLeafRoute | null {
   if (!pathname)
@@ -369,7 +412,7 @@ function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLea
   if (normalizedExact)
     return normalizedExact
 
-  // 动态路由不计算 specificity；第一个成功匹配的声明项直接胜出。
+  // dynamicRoutes 已在建索引时完成排序，第一个成功匹配项就是最高优先级路由。
   for (let indexPosition = 0; indexPosition < index.dynamicRoutes.length; indexPosition += 1) {
     const item = index.dynamicRoutes[indexPosition]
     if (matchRoutePath(item.path, pathname))
