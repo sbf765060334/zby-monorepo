@@ -122,6 +122,25 @@ describe('createRouteRegistry', () => {
     ])
   })
 
+  it('keeps ignored menu routes accessible through the URL', () => {
+    const ignoredRoute: ProLayoutRoute = {
+      path: '/internal-report',
+      title: 'Internal report',
+      element: DashboardPage,
+      ignore: true,
+    }
+    const registry = createRouteRegistry({ routes: [ignoredRoute] })
+
+    expect(registry.permissionRoutes[0]).toBe(ignoredRoute)
+    expect(registry.routeMapping['/internal-report']).toBe(ignoredRoute)
+    expect(registry.resolveLeafRoute('/internal-report', { withinAuth: true })?.route).toBe(
+      ignoredRoute,
+    )
+    expect(registry.isPageRoute(ignoredRoute)).toBe(true)
+    expect(registry.defaultRoute).toBe('/internal-report')
+    expect(ignoredRoute.ignore).toBe(true)
+  })
+
   it('uses an explicit redirect path before the first accessible route', () => {
     const registry = createRouteRegistry({
       routes,
@@ -181,7 +200,7 @@ describe('route helpers', () => {
     expect(isAccessibleRoute({ path: '/page', title: 'Page', element: DashboardPage })).toBe(true)
     expect(
       isAccessibleRoute({ path: '/ignored', title: 'Ignored', element: DashboardPage, ignore: true }),
-    ).toBe(false)
+    ).toBe(true)
     expect(isPromptRoute(true)).toBe(true)
     expect(isPromptRoute('Coming soon')).toBe(true)
     expect(isPromptRoute(undefined)).toBe(false)

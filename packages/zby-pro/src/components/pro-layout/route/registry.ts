@@ -60,8 +60,8 @@ interface CreateRouteRegistryParams {
    */
   defaultRedirectPath?: string
   /**
-   * 自定义判断路由是否可以作为页面访问的方法；未提供时要求存在 element
-   * 且 route.ignore 不为 true。
+   * 自定义判断路由是否可以作为页面访问的方法；未提供时只要求存在 element。
+   * ignore 仅由菜单等可见导航结构消费，不参与页面访问判断。
    */
   isPageRoute?: (route: ProLayoutRoute) => boolean
 }
@@ -286,12 +286,11 @@ export function filterAuthorizedRoutes(
 /**
  * 默认的页面路由判定规则。
  *
- * 当前规则要求同时存在 element 且未设置 ignore。需要特别注意，Shuzhi 文档
- * 将 ignore 描述为菜单隐藏属性，但这里也会把它排除在默认页面落点之外；
- * 后续若确认 ignore 只影响菜单，应统一调整该语义及相关集成测试。
+ * 存在 element 就代表该路由可以作为页面访问。ignore 只控制菜单等可见导航
+ * 结构是否展示该路由，不影响 URL 解析、权限访问、页签和默认页面判断。
  */
 export function isAccessibleRoute(route?: ProLayoutRoute | null) {
-  return Boolean(route?.element && !route.ignore)
+  return Boolean(route?.element)
 }
 
 /**
