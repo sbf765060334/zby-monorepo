@@ -1,0 +1,281 @@
+# ProLayout 渐进式迁移基线
+
+## 1. 文档目的
+
+本文档是将 Shuzhi ProLayout 迁移到 `@zby/pro` 的执行基线，用于约束后续实现、评审和测试。
+
+- 目标仓库：`C:\Users\Lenovo\Desktop\demo\zby-monorepo`
+- 参考仓库：`D:\zby\shuzhi-monorepo`
+- 参考组件：`packages/shuzhi-pro/components/pro-layout`
+- 目标包：`packages/zby-pro`
+
+除本文档明确记录的已批准差异外，迁移应保持 Shuzhi ProLayout 已存在的产品行为。发现新的行为差异、设计缺陷或无法等价迁移的能力时，必须先说明并等待确认。
+
+## 2. 已确认的总体约束
+
+1. 不迁移 Next.js 相关代码、入口、类型、测试和依赖。
+2. 不迁移 AI 主题和主题 preset。
+3. 主题模式保留跟随系统、浅色主题和暗黑主题三种；对外值沿用参考实现的 `auto`、`light` 和 `dark`。
+4. 主题切换动画复用 `packages/zby-pro/src/hooks/useThemeModeTransition.ts`；跟随系统模式先解析实际的 Light/Dark 外观，再把解析结果交给该 Hook。
+5. 普通 UI 组件使用 antd，不引入整套 `shuzhi-ui`。
+6. ScrollArea 使用 `@zby/ui` 已有实现。
+7. 允许按需引入 `ahooks`、`zustand`、`clsx`、`@dnd-kit/*` 等直接依赖。
+8. 不在运行时代码或普通类型中直接依赖 `antd/es/**` 等 antd 内部模块；Component Token 的纯类型声明合并可以沿用 ZBY 现有组件方案。
+9. UI 产品行为和交互结构按 Shuzhi 迁移，组件 API 做 antd 等价适配，样式注册机制按 ZBY 现有 CSS-in-JS 模式重写。
+10. 每个迁移步骤必须独立完成验证并汇报，不自动进入下一步。
+
+## 3. 已批准的实现差异
+
+以下差异已经确认，可在保持产品语义的前提下修复参考实现的问题。
+
+### 3.1 保留跨窗口消息能力
+
+保留现有消息协议表达的能力：
+
+- `type: 'navigator'`
+- `url`
+- `destroy`
+- `skipBeforeClose`
+
+消息来源校验策略尚未确认。在确认前，只迁移协议类型和测试基线，不擅自决定同源限制、可信 origin 列表或自定义校验器 API。
+
+### 3.2 修复持久化并发覆盖
+
+ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完整状态”的非原子更新方式。
+
+最低验收要求：
+
+- 收藏、固定页签和参数路径同时保存时互不覆盖。
+- 同一字段连续快速更新时，最终持久化结果与最后一次已提交的内存状态一致。
+- IndexedDB 默认 adapter 的读取与字段更新必须处于可证明不会丢失更新的事务或串行流程中。
+- 自定义远程 adapter 的调用顺序必须有明确契约。
+
+### 3.3 权限支持运行时变化
+
+`hasAuth` 在 ProLayout 挂载后发生变化时，必须重新计算权限路由并同步页面状态。
+
+最低验收要求：
+
+- 新获得权限后，对应菜单和页面可以访问。
+- 权限被撤销后，对应菜单消失，当前页面不再继续展示受限内容。
+- 已打开页签、KeepAlive 页面和持久化页签不会绕过最新权限结果。
+- `hasAuth` 从函数变为 `undefined` 或从 `undefined` 变为函数时行为正确。
+- 调用方应通过新的函数引用表达权限集合变化；不得依赖无法被 React 观察的闭包内部变化。
+
+## 4. 必须保留的功能范围
+
+### 4.1 路由与导航
+
+- 路由树、父子层级和面包屑路径解析。
+- 静态路由、参数路由和末尾通配符匹配能力。
+- 完整路由表与权限路由表。
+- 默认可访问页面和目录首个可访问子页面跳转。
+- `_blank`、`target`、`ignore`、`prompt`、`anchorPoints` 等路由配置行为。
+- React Router location、navigate、replace、search 和 hash 同步。
+- 路由组件 preload 能力和失败处理。
+
+### 4.2 页签与页面状态
+
+- 普通页签、固定页签、收藏菜单和页签顺序。
+- 动态参数路由共享页签和 `supportMultipleTabs` 独立页签。
+- 页签关闭、关闭前 Hook、显式跳过 Hook 和关闭后回调。
+- 页签对应 pathname、search、hash 的缓存与恢复。
+- 页面标题和页签标题动态更新。
+- 页面生命周期事件和 location 事件。
+
+### 4.3 KeepAlive
+
+- 开启和关闭 KeepAlive。
+- `include`、`exclude` 和 `maxCachedPages`。
+- 固定页签不参与普通 LRU 淘汰。
+- 已缓存页面切换时保持 React 页面实例。
+- 被关闭、被淘汰或失去权限的页面完成状态清理。
+
+### 4.4 持久化
+
+- 收藏菜单。
+- 固定页签。
+- 参数路由页签对应的真实 pathname。
+- 默认 IndexedDB adapter。
+- 自定义远程 adapter。
+- `storageAdapter={false}` 的纯内存模式。
+- `initialStorageState` 首屏初始化。
+- 加载与保存错误回调及 retry。
+- `storageKey` 隔离。
+
+### 4.5 UI 与上下文
+
+- 侧边菜单、菜单抽屉、系统切换入口、页签栏、收藏面板和内容区域。
+- `prefixCls`、semantic `classNames` 和 `styles`。
+- `useProLayoutContext`、`useProLayoutPageContext`、`ProLayoutAuth` 和 `useProLayoutAuth`。
+- `ProLayoutContentContainer` 的 fill、stack、aside、padding 和 scrollable 行为。
+- 跟随系统、浅色和暗黑三种主题模式、Component Token 和现有圆形主题过渡动画。
+
+## 5. 明确排除的范围
+
+- `pro-layout/next.ts`
+- `router/next.tsx`
+- `router/next-navigation.d.ts`
+- `NextProLayoutProps`
+- `NextProLayoutPageLoading`
+- Next.js 专用入口、测试、playground 和依赖
+- AI 主题请求、推荐、会话和 Drawer
+- 主题 preset 及其选项、配置和持久化
+- 除跟随系统、浅色和暗黑以外的其它主题能力
+- 仅服务于 Next 页面缓存切换的 navigate `cache` 元数据
+
+## 6. 尚未批准的行为调整
+
+以下问题已经在参考实现中发现，但尚未获得修改确认。迁移到对应模块前必须单独说明。
+
+- 跨窗口消息允许哪些 origin，以及如何表达可信来源。
+- React Router basename 下的内部链接和新窗口链接是否作为兼容性修复处理。
+- `storageKey` 或 `storageAdapter` 在组件挂载后变化时是否重新加载状态。
+- `jumpTo` 传入空 search/hash 时，是清空还是恢复页签缓存。
+- 动态 routes 更新后，既有页签和 KeepAlive 页面应关闭、刷新还是保留为无权限/404 页面。
+- 固定页签是否允许通过公共 `closeTab` API 关闭。
+
+国际化对象必须跟随当前 locale 更新，属于已存在功能的正确同步，不视为新增产品行为。
+
+## 7. 测试矩阵
+
+### 7.1 Route Registry
+
+- [ ] 精确静态路由解析。
+- [ ] 参数路由解析和参数替换。
+- [ ] 末尾通配符匹配及零段匹配。
+- [ ] 重叠动态路由的优先级有明确测试。
+- [ ] 父子路由链和 selected path 正确。
+- [ ] 默认路由取第一个可访问页面。
+- [ ] 目录跳转到第一个可访问子页面。
+- [ ] `ignore`、无 element 和 prompt 路由按既有规则处理。
+- [ ] `supportMultipleTabs` 生成独立 tab key。
+- [ ] preload 成功、失败和重复触发行为明确。
+
+### 7.2 React Router Adapter
+
+- [ ] location 的 pathname、search、hash 正确同步。
+- [ ] 字符串和对象两种 navigate target 正确序列化。
+- [ ] replace 选项正确传递。
+- [ ] BrowserRouter basename 下 navigate 正确。
+- [ ] basename 下 `_blank` 内部链接生成正确 href。
+- [ ] MemoryRouter 集成测试不依赖浏览器全局对象。
+
+### 7.3 Runtime Authorization
+
+- [ ] 未传 `hasAuth` 时默认允许访问。
+- [ ] 有权限和无权限路由分别进入授权路由表和完整路由表。
+- [ ] 直接访问无权限地址显示 403，不渲染页面组件。
+- [ ] 运行时新增权限后菜单和页面同步恢复。
+- [ ] 运行时撤销权限后当前受限页面立即停止展示。
+- [ ] 权限变化后已打开页签和 KeepAlive 页面重新校验。
+- [ ] 权限变化后收藏和固定页签不会绕过授权结果。
+- [ ] `hasAuth` 在函数与 `undefined` 之间切换时状态一致。
+
+### 7.4 Cross-Window Message
+
+- [ ] 忽略非 `navigator` 消息。
+- [ ] 忽略缺少合法 url 的消息。
+- [ ] 普通消息执行 jumpTo。
+- [ ] `destroy` 先关闭旧页签再打开新地址。
+- [ ] `skipBeforeClose` 能按协议显式跳过关闭 Hook。
+- [ ] 不可信来源被拒绝，可信来源被接受。
+- [ ] 组件卸载后移除 message 监听器。
+
+### 7.5 Storage And Cache
+
+- [ ] IndexedDB 不可用时返回空状态且不抛出环境错误。
+- [ ] 非法存储数据完成标准化。
+- [ ] `initialStorageState` 不再触发异步覆盖。
+- [ ] hydration 期间发生内存修改时不覆盖新状态。
+- [ ] `storageAdapter={false}` 不执行外部读写。
+- [ ] 加载和保存失败提供正确 phase、storageKey 和 retry。
+- [ ] 不同 storageKey 完全隔离。
+- [ ] 收藏、固定页签和参数路径并发保存时全部保留。
+- [ ] 同一字段连续保存时最终结果为最后一次状态。
+- [ ] 关闭页签后 pathname、search、hash 缓存完成清理。
+- [ ] 空 search/hash 的最终语义在确认后有对应测试。
+
+### 7.6 Tabs And KeepAlive
+
+- [ ] 固定页签始终排在普通页签之前且组内顺序稳定。
+- [ ] 拖拽不能跨越固定/非固定分组。
+- [ ] 关闭 Hook 全部同意才允许关闭。
+- [ ] 关闭后清理 Hook、emitter、页面和缓存。
+- [ ] 动态参数共享页签时更新真实 pathname。
+- [ ] `supportMultipleTabs` 为不同参数保留不同页面实例。
+- [ ] 无限 KeepAlive 重访页面时对象和组件实例稳定。
+- [ ] LRU 只淘汰可淘汰的非活动、非固定页面。
+- [ ] include/exclude 同时存在时遵循既有优先级。
+
+### 7.7 Theme And UI
+
+- [ ] ConfigProvider prefixCls 能改变 ProLayout DOM 类名前缀。
+- [ ] `theme.components.ProLayout` 能覆盖 Component Token。
+- [ ] 跟随系统、浅色和暗黑三种模式可以正确切换和持久化。
+- [ ] 跟随系统模式响应 `prefers-color-scheme` 的初始值和运行时变化。
+- [ ] 三种模式都能同步 antd token 和 ProLayout CSS Variables。
+- [ ] 主题实际外观发生 Light/Dark 变化时调用现有 `useThemeModeTransition`。
+- [ ] prefers-reduced-motion 下不执行圆形动画。
+- [ ] 菜单、Drawer、Tabs、Popover 和 ContentContainer 在明暗主题下可读。
+- [ ] semantic classNames/styles 只作用于对应区域。
+- [ ] 桌面与窄视口下没有重叠、溢出和不可操作区域。
+
+## 8. 每步统一验证门槛
+
+每个迁移步骤至少执行与改动范围对应的命令：
+
+```text
+corepack pnpm@11.7.0 --filter @zby/pro typecheck
+corepack pnpm@11.7.0 --filter @zby/pro test
+corepack pnpm@11.7.0 exec eslint packages/zby-pro/src
+```
+
+涉及包入口、依赖、主题样式或构建配置时，额外执行：
+
+```text
+corepack pnpm@11.7.0 --filter @zby/pro build
+```
+
+每一步结束时还必须检查：
+
+- `git diff --check`
+- `git status --short`
+- 没有 Next.js、AI 主题、主题 preset 或其它未批准主题能力残留。
+- 没有 `shuzhi-ui`、`@shuzhi/*` 或 `antd/es/**` 运行时依赖。
+- 没有进入当前步骤范围之外的产品行为调整。
+
+## 9. 参考仓库验证基线
+
+已尝试运行以下参考测试：
+
+```text
+vitest run components/pro-layout/__tests__/index.test.ts \
+  components/pro-layout/__tests__/content-render.test.tsx \
+  components/pro-layout/__tests__/content-container.test.tsx
+```
+
+结果：
+
+- `content-container.test.tsx`：10 个测试通过。
+- `index.test.ts` 和 `content-render.test.tsx`：测试收集阶段失败，原因为无法解析 `shuzhi-ui/locale/en_US`，两份文件均为 0 test。
+
+因此不能把参考仓库当前状态记录为“ProLayout 全量测试通过”。后续迁移以源码行为、能够正常执行的参考测试和 ZBY 新增回归测试共同作为验证依据。
+
+## 10. 渐进式迁移状态
+
+- [x] 步骤 1：建立迁移基线。
+- [x] 步骤 2：迁移纯类型层。
+- [ ] 步骤 3：迁移路由引擎。
+- [ ] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
+- [ ] 步骤 5：迁移并拆分 Store 引擎。
+- [ ] 步骤 6：迁移 Context 和 Effects。
+- [ ] 步骤 7：完成运行时权限变化。
+- [ ] 步骤 8：迁移页面渲染与 KeepAlive。
+- [ ] 步骤 9：迁移菜单 UI。
+- [ ] 步骤 10：迁移页签 UI。
+- [ ] 步骤 11：组装 Core 和 React Router Adapter。
+- [ ] 步骤 12：迁移跨窗口消息。
+- [ ] 步骤 13：迁移 ContentContainer。
+- [ ] 步骤 14：接入跟随系统、浅色、暗黑主题和 ProLayout Token。
+- [ ] 步骤 15：公开导出与最终验收。
