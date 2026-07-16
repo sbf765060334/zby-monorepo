@@ -32,7 +32,8 @@
   "dependencies": {
     "@zby/intl": "workspace:*",
     "@zby/ui": "workspace:*",
-    "idb-keyval": "6.3.0"
+    "idb-keyval": "6.3.0",
+    "zustand": "5.0.12"
   },
   "peerDependencies": {
     "@ant-design/cssinjs": ">=1.0.0",

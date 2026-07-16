@@ -42,6 +42,16 @@ export class ProLayoutCache {
   }
 
   /**
+   * 获取当前参数路径映射的只读快照。
+   *
+   * Store 在异步 hydration 开始时记录该快照，加载完成后让当前会话已经确认的
+   * 动态 pathname 覆盖旧持久化值。返回副本可以避免调用方绕过变更通知修改 Cache。
+   */
+  getFixedParamsPathMap() {
+    return { ...this.paramsPathMap }
+  }
+
+  /**
    * 使用持久化加载结果替换参数路径映射。
    *
    * hydration 本身不触发保存回调，否则刚加载的数据会被立即原样写回存储。

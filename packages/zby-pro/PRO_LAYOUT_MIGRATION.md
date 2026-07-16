@@ -88,6 +88,21 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - 推测性预加载失败不得打断 hover、focus 或页签交互；真正导航时仍由正常页面加载流程处理错误。
 - 保持 `preloadRouteElement` 的 `void` 返回值，不增加错误回调或其它公开 API。
 
+### 3.7 拆分 Store 并修复状态竞争
+
+第五步实现结论：
+
+- Store 使用 `zustand/vanilla`，按类型、初始化、持久化、导航、页签模型、页签动作和 KeepAlive 拆分，不照搬参考仓库 938 行单文件。
+- Store 使用自己的 `ProLayoutTab`、国际化和消息最小接口，不依赖 antd Tabs 类型、`antd/es/**` 或 `shuzhi-ui`。
+- hydration 使用 collection、fixedTabs、fixedParamsPathMap 三个字段各自的修改版本；只保护加载期间真正发生本地修改的字段。
+- 当前会话已经确认的动态 pathname 覆盖旧持久化值，避免首屏 `/project/99` 在加载后退回旧的 `/project/42`。
+- `storageKey` 或 `storageAdapter` 变化时重新加载新来源，并通过 generation 阻止旧来源晚到结果回写。
+- `storageAdapter={false}` 保持纯内存状态；从 false 切换到真实 Adapter 后正常加载。
+- 关闭固定页签时同步取消固定并持久化；并发关闭同一页签只允许一个操作完成清理和回调。
+- `jumpTo` 和 `smartNavigate` 中，undefined 表示恢复页签 search/hash 缓存，null 或空字符串表示显式清空。
+- KeepAlive 动态缩容时一次达到上限；非正数上限只保留活动页和不可淘汰固定页，exclude 优先于 include。
+- 不迁移仅服务于 Next.js 页面缓存切换的 navigate `cache` 元数据。
+
 ## 4. 必须保留的功能范围
 
 ### 4.1 路由与导航
@@ -156,10 +171,7 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 
 - 跨窗口消息允许哪些 origin，以及如何表达可信来源。
 - React Router basename 下的内部链接和新窗口链接是否作为兼容性修复处理。
-- `storageKey` 或 `storageAdapter` 在组件挂载后变化时是否重新加载状态。
-- `jumpTo` 传入空 search/hash 时，是清空还是恢复页签缓存。
 - 动态 routes 更新后，既有页签和 KeepAlive 页面应关闭、刷新还是保留为无权限/404 页面。
-- 固定页签是否允许通过公共 `closeTab` API 关闭。
 
 国际化对象必须跟随当前 locale 更新，属于已存在功能的正确同步，不视为新增产品行为。
 
@@ -215,27 +227,28 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - [x] 相同参数 pathname 不触发重复持久化通知。
 - [x] IndexedDB 不可用时返回空状态且不抛出环境错误。
 - [x] 非法存储数据完成标准化。
-- [ ] `initialStorageState` 不再触发异步覆盖。
-- [ ] hydration 期间发生内存修改时不覆盖新状态。
-- [ ] `storageAdapter={false}` 不执行外部读写。
-- [ ] 加载和保存失败提供正确 phase、storageKey 和 retry。
+- [x] `initialStorageState` 不再触发异步覆盖。
+- [x] hydration 期间发生内存修改时不覆盖新状态，未冲突字段仍正常加载。
+- [x] `storageAdapter={false}` 不执行外部读写，并支持后续切换到真实 Adapter。
+- [x] `storageKey` 或 `storageAdapter` 变化后加载新来源，旧异步结果不能回写。
+- [x] 加载和保存失败提供正确 phase、storageKey 和 retry。
 - [x] 不同 storageKey 完全隔离。
 - [x] 收藏、固定页签和参数路径并发保存时全部保留。
 - [x] 同一字段连续保存时最终结果为最后一次状态。
-- [ ] 关闭页签后 pathname、search、hash 缓存完成清理。
-- [ ] 空 search/hash 的最终语义在确认后有对应测试。
+- [x] 关闭页签后 pathname、search、hash 缓存完成清理。
+- [x] undefined 恢复 search/hash 缓存，null 或空字符串显式清空。
 
 ### 7.6 Tabs And KeepAlive
 
-- [ ] 固定页签始终排在普通页签之前且组内顺序稳定。
+- [x] 固定页签始终排在普通页签之前且组内顺序稳定。
 - [ ] 拖拽不能跨越固定/非固定分组。
-- [ ] 关闭 Hook 全部同意才允许关闭。
-- [ ] 关闭后清理 Hook、emitter、页面和缓存。
-- [ ] 动态参数共享页签时更新真实 pathname。
-- [ ] `supportMultipleTabs` 为不同参数保留不同页面实例。
-- [ ] 无限 KeepAlive 重访页面时对象和组件实例稳定。
-- [ ] LRU 只淘汰可淘汰的非活动、非固定页面。
-- [ ] include/exclude 同时存在时遵循既有优先级。
+- [x] 关闭 Hook 全部同意才允许关闭。
+- [x] 关闭后清理 Hook、emitter、页面和缓存。
+- [x] 动态参数共享页签时更新真实 pathname。
+- [x] `supportMultipleTabs` 为不同参数保留不同页面实例。
+- [x] 无限 KeepAlive 重访页面时对象和组件实例稳定。
+- [x] LRU 只淘汰可淘汰的非活动、非固定页面。
+- [x] include/exclude 同时存在时遵循既有优先级。
 
 ### 7.7 Theme And UI
 
@@ -297,7 +310,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 2：迁移纯类型层。
 - [x] 步骤 3：迁移路由引擎。
 - [x] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
-- [ ] 步骤 5：迁移并拆分 Store 引擎。
+- [x] 步骤 5：迁移并拆分 Store 引擎。
 - [ ] 步骤 6：迁移 Context 和 Effects。
 - [ ] 步骤 7：完成运行时权限变化。
 - [ ] 步骤 8：迁移页面渲染与 KeepAlive。
