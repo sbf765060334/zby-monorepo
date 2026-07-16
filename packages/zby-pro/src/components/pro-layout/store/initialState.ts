@@ -37,8 +37,13 @@ export interface ProLayoutInitialState {
 export function createProLayoutInitialState(
   params: CreateProLayoutStoreParams,
 ): ProLayoutInitialState {
+  // initialStorageState 可能来自 SSR、远端预取或调用方手写对象，先在边界补齐字段并
+  // 复制集合，后续初始化逻辑即可只处理可信结构。
   const storageState = normalizeProLayoutStorageState(params.initialStorageState)
+  // 持久化固定项可能属于旧路由配置；创建 tabs 前先去重并移除当前 Registry 无法
+  // 解析成页面的 key，避免无效项占用固定上限。
   const fixedSet = sanitizeFixedTabKeys(storageState.fixedTabs, params.registry)
+  // 入口可能是根路径、目录或叶子页，统一解析为首个真正可以渲染的 pathname。
   const initialPagePathname = resolveInitialPagePathname(
     params.registry,
     params.initialPathname,
@@ -50,6 +55,7 @@ export function createProLayoutInitialState(
   const initialTabKey = initialPagePathname
     ? params.registry.getTabKey(initialPagePathname)
     : null
+  // Cache 拥有自己的可变副本，不能直接复用 storageState 中的对象引用。
   const fixedParamsPathMap = { ...storageState.fixedParamsPathMap }
 
   if (
@@ -58,9 +64,13 @@ export function createProLayoutInitialState(
     initialTabKey !== initialPagePathname &&
     !initialLeaf?.route.supportMultipleTabs
   ) {
+    // 共享动态路由的 tabKey 是注册 pattern，必须用首屏真实 pathname 覆盖持久化旧值，
+    // 否则异步 hydration 前首次切换页签就可能跳回上次会话的参数地址。
     fixedParamsPathMap[initialTabKey] = initialPagePathname
   }
 
+  // 未解析到页面时仍保留宿主传入 pathname，供 403/404 和面包屑等外层逻辑判断；
+  // tabs/pages 则保持为空，不为目录或未知路由提前创建页面实例。
   const currentPathname = initialPagePathname || params.initialPathname || ''
   const currentRoutes = currentPathname
     ? params.registry.getCurrentRoutes(currentPathname)
@@ -68,6 +78,7 @@ export function createProLayoutInitialState(
   const currentSelectedPath = currentPathname
     ? params.registry.getCurrentSelectedPath(currentPathname)
     : []
+  // 只有合法叶子路由同时具备 pathname、tabKey 和 route 时才创建首屏页面实例。
   const pages = createInitialPages(initialPagePathname, initialTabKey, initialLeaf?.route)
 
   return {
@@ -98,13 +109,16 @@ function resolveInitialPagePathname(
   if (!pathname)
     return null
 
+  // 根路径没有自身页面身份：显式 defaultRoute 优先，缺省时退到权限范围内首个页面。
   if (pathname === '/')
     return defaultRoute || registry.findFirstAccessiblePath() || null
 
+  // 完整索引中的页面保持原始真实 pathname，动态参数不会在这里被替换成 pattern。
   const leaf = registry.resolveLeafRoute(pathname)
   if (registry.isPageRoute(leaf?.route))
     return pathname
 
+  // 目录路由进入首个可访问子页面；未知地址或空目录无法生成首屏页面。
   return registry.findFirstAccessibleChild(pathname) || null
 }
 

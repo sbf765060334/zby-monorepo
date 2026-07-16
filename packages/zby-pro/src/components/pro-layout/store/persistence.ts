@@ -89,19 +89,30 @@ export async function hydrateStorage(
   runtime: ProLayoutStoreRuntime,
 ) {
   const state = get()
+  // 三种情况都不能重复加载：纯内存模式没有外部来源；已完成 hydration 无需重放；
+  // loading 期间复用当前请求，避免两个 load 以相同 generation 竞争提交结果。
   if (state.storageAdapter === false || state.storageHydrated || state.storageLoading)
     return
 
+  // Adapter、key 和 generation 构成本次请求的来源快照。后续即使 Core 切换来源，
+  // 当前 Promise 仍只代表旧来源，完成时必须用 generation 判断是否还能提交。
   const adapter = state.storageAdapter
   const storageKey = state.storageKey
   const sourceGeneration = runtime.storageSourceGeneration
+  // 记录三个字段各自的起始版本，而不是用一个全局 dirty 标记；这样加载期间只改收藏
+  // 时，固定页签和动态 pathname 仍能采用远端结果。
   const startMutationVersions = { ...runtime.storageMutationVersions }
+  // 当前会话已从首屏 URL 确认的动态 pathname 比持久化旧值更新，合并时应最后覆盖。
   const startParamsPathMap = state.cache.getFixedParamsPathMap()
 
+  // 先清理上次错误再进入 loading，使重试期间 UI 不会同时展示旧错误和加载状态。
   set({ storageLoading: true, storageLoadError: undefined })
 
   try {
+    // 所有 Adapter 的返回值都再次经过边界标准化，Store 后续逻辑只处理完整结构。
     const loaded = normalizeProLayoutStorageState(await adapter.load(storageKey))
+    // hydration 可能发现存储中的无效固定 key，或需要用当前会话 pathname 修正旧映射；
+    // 这里先记录修正值，等 Zustand 状态提交完成后再执行外部 I/O。
     let fixedTabsToPersist: string[] | null = null
     let paramsPathMapToPersist: Record<string, string> | null = null
 
@@ -118,6 +129,8 @@ export async function hydrateStorage(
         runtime.storageMutationVersions.fixedParamsPathMap ===
         startMutationVersions.fixedParamsPathMap
 
+      // 字段版本未变化说明加载期间没有本地写入，可以接受存储值；否则保留用户刚完成的
+      // 内存操作，避免异步 load 把它覆盖回旧状态。
       const collectionSet = collectionUnchanged
         ? loaded.collection
         : previous.collectionSet
@@ -125,15 +138,19 @@ export async function hydrateStorage(
         ? sanitizeFixedTabKeys(loaded.fixedTabs, previous.registry)
         : previous.fixedSet
 
+      // sanitize 只影响非法或重复 key；清理结果需要回写，避免下次挂载重复清理。
       if (fixedTabsUnchanged && !areStringArraysEqual(fixedSet, loaded.fixedTabs))
         fixedTabsToPersist = fixedSet
 
       if (paramsPathMapUnchanged) {
+        // 展开顺序刻意让当前会话快照覆盖存储值。比如存储中是 /project/42，而本次首屏
+        // 已打开 /project/99，共享页签恢复时必须保留 /project/99。
         const mergedParamsPathMap = {
           ...loaded.fixedParamsPathMap,
           ...startParamsPathMap,
         }
 
+        // 使用 hydrate 方法直接替换 Cache，避免把“刚加载的数据”误当成本地修改再次保存。
         previous.cache.hydrateFixedParamsPathMap(mergedParamsPathMap)
 
         if (!areStringMapsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap))
@@ -143,6 +160,7 @@ export async function hydrateStorage(
       return {
         collectionSet,
         fixedSet,
+        // hydration 只补入新固定页签，不删除本次会话已经打开的普通页签。
         tabs: fixedTabsUnchanged
           ? mergeTabsWithFixedSet(previous.tabs, fixedSet, previous.registry)
           : previous.tabs,
@@ -189,16 +207,21 @@ function persistStorageAction(
     storageKey: string,
   ) => Promise<void>,
 ) {
+  // 先递增版本再检查 Adapter。即使当前是纯内存模式，这次用户操作也必须阻止已经
+  // 在途的 hydration 使用旧值覆盖对应字段。
   runtime.storageMutationVersions[field] += 1
 
   const state = get()
   if (state.storageAdapter === false)
     return
 
+  // 保存动作绑定触发当下的 Adapter 和 storageKey。来源随后切换时，旧写入仍由旧
+  // Adapter 自己完成；错误重试也必须重放同一次提交，而不能误写当前的新来源。
   const adapter = state.storageAdapter
   const storageKey = state.storageKey
 
   void action(adapter, storageKey).catch((error) => {
+    // 内存状态已经先行提交，持久化失败不回滚 UI；由调用方决定何时展示错误和重试。
     get().onStorageLoadError?.(error, {
       storageKey,
       phase,

@@ -56,15 +56,18 @@ export function normalizeProLayoutStorageState(
 export function createIndexedDBProLayoutStorageAdapter(): ProLayoutStorageAdapter {
   return {
     async load(storageKey) {
+      // SSR、测试或禁用 IndexedDB 的浏览器环境没有 store，按“尚无持久化数据”处理。
       const store = getIndexedDBStore()
       if (!store)
         return normalizeProLayoutStorageState()
 
+      // 数据库可能仍是旧版本或部分结构，读取后必须再次走公开边界的标准化流程。
       const current = await get<Partial<ProLayoutStorageState>>(storageKey, store)
       return normalizeProLayoutStorageState(current)
     },
 
     saveCollection(storageKey, collection) {
+      // 每个入口只生成自己负责的字段 patch，不能用调用方快照重写其它并发字段。
       return updateIndexedDBState(storageKey, {
         collection: normalizeStringArray(collection),
       })
@@ -94,6 +97,7 @@ export function createIndexedDBProLayoutStorageAdapter(): ProLayoutStorageAdapte
 export function createRemoteProLayoutStorageAdapter(
   config: ProLayoutRemoteStorageAdapterConfig,
 ): ProLayoutStorageAdapter {
+  // 队列属于本次 Adapter 实例；同一远端配置内相同 storageKey 串行，不同 key 并行。
   const enqueueWrite = createStorageWriteQueue()
 
   return {
@@ -102,6 +106,7 @@ export function createRemoteProLayoutStorageAdapter(
     },
 
     saveCollection(storageKey, collection) {
+      // 入队前完成标准化并创建新数组，调用方后续修改原数组不会改变排队中的请求值。
       const normalized = normalizeStringArray(collection)
       return enqueueWrite(storageKey, () => config.saveCollection(storageKey, normalized))
     },
@@ -126,6 +131,7 @@ function getIndexedDBStore() {
   if (typeof indexedDB === 'undefined')
     return null
 
+  // 同一模块只创建一次 idb-keyval Store 描述，后续读写复用相同数据库与 object store。
   indexedDBStore ||= createStore(DB_NAME, STATE_STORE)
   return indexedDBStore
 }
@@ -145,6 +151,7 @@ async function updateIndexedDBState(
   if (!store)
     return
 
+  // 队列保证调用顺序；update 自身再保证“读取最新值 + 合并 patch + 写回”位于同一事务。
   await enqueueIndexedDBWrite(
     storageKey,
     () =>
@@ -167,11 +174,16 @@ async function updateIndexedDBState(
  * 长期持有已经完成的 storageKey。
  */
 function createStorageWriteQueue(): StorageWriteQueue {
+  // Map 只保存每个 key 当前队尾的“永不 reject”Promise，作为下一次操作的起点。
   const queueTails = new Map<string, Promise<void>>()
 
   return (storageKey, action) => {
+    // 没有前序任务时从已完成 Promise 开始；有前序任务时等待其成功或失败结束。
     const previous = queueTails.get(storageKey) || Promise.resolve()
+    // catch 吸收前序错误，使本次 action 仍会执行；operation 保留本次 action 的真实
+    // resolve/reject，调用方因此仍能感知自己的保存结果。
     const operation = previous.catch(() => undefined).then(action)
+    // 队尾只用于串联后续任务，必须把本次失败转换为 fulfilled，避免失败永久截断队列。
     const queueTail = operation.then(
       () => undefined,
       () => undefined,
@@ -179,6 +191,7 @@ function createStorageWriteQueue(): StorageWriteQueue {
 
     queueTails.set(storageKey, queueTail)
     void queueTail.then(() => {
+      // 完成时该 key 可能已有更新任务接在后面；只有自己仍是最新队尾才能删除 Map 项。
       if (queueTails.get(storageKey) === queueTail)
         queueTails.delete(storageKey)
     })
@@ -199,6 +212,8 @@ function normalizeStringMap(value: unknown): Record<string, string> {
   if (!isRecord(value))
     return {}
 
+  // reduce 构造全新普通对象，同时丢弃非字符串 value；key 本身来自 Object.keys，
+  // 不遍历原型链上的可疑字段。
   return Object.keys(value).reduce<Record<string, string>>((result, itemKey) => {
     const itemValue = value[itemKey]
     if (typeof itemValue === 'string')

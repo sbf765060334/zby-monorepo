@@ -14,6 +14,8 @@ const FALLBACK_URL_BASE = 'https://zby.local'
  * 无法被原生 URL 接受的输入会保持平台默认行为并抛出 TypeError。
  */
 export function parseUrl(url: string, base?: string): URL {
+  // 显式 base 优先；否则浏览器使用当前 origin，SSR 使用虚拟 origin 保证相对 URL
+  // 仍能交给原生 URL 解析。这里只决定解析上下文，不把 base 拼入返回的应用路径。
   const baseUrl =
     base || (typeof window === 'undefined' ? FALLBACK_URL_BASE : window.location.origin)
 
@@ -63,6 +65,7 @@ interface BuildUrlForTabParams {
  * 因此不会改变已有编码、参数顺序或重复参数。
  */
 export function buildUrlForTab(data: BuildUrlForTabParams) {
+  // 先归一化两个可选片段，再只为非空查询补 `?`；hash 已由 normalizeHash 补好 `#`。
   const searchParams = normalizeSearchParams(data.searchParams)
   const hash = normalizeHash(data.hash)
   const query = searchParams ? `?${searchParams}` : ''

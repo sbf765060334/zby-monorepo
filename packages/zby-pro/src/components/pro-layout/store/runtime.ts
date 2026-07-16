@@ -64,6 +64,7 @@ export function createStorageMutationVersions(): ProLayoutStorageMutationVersion
  * generation 只递增而不归零，确保任意旧请求保存的编号都不可能重新变成有效值。
  */
 export function resetStorageRuntime(runtime: ProLayoutStoreRuntime) {
+  // 先使所有捕获旧 generation 的 load 失效，再为新来源建立干净的字段版本基线。
   runtime.storageSourceGeneration += 1
   runtime.storageMutationVersions = createStorageMutationVersions()
 }

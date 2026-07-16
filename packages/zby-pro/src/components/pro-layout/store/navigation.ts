@@ -16,6 +16,8 @@ export function bootstrapByPathname(
   const state = get()
 
   if (data.pathname === '/') {
+    // 根路径自身不创建页签。显式 defaultRoute 优先，否则由权限 Registry 选取首个
+    // 可访问页面；两者都不存在时布局进入无活动页面状态。
     const fallback = data.defaultRoute || state.registry.findFirstAccessiblePath()
     if (fallback) {
       state.jumpTo(fallback)
@@ -26,10 +28,13 @@ export function bootstrapByPathname(
     return
   }
 
+  // 已经是可展示叶子页时，真正的页签创建由随后 location 同步统一完成，避免这里
+  // 导航或建页后又被 Router 的 location effect 重复处理。
   const leaf = state.resolveLeafRoute(data.pathname)
   if (state.registry.isPageRoute(leaf?.route))
     return
 
+  // 目录地址跳到权限范围内第一个可访问子页面；没有子页面的未知/空目录清空活动项。
   const child = state.registry.findFirstAccessibleChild(data.pathname)
   if (child) {
     state.jumpTo(child)
@@ -45,11 +50,14 @@ export function syncByPathname(
   get: GetProLayoutStoreState,
   pathname: string,
 ) {
+  // 根路径由 bootstrapByPathname 负责默认页解析，空值则代表 Router 尚未准备完成。
   if (!pathname || pathname === '/')
     return
 
   const state = get()
   const leaf = state.resolveLeafRoute(pathname)
+  // 只有完整路由索引能够解析且具备页面 element 的地址才进入页签同步；目录和未知
+  // 地址继续交给 bootstrap 或外层 404 流程处理。
   if (!state.registry.isPageRoute(leaf?.route))
     return
 
@@ -70,9 +78,12 @@ export function jumpTo(
     | { pathname: string, searchParams?: string | null, hash?: string | null },
 ) {
   const state = get()
+  // Store 可以早于 Router Adapter 创建；navigate 尚未注入时不提前修改活动页签状态。
   if (!state.navigate)
     return
 
+  // 字符串被视为完整 URL，统一拆出 pathname/search/hash；结构化参数保留 undefined，
+  // 以便后面区分“恢复缓存”和“显式清空”。
   const parsedUrl = typeof params === 'string' ? parseUrl(params) : null
   let pathname = typeof params === 'string' ? parsedUrl!.pathname : params.pathname
   const searchParams =
@@ -86,6 +97,8 @@ export function jumpTo(
     Array.isArray(exactRoute.routes) &&
     exactRoute.routes.length > 0
   ) {
+    // 精确命中权限目录路由时打开其第一个可访问子页面；若没有子页则保留原地址，
+    // 由后续 Registry 解析和页面渲染流程按现有契约继续处理。
     pathname = state.registry.findFirstAccessibleChild(pathname) || pathname
   }
 
@@ -93,6 +106,8 @@ export function jumpTo(
   if (!tabKey)
     return
 
+  // jumpTo 只在已有 KeepAlive 页面时立即切换 activePage；新页面仍交给 Router location
+  // 生效后的 syncByPathname 创建，避免导航尚未完成就提前渲染目标路由。
   const shouldActivateCachedPage =
     state.keepAlive !== false && state.pages.some((page) => page.key === tabKey)
   const ensuredTabKey = ensureTabStateForPathname(set, get, pathname, {
@@ -101,7 +116,9 @@ export function jumpTo(
   if (!ensuredTabKey)
     return
 
+  // ensureTabStateForPathname 可能更新 Cache，因此重新读取最新状态，不沿用函数入口快照。
   const latest = get()
+  // 共享动态页签优先恢复 Cache 中最后访问的真实 pathname；首次打开时使用传入地址。
   const realPath = latest.cache.getParamsPathByTabKey(tabKey) || pathname
 
   latest.navigate?.(
@@ -130,6 +147,8 @@ export function smartNavigate(
   if (!state.navigate)
     return
 
+  // activePage 是当前实际渲染页面，activeTabKey 是 UI 选中页签；过渡阶段优先以前者
+  // 定位地址，找不到页面实例时再从共享动态页签 Cache 恢复真实 pathname。
   const activeKey = state.activePage || state.activeTabKey
   const activePage = activeKey
     ? state.pages.find((page) => page.key === activeKey)
@@ -139,6 +158,8 @@ export function smartNavigate(
     (activeKey ? state.cache.getParamsPathByTabKey(activeKey) || activeKey : '')
 
   if (data.pathname && activePathname && data.pathname !== activePathname) {
+    // pathname 改变意味着可能切换页签或路由身份，必须走完整 jumpTo 流程；只有同页
+    // search/hash 更新才可以直接 replace 当前历史记录。
     state.jumpTo({
       pathname: data.pathname,
       searchParams: data.searchParams,
@@ -155,6 +176,8 @@ export function smartNavigate(
   if (!tabKey)
     return
 
+  // replace 只更新 Router location。页面 effect 随后会把最新 search/hash 写入 Cache，
+  // 此处读取 Cache 仅用于补全调用方未提供（undefined）的部分。
   state.navigate(
     {
       pathname,
@@ -176,13 +199,16 @@ export async function closeThisTabOpenNewOne(
   data: { oldPath: string, newPath: string },
   options?: ProLayoutCloseOptions,
 ) {
+  // oldPath 可能包含 query/hash，关闭身份只由 pathname 对应的 tabKey 决定。
   const oldTabKey = get().getTabKey(parseUrl(data.oldPath).pathname)
   if (oldTabKey && get().tabs.some((tab) => tab.key === oldTabKey)) {
+    // 只有旧页签确实存在才执行关闭守卫；守卫拒绝时不能继续打开新页面。
     const closed = await closeTab(set, get, runtime, oldTabKey, options)
     if (!closed)
       return false
   }
 
+  // 新地址按完整 URL 解析后交给 jumpTo，确保 query/hash 的“显式值”语义不丢失。
   const url = parseUrl(data.newPath)
   get().jumpTo({
     pathname: url.pathname,

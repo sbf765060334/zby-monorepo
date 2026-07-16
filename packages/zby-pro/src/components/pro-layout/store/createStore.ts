@@ -42,12 +42,20 @@ import type { ProLayoutCurrentRoute, ProLayoutSystemItem } from '../interface'
  * 统一通过 syncExternalDeps 注入。
  */
 export function createProLayoutStore(params: CreateProLayoutStoreParams) {
+  // 首屏数据必须在创建 Zustand 之前一次性算完，避免订阅者先观察到空状态，随后再
+  // 收到一轮仅用于初始化的更新；这也让 SSR 和浏览器使用完全相同的同步快照。
   const initial = createProLayoutInitialState(params)
   const storageAdapter = resolveStorageAdapter(params.storageAdapter)
+  // 调用方显式注入 initialStorageState 时，它就是本次挂载的 hydration 结果；纯内存
+  // 模式同样不需要异步加载。其余情况由 Core 在挂载后调用 hydrateStorage。
   const hasInitialStorageState = Boolean(params.initialStorageState)
+  // runtime 保存异步任务版本和命令处理器，不放入 Zustand，以免这些内部协调动作
+  // 触发 React 订阅更新。每次创建 Store 都会得到独立实例，不能跨布局共享。
   const runtime = createProLayoutStoreRuntime()
 
   return createZustandStore<ProLayoutStoreState>((set, get) => {
+    // Cache 在 Store 整个生命周期中保持同一引用。只有动态 pathname 映射需要持久化，
+    // 高频变化的 search/hash 留在 Cache 内部，不进入 Zustand 快照。
     const cache = new ProLayoutCache(
       initial.fixedParamsPathMap,
       (fixedParamsPathMap) =>
@@ -88,9 +96,11 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       storageLoadError: undefined,
       onStorageLoadError: params.onStorageLoadError || null,
 
+      // 动作只做薄封装，共享同一组 set/get/runtime，具体领域逻辑放在拆分模块中。
       hydrateStorage: () => hydrateStorage(set, get, runtime),
 
       registerPageLocationEmitter: (tabKey, emitter) => {
+        // 页面尚未得到稳定 tabKey，或卸载过程没有 emitter 时，返回可安全调用的空清理器。
         if (!tabKey || !emitter)
           return () => undefined
 
@@ -98,6 +108,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         map.set(tabKey, emitter)
 
         return () => {
+          // 同一 tabKey 可能已经被新页面实例重新注册。旧实例卸载时只能删除自己注册的
+          // emitter，不能误删后来接管该 key 的新 emitter。
           if (map.get(tabKey) === emitter)
             map.delete(tabKey)
         }
@@ -114,6 +126,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       syncByPathname: (pathname) => syncByPathname(set, get, pathname),
 
       setPathnameDescription: (map) => {
+        // 动态页面描述允许分批上报，因此采用增量合并；关闭页签时再按真实 pathname
+        // 删除对应项，避免一个页面更新描述时覆盖其它已打开页面。
         set((state) => ({
           pathnameDescriptionMap: {
             ...state.pathnameDescriptionMap,
@@ -124,6 +138,7 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 
       setTabLabel: (key, label) => {
         set((state) => {
+          // 不存在的页签不补建，标题相同也不创建新数组，减少 Tabs 订阅者无效刷新。
           const hit = state.tabs.find((tab) => tab.key === key)
           if (!hit || hit.label === label)
             return state
@@ -144,6 +159,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         closeThisTabOpenNewOne(set, get, runtime, data, options),
 
       addBeforeCloseHook: (handler, pathname) => {
+        // Hook 以 tabKey 归组，而不是直接使用 pathname：共享动态路由的不同真实地址
+        // 属于同一个页签，关闭时必须统一执行该页签下登记的全部 Hook。
         const tabKey = get().getTabKey(pathname)
         if (!tabKey)
           return
@@ -159,6 +176,7 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 
         const map = runtime.beforeTabCloseMap
         if (!handler) {
+          // 未指定 handler 表示页面整体清理，直接注销该页签的全部关闭守卫。
           map.delete(tabKey)
           return
         }
@@ -168,6 +186,7 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
           return
 
         const next = list.filter((item) => item !== handler)
+        // Map 中不保留空数组，关闭页签时即可用“无记录”快速跳过 Hook 阶段。
         if (next.length > 0)
           map.set(tabKey, next)
         else
@@ -206,6 +225,8 @@ function syncExternalDeps(
   data: ProLayoutExternalDeps,
 ) {
   const previous = get()
+  // storageKey 与 Adapter 共同标识一个持久化来源。字段缺席表示沿用旧值；显式传入
+  // undefined 的 Adapter 则由 resolveStorageAdapter 恢复为默认 IndexedDB Adapter。
   const nextStorageKey =
     'storageKey' in data && data.storageKey !== undefined
       ? data.storageKey
@@ -217,14 +238,18 @@ function syncExternalDeps(
   const storageSourceChanged =
     previous.storageKey !== nextStorageKey ||
     previous.storageAdapter !== nextStorageAdapter
+  // 切换来源前先从旧 Cache 提取“仍打开页签”所需的动态 pathname。reset 只处理运行时
+  // 版本，但后续 hydrate 会替换 Cache，若不保留该覆盖层，用户当前地址可能倒退。
   const openParamsPathOverlay = storageSourceChanged
     ? getOpenParamsPathOverlay(previous)
     : null
 
+  // generation 必须在发起新 load 之前递增，使旧来源的晚到 Promise 立即失效。
   if (storageSourceChanged)
     resetStorageRuntime(runtime)
 
   set((state) => {
+    // 只收集真正变化的字段并一次提交，保证一轮 Core props 同步最多触发一轮订阅更新。
     const next: Partial<ProLayoutStoreState> = {}
 
     assignIfChanged(next, state, data, 'navigate', data.navigate ?? null)
@@ -269,11 +294,13 @@ function syncExternalDeps(
     }
 
     if ('registry' in data && data.registry && state.registry !== data.registry) {
+      // Registry 是路由树和所有索引的唯一数据源；这里只替换引用，不复制派生映射。
       next.registry = data.registry
     }
 
     if ('keepAlive' in data && data.keepAlive !== undefined && state.keepAlive !== data.keepAlive) {
       next.keepAlive = data.keepAlive
+      // 配置收紧时立即按新规则裁剪已有页面，不能等到下次导航才淘汰超限实例。
       next.pages = enforceKeepAliveLimit(
         state.pages,
         state.activePage,
@@ -283,6 +310,7 @@ function syncExternalDeps(
     }
 
     if (storageSourceChanged) {
+      // 新来源从未完成 hydration；纯内存模式没有外部数据可加载，因此直接视为完成。
       next.storageKey = nextStorageKey
       next.storageAdapter = nextStorageAdapter
       next.storageHydrated = nextStorageAdapter === false
@@ -290,6 +318,7 @@ function syncExternalDeps(
       next.storageLoadError = undefined
     }
 
+    // Zustand 接受原 state 表示无变化，可避免空对象也触发订阅者重新计算。
     return Object.keys(next).length > 0 ? next : state
   })
 
@@ -316,12 +345,15 @@ function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
   const currentParamsPathMap = state.cache.getFixedParamsPathMap()
 
   return state.tabs.reduce<Record<string, string>>((result, tab) => {
+    // 只有 Cache 中确实记录过真实 pathname 的共享动态页签才需要进入覆盖层。
     const pathname = currentParamsPathMap[tab.key]
     if (!pathname)
       return result
 
     const leaf = state.registry.resolveLeafRoute(pathname)
     const resolvedTabKey = state.registry.getTabKey(pathname)
+    // Registry 可能已变化：无法解析、tabKey 已不一致，或路由改为多页签模式时，旧映射
+    // 都不再符合当前页签语义，不能带入新持久化来源。
     if (
       !leaf ||
       resolvedTabKey !== tab.key ||

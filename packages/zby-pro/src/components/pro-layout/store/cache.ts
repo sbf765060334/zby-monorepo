@@ -67,14 +67,18 @@ export class ProLayoutCache {
    * IndexedDB/远程写入，并降低并发保存的压力。
    */
   setParamsPath(tabKey: string, pathname: string | null) {
+    // 使用 in 区分“没有该 key”和“该 key 恰好映射为空值”；虽然后者不会由正常写入
+    // 产生，但 hydration 可能接收外部数据，删除语义仍需可靠。
     const hasCurrentPath = tabKey in this.paramsPathMap
 
     if (!pathname) {
+      // 删除不存在的映射不触发持久化，避免关闭普通静态页签产生无意义保存。
       if (!hasCurrentPath)
         return
 
       delete this.paramsPathMap[tabKey]
     } else {
+      // 重复访问同一动态 pathname 不改变业务状态，也不应增加 Storage 写队列压力。
       if (this.paramsPathMap[tabKey] === pathname)
         return
 
@@ -89,6 +93,7 @@ export class ProLayoutCache {
   setSearchParamsForTabKey(tabKey: string, searchParams: string | null | undefined) {
     const normalized = normalizeSearchParams(searchParams)
     if (!normalized) {
+      // 空查询统一表现为“没有 Map 项”，读取时再回退为空字符串。
       delete this.searchParamsMap[tabKey]
       return
     }
@@ -105,6 +110,7 @@ export class ProLayoutCache {
   setHashForTabKey(tabKey: string, hash: string | null | undefined) {
     const normalized = normalizeHash(hash)
     if (!normalized) {
+      // 与 searchParams 一致，清空时删除 key，不在内存中积累空值记录。
       delete this.hashMap[tabKey]
       return
     }
