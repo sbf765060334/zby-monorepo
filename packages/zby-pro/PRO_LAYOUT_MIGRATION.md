@@ -50,6 +50,14 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - IndexedDB 默认 adapter 的读取与字段更新必须处于可证明不会丢失更新的事务或串行流程中。
 - 自定义远程 adapter 的调用顺序必须有明确契约。
 
+第四步实现结论：
+
+- 默认 adapter 使用 `idb-keyval.update` 在单个 readwrite transaction 中读取最新记录、合并字段并写回。
+- 默认 adapter 和远程 adapter 都按 `storageKey` 串行保存；单次失败不阻塞后续提交。
+- `idb-keyval` 是 `@zby/pro` 运行时依赖，`fake-indexeddb` 只用于真实事务测试。
+- 不迁移仅被参考测试使用的 `createStorageKeys` 和完全未使用的可变空状态常量。
+- `getInitialTabsFromStorage` 属于 Store 初始化逻辑，延后到第五步迁移。
+
 ### 3.3 权限支持运行时变化
 
 `hasAuth` 在 ProLayout 挂载后发生变化时，必须重新计算权限路由并同步页面状态。
@@ -202,15 +210,18 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 
 ### 7.5 Storage And Cache
 
-- [ ] IndexedDB 不可用时返回空状态且不抛出环境错误。
-- [ ] 非法存储数据完成标准化。
+- [x] URL 解析、search/hash 标准化和页签 URL 组合正确。
+- [x] 参数 pathname、search 和 hash Cache 可以设置、恢复与清理。
+- [x] 相同参数 pathname 不触发重复持久化通知。
+- [x] IndexedDB 不可用时返回空状态且不抛出环境错误。
+- [x] 非法存储数据完成标准化。
 - [ ] `initialStorageState` 不再触发异步覆盖。
 - [ ] hydration 期间发生内存修改时不覆盖新状态。
 - [ ] `storageAdapter={false}` 不执行外部读写。
 - [ ] 加载和保存失败提供正确 phase、storageKey 和 retry。
-- [ ] 不同 storageKey 完全隔离。
-- [ ] 收藏、固定页签和参数路径并发保存时全部保留。
-- [ ] 同一字段连续保存时最终结果为最后一次状态。
+- [x] 不同 storageKey 完全隔离。
+- [x] 收藏、固定页签和参数路径并发保存时全部保留。
+- [x] 同一字段连续保存时最终结果为最后一次状态。
 - [ ] 关闭页签后 pathname、search、hash 缓存完成清理。
 - [ ] 空 search/hash 的最终语义在确认后有对应测试。
 
@@ -285,7 +296,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 1：建立迁移基线。
 - [x] 步骤 2：迁移纯类型层。
 - [x] 步骤 3：迁移路由引擎。
-- [ ] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
+- [x] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
 - [ ] 步骤 5：迁移并拆分 Store 引擎。
 - [ ] 步骤 6：迁移 Context 和 Effects。
 - [ ] 步骤 7：完成运行时权限变化。
