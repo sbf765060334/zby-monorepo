@@ -3,25 +3,15 @@ import {
   createIndexedDBProLayoutStorageAdapter,
   normalizeProLayoutStorageState,
 } from './storage'
+import type { ProLayoutStoreRuntime, ProLayoutStorageField } from './runtime'
 import { mergeTabsWithFixedSet, sanitizeFixedTabKeys } from './tabModel'
 import type {
   GetProLayoutStoreState,
-  ProLayoutStorageField,
-  ProLayoutStorageMutationVersions,
   SetProLayoutStoreState,
 } from './types'
 
 /** 所有未显式提供 Adapter 的 Store 共享默认 IndexedDB Adapter。 */
 const DEFAULT_STORAGE_ADAPTER = createIndexedDBProLayoutStorageAdapter()
-
-/** 创建三个字段均从 0 开始的本地修改版本。 */
-export function createStorageMutationVersions(): ProLayoutStorageMutationVersions {
-  return {
-    collection: 0,
-    fixedTabs: 0,
-    fixedParamsPathMap: 0,
-  }
-}
 
 /** undefined 恢复默认 IndexedDB Adapter，false 明确关闭外部持久化。 */
 export function resolveStorageAdapter(
@@ -34,11 +24,13 @@ export function resolveStorageAdapter(
 export function persistCollection(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   collection: string[],
 ) {
   persistStorageAction(
     set,
     get,
+    runtime,
     'collection',
     'saveCollection',
     (adapter, storageKey) => adapter.saveCollection(storageKey, collection),
@@ -49,11 +41,13 @@ export function persistCollection(
 export function persistFixedTabs(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   fixedTabs: string[],
 ) {
   persistStorageAction(
     set,
     get,
+    runtime,
     'fixedTabs',
     'saveFixedTabs',
     (adapter, storageKey) => adapter.saveFixedTabs(storageKey, fixedTabs),
@@ -64,11 +58,13 @@ export function persistFixedTabs(
 export function persistFixedParamsPathMap(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   fixedParamsPathMap: Record<string, string>,
 ) {
   persistStorageAction(
     set,
     get,
+    runtime,
     'fixedParamsPathMap',
     'saveFixedParamsPathMap',
     (adapter, storageKey) =>
@@ -90,6 +86,7 @@ export function persistFixedParamsPathMap(
 export async function hydrateStorage(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
 ) {
   const state = get()
   if (state.storageAdapter === false || state.storageHydrated || state.storageLoading)
@@ -97,8 +94,8 @@ export async function hydrateStorage(
 
   const adapter = state.storageAdapter
   const storageKey = state.storageKey
-  const sourceGeneration = state.storageSourceGeneration
-  const startMutationVersions = { ...state.storageMutationVersions }
+  const sourceGeneration = runtime.storageSourceGeneration
+  const startMutationVersions = { ...runtime.storageMutationVersions }
   const startParamsPathMap = state.cache.getFixedParamsPathMap()
 
   set({ storageLoading: true, storageLoadError: undefined })
@@ -110,15 +107,15 @@ export async function hydrateStorage(
 
     set((previous) => {
       // 新来源已经接管 Store 时，旧请求不得再修改 loading、error 或业务状态。
-      if (previous.storageSourceGeneration !== sourceGeneration)
+      if (runtime.storageSourceGeneration !== sourceGeneration)
         return previous
 
       const collectionUnchanged =
-        previous.storageMutationVersions.collection === startMutationVersions.collection
+        runtime.storageMutationVersions.collection === startMutationVersions.collection
       const fixedTabsUnchanged =
-        previous.storageMutationVersions.fixedTabs === startMutationVersions.fixedTabs
+        runtime.storageMutationVersions.fixedTabs === startMutationVersions.fixedTabs
       const paramsPathMapUnchanged =
-        previous.storageMutationVersions.fixedParamsPathMap ===
+        runtime.storageMutationVersions.fixedParamsPathMap ===
         startMutationVersions.fixedParamsPathMap
 
       const collectionSet = collectionUnchanged
@@ -155,15 +152,15 @@ export async function hydrateStorage(
     })
 
     // setState 期间只计算需要回写的修正，真正 I/O 放到状态提交之后执行。
-    if (get().storageSourceGeneration === sourceGeneration) {
+    if (runtime.storageSourceGeneration === sourceGeneration) {
       if (fixedTabsToPersist)
-        persistFixedTabs(set, get, fixedTabsToPersist)
+        persistFixedTabs(set, get, runtime, fixedTabsToPersist)
       if (paramsPathMapToPersist)
-        persistFixedParamsPathMap(set, get, paramsPathMapToPersist)
+        persistFixedParamsPathMap(set, get, runtime, paramsPathMapToPersist)
     }
   } catch (error) {
     const latest = get()
-    if (latest.storageSourceGeneration !== sourceGeneration)
+    if (runtime.storageSourceGeneration !== sourceGeneration)
       return
 
     set({ storageLoading: false, storageLoadError: error })
@@ -184,6 +181,7 @@ export async function hydrateStorage(
 function persistStorageAction(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   field: ProLayoutStorageField,
   phase: Exclude<ProLayoutStorageErrorPhase, 'load'>,
   action: (
@@ -191,14 +189,9 @@ function persistStorageAction(
     storageKey: string,
   ) => Promise<void>,
 ) {
-  const state = get()
-  set({
-    storageMutationVersions: {
-      ...state.storageMutationVersions,
-      [field]: state.storageMutationVersions[field] + 1,
-    },
-  })
+  runtime.storageMutationVersions[field] += 1
 
+  const state = get()
   if (state.storageAdapter === false)
     return
 

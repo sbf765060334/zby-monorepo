@@ -1,4 +1,5 @@
 import { closeTab, ensureTabStateForPathname } from './tabs'
+import type { ProLayoutStoreRuntime } from './runtime'
 import type {
   GetProLayoutStoreState,
   SetProLayoutStoreState,
@@ -78,7 +79,7 @@ export function jumpTo(
     typeof params === 'string' ? parsedUrl!.searchParams.toString() : params.searchParams
   const hash = typeof params === 'string' ? parsedUrl!.hash : params.hash
 
-  const exactRoute = state.routeMapping[pathname]
+  const exactRoute = state.registry.routeMapping[pathname]
   if (
     exactRoute &&
     !state.registry.isPageRoute(exactRoute) &&
@@ -171,12 +172,13 @@ export function smartNavigate(
 export async function closeThisTabOpenNewOne(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   data: { oldPath: string, newPath: string },
   options?: ProLayoutCloseOptions,
 ) {
   const oldTabKey = get().getTabKey(parseUrl(data.oldPath).pathname)
   if (oldTabKey && get().tabs.some((tab) => tab.key === oldTabKey)) {
-    const closed = await closeTab(set, get, oldTabKey, options)
+    const closed = await closeTab(set, get, runtime, oldTabKey, options)
     if (!closed)
       return false
   }

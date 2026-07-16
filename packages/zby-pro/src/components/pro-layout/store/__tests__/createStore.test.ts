@@ -42,6 +42,20 @@ const intl: ProLayoutIntl = {
 }
 
 describe('proLayout Store initialization and navigation', () => {
+  it('keeps route indexes and internal coordination data outside the Store snapshot', () => {
+    const state = createTestStore().getState()
+
+    expect(state.registry.routes).toBe(routes)
+    expect(state).not.toHaveProperty('routes')
+    expect(state).not.toHaveProperty('permissionRoutes')
+    expect(state).not.toHaveProperty('fullRouteMapping')
+    expect(state).not.toHaveProperty('routeMapping')
+    expect(state).not.toHaveProperty('storageSourceGeneration')
+    expect(state).not.toHaveProperty('storageMutationVersions')
+    expect(state).not.toHaveProperty('pageLocationEmitterMap')
+    expect(state).not.toHaveProperty('beforeTabCloseMap')
+  })
+
   it('creates an SSR-ready snapshot and keeps the current dynamic pathname authoritative', () => {
     const store = createTestStore({
       initialPathname: '/project/99',
@@ -243,6 +257,46 @@ describe('proLayout Store persistence coordination', () => {
     expect(store.getState().collectionSet).toEqual(['/orders'])
   })
 
+  it('keeps inactive shared dynamic tab paths when the storage source changes', async () => {
+    const navigate = vi.fn()
+    const nextAdapter = createAdapter()
+    const store = createTestStore({ storageAdapter: false })
+
+    store.getState().syncExternalDeps({ navigate })
+    store.getState().syncByPathname('/project/42')
+    store.getState().syncByPathname('/dashboard')
+
+    expect(store.getState().activeTabKey).toBe('/dashboard')
+    expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe(
+      '/project/42',
+    )
+
+    store.getState().syncExternalDeps({ storageAdapter: nextAdapter })
+    await vi.waitFor(() => {
+      expect(store.getState().storageHydrated).toBe(true)
+    })
+
+    expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe(
+      '/project/42',
+    )
+
+    store.getState().jumpTo('/project/:id')
+    expect(navigate).toHaveBeenLastCalledWith('/project/42')
+  })
+
+  it('keeps the complete in-memory path cache when persistence is disabled', () => {
+    const store = createTestStore({ storageAdapter: createAdapter() })
+
+    store.getState().syncByPathname('/project/42')
+    store.getState().syncByPathname('/dashboard')
+    store.getState().syncExternalDeps({ storageAdapter: false })
+
+    expect(store.getState().storageHydrated).toBe(true)
+    expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe(
+      '/project/42',
+    )
+  })
+
   it('loads an adapter introduced after starting in pure memory mode', async () => {
     const adapter = createAdapter({
       load: vi.fn(async () => ({
@@ -337,6 +391,79 @@ describe('proLayout Store persistence coordination', () => {
 })
 
 describe('proLayout Store tabs and KeepAlive', () => {
+  it('does not update state or persist fixed tabs when setTabs receives equal tabs', () => {
+    const adapter = createAdapter()
+    const store = createTestStore({
+      storageAdapter: adapter,
+      initialStorageState: {
+        collection: [],
+        fixedTabs: ['/dashboard'],
+        fixedParamsPathMap: {},
+      },
+    })
+    const listener = vi.fn()
+    const unsubscribe = store.subscribe(listener)
+    const equalTabs = store.getState().tabs.map((tab) => ({ ...tab }))
+
+    store.getState().setTabs(equalTabs)
+
+    expect(listener).not.toHaveBeenCalled()
+    expect(adapter.saveFixedTabs).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('updates an ordinary tab reorder without persisting fixed tabs', () => {
+    const adapter = createAdapter()
+    const store = createTestStore({
+      storageAdapter: adapter,
+      initialStorageState: {
+        collection: [],
+        fixedTabs: ['/dashboard'],
+        fixedParamsPathMap: {},
+      },
+    })
+
+    store.getState().syncByPathname('/orders')
+    store.getState().syncByPathname('/project/42')
+    const [fixedTab, ordersTab, projectTab] = store.getState().tabs
+
+    store.getState().setTabs([fixedTab, projectTab, ordersTab])
+
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+      '/orders',
+    ])
+    expect(store.getState().fixedSet).toEqual(['/dashboard'])
+    expect(adapter.saveFixedTabs).not.toHaveBeenCalled()
+  })
+
+  it('updates and persists the fixed tab order exactly once', () => {
+    const adapter = createAdapter()
+    const store = createTestStore({
+      storageAdapter: adapter,
+      initialStorageState: {
+        collection: [],
+        fixedTabs: ['/dashboard', '/orders'],
+        fixedParamsPathMap: {},
+      },
+    })
+    const [dashboardTab, ordersTab] = store.getState().tabs
+
+    store.getState().setTabs([ordersTab, dashboardTab])
+
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/orders',
+      '/dashboard',
+    ])
+    expect(store.getState().fixedSet).toEqual(['/orders', '/dashboard'])
+    expect(adapter.saveFixedTabs).toHaveBeenCalledOnce()
+    expect(adapter.saveFixedTabs).toHaveBeenCalledWith('test-pro-layout', [
+      '/orders',
+      '/dashboard',
+    ])
+  })
+
   it('keeps a tab open when any before-close hook refuses', async () => {
     const store = createTestStore()
 
@@ -384,6 +511,7 @@ describe('proLayout Store tabs and KeepAlive', () => {
 
   it('cleans page emitters, close hooks, descriptions and URL cache', async () => {
     const emitter = { emit: vi.fn() }
+    const beforeClose = vi.fn(() => false)
     const store = createTestStore()
 
     store.getState().syncByPathname('/project/42')
@@ -391,16 +519,25 @@ describe('proLayout Store tabs and KeepAlive', () => {
     store.getState().cache.setHashForTabKey('/project/:id', '#summary')
     store.getState().setPathnameDescription({ '/project/42': '项目 42' })
     store.getState().registerPageLocationEmitter('/project/:id', emitter)
-    store.getState().addBeforeCloseHook(() => true, '/project/42')
+    store.getState().addBeforeCloseHook(beforeClose, '/project/42')
 
     await store.getState().closeTab('/project/:id', { skipBeforeClose: true })
 
     expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe('')
     expect(store.getState().cache.getSearchParamsForTabKey('/project/:id')).toBe('')
     expect(store.getState().cache.getHashForTabKey('/project/:id')).toBe('')
-    expect(store.getState().pageLocationEmitterMap.has('/project/:id')).toBe(false)
-    expect(store.getState().beforeTabCloseMap.has('/project/:id')).toBe(false)
     expect(store.getState().pathnameDescriptionMap['/project/42']).toBeUndefined()
+
+    store.getState().emitPageLocationEvent('/project/:id', {
+      pathname: '/project/42',
+      search: '',
+      hash: '',
+    })
+    expect(emitter.emit).not.toHaveBeenCalled()
+
+    store.getState().syncByPathname('/project/42')
+    await expect(store.getState().closeTab('/project/:id')).resolves.toBe(true)
+    expect(beforeClose).not.toHaveBeenCalled()
   })
 
   it('immediately shrinks retained pages when maxCachedPages changes', () => {
@@ -523,21 +660,21 @@ function createTestStore(params: Partial<CreateProLayoutStoreParams> = {}) {
 
 function createAdapter(
   overrides: Partial<ProLayoutStorageAdapter> = {},
-): ProLayoutStorageAdapter & {
-  load: ReturnType<typeof vi.fn<ProLayoutStorageAdapter['load']>>
-  saveCollection: ReturnType<typeof vi.fn<ProLayoutStorageAdapter['saveCollection']>>
-  saveFixedTabs: ReturnType<typeof vi.fn<ProLayoutStorageAdapter['saveFixedTabs']>>
-  saveFixedParamsPathMap: ReturnType<
-    typeof vi.fn<ProLayoutStorageAdapter['saveFixedParamsPathMap']>
-  >
-} {
+) {
   return {
-    load: vi.fn(async () => normalizeProLayoutStorageState()),
-    saveCollection: vi.fn(async () => undefined),
-    saveFixedTabs: vi.fn(async () => undefined),
-    saveFixedParamsPathMap: vi.fn(async () => undefined),
-    ...overrides,
-  } as never
+    load: vi.fn<ProLayoutStorageAdapter['load']>(
+      overrides.load ?? (async () => normalizeProLayoutStorageState()),
+    ),
+    saveCollection: vi.fn<ProLayoutStorageAdapter['saveCollection']>(
+      overrides.saveCollection ?? (async () => undefined),
+    ),
+    saveFixedTabs: vi.fn<ProLayoutStorageAdapter['saveFixedTabs']>(
+      overrides.saveFixedTabs ?? (async () => undefined),
+    ),
+    saveFixedParamsPathMap: vi.fn<
+      ProLayoutStorageAdapter['saveFixedParamsPathMap']
+    >(overrides.saveFixedParamsPathMap ?? (async () => undefined)),
+  } satisfies ProLayoutStorageAdapter
 }
 
 function createDeferred<Value>() {

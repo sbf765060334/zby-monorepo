@@ -2,9 +2,9 @@ import { buildUrlForTab } from './url'
 import { enforceKeepAliveLimit, shouldRefreshPageTouchedAt } from './keepAlive'
 import {
   persistCollection,
-  persistFixedParamsPathMap,
   persistFixedTabs,
 } from './persistence'
+import type { ProLayoutStoreRuntime } from './runtime'
 import { sortTabs } from './tabModel'
 import type {
   GetProLayoutStoreState,
@@ -99,25 +99,45 @@ export function ensureTabStateForPathname(
   return tabKey
 }
 
-/** 替换页签顺序，并持久化固定页签在新顺序中的组内顺序。 */
+/**
+ * 替换页签顺序，并在固定页签组内顺序确实变化时同步持久化。
+ *
+ * 拖拽组件即使没有产生有效重排，也可能返回一个内容相同的新数组，因此不能只比较
+ * 数组引用。普通页签之间的顺序不属于持久化数据；只有固定页签的相对顺序变化时，
+ * 才同时更新 fixedSet 并写入 Storage Adapter。
+ */
 export function setTabs(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   tabs: ProLayoutTab[],
 ) {
   const state = get()
+  if (areTabsEqual(state.tabs, tabs))
+    return
+
   const orderedFixedTabs = tabs
     .filter((tab) => state.fixedSet.includes(tab.key))
     .map((tab) => tab.key)
+  const fixedOrderChanged = !areStringArraysEqual(
+    state.fixedSet,
+    orderedFixedTabs,
+  )
 
-  persistFixedTabs(set, get, orderedFixedTabs)
-  set((previous) => (previous.tabs === tabs ? previous : { tabs }))
+  if (fixedOrderChanged)
+    persistFixedTabs(set, get, runtime, orderedFixedTabs)
+
+  set({
+    tabs,
+    ...(fixedOrderChanged ? { fixedSet: orderedFixedTabs } : {}),
+  })
 }
 
 /** 收藏或取消收藏路由，并保持参考实现的成功提示。 */
 export function toggleCollection(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   path: string,
 ) {
   const state = get()
@@ -126,7 +146,7 @@ export function toggleCollection(
     ? state.collectionSet.filter((item) => item !== path)
     : state.collectionSet.concat(path)
 
-  persistCollection(set, get, next)
+  persistCollection(set, get, runtime, next)
   set({ collectionSet: next })
   state.messageApi?.success?.(
     isCollected
@@ -139,6 +159,7 @@ export function toggleCollection(
 export function toggleFixed(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   path: string,
 ) {
   const state = get()
@@ -160,7 +181,7 @@ export function toggleFixed(
     ? state.fixedSet.filter((item) => item !== path)
     : state.fixedSet.concat(path)
 
-  persistFixedTabs(set, get, next)
+  persistFixedTabs(set, get, runtime, next)
   set({ fixedSet: next, tabs: sortTabs(state.tabs, next) })
   state.messageApi?.success?.(
     isFixed
@@ -179,6 +200,7 @@ export function toggleFixed(
 export async function closeTab(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
   tabKey: string,
   options?: ProLayoutCloseOptions,
 ) {
@@ -187,7 +209,7 @@ export async function closeTab(
     return false
 
   if (!options?.skipBeforeClose) {
-    const hooks = initialState.beforeTabCloseMap.get(tabKey) || []
+    const hooks = runtime.beforeTabCloseMap.get(tabKey) || []
     if (hooks.length > 0) {
       const results = await Promise.all(hooks.map((hook) => hook()))
       if (!results.every((result) => result === true))
@@ -213,7 +235,7 @@ export async function closeTab(
     : state.fixedSet
 
   if (wasFixed)
-    persistFixedTabs(set, get, nextFixedSet)
+    persistFixedTabs(set, get, runtime, nextFixedSet)
 
   set((previous) => {
     const pathnameDescriptionMap = { ...previous.pathnameDescriptionMap }
@@ -238,8 +260,8 @@ export async function closeTab(
   })
 
   const latest = get()
-  latest.beforeTabCloseMap.delete(tabKey)
-  latest.pageLocationEmitterMap.delete(tabKey)
+  runtime.beforeTabCloseMap.delete(tabKey)
+  runtime.pageLocationEmitterMap.delete(tabKey)
   latest.cache.clearTab(tabKey)
   latest.afterTabClose?.(tabKey, { pathname: closedPathname })
 
@@ -259,16 +281,21 @@ export async function closeTab(
   return true
 }
 
-/**
- * Cache 变更回调使用的持久化桥接。
- *
- * 单独导出该薄函数可以让 createStore 创建 Cache 时不需要知道持久化模块的内部
- * 字段版本和错误处理细节。
- */
-export function persistCacheParamsPathMap(
-  set: SetProLayoutStoreState,
-  get: GetProLayoutStoreState,
-  fixedParamsPathMap: Record<string, string>,
-) {
-  persistFixedParamsPathMap(set, get, fixedParamsPathMap)
+/** 比较页签领域数据，过滤只因调用方创建新数组或新对象产生的无效更新。 */
+function areTabsEqual(left: ProLayoutTab[], right: ProLayoutTab[]) {
+  return left === right || (
+    left.length === right.length &&
+    left.every(
+      (tab, index) =>
+        tab.key === right[index]?.key && tab.label === right[index]?.label,
+    )
+  )
+}
+
+/** 按顺序比较固定页签 key，顺序变化本身就是需要持久化的业务状态。 */
+function areStringArraysEqual(left: string[], right: string[]) {
+  return left === right || (
+    left.length === right.length &&
+    left.every((item, index) => item === right[index])
+  )
 }

@@ -26,13 +26,6 @@ export interface ProLayoutInitialState {
   currentSelectedPath: string[]
   /** Cache 初始化使用的参数路径映射。 */
   fixedParamsPathMap: Record<string, string>
-  /**
-   * 当前 URL 明确确认的动态路径映射。
-   *
-   * 异步 hydration 时该映射必须覆盖旧存储值，避免首屏位于 /project/99，加载
-   * 完成后页签却悄悄恢复到旧的 /project/42。
-   */
-  initialParamsPathOverlay: Record<string, string>
 }
 
 /**
@@ -58,7 +51,6 @@ export function createProLayoutInitialState(
     ? params.registry.getTabKey(initialPagePathname)
     : null
   const fixedParamsPathMap = { ...storageState.fixedParamsPathMap }
-  const initialParamsPathOverlay: Record<string, string> = {}
 
   if (
     initialPagePathname &&
@@ -67,7 +59,6 @@ export function createProLayoutInitialState(
     !initialLeaf?.route.supportMultipleTabs
   ) {
     fixedParamsPathMap[initialTabKey] = initialPagePathname
-    initialParamsPathOverlay[initialTabKey] = initialPagePathname
   }
 
   const currentPathname = initialPagePathname || params.initialPathname || ''
@@ -95,7 +86,6 @@ export function createProLayoutInitialState(
     currentRoutes,
     currentSelectedPath,
     fixedParamsPathMap,
-    initialParamsPathOverlay,
   }
 }
 

@@ -10,7 +10,6 @@ import type {
   ProLayoutPage,
   ProLayoutProps,
   ProLayoutRoute,
-  ProLayoutRouteMapping,
   ProLayoutSystemItem,
 } from '../interface'
 import type { ProLayoutRouteRegistry } from '../route'
@@ -54,17 +53,6 @@ export interface ProLayoutIntl {
   ) => string
 }
 
-/** 持久化状态的三个独立可变字段。 */
-export type ProLayoutStorageField = keyof ProLayoutStorageState
-
-/**
- * 每个持久化字段各自的本地修改版本。
- *
- * hydration 开始时记录快照；加载完成后只覆盖版本没有变化的字段，避免用户只修改
- * 收藏时，把同一时刻加载回来的固定页签和参数路径也一并丢弃。
- */
-export type ProLayoutStorageMutationVersions = Record<ProLayoutStorageField, number>
-
 /** ProLayout Store 的完整运行时状态与动作。 */
 export interface ProLayoutStoreState {
   /** 宿主路由提供的导航函数；Core 挂载后通过 syncExternalDeps 注入。 */
@@ -83,14 +71,6 @@ export interface ProLayoutStoreState {
   maxFixedTabCount: number
   /** KeepAlive 开关或详细配置。 */
   keepAlive: boolean | ProLayoutKeepAliveConfig
-  /** 未经过权限过滤的完整路由映射。 */
-  fullRouteMapping: ProLayoutRouteMapping
-  /** 经过权限过滤的路由映射。 */
-  routeMapping: ProLayoutRouteMapping
-  /** 原始完整路由树。 */
-  routes: ProLayoutRoute[]
-  /** 经过权限过滤的路由树。 */
-  permissionRoutes: ProLayoutRoute[]
   /** 页面展示变化时通知外部系统的回调。 */
   onPageDisplay: ProLayoutProps['setPage'] | null
   /** 页签完成关闭和资源清理后的回调。 */
@@ -137,19 +117,8 @@ export interface ProLayoutStoreState {
   storageLoading: boolean
   /** 最近一次持久化加载错误。 */
   storageLoadError: unknown
-  /** storageKey 或 Adapter 变化时递增，用于废弃旧来源的异步加载结果。 */
-  storageSourceGeneration: number
-  /** 三个持久化字段各自的本地修改版本。 */
-  storageMutationVersions: ProLayoutStorageMutationVersions
   /** 持久化加载或保存失败回调。 */
   onStorageLoadError: ProLayoutProps['onStorageLoadError'] | null
-  /** 页签 key 到页面 location 事件发射器的映射。 */
-  pageLocationEmitterMap: Map<
-    string,
-    { emit: (payload: ProLayoutLocationEventPayload) => void }
-  >
-  /** 页签 key 到关闭前 Hook 列表的映射。 */
-  beforeTabCloseMap: Map<string, ProLayoutBeforeCloseHook[]>
 
   /** 从当前持久化来源加载状态；并发本地修改按字段完成冲突合并。 */
   hydrateStorage: () => Promise<void>

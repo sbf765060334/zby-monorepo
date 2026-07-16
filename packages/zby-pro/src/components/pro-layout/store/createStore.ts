@@ -10,14 +10,17 @@ import {
   syncByPathname,
 } from './navigation'
 import {
-  createStorageMutationVersions,
   hydrateStorage,
+  persistFixedParamsPathMap,
   resolveStorageAdapter,
 } from './persistence'
+import {
+  createProLayoutStoreRuntime,
+  resetStorageRuntime,
+} from './runtime'
 import { ProLayoutCache } from './cache'
 import {
   closeTab,
-  persistCacheParamsPathMap,
   setTabs,
   toggleCollection,
   toggleFixed,
@@ -42,12 +45,13 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
   const initial = createProLayoutInitialState(params)
   const storageAdapter = resolveStorageAdapter(params.storageAdapter)
   const hasInitialStorageState = Boolean(params.initialStorageState)
+  const runtime = createProLayoutStoreRuntime()
 
   return createZustandStore<ProLayoutStoreState>((set, get) => {
     const cache = new ProLayoutCache(
       initial.fixedParamsPathMap,
       (fixedParamsPathMap) =>
-        persistCacheParamsPathMap(set, get, fixedParamsPathMap),
+        persistFixedParamsPathMap(set, get, runtime, fixedParamsPathMap),
     )
 
     return {
@@ -59,10 +63,6 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       hasAuth: params.hasAuth,
       maxFixedTabCount: params.maxFixedTabCount,
       keepAlive: params.keepAlive,
-      fullRouteMapping: params.registry.fullRouteMapping,
-      routeMapping: params.registry.routeMapping,
-      routes: params.registry.routes,
-      permissionRoutes: params.registry.permissionRoutes,
       onPageDisplay: params.onPageDisplay || null,
       afterTabClose: params.afterTabClose || null,
       renderLogo: params.renderLogo || null,
@@ -86,19 +86,15 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       storageHydrated: hasInitialStorageState || storageAdapter === false,
       storageLoading: false,
       storageLoadError: undefined,
-      storageSourceGeneration: 0,
-      storageMutationVersions: createStorageMutationVersions(),
       onStorageLoadError: params.onStorageLoadError || null,
-      pageLocationEmitterMap: new Map(),
-      beforeTabCloseMap: new Map(),
 
-      hydrateStorage: () => hydrateStorage(set, get),
+      hydrateStorage: () => hydrateStorage(set, get, runtime),
 
       registerPageLocationEmitter: (tabKey, emitter) => {
         if (!tabKey || !emitter)
           return () => undefined
 
-        const map = get().pageLocationEmitterMap
+        const map = runtime.pageLocationEmitterMap
         map.set(tabKey, emitter)
 
         return () => {
@@ -108,10 +104,10 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       },
 
       emitPageLocationEvent: (tabKey, payload) => {
-        get().pageLocationEmitterMap.get(tabKey)?.emit(payload)
+        runtime.pageLocationEmitterMap.get(tabKey)?.emit(payload)
       },
 
-      syncExternalDeps: (data) => syncExternalDeps(set, get, data),
+      syncExternalDeps: (data) => syncExternalDeps(set, get, runtime, data),
 
       bootstrapByPathname: (data) => bootstrapByPathname(set, get, data),
 
@@ -140,19 +136,19 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         })
       },
 
-      setTabs: (tabs) => setTabs(set, get, tabs),
+      setTabs: (tabs) => setTabs(set, get, runtime, tabs),
 
-      closeTab: (key, options) => closeTab(set, get, key, options),
+      closeTab: (key, options) => closeTab(set, get, runtime, key, options),
 
       closeThisTabOpenNewOne: (data, options) =>
-        closeThisTabOpenNewOne(set, get, data, options),
+        closeThisTabOpenNewOne(set, get, runtime, data, options),
 
       addBeforeCloseHook: (handler, pathname) => {
         const tabKey = get().getTabKey(pathname)
         if (!tabKey)
           return
 
-        const map = get().beforeTabCloseMap
+        const map = runtime.beforeTabCloseMap
         map.set(tabKey, (map.get(tabKey) || []).concat(handler))
       },
 
@@ -161,7 +157,7 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         if (!tabKey)
           return
 
-        const map = get().beforeTabCloseMap
+        const map = runtime.beforeTabCloseMap
         if (!handler) {
           map.delete(tabKey)
           return
@@ -189,9 +185,9 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 
       getCurrentRoutes: (pathname) => get().registry.getCurrentRoutes(pathname),
 
-      toggleCollection: (path) => toggleCollection(set, get, path),
+      toggleCollection: (path) => toggleCollection(set, get, runtime, path),
 
-      toggleFixed: (path) => toggleFixed(set, get, path),
+      toggleFixed: (path) => toggleFixed(set, get, runtime, path),
     }
   })
 }
@@ -206,6 +202,7 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 function syncExternalDeps(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
+  runtime: ReturnType<typeof createProLayoutStoreRuntime>,
   data: ProLayoutExternalDeps,
 ) {
   const previous = get()
@@ -220,6 +217,12 @@ function syncExternalDeps(
   const storageSourceChanged =
     previous.storageKey !== nextStorageKey ||
     previous.storageAdapter !== nextStorageAdapter
+  const openParamsPathOverlay = storageSourceChanged
+    ? getOpenParamsPathOverlay(previous)
+    : null
+
+  if (storageSourceChanged)
+    resetStorageRuntime(runtime)
 
   set((state) => {
     const next: Partial<ProLayoutStoreState> = {}
@@ -267,10 +270,6 @@ function syncExternalDeps(
 
     if ('registry' in data && data.registry && state.registry !== data.registry) {
       next.registry = data.registry
-      next.fullRouteMapping = data.registry.fullRouteMapping
-      next.routeMapping = data.registry.routeMapping
-      next.routes = data.registry.routes
-      next.permissionRoutes = data.registry.permissionRoutes
     }
 
     if ('keepAlive' in data && data.keepAlive !== undefined && state.keepAlive !== data.keepAlive) {
@@ -289,8 +288,6 @@ function syncExternalDeps(
       next.storageHydrated = nextStorageAdapter === false
       next.storageLoading = false
       next.storageLoadError = undefined
-      next.storageSourceGeneration = state.storageSourceGeneration + 1
-      next.storageMutationVersions = createStorageMutationVersions()
     }
 
     return Object.keys(next).length > 0 ? next : state
@@ -300,29 +297,42 @@ function syncExternalDeps(
     return
 
   const latest = get()
-  // 新来源不继承旧来源的参数映射，只保留当前活动动态页签已经确认的真实 pathname。
-  latest.cache.hydrateFixedParamsPathMap(getActiveParamsPathOverlay(latest))
+  // false 只关闭外部持久化，当前挂载期间的全部内存地址必须保持可用。
+  if (latest.storageAdapter === false)
+    return
 
-  if (latest.storageAdapter !== false)
-    void latest.hydrateStorage()
+  // 新来源不继承已经关闭页签的旧映射，但仍打开的共享动态页签必须保留真实地址。
+  latest.cache.hydrateFixedParamsPathMap(openParamsPathOverlay || {})
+  void latest.hydrateStorage()
 }
 
-/** 计算当前活动动态页签在切换持久化来源时必须保留的真实 pathname。 */
-function getActiveParamsPathOverlay(state: ProLayoutStoreState) {
-  const activeKey = state.activePage || state.activeTabKey
-  const activePage = activeKey
-    ? state.pages.find((page) => page.key === activeKey)
-    : undefined
-  const pathname = activePage?.pathname || state.currentPathname
-  if (!pathname)
-    return {}
+/**
+ * 计算持久化来源切换时仍需保留的共享动态页签真实 pathname。
+ *
+ * 以 tabs 而不是 pages 为准：KeepAlive 可以淘汰页面实例，但只要页签仍然打开，
+ * 用户再次点击时就必须能从注册 pattern 恢复到最后访问的真实地址。
+ */
+function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
+  const currentParamsPathMap = state.cache.getFixedParamsPathMap()
 
-  const leaf = state.registry.resolveLeafRoute(pathname)
-  const tabKey = state.registry.getTabKey(pathname)
-  if (!leaf || !tabKey || tabKey === pathname || leaf.route.supportMultipleTabs)
-    return {}
+  return state.tabs.reduce<Record<string, string>>((result, tab) => {
+    const pathname = currentParamsPathMap[tab.key]
+    if (!pathname)
+      return result
 
-  return { [tabKey]: pathname }
+    const leaf = state.registry.resolveLeafRoute(pathname)
+    const resolvedTabKey = state.registry.getTabKey(pathname)
+    if (
+      !leaf ||
+      resolvedTabKey !== tab.key ||
+      leaf.route.supportMultipleTabs
+    ) {
+      return result
+    }
+
+    result[tab.key] = pathname
+    return result
+  }, {})
 }
 
 /** 仅当 data 明确包含字段且值不是 undefined 时同步普通标量依赖。 */

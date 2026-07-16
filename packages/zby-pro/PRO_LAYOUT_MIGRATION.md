@@ -94,13 +94,17 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 
 - Store 使用 `zustand/vanilla`，按类型、初始化、持久化、导航、页签模型、页签动作和 KeepAlive 拆分，不照搬参考仓库 938 行单文件。
 - Store 使用自己的 `ProLayoutTab`、国际化和消息最小接口，不依赖 antd Tabs 类型、`antd/es/**` 或 `shuzhi-ui`。
+- Store 只持有一个 Route Registry；原始路由树、权限路由树和两套路由映射统一从 Registry 读取，不在 Zustand 快照中保存重复引用。
+- generation、字段修改版本、页面 emitter 和关闭前 Hook Map 由每个 Store 独享的闭包 runtime 保存；这些命令协调数据不参与 Zustand 订阅和 UI 更新。
 - hydration 使用 collection、fixedTabs、fixedParamsPathMap 三个字段各自的修改版本；只保护加载期间真正发生本地修改的字段。
 - 当前会话已经确认的动态 pathname 覆盖旧持久化值，避免首屏 `/project/99` 在加载后退回旧的 `/project/42`。
-- `storageKey` 或 `storageAdapter` 变化时重新加载新来源，并通过 generation 阻止旧来源晚到结果回写。
-- `storageAdapter={false}` 保持纯内存状态；从 false 切换到真实 Adapter 后正常加载。
+- `storageKey` 或 `storageAdapter` 变化时重新加载新来源，并通过 generation 阻止旧来源晚到结果回写；仍打开的共享动态页签继续保留真实 pathname。
+- `storageAdapter={false}` 保持纯内存状态和完整内存 Cache；从 false 切换到真实 Adapter 后正常加载。
 - 关闭固定页签时同步取消固定并持久化；并发关闭同一页签只允许一个操作完成清理和回调。
+- `setTabs` 对内容相同的页签数组不更新状态；普通页签重排不写 fixedTabs，固定页签组内重排同时更新内存顺序并只持久化一次。
 - `jumpTo` 和 `smartNavigate` 中，undefined 表示恢复页签 search/hash 缓存，null 或空字符串表示显式清空。
 - KeepAlive 动态缩容时一次达到上限；非正数上限只保留活动页和不可淘汰固定页，exclude 优先于 include。
+- 删除未消费的首屏动态路径 overlay 和一次性 Cache 持久化转发函数；测试 Storage Adapter 通过接口签名构造 mock，不再使用 `as never` 绕过类型检查。
 - 不迁移仅服务于 Next.js 页面缓存切换的 navigate `cache` 元数据。
 
 ## 4. 必须保留的功能范围
@@ -230,7 +234,7 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - [x] `initialStorageState` 不再触发异步覆盖。
 - [x] hydration 期间发生内存修改时不覆盖新状态，未冲突字段仍正常加载。
 - [x] `storageAdapter={false}` 不执行外部读写，并支持后续切换到真实 Adapter。
-- [x] `storageKey` 或 `storageAdapter` 变化后加载新来源，旧异步结果不能回写。
+- [x] `storageKey` 或 `storageAdapter` 变化后加载新来源，旧异步结果不能回写，非活动共享动态页签仍可恢复真实 pathname。
 - [x] 加载和保存失败提供正确 phase、storageKey 和 retry。
 - [x] 不同 storageKey 完全隔离。
 - [x] 收藏、固定页签和参数路径并发保存时全部保留。
@@ -241,6 +245,7 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 ### 7.6 Tabs And KeepAlive
 
 - [x] 固定页签始终排在普通页签之前且组内顺序稳定。
+- [x] 相同页签不触发更新，普通页签重排不写 fixedTabs，固定页签重排只写一次并同步 fixedSet。
 - [ ] 拖拽不能跨越固定/非固定分组。
 - [x] 关闭 Hook 全部同意才允许关闭。
 - [x] 关闭后清理 Hook、emitter、页面和缓存。
