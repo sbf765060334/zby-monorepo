@@ -107,6 +107,32 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - 删除未消费的首屏动态路径 overlay 和一次性 Cache 持久化转发函数；测试 Storage Adapter 通过接口签名构造 mock，不再使用 `as never` 绕过类型检查。
 - 不迁移仅服务于 Next.js 页面缓存切换的 navigate `cache` 元数据。
 
+### 3.8 迁移 Context 与 Effects 并修复 React 同步缺陷
+
+第六步实现结论：
+
+- Layout Context 只承载生命周期稳定的 Zustand vanilla Store 引用；业务组件通过
+  `useProLayoutContext` 读取受控的公共能力，内部组件通过 selector 精确订阅 Store。
+- Page Context 延续每个 KeepAlive 页面实例独享一个 vanilla Store 的契约，暴露真实
+  pathname、tabKey、lifecycle 事件流和 location 事件流；具体 Provider 在第八步接入。
+- Provider 外调用 Context Hook 时返回只读空 Store，不抛出异常，也不会产生导航、
+  持久化或其它副作用。
+- 修复参考 `useStoreSelector` 仅凭 Store state 引用相同复用旧结果的问题；缓存同时以
+  Store state 与 selector 身份为键，同一 snapshot 保持选择结果引用稳定，selector 只因
+  props 或闭包变量变化时仍会重新计算，再通过 equalityFn 复用等价结果引用。
+- `SyncExternalDepsEffects` 使用 layout effect 在绘制前同步外部依赖，并补全参考实现遗漏
+  的 `intl` 与 `storageKey`；locale 和持久化命名空间在挂载后变化时都能进入 Store。
+- `PathnameSyncEffects` 不再只在首次挂载处理根路径和目录路由；浏览器历史或外部 Router
+  在挂载后进入目录时，仍会跳到首个可访问子页面。相同输入在 React StrictMode 重放
+  时不会重复导航。
+- Registry 的 `defaultRoute === '/'` 表示没有可访问默认页面，Effect 不会发起无意义的
+  `/ → /` 自导航。
+- `LocationCacheEffects` 在首次挂载和每次 location 变化时缓存 search/hash，并发布完整
+  pathname、search、hash。产品契约确认为：页面首次挂载后也应收到当前 location；
+  第八步的页面 Provider 必须使用 layout effect 先注册 emitter。
+- Context 与 Effects 不依赖 React Router、Next.js、antd 内部模块或 ahooks；Router 能力仍
+  通过通用类型和 Store 动作注入。
+
 ## 4. 必须保留的功能范围
 
 ### 4.1 路由与导航
@@ -268,6 +294,21 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - [ ] semantic classNames/styles 只作用于对应区域。
 - [ ] 桌面与窄视口下没有重叠、溢出和不可操作区域。
 
+### 7.8 Context And Effects
+
+- [x] Layout Context 和 Page Context 在 Provider 外返回无副作用默认值。
+- [x] selector 闭包参数变化但 Store 快照不变时，选择结果立即更新。
+- [x] 对象 selector 未传 equalityFn 时，同一 Store snapshot 的选择结果保持稳定。
+- [x] equalityFn 判定等价时保持选择结果引用稳定。
+- [x] locale 变化后 Store 使用最新 intl 对象。
+- [x] storageKey/Adapter 变化后加载新来源，并沿用 Store generation 竞态保护。
+- [x] 首屏根路径和目录路由能够跳转到默认可访问页面。
+- [x] 挂载后通过外部 Router 或浏览器历史进入目录，仍跳到首个可访问子页面。
+- [x] StrictMode 重放相同 pathname Effect 时不重复导航。
+- [x] 没有可访问页面时不会从根路径导航到根路径。
+- [x] Location Effect 首次挂载时缓存 search/hash，并向已注册页面发布完整 location。
+- [ ] 第八步页面 Provider 使用 layout effect 注册 emitter，确保收到首次 location。
+
 ## 8. 每步统一验证门槛
 
 每个迁移步骤至少执行与改动范围对应的命令：
@@ -316,7 +357,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 3：迁移路由引擎。
 - [x] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
 - [x] 步骤 5：迁移并拆分 Store 引擎。
-- [ ] 步骤 6：迁移 Context 和 Effects。
+- [x] 步骤 6：迁移 Context 和 Effects。
 - [ ] 步骤 7：完成运行时权限变化。
 - [ ] 步骤 8：迁移页面渲染与 KeepAlive。
 - [ ] 步骤 9：迁移菜单 UI。

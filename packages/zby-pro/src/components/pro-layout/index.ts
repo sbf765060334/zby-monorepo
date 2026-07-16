@@ -4,6 +4,8 @@ export type {
   ProLayoutAuthProps,
   UseProLayoutAuthOptions,
 } from './auth'
+export { useProLayoutContext, useProLayoutPageContext } from './context'
+export type { ProLayoutContextValue, ProLayoutPageContextValue } from './context'
 export type {
   ProLayoutAfterTabCloseInfo,
   ProLayoutBeforeCloseHook,
