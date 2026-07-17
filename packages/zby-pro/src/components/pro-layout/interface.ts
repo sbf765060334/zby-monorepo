@@ -154,7 +154,13 @@ export interface ProLayoutAfterTabCloseInfo {
 export interface ProLayoutProps {
   /** 应用标题，同时作为浏览器页面标题的基础文本。 */
   title: string
-  /** 驱动菜单、权限、页签、面包屑和页面渲染的不可变路由快照。 */
+  /**
+   * 驱动菜单、权限、页签、面包屑和页面渲染的不可变路由快照。
+   *
+   * 请在组件外定义，或使用 useMemo 保持引用稳定；每次传入新的数组或路由对象引用都会重建
+   * Route Registry，并同步相关路由元数据。多语言场景应仅在翻译后的标题实际变化时创建新快照，
+   * 不要直接修改现有数组或路由对象。
+   */
   routes: ProLayoutRoute[]
   /** Header 的 Logo 和右侧扩展内容配置。 */
   header?: ProLayoutHeaderConfig
@@ -199,13 +205,23 @@ export interface ProLayoutProps {
   styles?: ProLayoutStyles
   /** 收藏、固定页签和参数路径持久化使用的命名空间。 */
   storageKey?: string
-  /** 自定义持久化适配器；传入 false 时只保留当前挂载期间的内存状态。 */
+  /**
+   * 自定义持久化适配器；传入 false 时只保留当前挂载期间的内存状态。
+   *
+   * 适配器引用代表当前持久化数据源，请勿在组件渲染期间直接创建。应在组件外创建，或使用
+   * useMemo 保持引用稳定；传入新引用会重置持久化任务的代次，并从新的数据源重新加载状态。
+   */
   storageAdapter?: false | ProLayoutStorageAdapter
   /** 首次创建 Store 时使用的预加载持久化状态。 */
   initialStorageState?: ProLayoutStorageState
   /** 持久化加载或保存失败时的回调。 */
   onStorageLoadError?: (error: unknown, info: ProLayoutStorageErrorInfo) => void
-  /** 是否启用页面实例缓存，或提供详细的 KeepAlive 配置。 */
+  /**
+   * 是否启用页面实例缓存，或提供详细的 KeepAlive 配置。
+   *
+   * 使用对象形式时，请在组件外定义或使用 useMemo 保持配置引用稳定，其中 include、exclude
+   * 的函数引用也应保持稳定。新的配置引用会触发 Store 配置同步，但不会因此形成无限更新。
+   */
   keepAlive?: boolean | ProLayoutKeepAliveConfig
 }
 
