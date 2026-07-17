@@ -67,6 +67,10 @@ export interface ProLayoutStoreState {
   storageKey: string
   /** 当前页面权限判断函数。 */
   hasAuth: ProLayoutProps['hasAuth']
+  /** 当前已经提交的权限快照版本；undefined 表示挂载期静态权限。 */
+  authVersion: ProLayoutProps['authVersion']
+  /** 每次权限版本变化时递增，通知稳定 hasAuth 的页面内权限订阅者重新计算。 */
+  authRevision: number
   /** 最大固定页签数量。 */
   maxFixedTabCount: number
   /** KeepAlive 开关或详细配置。 */
@@ -187,6 +191,7 @@ export type ProLayoutExternalDeps = Partial<{
   registry: ProLayoutRouteRegistry
   storageKey: string
   hasAuth: ProLayoutProps['hasAuth']
+  authVersion: ProLayoutProps['authVersion']
   maxFixedTabCount: number
   keepAlive: boolean | ProLayoutKeepAliveConfig
   headerHeight: number
@@ -213,6 +218,8 @@ export interface CreateProLayoutStoreParams {
   storageKey: string
   /** 初始权限判断函数。 */
   hasAuth: ProLayoutProps['hasAuth']
+  /** 初始权限版本；未传时固定使用初始 hasAuth。 */
+  authVersion?: ProLayoutProps['authVersion']
   /** 初始最大固定页签数量。 */
   maxFixedTabCount: number
   /** 初始 KeepAlive 配置。 */

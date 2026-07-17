@@ -19,6 +19,7 @@ export type SyncExternalDepsEffectsProps = ProLayoutExternalDeps & {
 function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
   const {
     afterTabClose,
+    authVersion,
     breadcrumbHeight,
     currentPathname,
     currentRoutes,
@@ -47,6 +48,7 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     // 切换持久化来源并利用 generation 丢弃旧来源晚到的异步结果。
     store.getState().syncExternalDeps({
       afterTabClose,
+      authVersion,
       breadcrumbHeight,
       currentPathname,
       currentRoutes,
@@ -70,6 +72,7 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     })
   }, [
     afterTabClose,
+    authVersion,
     breadcrumbHeight,
     currentPathname,
     currentRoutes,

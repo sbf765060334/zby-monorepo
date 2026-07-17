@@ -34,6 +34,18 @@ const routes: ProLayoutRoute[] = [
     supportMultipleTabs: true,
     element: () => null,
   },
+  {
+    path: '/admin',
+    title: '管理后台',
+    auth: 'admin',
+    element: () => null,
+  },
+  {
+    path: '/admin/project/:id',
+    title: '管理项目',
+    auth: 'admin',
+    element: () => null,
+  },
 ]
 
 const intl: ProLayoutIntl = {
@@ -158,6 +170,180 @@ describe('proLayout Store initialization and navigation', () => {
       },
       { replace: true },
     )
+  })
+})
+
+describe('proLayout Store runtime authorization', () => {
+  it('does not create a page instance for an unauthorized initial URL', () => {
+    const hasAuth = (code: string) => code !== 'admin'
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes, hasAuth }),
+      hasAuth,
+      authVersion: 0,
+      initialPathname: '/admin',
+    })
+
+    expect(store.getState().currentPathname).toBe('/admin')
+    expect(store.getState().tabs).toEqual([])
+    expect(store.getState().pages).toEqual([])
+    expect(store.getState().activeTabKey).toBeNull()
+    expect(store.getState().activePage).toBeNull()
+  })
+
+  it('ignores a new hasAuth function until authVersion changes', () => {
+    const denyAdmin = (code: string) => code !== 'admin'
+    const allowAll = () => true
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
+      hasAuth: denyAdmin,
+      authVersion: 0,
+    })
+    const initialRegistry = store.getState().registry
+
+    store.getState().syncExternalDeps({ hasAuth: allowAll, authVersion: 0 })
+
+    expect(store.getState().hasAuth).toBe(denyAdmin)
+    expect(store.getState().registry).toBe(initialRegistry)
+    expect(store.getState().authRevision).toBe(0)
+
+    const nextRegistry = createRouteRegistry({ routes, hasAuth: allowAll })
+    store.getState().syncExternalDeps({
+      authVersion: 1,
+      hasAuth: allowAll,
+      registry: nextRegistry,
+    })
+
+    expect(store.getState().hasAuth).toBe(allowAll)
+    expect(store.getState().registry).toBe(nextRegistry)
+    expect(store.getState().authRevision).toBe(1)
+    expect(store.getState().resolveLeafRoute('/admin', true)?.route.path).toBe('/admin')
+  })
+
+  it('preserves tab preferences while revoking and cleanly recreating the current page', () => {
+    const allowAll = () => true
+    const denyAdmin = (code: string) => code !== 'admin'
+    const allowRegistry = createRouteRegistry({ routes, hasAuth: allowAll })
+    const store = createTestStore({
+      registry: allowRegistry,
+      hasAuth: allowAll,
+      authVersion: 0,
+      initialPathname: '/admin',
+      initialStorageState: {
+        collection: ['/admin'],
+        fixedTabs: ['/admin'],
+        fixedParamsPathMap: {},
+      },
+    })
+    const initialPage = store.getState().pages[0]
+
+    store.getState().cache.setSearchParamsForTabKey('/admin', 'panel=users')
+    store.getState().cache.setHashForTabKey('/admin', '#member')
+    store.getState().syncExternalDeps({
+      authVersion: 1,
+      hasAuth: denyAdmin,
+      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
+    })
+
+    expect(store.getState().currentPathname).toBe('/admin')
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/admin'])
+    expect(store.getState().fixedSet).toEqual(['/admin'])
+    expect(store.getState().collectionSet).toEqual(['/admin'])
+    expect(store.getState().cache.getSearchParamsForTabKey('/admin')).toBe('panel=users')
+    expect(store.getState().cache.getHashForTabKey('/admin')).toBe('#member')
+    expect(store.getState().pages).toEqual([])
+    expect(store.getState().activeTabKey).toBe('/admin')
+    expect(store.getState().activePage).toBeNull()
+
+    // Router 或保留页签再次同步同一地址时，也不能重建无权限业务页面。
+    store.getState().syncByPathname('/admin')
+    expect(store.getState().pages).toEqual([])
+
+    const navigate = vi.fn()
+    store.getState().syncExternalDeps({ navigate })
+    store.getState().jumpTo({ pathname: '/admin' })
+    expect(navigate).toHaveBeenLastCalledWith('/admin?panel=users#member')
+    expect(store.getState().pages).toEqual([])
+
+    store.getState().syncExternalDeps({
+      authVersion: 2,
+      hasAuth: allowAll,
+      registry: allowRegistry,
+    })
+
+    expect(store.getState().activePage).toBe('/admin')
+    expect(store.getState().pages.map((page) => page.key)).toEqual(['/admin'])
+    expect(store.getState().pages[0]).not.toBe(initialPage)
+  })
+
+  it('cleans revoked page runtime without running close hooks or closing its tab', async () => {
+    const allowAll = () => true
+    const denyAdmin = (code: string) => code !== 'admin'
+    const emitter = { emit: vi.fn() }
+    const beforeClose = vi.fn(() => false)
+    const afterTabClose = vi.fn()
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes, hasAuth: allowAll }),
+      hasAuth: allowAll,
+      authVersion: 0,
+      initialPathname: '/admin/project/1',
+      afterTabClose,
+    })
+
+    store.getState().registerPageLocationEmitter('/admin/project/:id', emitter)
+    store.getState().addBeforeCloseHook(beforeClose, '/admin/project/1')
+    store.getState().setPathnameDescription({
+      '/admin/project/1': '管理项目一',
+      '/admin/project/2': '管理项目二',
+    })
+    store.getState().syncExternalDeps({
+      authVersion: 1,
+      hasAuth: denyAdmin,
+      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
+    })
+
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/admin/project/:id'])
+    expect(store.getState().pathnameDescriptionMap).toEqual({})
+    expect(beforeClose).not.toHaveBeenCalled()
+    expect(afterTabClose).not.toHaveBeenCalled()
+
+    store.getState().emitPageLocationEvent('/admin/project/:id', {
+      pathname: '/admin/project/1',
+      search: '',
+      hash: '',
+    })
+    expect(emitter.emit).not.toHaveBeenCalled()
+
+    // 撤权已经删除拒绝关闭的 Hook，因此后续用户主动关闭保留页签可以正常完成。
+    await expect(store.getState().closeTab('/admin/project/:id')).resolves.toBe(true)
+    expect(beforeClose).not.toHaveBeenCalled()
+    expect(afterTabClose).toHaveBeenCalledOnce()
+  })
+
+  it('supports function and undefined authorization snapshots in both directions', () => {
+    const denyAdmin = (code: string) => code !== 'admin'
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
+      hasAuth: denyAdmin,
+      authVersion: 0,
+      initialPathname: '/admin',
+    })
+
+    store.getState().syncExternalDeps({
+      authVersion: 1,
+      hasAuth: undefined,
+      registry: createRouteRegistry({ routes }),
+    })
+    expect(store.getState().hasAuth).toBeUndefined()
+    expect(store.getState().activePage).toBe('/admin')
+
+    store.getState().syncExternalDeps({
+      authVersion: undefined,
+      hasAuth: denyAdmin,
+      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
+    })
+    expect(store.getState().hasAuth).toBe(denyAdmin)
+    expect(store.getState().activePage).toBeNull()
+    expect(store.getState().pages).toEqual([])
   })
 })
 

@@ -26,10 +26,11 @@ export function ensureTabStateForPathname(
   options?: { ensurePage?: boolean },
 ) {
   const state = get()
-  // 默认从完整路由索引解析目标；Registry 完全无法识别的地址不创建幽灵页签。
-  // 权限索引的动态同步由后续运行时权限流程统一处理，这里只维护页签领域状态。
-  const leaf = state.resolveLeafRoute(pathname)
-  if (!leaf?.route)
+  // 页面实例只能从权限索引创建。完整索引仍用于识别 403 和恢复旧页签身份，但不能
+  // 进入 pages，否则直接 URL、固定页签或 KeepAlive 都可能绕过最新权限快照。
+  const leaf = state.resolveLeafRoute(pathname, true)
+  const route = leaf?.route
+  if (!route || !state.registry.isPageRoute(route))
     return null
 
   // 普通动态路由返回注册 pattern 作为共享 key；supportMultipleTabs 路由返回真实
@@ -49,7 +50,7 @@ export function ensureTabStateForPathname(
     if (!tabs.some((tab) => tab.key === tabKey)) {
       // 新页签先追加，再由 sortTabs 恢复“固定在前、组内稳定”的顺序。
       tabs = sortTabs(
-        tabs.concat({ key: tabKey, label: leaf.route.title }),
+        tabs.concat({ key: tabKey, label: route.title }),
         previous.fixedSet,
       )
       next.tabs = tabs
@@ -67,7 +68,7 @@ export function ensureTabStateForPathname(
         pages = pages.concat({
           key: tabKey,
           pathname,
-          route: leaf.route,
+          route,
           touchedAt: now,
         })
       } else if (pages[pageIndex].pathname !== pathname) {
@@ -75,7 +76,7 @@ export function ensureTabStateForPathname(
         // pathname、匹配路由和 LRU 时间。
         pages = pages.map((page) =>
           page.key === tabKey
-            ? { ...page, pathname, route: leaf.route, touchedAt: now }
+            ? { ...page, pathname, route, touchedAt: now }
             : page,
         )
       } else if (shouldRefreshPageTouchedAt(previous.keepAlive)) {
@@ -106,7 +107,7 @@ export function ensureTabStateForPathname(
 
   // 共享动态页签的 key 只是路由 pattern，真实 pathname 另存 Cache，供重新激活、关闭
   // 回调和跨持久化来源恢复使用；多页签模式的 key 已是 pathname，无需重复映射。
-  if (tabKey !== pathname && !leaf.route.supportMultipleTabs)
+  if (tabKey !== pathname && !route.supportMultipleTabs)
     get().cache.setParamsPath(tabKey, pathname)
 
   return tabKey

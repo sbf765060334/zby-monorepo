@@ -60,15 +60,20 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 
 ### 3.3 权限支持运行时变化
 
-`hasAuth` 在 ProLayout 挂载后发生变化时，必须重新计算权限路由并同步页面状态。
+运行时权限变化通过显式 `authVersion` 提交。`hasAuth` 函数引用本身不是权限版本，
+避免调用方在 JSX 中传入内联函数时，普通渲染反复重建 Route Registry。
 
 最低验收要求：
 
 - 新获得权限后，对应菜单和页面可以访问。
 - 权限被撤销后，对应菜单消失，当前页面不再继续展示受限内容。
 - 已打开页签、KeepAlive 页面和持久化页签不会绕过最新权限结果。
-- `hasAuth` 从函数变为 `undefined` 或从 `undefined` 变为函数时行为正确。
-- 调用方应通过新的函数引用表达权限集合变化；不得依赖无法被 React 观察的闭包内部变化。
+- `hasAuth` 从函数变为 `undefined` 或从 `undefined` 变为函数时，必须同时改变
+  `authVersion`，并得到一致的新权限快照。
+- 未传 `authVersion` 时，整个挂载期固定使用首次提交的 `hasAuth`；后续只改变
+  `hasAuth` 不生效。
+- `authVersion` 支持字符串和数字，不要求连续递增，只使用 `Object.is` 判断变化；
+  切换到或切出 `undefined` 也属于一次版本变化。
 
 ### 3.4 修复 Route Registry 与公开契约不一致
 
@@ -132,6 +137,27 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
   第八步的页面 Provider 必须使用 layout effect 先注册 emitter。
 - Context 与 Effects 不依赖 React Router、Next.js、antd 内部模块或 ahooks；Router 能力仍
   通过通用类型和 Store 动作注入。
+
+### 3.9 完成运行时权限变化
+
+第七步实现结论：
+
+- 新增 `authVersion?: string | number` 作为唯一运行时权限提交信号；未传时固定使用
+  挂载时的 `hasAuth`，同一版本内的新函数引用不会进入 Registry 或页面权限 Hook。
+- `useProLayoutAuthorization` 保存已提交权限快照。`authVersion` 变化时同时提交当前
+  `hasAuth` 并重建 Registry；普通 routes 变化只重建索引，不触发旧页面收敛。
+- Store 使用 `authRevision` 通知稳定 `hasAuth` 的页面内权限订阅者重新计算，支持
+  函数与 `undefined` 双向切换，也支持读取外部权限服务的稳定函数。
+- 撤权后保留页签、顺序、固定、收藏和 URL Cache；当前 URL 不跳转，页面渲染层可
+  依据完整索引与权限索引展示 403。
+- 已失权的 KeepAlive 页面立即从 `pages` 删除，活动页面置空，并清理 emitter、关闭
+  Hook 和动态页面描述；撤权不执行关闭 Hook，也不触发 `afterTabClose`。
+- 首屏、Router pathname 同步和页签创建统一从权限索引创建业务页面实例；保留的
+  失权页签可以导航到原 URL，但不能重新创建页面实例。
+- 授权恢复后主动重新同步当前 pathname，即使 Router 地址未变化，也会创建新的干净
+  页面实例，不复用撤权前组件状态。
+- `useProLayoutAuth` 和 `ProLayoutAuth` 已迁移。403 页面卸载、菜单隐藏和 Core 接入的
+  真实 UI 集成验证分别留在第八步、第九步和第十一步完成。
 
 ## 4. 必须保留的功能范围
 
@@ -231,14 +257,17 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 
 ### 7.3 Runtime Authorization
 
-- [ ] 未传 `hasAuth` 时默认允许访问。
-- [ ] 有权限和无权限路由分别进入授权路由表和完整路由表。
+- [x] 未传 `hasAuth` 时默认允许访问。
+- [x] 有权限和无权限路由分别进入授权路由表和完整路由表。
+- [x] 未传 `authVersion` 时固定使用挂载期权限快照，普通函数引用变化不生效。
+- [x] `authVersion` 变化后同步 Registry、Store 和页面内权限结果。
 - [ ] 直接访问无权限地址显示 403，不渲染页面组件。
 - [ ] 运行时新增权限后菜单和页面同步恢复。
 - [ ] 运行时撤销权限后当前受限页面立即停止展示。
-- [ ] 权限变化后已打开页签和 KeepAlive 页面重新校验。
-- [ ] 权限变化后收藏和固定页签不会绕过授权结果。
-- [ ] `hasAuth` 在函数与 `undefined` 之间切换时状态一致。
+- [x] Store 不为直接访问的无权限地址创建页面实例；403 视图留待第八步验证。
+- [x] 权限变化后已打开页签和 KeepAlive 页面重新校验。
+- [x] 权限变化后收藏和固定偏好保留，但不能创建无权限页面实例。
+- [x] `hasAuth` 在函数与 `undefined` 之间随版本切换时状态一致。
 
 ### 7.4 Cross-Window Message
 
@@ -358,7 +387,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
 - [x] 步骤 5：迁移并拆分 Store 引擎。
 - [x] 步骤 6：迁移 Context 和 Effects。
-- [ ] 步骤 7：完成运行时权限变化。
+- [x] 步骤 7：完成运行时权限变化。
 - [ ] 步骤 8：迁移页面渲染与 KeepAlive。
 - [ ] 步骤 9：迁移菜单 UI。
 - [ ] 步骤 10：迁移页签 UI。

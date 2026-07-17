@@ -19,6 +19,7 @@ import {
   resetStorageRuntime,
 } from './runtime'
 import { ProLayoutCache } from './cache'
+import { removeUnauthorizedPageInstances } from './authorization'
 import {
   closeTab,
   setTabs,
@@ -69,6 +70,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       registry: params.registry,
       storageKey: params.storageKey,
       hasAuth: params.hasAuth,
+      authVersion: params.authVersion,
+      authRevision: 0,
       maxFixedTabCount: params.maxFixedTabCount,
       keepAlive: params.keepAlive,
       onPageDisplay: params.onPageDisplay || null,
@@ -225,6 +228,15 @@ function syncExternalDeps(
   data: ProLayoutExternalDeps,
 ) {
   const previous = get()
+  // hasAuth 引用本身不是权限变化信号。同一版本内即使 Core 收到新的内联函数，Store
+  // 也继续使用已提交快照；只有 authVersion 发生变化时才同步函数并收敛页面状态。
+  const authorizationChanged =
+    'authVersion' in data && !Object.is(previous.authVersion, data.authVersion)
+  const authorizationRegistry =
+    authorizationChanged && data.registry ? data.registry : previous.registry
+  const authorizationConvergence = authorizationChanged
+    ? removeUnauthorizedPageInstances(previous, authorizationRegistry, runtime)
+    : null
   // storageKey 与 Adapter 共同标识一个持久化来源。字段缺席表示沿用旧值；显式传入
   // undefined 的 Adapter 则由 resolveStorageAdapter 恢复为默认 IndexedDB Adapter。
   const nextStorageKey =
@@ -272,9 +284,20 @@ function syncExternalDeps(
       data.onStorageLoadError ?? null,
     )
 
-    // hasAuth 必须允许从函数显式恢复为 undefined，不能使用忽略 undefined 的通用辅助。
-    if ('hasAuth' in data && state.hasAuth !== data.hasAuth)
-      next.hasAuth = data.hasAuth
+    if (authorizationChanged) {
+      // 版本变化会原子提交当前权限函数和 revision。hasAuth 必须允许显式切换为
+      // undefined，表示关闭权限过滤并恢复所有注册路由的访问能力。
+      next.authVersion = data.authVersion
+      next.authRevision = state.authRevision + 1
+      if ('hasAuth' in data)
+        next.hasAuth = data.hasAuth
+
+      if (authorizationConvergence) {
+        next.pages = authorizationConvergence.pages
+        next.activePage = authorizationConvergence.activePage
+        next.pathnameDescriptionMap = authorizationConvergence.pathnameDescriptionMap
+      }
+    }
 
     if ('systemList' in data && !areSystemListsEqual(state.systemList, data.systemList))
       next.systemList = data.systemList || []
@@ -302,8 +325,10 @@ function syncExternalDeps(
       next.keepAlive = data.keepAlive
       // 配置收紧时立即按新规则裁剪已有页面，不能等到下次导航才淘汰超限实例。
       next.pages = enforceKeepAliveLimit(
-        state.pages,
-        state.activePage,
+        authorizationConvergence ? authorizationConvergence.pages : state.pages,
+        authorizationConvergence
+          ? authorizationConvergence.activePage
+          : state.activePage,
         data.keepAlive,
         state.fixedSet,
       )
@@ -321,6 +346,14 @@ function syncExternalDeps(
     // Zustand 接受原 state 表示无变化，可避免空对象也触发订阅者重新计算。
     return Object.keys(next).length > 0 ? next : state
   })
+
+  if (authorizationChanged) {
+    // 权限恢复时 Router pathname 通常没有变化，PathnameSyncEffects 不会再次执行。
+    // 主动同步当前地址可以创建一个干净的新页面实例；撤权时同一入口只会保持 403
+    // 所需的空 activePage，不会重新创建无权限业务页面。
+    const latest = get()
+    latest.syncByPathname(latest.currentPathname)
+  }
 
   if (!storageSourceChanged)
     return

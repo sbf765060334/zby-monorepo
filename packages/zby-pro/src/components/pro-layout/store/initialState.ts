@@ -50,7 +50,7 @@ export function createProLayoutInitialState(
     params.defaultRoute,
   )
   const initialLeaf = initialPagePathname
-    ? params.registry.resolveLeafRoute(initialPagePathname)
+    ? params.registry.resolveLeafRoute(initialPagePathname, { withinAuth: true })
     : null
   const initialTabKey = initialPagePathname
     ? params.registry.getTabKey(initialPagePathname)
@@ -91,7 +91,9 @@ export function createProLayoutInitialState(
       initialRoute: initialLeaf?.route,
     }),
     pages,
-    activeTabKey: initialTabKey,
+    // 入口存在于完整索引但不在权限索引时，保留 currentPathname 供 403 判断，但不能
+    // 让一个尚未创建页签和页面实例的受限 routeKey 成为活动页签。
+    activeTabKey: pages.length > 0 ? initialTabKey : null,
     activePage: pages.length > 0 ? initialTabKey : null,
     currentPathname,
     currentRoutes,
@@ -113,8 +115,8 @@ function resolveInitialPagePathname(
   if (pathname === '/')
     return defaultRoute || registry.findFirstAccessiblePath() || null
 
-  // 完整索引中的页面保持原始真实 pathname，动态参数不会在这里被替换成 pattern。
-  const leaf = registry.resolveLeafRoute(pathname)
+  // 权限索引中的页面保持原始真实 pathname，动态参数不会在这里被替换成 pattern。
+  const leaf = registry.resolveLeafRoute(pathname, { withinAuth: true })
   if (registry.isPageRoute(leaf?.route))
     return pathname
 

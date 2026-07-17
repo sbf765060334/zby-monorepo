@@ -55,11 +55,23 @@ export function syncByPathname(
     return
 
   const state = get()
-  const leaf = state.resolveLeafRoute(pathname)
-  // 只有完整路由索引能够解析且具备页面 element 的地址才进入页签同步；目录和未知
-  // 地址继续交给 bootstrap 或外层 404 流程处理。
-  if (!state.registry.isPageRoute(leaf?.route))
+  const leaf = state.resolveLeafRoute(pathname, true)
+  // 权限索引不能解析的页面不得创建或激活业务实例。若它已有保留页签，只保留页签
+  // 选中身份，activePage 清空后由渲染层按完整索引区分 403 与 404。
+  if (!state.registry.isPageRoute(leaf?.route)) {
+    const fullTabKey = state.getTabKey(pathname)
+    const activeTabKey =
+      fullTabKey && state.tabs.some((tab) => tab.key === fullTabKey)
+        ? fullTabKey
+        : null
+
+    set((previous) => {
+      if (previous.activeTabKey === activeTabKey && previous.activePage === null)
+        return previous
+      return { activeTabKey, activePage: null }
+    })
     return
+  }
 
   ensureTabStateForPathname(set, get, pathname, { ensurePage: true })
 }
@@ -105,6 +117,32 @@ export function jumpTo(
   const tabKey = state.getTabKey(pathname)
   if (!tabKey)
     return
+
+  const authorizedLeaf = state.resolveLeafRoute(pathname, true)
+  const isAuthorizedPage = state.registry.isPageRoute(authorizedLeaf?.route)
+
+  if (!isAuthorizedPage) {
+    // 失权页签仍可导航到原 URL 展示 403，但不能重新创建页面实例。不存在旧页签时
+    // 不补建一个新的受限页签，当前活动页签也应清空，避免继续高亮其它业务页面。
+    const activeTabKey = state.tabs.some((tab) => tab.key === tabKey)
+      ? tabKey
+      : null
+    set({ activeTabKey, activePage: null })
+
+    const latest = get()
+    const realPath = latest.cache.getParamsPathByTabKey(tabKey) || pathname
+    latest.navigate?.(
+      buildUrlForTab({
+        pathname: realPath,
+        searchParams: resolveSearchParams(
+          searchParams,
+          latest.cache.getSearchParamsForTabKey(tabKey),
+        ),
+        hash: resolveHash(hash, latest.cache.getHashForTabKey(tabKey)),
+      }),
+    )
+    return
+  }
 
   // jumpTo 只在已有 KeepAlive 页面时立即切换 activePage；新页面仍交给 Router location
   // 生效后的 syncByPathname 创建，避免导航尚未完成就提前渲染目标路由。
