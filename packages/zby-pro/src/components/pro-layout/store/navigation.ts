@@ -11,15 +11,15 @@ import type { ProLayoutCloseOptions } from '../interface'
 export function bootstrapByPathname(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
-  data: { pathname: string, defaultRoute?: string | null },
+  data: { pathname: string },
 ) {
   const state = get()
 
   if (data.pathname === '/') {
-    // 根路径自身不创建页签。显式 defaultRoute 优先，否则由权限 Registry 选取首个
-    // 可访问页面；两者都不存在时布局进入无活动页面状态。
-    const fallback = data.defaultRoute || state.registry.findFirstAccessiblePath()
-    if (fallback) {
+    // 根路径自身不创建页签。Registry.defaultRoute 已经校验过存在性、页面类型和权限；
+    // `/` 仅表示当前没有任何可访问页面，不能触发无意义的自导航。
+    const fallback = state.registry.defaultRoute
+    if (fallback !== '/') {
       state.jumpTo(fallback)
       return
     }

@@ -259,7 +259,6 @@ function syncExternalDeps(
     assignIfChanged(next, state, data, 'maxFixedTabCount', data.maxFixedTabCount)
     assignIfChanged(next, state, data, 'headerHeight', data.headerHeight)
     assignIfChanged(next, state, data, 'breadcrumbHeight', data.breadcrumbHeight)
-    assignIfChanged(next, state, data, 'currentPathname', data.currentPathname)
     assignIfChanged(next, state, data, 'noBar', data.noBar)
     assignIfChanged(next, state, data, 'showBreadcrumb', data.showBreadcrumb)
     assignIfChanged(next, state, data, 'onPageDisplay', data.onPageDisplay ?? null)
@@ -276,30 +275,38 @@ function syncExternalDeps(
     if ('systemList' in data && !areSystemListsEqual(state.systemList, data.systemList))
       next.systemList = data.systemList || []
 
-    if (
-      'currentRoutes' in data &&
-      !areCurrentRoutesEqual(state.currentRoutes, data.currentRoutes)
-    ) {
-      next.currentRoutes = data.currentRoutes || []
-    }
+    const registry = data.registry || state.registry
+    const currentPathname = data.currentPathname ?? state.currentPathname
+    const registryChanged = registry !== state.registry
+    const currentPathnameChanged = currentPathname !== state.currentPathname
 
-    if (
-      'currentSelectedPath' in data &&
-      !areStringArraysEqual(state.currentSelectedPath, data.currentSelectedPath)
-    ) {
-      next.currentSelectedPath = data.currentSelectedPath || []
-    }
+    if (currentPathnameChanged)
+      next.currentPathname = currentPathname
 
-    if ('registry' in data && data.registry && state.registry !== data.registry) {
+    if (registryChanged) {
       // Registry 更新表示调用方提交了新的不可变 routes 快照。除替换查询源外，还要
       // 刷新默认页签标题和 KeepAlive 页面持有的 route 元数据；自定义标题保持不变。
-      next.registry = data.registry
-      const tabs = syncTabRouteMetadata(state, data.registry)
-      const pages = syncPageRouteMetadata(state.pages, data.registry)
+      next.registry = registry
+      const tabs = syncTabRouteMetadata(state, registry)
+      const pages = syncPageRouteMetadata(state.pages, registry)
       if (tabs !== state.tabs)
         next.tabs = tabs
       if (pages !== state.pages)
         next.pages = pages
+    }
+
+    if (registryChanged || currentPathnameChanged) {
+      // currentRoutes/currentSelectedPath 都由同一份 Registry + pathname 派生，不能再由
+      // Core 独立提交，否则路由快照更新时可能出现新 Registry 搭配旧面包屑的状态。
+      const currentRoutes = currentPathname
+        ? registry.getCurrentRoutes(currentPathname)
+        : []
+      const currentSelectedPath = currentRoutes.map((item) => item.realPath)
+
+      if (!areCurrentRoutesEqual(state.currentRoutes, currentRoutes))
+        next.currentRoutes = currentRoutes
+      if (!areStringArraysEqual(state.currentSelectedPath, currentSelectedPath))
+        next.currentSelectedPath = currentSelectedPath
     }
 
     if ('keepAlive' in data && data.keepAlive !== undefined && state.keepAlive !== data.keepAlive) {

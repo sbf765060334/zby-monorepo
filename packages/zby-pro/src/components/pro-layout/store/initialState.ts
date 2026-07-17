@@ -47,7 +47,6 @@ export function createProLayoutInitialState(
   const initialPagePathname = resolveInitialPagePathname(
     params.registry,
     params.initialPathname,
-    params.defaultRoute,
   )
   const initialLeaf = initialPagePathname
     ? params.registry.resolveLeafRoute(initialPagePathname, { withinAuth: true })
@@ -106,14 +105,14 @@ export function createProLayoutInitialState(
 function resolveInitialPagePathname(
   registry: ProLayoutRouteRegistry,
   pathname?: string,
-  defaultRoute?: string | null,
 ) {
   if (!pathname)
     return null
 
-  // 根路径没有自身页面身份：显式 defaultRoute 优先，缺省时退到权限范围内首个页面。
+  // 根路径只使用 Registry 已完成存在性、页面类型和权限校验的默认落点。`/` 是没有
+  // 任何可访问页面时的哨兵值，不能把它当成业务页面继续创建页签。
   if (pathname === '/')
-    return defaultRoute || registry.findFirstAccessiblePath() || null
+    return registry.defaultRoute === '/' ? null : registry.defaultRoute
 
   // 权限索引中的页面保持原始真实 pathname，动态参数不会在这里被替换成 pattern。
   const leaf = registry.resolveLeafRoute(pathname, { withinAuth: true })

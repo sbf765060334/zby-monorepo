@@ -5,24 +5,25 @@ import type { StoreApi } from 'zustand/vanilla'
 import type { ProLayoutExternalDeps, ProLayoutStoreState } from '../store'
 
 /** Core 每次渲染后需要同步到稳定 Store 的外部依赖。 */
-export type SyncExternalDepsEffectsProps = ProLayoutExternalDeps & {
+export type SyncExternalDepsEffectsProps = Omit<
+  ProLayoutExternalDeps,
+  'currentPathname' | 'registry'
+> & {
   store: StoreApi<ProLayoutStoreState>
 }
 
 /**
  * 在浏览器绘制前把 React/Core 的最新依赖同步到生命周期稳定的 Zustand Store。
  *
- * Store 只在 ProLayout 首次渲染时创建一次，Router、locale、Registry、回调与持久化
- * 来源则可能在后续渲染变化。集中在 layout effect 中一次同步，可以避免 UI 子组件先
+ * Store 只在 ProLayout 首次渲染时创建一次，locale、回调与持久化来源则可能在后续
+ * 渲染变化。集中在 layout effect 中一次同步，可以避免 UI 子组件先
  * 使用旧依赖绘制一帧，也避免每个消费者各自维护一套 prop 到 Store 的桥接逻辑。
+ * Registry 和 pathname 由 PathnameSyncEffects 统一同步，确保路由派生状态只有一个入口。
  */
 function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
   const {
     afterTabClose,
     breadcrumbHeight,
-    currentPathname,
-    currentRoutes,
-    currentSelectedPath,
     headerHeight,
     intl,
     keepAlive,
@@ -32,7 +33,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     noBar,
     onPageDisplay,
     onStorageLoadError,
-    registry,
     renderLogo,
     showBreadcrumb,
     storageAdapter,
@@ -47,9 +47,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     store.getState().syncExternalDeps({
       afterTabClose,
       breadcrumbHeight,
-      currentPathname,
-      currentRoutes,
-      currentSelectedPath,
       headerHeight,
       intl,
       keepAlive,
@@ -59,7 +56,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
       noBar,
       onPageDisplay,
       onStorageLoadError,
-      registry,
       renderLogo,
       showBreadcrumb,
       storageAdapter,
@@ -69,9 +65,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
   }, [
     afterTabClose,
     breadcrumbHeight,
-    currentPathname,
-    currentRoutes,
-    currentSelectedPath,
     headerHeight,
     intl,
     keepAlive,
@@ -81,7 +74,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     noBar,
     onPageDisplay,
     onStorageLoadError,
-    registry,
     renderLogo,
     showBreadcrumb,
     storageAdapter,

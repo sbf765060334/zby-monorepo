@@ -134,7 +134,7 @@ export interface ProLayoutStoreState {
   /** 同步 React/Core 在 Store 创建后发生变化的外部依赖。 */
   syncExternalDeps: (data: ProLayoutExternalDeps) => void
   /** 根据首个 pathname 处理根路径和目录重定向。 */
-  bootstrapByPathname: (data: { pathname: string, defaultRoute?: string | null }) => void
+  bootstrapByPathname: (data: { pathname: string }) => void
   /** 根据宿主 pathname 创建或激活对应页签和页面。 */
   syncByPathname: (pathname: string) => void
   /** 合并实际 pathname 对应的动态描述。 */
@@ -192,8 +192,6 @@ export type ProLayoutExternalDeps = Partial<{
   keepAlive: boolean | ProLayoutKeepAliveConfig
   headerHeight: number
   breadcrumbHeight: number
-  currentRoutes: ProLayoutCurrentRoute[]
-  currentSelectedPath: string[]
   currentPathname: string
   noBar: boolean
   showBreadcrumb: boolean
@@ -242,8 +240,6 @@ export interface CreateProLayoutStoreParams {
   initialStorageState?: ProLayoutStorageState
   /** Store 创建时宿主路由的 pathname。 */
   initialPathname?: string
-  /** 根路径优先使用的默认路由。 */
-  defaultRoute?: string | null
   /** 持久化错误回调。 */
   onStorageLoadError?: ProLayoutProps['onStorageLoadError']
 }

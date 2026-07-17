@@ -194,13 +194,14 @@ describe('ProLayout Effects', () => {
   it('redirects a directory entered after mount and avoids StrictMode duplicate navigation', () => {
     const navigate = vi.fn()
     const store = createTestStore()
+    const registry = store.getState().registry
     store.getState().syncExternalDeps({ navigate })
     const view = render(
       <StrictMode>
         <PathnameSyncEffects
           store={store}
           pathname="/settings"
-          defaultRoute="/dashboard"
+          registry={registry}
         />
       </StrictMode>,
     )
@@ -214,7 +215,7 @@ describe('ProLayout Effects', () => {
         <PathnameSyncEffects
           store={store}
           pathname="/dashboard"
-          defaultRoute="/dashboard"
+          registry={registry}
         />
       </StrictMode>,
     )
@@ -228,7 +229,7 @@ describe('ProLayout Effects', () => {
         <PathnameSyncEffects
           store={store}
           pathname="/settings"
-          defaultRoute="/dashboard"
+          registry={registry}
         />
       </StrictMode>,
     )
@@ -249,13 +250,85 @@ describe('ProLayout Effects', () => {
       <PathnameSyncEffects
         store={store}
         pathname="/"
-        defaultRoute={registry.defaultRoute}
+        registry={registry}
       />,
     )
 
     expect(registry.defaultRoute).toBe('/')
     expect(navigate).not.toHaveBeenCalled()
     expect(store.getState().activeTabKey).toBeNull()
+  })
+
+  it('re-evaluates the root default after the authoritative Registry changes', () => {
+    const navigate = vi.fn()
+    const initialRegistry = createRouteRegistry({
+      routes: [{ path: '/empty', title: '空目录', routes: [] }],
+    })
+    const nextRegistry = createRouteRegistry({ routes })
+    const store = createTestStore({ registry: initialRegistry, initialPathname: '/' })
+    store.getState().syncExternalDeps({ navigate })
+    const view = render(
+      <PathnameSyncEffects store={store} pathname="/" registry={initialRegistry} />,
+    )
+
+    expect(navigate).not.toHaveBeenCalled()
+
+    view.rerender(
+      <PathnameSyncEffects store={store} pathname="/" registry={nextRegistry} />,
+    )
+
+    expect(store.getState().registry).toBe(nextRegistry)
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('uses the validated Registry default when the configured default is unauthorized', () => {
+    const navigate = vi.fn()
+    const hasAuth = (code: string) => code !== 'admin'
+    const registry = createRouteRegistry({
+      routes: routes.concat({
+        path: '/admin',
+        title: '管理后台',
+        auth: 'admin',
+        element: () => null,
+      }),
+      hasAuth,
+      defaultRedirectPath: '/admin',
+    })
+    const store = createTestStore({ registry, hasAuth, initialPathname: '/' })
+    store.getState().syncExternalDeps({ navigate })
+
+    render(<PathnameSyncEffects store={store} pathname="/" registry={registry} />)
+
+    expect(registry.defaultRoute).toBe('/dashboard')
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('keeps a directly visited unauthorized URL for the 403 renderer', () => {
+    const navigate = vi.fn()
+    const hasAuth = (code: string) => code !== 'admin'
+    const registry = createRouteRegistry({
+      routes: routes.concat({
+        path: '/admin',
+        title: '管理后台',
+        auth: 'admin',
+        element: () => null,
+      }),
+      hasAuth,
+    })
+    const store = createTestStore({ registry, hasAuth })
+    store.getState().syncExternalDeps({ navigate })
+
+    render(<PathnameSyncEffects store={store} pathname="/admin" registry={registry} />)
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(store.getState().currentPathname).toBe('/admin')
+    expect(store.getState().registry.resolveLeafRoute('/admin')).not.toBeNull()
+    expect(
+      store.getState().registry.resolveLeafRoute('/admin', { withinAuth: true }),
+    ).toBeNull()
+    expect(store.getState().activePage).toBeNull()
   })
 
   it('caches and emits the complete location on first effect mount', async () => {

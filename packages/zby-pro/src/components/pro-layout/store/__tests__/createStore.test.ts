@@ -96,6 +96,39 @@ describe('proLayout Store initialization and navigation', () => {
     expect(state.cache.getParamsPathByTabKey('/project/:id')).toBe('/project/99')
   })
 
+  it.each([
+    ['missing path', '/missing'],
+    ['directory path', '/settings'],
+    ['unauthorized page', '/admin'],
+  ])('uses the validated Registry fallback for an invalid default: %s', (_case, defaultRedirectPath) => {
+    const hasAuth = (code: string) => code !== 'admin'
+    const registry = createRouteRegistry({
+      routes: routes.concat({
+        path: '/settings',
+        title: '设置',
+        routes: [
+          {
+            path: '/settings/profile',
+            title: '个人设置',
+            element: () => null,
+          },
+        ],
+      }),
+      hasAuth,
+      defaultRedirectPath,
+    })
+    const store = createTestStore({
+      registry,
+      hasAuth,
+      initialPathname: '/',
+    })
+
+    expect(registry.defaultRoute).toBe('/dashboard')
+    expect(store.getState().currentPathname).toBe('/dashboard')
+    expect(store.getState().activeTabKey).toBe('/dashboard')
+    expect(store.getState().activePage).toBe('/dashboard')
+  })
+
   it('keeps persisted fixed tabs first while preserving both group orders', () => {
     const store = createTestStore({
       initialPathname: '/project/42',
@@ -634,10 +667,10 @@ describe('proLayout Store tabs and KeepAlive', () => {
 
     store.getState().syncExternalDeps({
       registry: nextRegistry,
-      currentRoutes: nextRegistry.getCurrentRoutes('/dashboard'),
     })
 
     expect(store.getState().currentRoutes[0]?.route).toBe(nextRoutes[0])
+    expect(store.getState().currentSelectedPath).toEqual(['/dashboard'])
     expect(store.getState().tabs).toMatchObject([
       { key: '/dashboard', label: '工作台 EN', labelCustomized: false },
       { key: '/orders', label: '我的订单', labelCustomized: true },
@@ -650,6 +683,59 @@ describe('proLayout Store tabs and KeepAlive', () => {
       ...initialOrdersPage,
       route: nextRoutes[1],
     })
+  })
+
+  it('derives route hierarchy from the latest Registry without separate route inputs', () => {
+    const initialRoutes: ProLayoutRoute[] = [
+      {
+        path: '/system',
+        title: '系统管理',
+        routes: [
+          {
+            path: '/users',
+            title: '用户管理',
+            element: () => null,
+          },
+        ],
+      },
+    ]
+    const nextRoutes: ProLayoutRoute[] = [
+      {
+        path: '/organization',
+        title: 'Organization',
+        routes: [
+          {
+            path: '/users',
+            title: 'Users',
+            element: () => null,
+          },
+        ],
+      },
+    ]
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes: initialRoutes }),
+      initialPathname: '/users',
+    })
+
+    store.getState().syncExternalDeps({
+      registry: createRouteRegistry({ routes: nextRoutes }),
+    })
+
+    expect(store.getState().currentRoutes.map((item) => item.route.title)).toEqual([
+      'Organization',
+      'Users',
+    ])
+    expect(store.getState().currentSelectedPath).toEqual(['/organization', '/users'])
+  })
+
+  it('derives route hierarchy when the authoritative pathname changes', () => {
+    const store = createTestStore({ initialPathname: '/dashboard' })
+
+    store.getState().syncExternalDeps({ currentPathname: '/orders' })
+
+    expect(store.getState().currentPathname).toBe('/orders')
+    expect(store.getState().currentRoutes[0]?.route).toBe(routes[1])
+    expect(store.getState().currentSelectedPath).toEqual(['/orders'])
   })
 
   it('marks an unchanged setTabLabel value as customized', () => {
