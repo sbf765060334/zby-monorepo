@@ -149,12 +149,35 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 ### 3.10 已迁移核心回顾修复
 
 - `defaultRedirectPath` 只有在权限索引中能够解析为页面时才生效，否则回退首个可访问页面。
+- Store 初始化和 pathname 同步不再接收独立的原始默认地址，只使用 Registry 校验后的
+  `defaultRoute`；直接访问无权限页面仍保留 URL 并进入 403，而不是跳转默认页面。
+- Registry 与 pathname 是当前路由状态的权威输入；`currentRoutes` 和
+  `currentSelectedPath` 由 Store 在同一次更新中派生，不能由 Core 独立提交旧快照。
 - 关闭共享动态页签时按 tabKey 清理全部历史 pathname 描述。
 - 相邻页签的页面实例已被 LRU 淘汰时，只切换 `activeTabKey`，`activePage` 保持 null。
 - 新 routes 元数据快照会刷新 currentRoutes、默认页签标题和 KeepAlive page.route；业务
   通过 `setTabLabel` 设置的自定义标题不被覆盖。
 - 页签 preload 只解析权限索引，无权限固定页签不会预加载业务组件。
 - KeepAlive 过滤结果未删除页面时复用原 pages 引用，避免无意义 Store 通知。
+
+### 3.11 迁移页面渲染与 KeepAlive
+
+第八步实现结论：
+
+- `ProLayoutContent` 直接消费 Store 的 `pages` 和 `activePage`；非活动页面只隐藏而不卸载，
+  页签关闭、KeepAlive 过滤或 LRU 从 pages 删除描述后才真正卸载 React 页面实例。
+- 每个 PageContainer 创建独立的 vanilla Page Context Store，保存真实 pathname、tabKey、
+  当前路由层级、lifecycle 事件流和 location 事件流。
+- 页面 Store 使用 layout effect 在绘制前同步共享动态 pathname 和新 Registry 路由层级，
+  不会短暂暴露旧 Page Context。
+- 内容层和页面层都直接订阅 Registry；routes 更新但 pathname 不变时重新解析 element、
+  403 和 404，不依赖稳定的 Store 动作函数缓存旧查询结果。
+- 页面 emitter 注册和 `useSubscription` 都使用 layout effect，早于 LocationCacheEffects
+  的被动 effect，确保页面能够收到首次完整 location 和首次 lifecycle 状态。
+- 失去权限或从新 Registry 消失的旧 page 描述暂不擅自关闭，但其业务 element 会立即
+  卸载并替换为异常内容；页签和 page 描述的最终关闭策略仍遵循第 6 节的待确认项。
+- 使用 antd 的 Layout、Result、Spin 和 Alert.ErrorBoundary 等价适配参考 UI，不引入
+  `shuzhi-ui`；不迁移 Next.js 专属 `NextProLayoutPageLoading` 配置。
 
 ## 4. 必须保留的功能范围
 
@@ -258,8 +281,8 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - [x] 有权限和无权限路由分别进入授权路由表和完整路由表。
 - [x] 固定使用首次挂载的 `hasAuth`，后续函数引用变化不生效。
 - [x] routes 元数据更新时继续使用首次 `hasAuth` 重建 Registry。
-- [ ] 直接访问无权限地址显示 403，不渲染页面组件。
-- [x] Store 不为直接访问的无权限地址创建页面实例；403 视图留待第八步验证。
+- [x] 直接访问无权限地址显示 403，不渲染页面组件。
+- [x] Store 不为直接访问的无权限地址创建页面实例，内容层使用完整索引区分 403/404。
 
 ### 7.4 Cross-Window Message
 
@@ -301,6 +324,8 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - [x] 无限 KeepAlive 重访页面时对象和组件实例稳定。
 - [x] LRU 只淘汰可淘汰的非活动、非固定页面。
 - [x] include/exclude 同时存在时遵循既有优先级。
+- [x] 非活动页面只隐藏且不重复渲染，LRU 删除 page 描述后 React 页面实例完成卸载。
+- [x] Registry 在 pathname 不变时更新 element，内容层立即替换旧页面组件。
 
 ### 7.7 Theme And UI
 
@@ -328,7 +353,9 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - [x] StrictMode 重放相同 pathname Effect 时不重复导航。
 - [x] 没有可访问页面时不会从根路径导航到根路径。
 - [x] Location Effect 首次挂载时缓存 search/hash，并向已注册页面发布完整 location。
-- [ ] 第八步页面 Provider 使用 layout effect 注册 emitter，确保收到首次 location。
+- [x] 页面 Provider 和页面订阅都使用 layout effect，能够收到首次 lifecycle 和完整 location。
+- [x] 共享动态页签切换真实 pathname 时复用页面实例，并在绘制前同步 Page Context。
+- [x] Registry 元数据更新后，Page Context 的 currentRoutes 使用新路由对象和标题。
 
 ## 8. 每步统一验证门槛
 
@@ -380,7 +407,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 5：迁移并拆分 Store 引擎。
 - [x] 步骤 6：迁移 Context 和 Effects。
 - [x] 步骤 7：完成权限组件与静态权限快照。
-- [ ] 步骤 8：迁移页面渲染与 KeepAlive。
+- [x] 步骤 8：迁移页面渲染与 KeepAlive。
 - [ ] 步骤 9：迁移菜单 UI。
 - [ ] 步骤 10：迁移页签 UI。
 - [ ] 步骤 11：组装 Core 和 React Router Adapter。
