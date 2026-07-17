@@ -7,7 +7,6 @@ export type {
 export { useProLayoutContext, useProLayoutPageContext } from './context'
 export type { ProLayoutContextValue, ProLayoutPageContextValue } from './context'
 export type {
-  ProLayoutAuthVersion,
   ProLayoutAfterTabCloseInfo,
   ProLayoutBeforeCloseHook,
   ProLayoutClassNames,

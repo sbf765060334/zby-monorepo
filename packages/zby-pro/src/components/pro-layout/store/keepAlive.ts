@@ -39,17 +39,20 @@ export function enforceKeepAliveLimit(
   fixedSet: string[],
 ) {
   // 完全关闭 KeepAlive 时只保留当前活动页面，切换后其它页面实例立即销毁。
-  if (keepAlive === false)
-    return pages.filter((page) => page.key === activeKey)
+  if (keepAlive === false) {
+    const activePages = pages.filter((page) => page.key === activeKey)
+    return activePages.length === pages.length ? pages : activePages
+  }
 
   // 活动页面即使命中 exclude 也必须保留到导航完成，否则当前视图会在同一轮状态更新
   // 中先被卸载；其余页面才应用 include/exclude 配置。
-  let retainedPages =
+  const filteredPages =
     typeof keepAlive === 'object'
       ? pages.filter(
           (page) => page.key === activeKey || shouldKeepPage(page, keepAlive),
         )
       : pages
+  let retainedPages = filteredPages.length === pages.length ? pages : filteredPages
 
   // boolean true 或未设置数字上限时只应用过滤规则，不启用 LRU。
   if (typeof keepAlive !== 'object' || typeof keepAlive.maxCachedPages !== 'number')

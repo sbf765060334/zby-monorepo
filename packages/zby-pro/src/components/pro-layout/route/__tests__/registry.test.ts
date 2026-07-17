@@ -150,6 +150,20 @@ describe('createRouteRegistry', () => {
     expect(registry.defaultRoute).toBe('/docs/guide')
   })
 
+  it.each([
+    ['missing path', '/missing'],
+    ['directory path', '/workspace'],
+    ['unauthorized page', '/admin'],
+  ])('falls back from an invalid explicit redirect: %s', (_case, defaultRedirectPath) => {
+    const registry = createRouteRegistry({
+      routes,
+      hasAuth: (code) => code !== 'admin',
+      defaultRedirectPath,
+    })
+
+    expect(registry.defaultRoute).toBe('/workspace/dashboard')
+  })
+
   it('requires element for client pages unless a custom page matcher is provided', () => {
     const shellRoutes: ProLayoutRoute[] = [
       { path: '/shell-page', title: 'Shell page', page: true },

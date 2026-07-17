@@ -1,19 +1,12 @@
 import { useProLayoutStoreSelector } from '../context'
 import type { ProLayoutAuthCode, UseProLayoutAuthOptions } from './interface'
 
-/**
- * 使用 ProLayout 当前已经提交的权限快照判断页面内操作权限。
- *
- * authRevision 虽然不直接参与权限计算，但必须进入订阅：稳定的 hasAuth 函数可能在
- * authVersion 变化后继续保持相同引用，例如它读取外部权限服务。Store 递增 revision
- * 后，本 Hook 才会重新执行该函数并得到新结果。
- */
+/** 使用 ProLayout 首次挂载时保存的权限函数判断页面内操作权限。 */
 export function useProLayoutAuth(
   code?: ProLayoutAuthCode | null,
   options?: UseProLayoutAuthOptions,
 ) {
   const hasAuth = useProLayoutStoreSelector((state) => state.hasAuth)
-  useProLayoutStoreSelector((state) => state.authRevision)
 
   const codes = normalizeAuthCodes(code)
   // 空权限码和未启用权限过滤都遵循路由层的默认允许契约。

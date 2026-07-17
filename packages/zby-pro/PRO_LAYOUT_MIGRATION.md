@@ -58,22 +58,18 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - 不迁移仅被参考测试使用的 `createStorageKeys` 和完全未使用的可变空状态常量。
 - `getInitialTabsFromStorage` 属于 Store 初始化逻辑，延后到第五步迁移。
 
-### 3.3 权限支持运行时变化
+### 3.3 权限使用挂载期静态快照
 
-运行时权限变化通过显式 `authVersion` 提交。`hasAuth` 函数引用本身不是权限版本，
-避免调用方在 JSX 中传入内联函数时，普通渲染反复重建 Route Registry。
+ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用或改变函数背后的权限
+数据都不会刷新权限索引；用户、租户或权限上下文变化时必须重新挂载 ProLayout。
+这样普通渲染不会因内联函数的新引用反复重建 Route Registry，也不需要额外权限版本。
 
 最低验收要求：
 
-- 新获得权限后，对应菜单和页面可以访问。
-- 权限被撤销后，对应菜单消失，当前页面不再继续展示受限内容。
-- 已打开页签、KeepAlive 页面和持久化页签不会绕过最新权限结果。
-- `hasAuth` 从函数变为 `undefined` 或从 `undefined` 变为函数时，必须同时改变
-  `authVersion`，并得到一致的新权限快照。
-- 未传 `authVersion` 时，整个挂载期固定使用首次提交的 `hasAuth`；后续只改变
-  `hasAuth` 不生效。
-- `authVersion` 支持字符串和数字，不要求连续递增，只使用 `Object.is` 判断变化；
-  切换到或切出 `undefined` 也属于一次版本变化。
+- 首屏、直接 URL、页签恢复和页面内权限判断统一使用首次 `hasAuth`。
+- 后续传入新的 `hasAuth` 引用不生效。
+- routes 元数据快照更新时，Registry 继续使用首次 `hasAuth` 重建权限索引。
+- 权限上下文确实变化时，通过重新挂载 ProLayout 创建全新 Store 和权限快照。
 
 ### 3.4 修复 Route Registry 与公开契约不一致
 
@@ -138,26 +134,27 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - Context 与 Effects 不依赖 React Router、Next.js、antd 内部模块或 ahooks；Router 能力仍
   通过通用类型和 Store 动作注入。
 
-### 3.9 完成运行时权限变化
+### 3.9 完成权限组件与静态权限快照
 
 第七步实现结论：
 
-- 新增 `authVersion?: string | number` 作为唯一运行时权限提交信号；未传时固定使用
-  挂载时的 `hasAuth`，同一版本内的新函数引用不会进入 Registry 或页面权限 Hook。
-- `useProLayoutAuthorization` 保存已提交权限快照。`authVersion` 变化时同时提交当前
-  `hasAuth` 并重建 Registry；普通 routes 变化只重建索引，不触发旧页面收敛。
-- Store 使用 `authRevision` 通知稳定 `hasAuth` 的页面内权限订阅者重新计算，支持
-  函数与 `undefined` 双向切换，也支持读取外部权限服务的稳定函数。
-- 撤权后保留页签、顺序、固定、收藏和 URL Cache；当前 URL 不跳转，页面渲染层可
-  依据完整索引与权限索引展示 403。
-- 已失权的 KeepAlive 页面立即从 `pages` 删除，活动页面置空，并清理 emitter、关闭
-  Hook 和动态页面描述；撤权不执行关闭 Hook，也不触发 `afterTabClose`。
-- 首屏、Router pathname 同步和页签创建统一从权限索引创建业务页面实例；保留的
-  失权页签可以导航到原 URL，但不能重新创建页面实例。
-- 授权恢复后主动重新同步当前 pathname，即使 Router 地址未变化，也会创建新的干净
-  页面实例，不复用撤权前组件状态。
-- `useProLayoutAuth` 和 `ProLayoutAuth` 已迁移。403 页面卸载、菜单隐藏和 Core 接入的
-  真实 UI 集成验证分别留在第八步、第九步和第十一步完成。
+- `useProLayoutAuthorization` 使用首次 `hasAuth` 创建挂载期静态权限快照；routes 或
+  `defaultRedirectPath` 变化时继续使用该函数重建 Registry。
+- Store 不接收运行时 `hasAuth` 更新，也不保存权限版本或 revision。
+- 首屏、Router pathname 同步和页签创建统一从权限索引创建业务页面实例。
+- `useProLayoutAuth` 和 `ProLayoutAuth` 已迁移，并统一读取 Store 中的首次权限函数。
+- 直接访问无权限地址时不创建页签或页面实例；403 页面、菜单和 Core 的真实 UI 集成
+  验证分别留在第八步、第九步和第十一步完成。
+
+### 3.10 已迁移核心回顾修复
+
+- `defaultRedirectPath` 只有在权限索引中能够解析为页面时才生效，否则回退首个可访问页面。
+- 关闭共享动态页签时按 tabKey 清理全部历史 pathname 描述。
+- 相邻页签的页面实例已被 LRU 淘汰时，只切换 `activeTabKey`，`activePage` 保持 null。
+- 新 routes 元数据快照会刷新 currentRoutes、默认页签标题和 KeepAlive page.route；业务
+  通过 `setTabLabel` 设置的自定义标题不被覆盖。
+- 页签 preload 只解析权限索引，无权限固定页签不会预加载业务组件。
+- KeepAlive 过滤结果未删除页面时复用原 pages 引用，避免无意义 Store 通知。
 
 ## 4. 必须保留的功能范围
 
@@ -255,19 +252,14 @@ ZBY 实现不得复用“先读取完整状态，再在独立事务中写回完�
 - [ ] basename 下 `_blank` 内部链接生成正确 href。
 - [ ] MemoryRouter 集成测试不依赖浏览器全局对象。
 
-### 7.3 Runtime Authorization
+### 7.3 Authorization
 
 - [x] 未传 `hasAuth` 时默认允许访问。
 - [x] 有权限和无权限路由分别进入授权路由表和完整路由表。
-- [x] 未传 `authVersion` 时固定使用挂载期权限快照，普通函数引用变化不生效。
-- [x] `authVersion` 变化后同步 Registry、Store 和页面内权限结果。
+- [x] 固定使用首次挂载的 `hasAuth`，后续函数引用变化不生效。
+- [x] routes 元数据更新时继续使用首次 `hasAuth` 重建 Registry。
 - [ ] 直接访问无权限地址显示 403，不渲染页面组件。
-- [ ] 运行时新增权限后菜单和页面同步恢复。
-- [ ] 运行时撤销权限后当前受限页面立即停止展示。
 - [x] Store 不为直接访问的无权限地址创建页面实例；403 视图留待第八步验证。
-- [x] 权限变化后已打开页签和 KeepAlive 页面重新校验。
-- [x] 权限变化后收藏和固定偏好保留，但不能创建无权限页面实例。
-- [x] `hasAuth` 在函数与 `undefined` 之间随版本切换时状态一致。
 
 ### 7.4 Cross-Window Message
 
@@ -387,7 +379,7 @@ vitest run components/pro-layout/__tests__/index.test.ts \
 - [x] 步骤 4：迁移 URL、Cache 和 Storage Adapter。
 - [x] 步骤 5：迁移并拆分 Store 引擎。
 - [x] 步骤 6：迁移 Context 和 Effects。
-- [x] 步骤 7：完成运行时权限变化。
+- [x] 步骤 7：完成权限组件与静态权限快照。
 - [ ] 步骤 8：迁移页面渲染与 KeepAlive。
 - [ ] 步骤 9：迁移菜单 UI。
 - [ ] 步骤 10：迁移页签 UI。

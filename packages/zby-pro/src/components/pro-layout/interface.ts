@@ -131,14 +131,6 @@ export interface ProLayoutHeaderConfig {
 export type ProLayoutThemeMode = 'light' | 'dark' | 'auto'
 export type ProLayoutThemeAppearance = Exclude<ProLayoutThemeMode, 'auto'>
 
-/**
- * ProLayout 权限快照版本。
- *
- * 版本只用于表达“权限集合已经发生变化”，不要求连续递增；字符串适合直接使用
- * 用户、角色或租户版本号，数字适合使用本地递增 revision。
- */
-export type ProLayoutAuthVersion = string | number
-
 /** 仅保留跟随系统、浅色和暗黑三种主题模式。 */
 export interface ProLayoutThemeConfig {
   /** 是否在 Header 中启用 ProLayout 内置主题切换入口。 */
@@ -162,7 +154,7 @@ export interface ProLayoutAfterTabCloseInfo {
 export interface ProLayoutProps {
   /** 应用标题，同时作为浏览器页面标题的基础文本。 */
   title: string
-  /** 驱动菜单、权限、页签、面包屑和页面渲染的路由树。 */
+  /** 驱动菜单、权限、页签、面包屑和页面渲染的不可变路由快照。 */
   routes: ProLayoutRoute[]
   /** Header 的 Logo 和右侧扩展内容配置。 */
   header?: ProLayoutHeaderConfig
@@ -170,16 +162,13 @@ export interface ProLayoutProps {
   theme?: ProLayoutThemeConfig
   /** 是否展示页面面包屑区域。 */
   showBreadcrumb?: boolean
-  /** 根据权限码判断当前用户是否有权限。 */
-  hasAuth?: (code: string) => boolean
   /**
-   * 权限快照版本。
+   * 根据权限码判断当前用户是否有权限。
    *
-   * 未传时，ProLayout 固定使用首次挂载时提交的 hasAuth，后续 hasAuth 引用变化不会
-   * 生效。运行时刷新权限时，调用方必须同时改变 authVersion；ProLayout 才会提交
-   * 当前 hasAuth、重建权限路由并收敛已打开页面。切换到或切出 undefined 也属于变化。
+   * 注意：ProLayout 会固定使用首次挂载时传入的函数，后续替换引用或改变其判断结果
+   * 都不会刷新权限路由。用户、租户或权限上下文变化时必须重新挂载 ProLayout。
    */
-  authVersion?: ProLayoutAuthVersion
+  hasAuth?: (code: string) => boolean
   /** 当前页面变化时，将页面名称同步给外部系统。 */
   setPage?: (pageName: string) => void
   /** 页签完成关闭和状态清理后的回调。 */

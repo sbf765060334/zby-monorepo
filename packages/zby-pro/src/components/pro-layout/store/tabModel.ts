@@ -47,7 +47,7 @@ export function createTabsFromFixedSet(
     // fixedSet 已经清理过，但 Registry 可能在运行时替换；这里再次防御已失效路由。
     const route = registry.resolveLeafRoute(key)?.route
     if (registry.isPageRoute(route))
-      tabs.push({ key, label: route!.title })
+      tabs.push({ key, label: route!.title, labelCustomized: false })
 
     return tabs
   }, [])
@@ -74,7 +74,11 @@ export function createInitialTabs(params: {
     return sortTabs(tabs, params.fixedSet)
 
   return sortTabs(
-    tabs.concat({ key: params.initialTabKey, label: params.initialRoute.title }),
+    tabs.concat({
+      key: params.initialTabKey,
+      label: params.initialRoute.title,
+      labelCustomized: false,
+    }),
     params.fixedSet,
   )
 }

@@ -59,9 +59,7 @@ interface CreateRouteRegistryParams {
    * 根据权限码判断当前用户是否有权限；未提供时按拥有全部路由权限处理。
    */
   hasAuth?: ProLayoutProps['hasAuth']
-  /**
-   * 优先使用的默认跳转路径；当前实现信任该配置，不校验路径是否存在或有权限。
-   */
+  /** 优先使用的默认跳转页面；不存在、无权限或不是页面时回退首个可访问页面。 */
   defaultRedirectPath?: string
   /**
    * 自定义判断路由是否可以作为页面访问的方法；未提供时只要求存在 element。
@@ -169,9 +167,15 @@ export function createRouteRegistry(params: CreateRouteRegistryParams): ProLayou
   const fullIndex = createRouteIndex(routes)
   const authIndex = createRouteIndex(permissionRoutes)
 
-  // 显式 defaultRedirectPath 具有最高优先级，当前不会预先验证存在性或权限。
+  // 显式默认地址只有在权限索引中能够解析为页面时才生效。目录、未知地址或失权页面
+  // 都回退到声明顺序中的首个可访问页面，避免根路径进入 403 或静默停留。
+  const explicitDefaultLeaf = params.defaultRedirectPath
+    ? resolveRoute(params.defaultRedirectPath, authIndex)
+    : null
   const defaultRoute =
-    params.defaultRedirectPath || findFirstAccessiblePath(authIndex.mapping, isPageRoute) || '/'
+    explicitDefaultLeaf && isPageRoute(explicitDefaultLeaf.route)
+      ? params.defaultRedirectPath!
+      : findFirstAccessiblePath(authIndex.mapping, isPageRoute) || '/'
 
   const resolveLeafRoute: ProLayoutRouteRegistry['resolveLeafRoute'] = (pathname, options) => {
     // 完整索引用于识别路由事实，权限索引用于回答“当前用户能否访问”。

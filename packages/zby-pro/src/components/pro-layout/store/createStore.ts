@@ -19,7 +19,6 @@ import {
   resetStorageRuntime,
 } from './runtime'
 import { ProLayoutCache } from './cache'
-import { removeUnauthorizedPageInstances } from './authorization'
 import {
   closeTab,
   setTabs,
@@ -70,8 +69,6 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
       registry: params.registry,
       storageKey: params.storageKey,
       hasAuth: params.hasAuth,
-      authVersion: params.authVersion,
-      authRevision: 0,
       maxFixedTabCount: params.maxFixedTabCount,
       keepAlive: params.keepAlive,
       onPageDisplay: params.onPageDisplay || null,
@@ -141,14 +138,15 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 
       setTabLabel: (key, label) => {
         set((state) => {
-          // 不存在的页签不补建，标题相同也不创建新数组，减少 Tabs 订阅者无效刷新。
+          // 不存在的页签不补建。即使文本相同，也要记录业务已接管标题，避免后续
+          // routes 元数据更新时把调用方明确设置的标题误判为默认标题并覆盖。
           const hit = state.tabs.find((tab) => tab.key === key)
-          if (!hit || hit.label === label)
+          if (!hit || (hit.label === label && hit.labelCustomized))
             return state
 
           return {
             tabs: state.tabs.map((tab) =>
-              tab.key === key ? { ...tab, label } : tab,
+              tab.key === key ? { ...tab, label, labelCustomized: true } : tab,
             ),
           }
         })
@@ -228,15 +226,6 @@ function syncExternalDeps(
   data: ProLayoutExternalDeps,
 ) {
   const previous = get()
-  // hasAuth 引用本身不是权限变化信号。同一版本内即使 Core 收到新的内联函数，Store
-  // 也继续使用已提交快照；只有 authVersion 发生变化时才同步函数并收敛页面状态。
-  const authorizationChanged =
-    'authVersion' in data && !Object.is(previous.authVersion, data.authVersion)
-  const authorizationRegistry =
-    authorizationChanged && data.registry ? data.registry : previous.registry
-  const authorizationConvergence = authorizationChanged
-    ? removeUnauthorizedPageInstances(previous, authorizationRegistry, runtime)
-    : null
   // storageKey 与 Adapter 共同标识一个持久化来源。字段缺席表示沿用旧值；显式传入
   // undefined 的 Adapter 则由 resolveStorageAdapter 恢复为默认 IndexedDB Adapter。
   const nextStorageKey =
@@ -284,21 +273,6 @@ function syncExternalDeps(
       data.onStorageLoadError ?? null,
     )
 
-    if (authorizationChanged) {
-      // 版本变化会原子提交当前权限函数和 revision。hasAuth 必须允许显式切换为
-      // undefined，表示关闭权限过滤并恢复所有注册路由的访问能力。
-      next.authVersion = data.authVersion
-      next.authRevision = state.authRevision + 1
-      if ('hasAuth' in data)
-        next.hasAuth = data.hasAuth
-
-      if (authorizationConvergence) {
-        next.pages = authorizationConvergence.pages
-        next.activePage = authorizationConvergence.activePage
-        next.pathnameDescriptionMap = authorizationConvergence.pathnameDescriptionMap
-      }
-    }
-
     if ('systemList' in data && !areSystemListsEqual(state.systemList, data.systemList))
       next.systemList = data.systemList || []
 
@@ -317,18 +291,23 @@ function syncExternalDeps(
     }
 
     if ('registry' in data && data.registry && state.registry !== data.registry) {
-      // Registry 是路由树和所有索引的唯一数据源；这里只替换引用，不复制派生映射。
+      // Registry 更新表示调用方提交了新的不可变 routes 快照。除替换查询源外，还要
+      // 刷新默认页签标题和 KeepAlive 页面持有的 route 元数据；自定义标题保持不变。
       next.registry = data.registry
+      const tabs = syncTabRouteMetadata(state, data.registry)
+      const pages = syncPageRouteMetadata(state.pages, data.registry)
+      if (tabs !== state.tabs)
+        next.tabs = tabs
+      if (pages !== state.pages)
+        next.pages = pages
     }
 
     if ('keepAlive' in data && data.keepAlive !== undefined && state.keepAlive !== data.keepAlive) {
       next.keepAlive = data.keepAlive
       // 配置收紧时立即按新规则裁剪已有页面，不能等到下次导航才淘汰超限实例。
       next.pages = enforceKeepAliveLimit(
-        authorizationConvergence ? authorizationConvergence.pages : state.pages,
-        authorizationConvergence
-          ? authorizationConvergence.activePage
-          : state.activePage,
+        next.pages || state.pages,
+        state.activePage,
         data.keepAlive,
         state.fixedSet,
       )
@@ -346,14 +325,6 @@ function syncExternalDeps(
     // Zustand 接受原 state 表示无变化，可避免空对象也触发订阅者重新计算。
     return Object.keys(next).length > 0 ? next : state
   })
-
-  if (authorizationChanged) {
-    // 权限恢复时 Router pathname 通常没有变化，PathnameSyncEffects 不会再次执行。
-    // 主动同步当前地址可以创建一个干净的新页面实例；撤权时同一入口只会保持 403
-    // 所需的空 activePage，不会重新创建无权限业务页面。
-    const latest = get()
-    latest.syncByPathname(latest.currentPathname)
-  }
 
   if (!storageSourceChanged)
     return
@@ -400,6 +371,46 @@ function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
   }, {})
 }
 
+/** 使用新 Registry 刷新仍采用路由默认标题的页签，并保留业务自定义标题。 */
+function syncTabRouteMetadata(
+  state: ProLayoutStoreState,
+  registry: ProLayoutStoreState['registry'],
+) {
+  let changed = false
+  const tabs = state.tabs.map((tab) => {
+    if (tab.labelCustomized)
+      return tab
+
+    const pathname = state.cache.getParamsPathByTabKey(tab.key) || tab.key
+    const route = registry.resolveLeafRoute(pathname)?.route
+    if (!route || route.title === tab.label)
+      return tab
+
+    changed = true
+    return { ...tab, label: route.title }
+  })
+
+  return changed ? tabs : state.tabs
+}
+
+/** 替换 KeepAlive 页面持有的 route 元数据，不改变页面 key、URL 和 LRU 时间。 */
+function syncPageRouteMetadata(
+  pages: ProLayoutStoreState['pages'],
+  registry: ProLayoutStoreState['registry'],
+) {
+  let changed = false
+  const nextPages = pages.map((page) => {
+    const route = registry.resolveLeafRoute(page.pathname, { withinAuth: true })?.route
+    if (!route || route === page.route)
+      return page
+
+    changed = true
+    return { ...page, route }
+  })
+
+  return changed ? nextPages : pages
+}
+
 /** 仅当 data 明确包含字段且值不是 undefined 时同步普通标量依赖。 */
 function assignIfChanged<Key extends keyof ProLayoutStoreState>(
   next: Partial<ProLayoutStoreState>,
@@ -432,7 +443,7 @@ function areCurrentRoutesEqual(
     left.every(
       (item, index) =>
         item.realPath === right[index]?.realPath &&
-        item.route.path === right[index]?.route.path,
+        item.route === right[index]?.route,
     )
   )
 }

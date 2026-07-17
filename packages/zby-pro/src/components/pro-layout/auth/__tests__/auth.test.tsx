@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { ProLayoutStoreContext } from '../../context'
@@ -33,20 +33,18 @@ const intl: ProLayoutIntl = {
 
 afterEach(cleanup)
 
-describe('versioned ProLayout authorization snapshot', () => {
-  it('keeps the initial hasAuth until authVersion changes', () => {
+describe('static ProLayout authorization snapshot', () => {
+  it('keeps the initial hasAuth for the whole mount', () => {
     const denyAdmin = (code: string) => code !== 'admin'
     const allowAll = () => true
     let latestSnapshot: ProLayoutAuthorizationSnapshot | null = null
 
     function SnapshotProbe(props: {
       hasAuth?: (code: string) => boolean
-      authVersion?: string | number
     }) {
       latestSnapshot = useProLayoutAuthorization({
         routes,
         hasAuth: props.hasAuth,
-        authVersion: props.authVersion,
       })
       return null
     }
@@ -56,26 +54,14 @@ describe('versioned ProLayout authorization snapshot', () => {
     expect(initialSnapshot.hasAuth).toBe(denyAdmin)
     expect(initialSnapshot.registry.resolveLeafRoute('/admin', { withinAuth: true })).toBeNull()
 
-    // 未提供版本时，新的内联/闭包函数不会改变已经提交的权限快照。
+    // 后续新的内联/闭包函数不会改变首次挂载时保存的权限快照。
     view.rerender(<SnapshotProbe hasAuth={allowAll} />)
     expect(latestSnapshot).toBe(initialSnapshot)
-    expect(latestSnapshot!.hasAuth).toBe(denyAdmin)
-
-    view.rerender(<SnapshotProbe hasAuth={allowAll} authVersion={1} />)
-    expect(latestSnapshot).not.toBe(initialSnapshot)
-    expect(latestSnapshot!.hasAuth).toBe(allowAll)
-    expect(
-      latestSnapshot!.registry.resolveLeafRoute('/admin', { withinAuth: true })?.route.path,
-    ).toBe('/admin')
-
-    // 从显式版本切回 undefined 会提交一次当前函数，之后重新进入静态模式。
-    view.rerender(<SnapshotProbe hasAuth={denyAdmin} />)
-    expect(latestSnapshot!.authVersion).toBeUndefined()
     expect(latestSnapshot!.hasAuth).toBe(denyAdmin)
     expect(latestSnapshot!.registry.resolveLeafRoute('/admin', { withinAuth: true })).toBeNull()
   })
 
-  it('rebuilds routes with the committed permission function without changing versions', () => {
+  it('rebuilds routes with the initial permission function', () => {
     const denyAdmin = (code: string) => code !== 'admin'
     const allowAll = () => true
     const nextRoutes = routes.concat({
@@ -90,10 +76,7 @@ describe('versioned ProLayout authorization snapshot', () => {
       routes: ProLayoutRoute[]
       hasAuth: (code: string) => boolean
     }) {
-      latestSnapshot = useProLayoutAuthorization({
-        ...props,
-        authVersion: undefined,
-      })
+      latestSnapshot = useProLayoutAuthorization(props)
       return null
     }
 
@@ -106,15 +89,14 @@ describe('versioned ProLayout authorization snapshot', () => {
   })
 })
 
-describe('ProLayout page authorization runtime', () => {
-  it('updates hooks and render guards when authRevision changes with a stable function', () => {
+describe('ProLayout page authorization', () => {
+  it('supports hooks and render guards with the static permission function', () => {
     const permissions = new Set(['read'])
     const stableHasAuth = (code: string) => permissions.has(code)
     const store = createProLayoutStore({
       registry: createRouteRegistry({ routes, hasAuth: stableHasAuth }),
       storageKey: 'test-pro-layout-auth',
       hasAuth: stableHasAuth,
-      authVersion: 0,
       maxFixedTabCount: 4,
       keepAlive: true,
       headerHeight: 38,
@@ -152,34 +134,6 @@ describe('ProLayout page authorization runtime', () => {
     expect(screen.getByTestId('some-hook').textContent).toBe('allowed')
     expect(screen.getByTestId('guard').textContent).toBe('denied')
     expect(screen.getByTestId('function-child').textContent).toBe('false')
-
-    permissions.add('admin')
-    permissions.add('write')
-    act(() => {
-      store.getState().syncExternalDeps({
-        authVersion: 1,
-        hasAuth: stableHasAuth,
-        registry: createRouteRegistry({ routes, hasAuth: stableHasAuth }),
-      })
-    })
-
-    expect(screen.getByTestId('admin-hook').textContent).toBe('allowed')
-    expect(screen.getByTestId('all-hook').textContent).toBe('allowed')
-    expect(screen.getByTestId('guard').textContent).toBe('allowed')
-    expect(screen.getByTestId('function-child').textContent).toBe('true')
-
-    permissions.clear()
-    act(() => {
-      store.getState().syncExternalDeps({
-        authVersion: 2,
-        hasAuth: undefined,
-        registry: createRouteRegistry({ routes }),
-      })
-    })
-
-    expect(screen.getByTestId('admin-hook').textContent).toBe('allowed')
-    expect(screen.getByTestId('all-hook').textContent).toBe('allowed')
-    expect(screen.getByTestId('guard').textContent).toBe('allowed')
   })
 
   it('allows empty codes and calls outside a Provider', () => {

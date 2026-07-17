@@ -62,7 +62,7 @@ export function preloadTabRoute(
 ) {
   // Cache 没有记录真实参数路径时，静态路由或独立页签直接回退使用 tabKey。
   const pathname = cache.getParamsPathByTabKey(tabKey) || tabKey
-  const leaf = registry.resolveLeafRoute(pathname)
+  const leaf = registry.resolveLeafRoute(pathname, { withinAuth: true })
   if (!leaf?.route)
     return
 

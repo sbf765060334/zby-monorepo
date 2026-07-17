@@ -74,4 +74,23 @@ describe('route preload', () => {
 
     expect(preload).toHaveBeenCalledTimes(1)
   })
+
+  it('does not preload a route outside the permission index', async () => {
+    const preload = vi.fn()
+    const route = {
+      ...createPreloadRoute('/admin', preload),
+      auth: 'admin',
+    }
+    const registry = createRouteRegistry({
+      routes: [route],
+      hasAuth: () => false,
+    })
+
+    preloadTabRoute('/admin', registry, {
+      getParamsPathByTabKey: () => '',
+    })
+    await Promise.resolve()
+
+    expect(preload).not.toHaveBeenCalled()
+  })
 })

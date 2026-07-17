@@ -50,7 +50,7 @@ export function ensureTabStateForPathname(
     if (!tabs.some((tab) => tab.key === tabKey)) {
       // 新页签先追加，再由 sortTabs 恢复“固定在前、组内稳定”的顺序。
       tabs = sortTabs(
-        tabs.concat({ key: tabKey, label: route.title }),
+        tabs.concat({ key: tabKey, label: route.title, labelCustomized: false }),
         previous.fixedSet,
       )
       next.tabs = tabs
@@ -267,14 +267,19 @@ export async function closeTab(
     persistFixedTabs(set, get, runtime, nextFixedSet)
 
   set((previous) => {
-    // 页面描述以真实 pathname 为 key；页签关闭后同时释放，防止后续同地址沿用旧标题。
+    // 共享动态页签会为多个真实 pathname 保存描述。关闭时必须按 tabKey 清理全部历史
+    // 地址，不能只删除 Cache 中最后一次访问的 closedPathname。
     const pathnameDescriptionMap = { ...previous.pathnameDescriptionMap }
-    delete pathnameDescriptionMap[closedPathname]
+    Object.keys(pathnameDescriptionMap).forEach((pathname) => {
+      if (previous.registry.getTabKey(pathname) === tabKey)
+        delete pathnameDescriptionMap[pathname]
+    })
+    const pages = previous.pages.filter((page) => page.key !== tabKey)
 
     return {
       tabs: nextTabs,
       // 关闭页签与 KeepAlive 配置无关，对应页面实例必须立即从缓存集合移除。
-      pages: previous.pages.filter((page) => page.key !== tabKey),
+      pages,
       fixedSet: nextFixedSet,
       activeTabKey: nextActive
         ? nextActive.key
@@ -282,7 +287,9 @@ export async function closeTab(
           ? null
           : previous.activeTabKey,
       activePage: nextActive
-        ? nextActive.key
+        ? pages.some((page) => page.key === nextActive.key)
+          ? nextActive.key
+          : null
         : previous.activePage === tabKey
           ? null
           : previous.activePage,
@@ -321,7 +328,9 @@ function areTabsEqual(left: ProLayoutTab[], right: ProLayoutTab[]) {
     left.length === right.length &&
     left.every(
       (tab, index) =>
-        tab.key === right[index]?.key && tab.label === right[index]?.label,
+        tab.key === right[index]?.key &&
+        tab.label === right[index]?.label &&
+        tab.labelCustomized === right[index]?.labelCustomized,
     )
   )
 }

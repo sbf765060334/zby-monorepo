@@ -173,13 +173,12 @@ describe('proLayout Store initialization and navigation', () => {
   })
 })
 
-describe('proLayout Store runtime authorization', () => {
+describe('proLayout Store authorization', () => {
   it('does not create a page instance for an unauthorized initial URL', () => {
     const hasAuth = (code: string) => code !== 'admin'
     const store = createTestStore({
       registry: createRouteRegistry({ routes, hasAuth }),
       hasAuth,
-      authVersion: 0,
       initialPathname: '/admin',
     })
 
@@ -188,162 +187,6 @@ describe('proLayout Store runtime authorization', () => {
     expect(store.getState().pages).toEqual([])
     expect(store.getState().activeTabKey).toBeNull()
     expect(store.getState().activePage).toBeNull()
-  })
-
-  it('ignores a new hasAuth function until authVersion changes', () => {
-    const denyAdmin = (code: string) => code !== 'admin'
-    const allowAll = () => true
-    const store = createTestStore({
-      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
-      hasAuth: denyAdmin,
-      authVersion: 0,
-    })
-    const initialRegistry = store.getState().registry
-
-    store.getState().syncExternalDeps({ hasAuth: allowAll, authVersion: 0 })
-
-    expect(store.getState().hasAuth).toBe(denyAdmin)
-    expect(store.getState().registry).toBe(initialRegistry)
-    expect(store.getState().authRevision).toBe(0)
-
-    const nextRegistry = createRouteRegistry({ routes, hasAuth: allowAll })
-    store.getState().syncExternalDeps({
-      authVersion: 1,
-      hasAuth: allowAll,
-      registry: nextRegistry,
-    })
-
-    expect(store.getState().hasAuth).toBe(allowAll)
-    expect(store.getState().registry).toBe(nextRegistry)
-    expect(store.getState().authRevision).toBe(1)
-    expect(store.getState().resolveLeafRoute('/admin', true)?.route.path).toBe('/admin')
-  })
-
-  it('preserves tab preferences while revoking and cleanly recreating the current page', () => {
-    const allowAll = () => true
-    const denyAdmin = (code: string) => code !== 'admin'
-    const allowRegistry = createRouteRegistry({ routes, hasAuth: allowAll })
-    const store = createTestStore({
-      registry: allowRegistry,
-      hasAuth: allowAll,
-      authVersion: 0,
-      initialPathname: '/admin',
-      initialStorageState: {
-        collection: ['/admin'],
-        fixedTabs: ['/admin'],
-        fixedParamsPathMap: {},
-      },
-    })
-    const initialPage = store.getState().pages[0]
-
-    store.getState().cache.setSearchParamsForTabKey('/admin', 'panel=users')
-    store.getState().cache.setHashForTabKey('/admin', '#member')
-    store.getState().syncExternalDeps({
-      authVersion: 1,
-      hasAuth: denyAdmin,
-      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
-    })
-
-    expect(store.getState().currentPathname).toBe('/admin')
-    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/admin'])
-    expect(store.getState().fixedSet).toEqual(['/admin'])
-    expect(store.getState().collectionSet).toEqual(['/admin'])
-    expect(store.getState().cache.getSearchParamsForTabKey('/admin')).toBe('panel=users')
-    expect(store.getState().cache.getHashForTabKey('/admin')).toBe('#member')
-    expect(store.getState().pages).toEqual([])
-    expect(store.getState().activeTabKey).toBe('/admin')
-    expect(store.getState().activePage).toBeNull()
-
-    // Router 或保留页签再次同步同一地址时，也不能重建无权限业务页面。
-    store.getState().syncByPathname('/admin')
-    expect(store.getState().pages).toEqual([])
-
-    const navigate = vi.fn()
-    store.getState().syncExternalDeps({ navigate })
-    store.getState().jumpTo({ pathname: '/admin' })
-    expect(navigate).toHaveBeenLastCalledWith('/admin?panel=users#member')
-    expect(store.getState().pages).toEqual([])
-
-    store.getState().syncExternalDeps({
-      authVersion: 2,
-      hasAuth: allowAll,
-      registry: allowRegistry,
-    })
-
-    expect(store.getState().activePage).toBe('/admin')
-    expect(store.getState().pages.map((page) => page.key)).toEqual(['/admin'])
-    expect(store.getState().pages[0]).not.toBe(initialPage)
-  })
-
-  it('cleans revoked page runtime without running close hooks or closing its tab', async () => {
-    const allowAll = () => true
-    const denyAdmin = (code: string) => code !== 'admin'
-    const emitter = { emit: vi.fn() }
-    const beforeClose = vi.fn(() => false)
-    const afterTabClose = vi.fn()
-    const store = createTestStore({
-      registry: createRouteRegistry({ routes, hasAuth: allowAll }),
-      hasAuth: allowAll,
-      authVersion: 0,
-      initialPathname: '/admin/project/1',
-      afterTabClose,
-    })
-
-    store.getState().registerPageLocationEmitter('/admin/project/:id', emitter)
-    store.getState().addBeforeCloseHook(beforeClose, '/admin/project/1')
-    store.getState().setPathnameDescription({
-      '/admin/project/1': '管理项目一',
-      '/admin/project/2': '管理项目二',
-    })
-    store.getState().syncExternalDeps({
-      authVersion: 1,
-      hasAuth: denyAdmin,
-      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
-    })
-
-    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/admin/project/:id'])
-    expect(store.getState().pathnameDescriptionMap).toEqual({})
-    expect(beforeClose).not.toHaveBeenCalled()
-    expect(afterTabClose).not.toHaveBeenCalled()
-
-    store.getState().emitPageLocationEvent('/admin/project/:id', {
-      pathname: '/admin/project/1',
-      search: '',
-      hash: '',
-    })
-    expect(emitter.emit).not.toHaveBeenCalled()
-
-    // 撤权已经删除拒绝关闭的 Hook，因此后续用户主动关闭保留页签可以正常完成。
-    await expect(store.getState().closeTab('/admin/project/:id')).resolves.toBe(true)
-    expect(beforeClose).not.toHaveBeenCalled()
-    expect(afterTabClose).toHaveBeenCalledOnce()
-  })
-
-  it('supports function and undefined authorization snapshots in both directions', () => {
-    const denyAdmin = (code: string) => code !== 'admin'
-    const store = createTestStore({
-      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
-      hasAuth: denyAdmin,
-      authVersion: 0,
-      initialPathname: '/admin',
-    })
-
-    store.getState().syncExternalDeps({
-      authVersion: 1,
-      hasAuth: undefined,
-      registry: createRouteRegistry({ routes }),
-    })
-    expect(store.getState().hasAuth).toBeUndefined()
-    expect(store.getState().activePage).toBe('/admin')
-
-    store.getState().syncExternalDeps({
-      authVersion: undefined,
-      hasAuth: denyAdmin,
-      registry: createRouteRegistry({ routes, hasAuth: denyAdmin }),
-    })
-    expect(store.getState().hasAuth).toBe(denyAdmin)
-    expect(store.getState().activePage).toBeNull()
-    expect(store.getState().pages).toEqual([])
   })
 })
 
@@ -703,7 +546,12 @@ describe('proLayout Store tabs and KeepAlive', () => {
     store.getState().syncByPathname('/project/42')
     store.getState().cache.setSearchParamsForTabKey('/project/:id', 'tab=detail')
     store.getState().cache.setHashForTabKey('/project/:id', '#summary')
-    store.getState().setPathnameDescription({ '/project/42': '项目 42' })
+    store.getState().setPathnameDescription({
+      '/project/42': '项目 42',
+      '/project/99': '项目 99',
+      '/orders': '订单描述',
+    })
+    store.getState().syncByPathname('/project/99')
     store.getState().registerPageLocationEmitter('/project/:id', emitter)
     store.getState().addBeforeCloseHook(beforeClose, '/project/42')
 
@@ -712,7 +560,9 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe('')
     expect(store.getState().cache.getSearchParamsForTabKey('/project/:id')).toBe('')
     expect(store.getState().cache.getHashForTabKey('/project/:id')).toBe('')
-    expect(store.getState().pathnameDescriptionMap['/project/42']).toBeUndefined()
+    expect(store.getState().pathnameDescriptionMap).toEqual({
+      '/orders': '订单描述',
+    })
 
     store.getState().emitPageLocationEvent('/project/:id', {
       pathname: '/project/42',
@@ -737,6 +587,88 @@ describe('proLayout Store tabs and KeepAlive', () => {
     store.getState().syncExternalDeps({ keepAlive: { maxCachedPages: 1 } })
 
     expect(store.getState().pages.map((page) => page.key)).toEqual(['/project/:id'])
+  })
+
+  it('keeps activePage null while the next active tab has no cached page', async () => {
+    const navigate = vi.fn()
+    const store = createTestStore({ keepAlive: { maxCachedPages: 2 } })
+    store.getState().syncExternalDeps({ navigate })
+
+    store.getState().syncByPathname('/dashboard')
+    store.getState().syncByPathname('/orders')
+    store.getState().syncByPathname('/project/42')
+    store.getState().syncByPathname('/dashboard')
+
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/orders',
+      '/project/:id',
+    ])
+    expect(store.getState().pages.map((page) => page.key)).toEqual([
+      '/project/:id',
+      '/dashboard',
+    ])
+
+    await store.getState().closeTab('/dashboard')
+
+    expect(store.getState().activeTabKey).toBe('/orders')
+    expect(store.getState().activePage).toBeNull()
+    expect(navigate).toHaveBeenLastCalledWith('/orders')
+  })
+
+  it('synchronizes route metadata while preserving customized tab labels', () => {
+    const store = createTestStore({ initialPathname: '/dashboard' })
+    store.getState().syncByPathname('/orders')
+    store.getState().setTabLabel('/orders', '我的订单')
+    const initialDashboardPage = store.getState().pages.find(
+      (page) => page.key === '/dashboard',
+    )!
+    const initialOrdersPage = store.getState().pages.find(
+      (page) => page.key === '/orders',
+    )!
+    const nextRoutes = routes.map((route) => ({
+      ...route,
+      title: `${route.title} EN`,
+    }))
+    const nextRegistry = createRouteRegistry({ routes: nextRoutes })
+
+    store.getState().syncExternalDeps({
+      registry: nextRegistry,
+      currentRoutes: nextRegistry.getCurrentRoutes('/dashboard'),
+    })
+
+    expect(store.getState().currentRoutes[0]?.route).toBe(nextRoutes[0])
+    expect(store.getState().tabs).toMatchObject([
+      { key: '/dashboard', label: '工作台 EN', labelCustomized: false },
+      { key: '/orders', label: '我的订单', labelCustomized: true },
+    ])
+    expect(store.getState().pages.find((page) => page.key === '/dashboard')).toEqual({
+      ...initialDashboardPage,
+      route: nextRoutes[0],
+    })
+    expect(store.getState().pages.find((page) => page.key === '/orders')).toEqual({
+      ...initialOrdersPage,
+      route: nextRoutes[1],
+    })
+  })
+
+  it('marks an unchanged setTabLabel value as customized', () => {
+    const store = createTestStore({ initialPathname: '/dashboard' })
+    store.getState().setTabLabel('/dashboard', '工作台')
+    const nextRoutes = routes.map((route) => ({
+      ...route,
+      title: `${route.title} EN`,
+    }))
+
+    store.getState().syncExternalDeps({
+      registry: createRouteRegistry({ routes: nextRoutes }),
+    })
+
+    expect(store.getState().tabs[0]).toMatchObject({
+      key: '/dashboard',
+      label: '工作台',
+      labelCustomized: true,
+    })
   })
 
   it('creates independent tabs and page instances for supportMultipleTabs routes', () => {
@@ -810,6 +742,22 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(
       enforceKeepAliveLimit(pages, '/project/:id', { maxCachedPages: 0 }, []),
     ).toEqual([pages[2]])
+  })
+
+  it('returns the original pages when object KeepAlive retains every page', () => {
+    const pages = [
+      createPage('/dashboard', 1),
+      createPage('/orders', 2),
+    ]
+
+    expect(
+      enforceKeepAliveLimit(
+        pages,
+        '/orders',
+        { maxCachedPages: 8 },
+        [],
+      ),
+    ).toBe(pages)
   })
 
   it('synchronizes the latest intl and message dependencies', () => {
