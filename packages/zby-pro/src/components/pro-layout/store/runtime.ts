@@ -26,6 +26,8 @@ export type ProLayoutStorageMutationVersions = Record<
  * 闭包持有，而不是放入可观察的 Store 快照。
  */
 export interface ProLayoutStoreRuntime {
+  /** 当前持久化加载任务；并发调用复用同一个 Promise。 */
+  storageHydrationPromise: Promise<void> | null
   /** 持久化来源变化时递增，使旧来源尚未完成的异步加载结果失效。 */
   storageSourceGeneration: number
   /** 三个持久化字段各自的本地修改版本，用于字段级 hydration 冲突合并。 */
@@ -35,17 +37,27 @@ export interface ProLayoutStoreRuntime {
     string,
     { emit: (payload: ProLayoutLocationEventPayload) => void }
   >
-  /** 页签 key 到关闭前 Hook 列表的映射。 */
-  beforeTabCloseMap: Map<string, ProLayoutBeforeCloseHook[]>
+  /** 页签 key 到关闭前 Hook 注册记录的映射。 */
+  beforeTabCloseMap: Map<string, ProLayoutBeforeCloseRegistration[]>
+  /** 正在关闭的页签 key；防止重复执行关闭前 Hook。 */
+  closingTabKeys: Set<string>
+}
+
+/** 关闭前 Hook 注册时保存的历史路由身份，不依赖后续 Registry 重新解析。 */
+export interface ProLayoutBeforeCloseRegistration {
+  handler: ProLayoutBeforeCloseHook
+  pathname: string
 }
 
 /** 为一个新 Store 创建完全隔离的私有运行时。 */
 export function createProLayoutStoreRuntime(): ProLayoutStoreRuntime {
   return {
+    storageHydrationPromise: null,
     storageSourceGeneration: 0,
     storageMutationVersions: createStorageMutationVersions(),
     pageLocationEmitterMap: new Map(),
     beforeTabCloseMap: new Map(),
+    closingTabKeys: new Set(),
   }
 }
 
@@ -65,6 +77,7 @@ export function createStorageMutationVersions(): ProLayoutStorageMutationVersion
  */
 export function resetStorageRuntime(runtime: ProLayoutStoreRuntime) {
   // 先使所有捕获旧 generation 的 load 失效，再为新来源建立干净的字段版本基线。
+  runtime.storageHydrationPromise = null
   runtime.storageSourceGeneration += 1
   runtime.storageMutationVersions = createStorageMutationVersions()
 }

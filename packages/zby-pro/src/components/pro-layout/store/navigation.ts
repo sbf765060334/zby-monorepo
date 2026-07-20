@@ -229,22 +229,28 @@ export async function closeThisTabOpenNewOne(
   data: { oldPath: string, newPath: string },
   options?: ProLayoutCloseOptions,
 ) {
+  // 新地址只解析一次。关闭现有页签时把最终导航交给 closeTab 的提交阶段执行，
+  // 确保状态和资源清理后只产生一条导航记录，并且早于 afterTabClose 回调。
+  const url = parseUrl(data.newPath)
+  const openNewUrl = () => {
+    get().jumpTo({
+      pathname: url.pathname,
+      searchParams: url.searchParams.toString(),
+      hash: url.hash,
+    })
+  }
+
   // oldPath 可能包含 query/hash，关闭身份只由 pathname 对应的 tabKey 决定。
   const oldTabKey = get().getTabKey(parseUrl(data.oldPath).pathname)
   if (oldTabKey && get().tabs.some((tab) => tab.key === oldTabKey)) {
     // 只有旧页签确实存在才执行关闭守卫；守卫拒绝时不能继续打开新页面。
-    const closed = await closeTab(set, get, runtime, oldTabKey, options)
-    if (!closed)
-      return false
+    return closeTab(set, get, runtime, oldTabKey, {
+      ...options,
+      navigateAfterClose: openNewUrl,
+    })
   }
 
-  // 新地址按完整 URL 解析后交给 jumpTo，确保 query/hash 的“显式值”语义不丢失。
-  const url = parseUrl(data.newPath)
-  get().jumpTo({
-    pathname: url.pathname,
-    searchParams: url.searchParams.toString(),
-    hash: url.hash,
-  })
+  openNewUrl()
   return true
 }
 

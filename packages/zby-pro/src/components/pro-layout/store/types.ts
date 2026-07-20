@@ -151,7 +151,7 @@ export interface ProLayoutStoreState {
     options?: ProLayoutCloseOptions,
   ) => Promise<boolean>
   /** 为 pathname 对应页签增加关闭前 Hook。 */
-  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => void
+  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => () => void
   /** 清理 pathname 对应的指定 Hook 或全部 Hook。 */
   clearBeforeCloseHook: (pathname: string, handler?: ProLayoutBeforeCloseHook) => void
   /** 计算 pathname 对应的页签 key。 */

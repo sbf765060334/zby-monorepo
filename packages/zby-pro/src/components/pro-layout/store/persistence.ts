@@ -83,15 +83,37 @@ export function persistFixedParamsPathMap(
  * 4. 参数路径还会叠加加载开始前的当前会话快照，让首屏真实 URL 优先于旧存储；
  * 5. 无效固定 key 会被清理并回写，避免继续占用固定数量。
  */
-export async function hydrateStorage(
+export function hydrateStorage(
+  set: SetProLayoutStoreState,
+  get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
+) {
+  // 并发调用必须等待同一任务，不能只因为 storageLoading=true 就提前返回一个已完成
+  // Promise，否则第二个调用方 await 后仍可能读到尚未 hydration 的状态。
+  if (runtime.storageHydrationPromise)
+    return runtime.storageHydrationPromise
+
+  const state = get()
+  if (state.storageAdapter === false || state.storageHydrated)
+    return Promise.resolve()
+
+  const hydrationPromise = executeHydrateStorage(set, get, runtime).finally(() => {
+    // storageKey 切换会把 runtime 指向新任务；旧任务完成时不能清空新任务引用。
+    if (runtime.storageHydrationPromise === hydrationPromise)
+      runtime.storageHydrationPromise = null
+  })
+  runtime.storageHydrationPromise = hydrationPromise
+  return hydrationPromise
+}
+
+async function executeHydrateStorage(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
   runtime: ProLayoutStoreRuntime,
 ) {
   const state = get()
-  // 三种情况都不能重复加载：纯内存模式没有外部来源；已完成 hydration 无需重放；
-  // loading 期间复用当前请求，避免两个 load 以相同 generation 竞争提交结果。
-  if (state.storageAdapter === false || state.storageHydrated || state.storageLoading)
+  // 外层已经完成同一检查；这里保留防御判断，同时让执行函数独立满足类型收窄。
+  if (state.storageAdapter === false)
     return
 
   // Adapter、key 和 generation 构成本次请求的来源快照。后续即使 Core 切换来源，

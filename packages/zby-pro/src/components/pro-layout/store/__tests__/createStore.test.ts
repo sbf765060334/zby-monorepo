@@ -65,8 +65,10 @@ describe('proLayout Store initialization and navigation', () => {
     expect(state).not.toHaveProperty('routeMapping')
     expect(state).not.toHaveProperty('storageSourceGeneration')
     expect(state).not.toHaveProperty('storageMutationVersions')
+    expect(state).not.toHaveProperty('storageHydrationPromise')
     expect(state).not.toHaveProperty('pageLocationEmitterMap')
     expect(state).not.toHaveProperty('beforeTabCloseMap')
+    expect(state).not.toHaveProperty('closingTabKeys')
   })
 
   it('creates an SSR-ready snapshot and keeps the current dynamic pathname authoritative', () => {
@@ -174,6 +176,29 @@ describe('proLayout Store initialization and navigation', () => {
     // 字符串是完整目标地址，没有 search/hash 时也应明确清空旧缓存。
     store.getState().jumpTo('/project/101')
     expect(navigate).toHaveBeenLastCalledWith('/project/101')
+  })
+
+  it('closes the old tab and opens the new URL with a single navigation', async () => {
+    const navigate = vi.fn()
+    const store = createTestStore()
+    store.getState().syncExternalDeps({ navigate })
+    store.getState().syncByPathname('/dashboard')
+    store.getState().syncByPathname('/orders')
+    navigate.mockClear()
+
+    await expect(
+      store.getState().closeThisTabOpenNewOne({
+        oldPath: '/orders',
+        newPath: '/project/42?tab=detail#summary',
+      }),
+    ).resolves.toBe(true)
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary')
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
   })
 
   it('opens concrete children for dynamic and normalized directory targets', () => {
@@ -321,6 +346,24 @@ describe('proLayout Store persistence coordination', () => {
         '/task/:id': '/task/7',
       },
     )
+  })
+
+  it('returns the in-flight hydration task to concurrent callers', async () => {
+    const loadDeferred = createDeferred<ProLayoutStorageState>()
+    const adapter = createAdapter({ load: vi.fn(() => loadDeferred.promise) })
+    const store = createTestStore({ storageAdapter: adapter })
+
+    const firstHydration = store.getState().hydrateStorage()
+    const secondHydration = store.getState().hydrateStorage()
+
+    expect(secondHydration).toBe(firstHydration)
+    expect(store.getState().storageHydrated).toBe(false)
+    expect(adapter.load).toHaveBeenCalledOnce()
+
+    loadDeferred.resolve(normalizeProLayoutStorageState())
+    await secondHydration
+
+    expect(store.getState().storageHydrated).toBe(true)
   })
 
   it('reloads a new storageKey and ignores an older pending load result', async () => {
@@ -632,17 +675,19 @@ describe('proLayout Store tabs and KeepAlive', () => {
 
   it('allows only one concurrent close operation to clean and notify', async () => {
     const hookDeferred = createDeferred<boolean>()
+    const beforeClose = vi.fn(() => hookDeferred.promise)
     const afterTabClose = vi.fn()
     const store = createTestStore({ afterTabClose })
 
     store.getState().syncByPathname('/dashboard')
-    store.getState().addBeforeCloseHook(() => hookDeferred.promise, '/dashboard')
+    store.getState().addBeforeCloseHook(beforeClose, '/dashboard')
 
     const firstClose = store.getState().closeTab('/dashboard')
     const secondClose = store.getState().closeTab('/dashboard')
     hookDeferred.resolve(true)
 
     await expect(Promise.all([firstClose, secondClose])).resolves.toEqual([true, false])
+    expect(beforeClose).toHaveBeenCalledOnce()
     expect(afterTabClose).toHaveBeenCalledOnce()
     expect(store.getState().tabs).toEqual([])
   })
@@ -808,6 +853,39 @@ describe('proLayout Store tabs and KeepAlive', () => {
       ...initialOrdersPage,
       route: nextRoutes[1],
     })
+  })
+
+  it('cleans historical route resources after their Registry identity changes', async () => {
+    const beforeClose = vi.fn(() => false)
+    const legacyBeforeClose = vi.fn(() => false)
+    const store = createTestStore()
+    store.getState().syncByPathname('/project/42')
+    const disposeBeforeClose = store
+      .getState()
+      .addBeforeCloseHook(beforeClose, '/project/42')
+    store.getState().addBeforeCloseHook(legacyBeforeClose, '/project/42')
+    store.getState().setPathnameDescription({
+      '/project/42': '项目 42',
+      '/orders': '订单描述',
+    })
+
+    const multipleTabsRegistry = createRouteRegistry({
+      routes: routes.map((route) =>
+        route.path === '/project/:id'
+          ? { ...route, supportMultipleTabs: true }
+          : route,
+      ),
+    })
+    store.getState().syncExternalDeps({ registry: multipleTabsRegistry })
+    disposeBeforeClose()
+    store.getState().clearBeforeCloseHook('/project/42', legacyBeforeClose)
+
+    expect(store.getState().pathnameDescriptionMap).toEqual({
+      '/orders': '订单描述',
+    })
+    await expect(store.getState().closeTab('/project/:id')).resolves.toBe(true)
+    expect(beforeClose).not.toHaveBeenCalled()
+    expect(legacyBeforeClose).not.toHaveBeenCalled()
   })
 
   it('derives route hierarchy from the latest Registry without separate route inputs', () => {

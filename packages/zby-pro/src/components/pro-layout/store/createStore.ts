@@ -31,7 +31,11 @@ import type {
   ProLayoutStoreState,
   SetProLayoutStoreState,
 } from './types'
-import type { ProLayoutCurrentRoute, ProLayoutSystemItem } from '../interface'
+import type {
+  ProLayoutBeforeCloseHook,
+  ProLayoutCurrentRoute,
+  ProLayoutSystemItem,
+} from '../interface'
 
 /**
  * 创建独立、与 React 生命周期解耦的 ProLayout Zustand Store。
@@ -163,34 +167,28 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         // 属于同一个页签，关闭时必须统一执行该页签下登记的全部 Hook。
         const tabKey = get().getTabKey(pathname)
         if (!tabKey)
-          return
+          return () => undefined
 
         const map = runtime.beforeTabCloseMap
-        map.set(tabKey, (map.get(tabKey) || []).concat(handler))
+        map.set(
+          tabKey,
+          (map.get(tabKey) || []).concat({ handler, pathname }),
+        )
+
+        // disposer 捕获注册时的 tabKey。即使 routes 随后删除或改变该路由，页面卸载时
+        // 仍能清理原 Hook，不再依赖最新 Registry 重新解析历史 pathname。
+        return () => removeBeforeCloseHook(runtime, tabKey, handler)
       },
 
       clearBeforeCloseHook: (pathname, handler) => {
-        const tabKey = get().getTabKey(pathname)
+        // 正常情况使用最新 Registry；路由已经删除时，从注册记录恢复历史 tabKey。
+        const tabKey =
+          findRegisteredBeforeCloseTabKey(runtime, pathname, handler) ||
+          get().getTabKey(pathname)
         if (!tabKey)
           return
 
-        const map = runtime.beforeTabCloseMap
-        if (!handler) {
-          // 未指定 handler 表示页面整体清理，直接注销该页签的全部关闭守卫。
-          map.delete(tabKey)
-          return
-        }
-
-        const list = map.get(tabKey)
-        if (!list)
-          return
-
-        const next = list.filter((item) => item !== handler)
-        // Map 中不保留空数组，关闭页签时即可用“无记录”快速跳过 Hook 阶段。
-        if (next.length > 0)
-          map.set(tabKey, next)
-        else
-          map.delete(tabKey)
+        removeBeforeCloseHook(runtime, tabKey, handler)
       },
 
       getTabKey: (pathname) => get().registry.getTabKey(pathname),
@@ -286,6 +284,14 @@ function syncExternalDeps(
         next.tabs = tabs
       if (pages !== state.pages)
         next.pages = pages
+
+      const pathnameDescriptionMap = removeInvalidatedPathnameDescriptions(
+        state.pathnameDescriptionMap,
+        state.registry,
+        registry,
+      )
+      if (pathnameDescriptionMap !== state.pathnameDescriptionMap)
+        next.pathnameDescriptionMap = pathnameDescriptionMap
     }
 
     if (registryChanged || currentPathnameChanged) {
@@ -357,6 +363,79 @@ function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
     result[tab.key] = pathname
     return result
   }, {})
+}
+
+/** 从历史注册记录恢复 pathname 对应的 tabKey。 */
+function findRegisteredBeforeCloseTabKey(
+  runtime: ReturnType<typeof createProLayoutStoreRuntime>,
+  pathname: string,
+  handler?: ProLayoutBeforeCloseHook,
+) {
+  for (const [tabKey, registrations] of runtime.beforeTabCloseMap) {
+    if (
+      registrations.some(
+        (registration) =>
+          registration.pathname === pathname &&
+          (!handler || registration.handler === handler),
+      )
+    ) {
+      return tabKey
+    }
+  }
+
+  return null
+}
+
+/** 按注册时保存的 tabKey 删除指定 Hook，或清空该页签的全部 Hook。 */
+function removeBeforeCloseHook(
+  runtime: ReturnType<typeof createProLayoutStoreRuntime>,
+  tabKey: string,
+  handler?: ProLayoutBeforeCloseHook,
+) {
+  const registrations = runtime.beforeTabCloseMap.get(tabKey)
+  if (!registrations)
+    return
+
+  if (!handler) {
+    runtime.beforeTabCloseMap.delete(tabKey)
+    return
+  }
+
+  const next = registrations.filter(
+    (registration) => registration.handler !== handler,
+  )
+  if (next.length > 0)
+    runtime.beforeTabCloseMap.set(tabKey, next)
+  else
+    runtime.beforeTabCloseMap.delete(tabKey)
+}
+
+/**
+ * Registry 改变路由身份时清理依赖旧映射的动态描述。
+ *
+ * 仅修改 title 或 element 时新旧 tabKey 相同，描述会原样保留；删除路由或改变
+ * supportMultipleTabs 等身份语义时才移除旧记录。
+ */
+function removeInvalidatedPathnameDescriptions(
+  descriptions: Record<string, string>,
+  previousRegistry: ProLayoutStoreState['registry'],
+  nextRegistry: ProLayoutStoreState['registry'],
+) {
+  let changed = false
+  const next = { ...descriptions }
+
+  Object.keys(next).forEach((pathname) => {
+    const previousTabKey = previousRegistry.getTabKey(pathname)
+    if (
+      previousTabKey &&
+      nextRegistry.getTabKey(pathname) !== previousTabKey
+    ) {
+      delete next[pathname]
+      changed = true
+    }
+  })
+
+  return changed ? next : descriptions
 }
 
 /** 使用新 Registry 刷新仍采用路由默认标题的页签，并保留业务自定义标题。 */

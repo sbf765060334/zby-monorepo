@@ -213,37 +213,65 @@ export function toggleFixed(
   )
 }
 
+interface InternalCloseOptions extends ProLayoutCloseOptions {
+  /** 组合动作指定的唯一关闭后导航；存在时不再执行默认相邻页回退。 */
+  navigateAfterClose?: () => void
+}
+
 /**
  * 关闭页签并清理其页面、URL Cache、事件发射器和关闭前 Hook。
  *
- * Hook 完成后会重新检查页签是否仍存在，避免两个并发关闭操作重复清理和重复触发
- * afterTabClose。固定页签允许沿用现有关闭交互，但关闭时会同步取消固定并持久化，
- * 防止隐藏 key 继续占用固定数量或在下次挂载时重新出现。
+ * Hook 完成后会重新检查页签是否仍存在，避免其它动作并发移除后重复清理。固定页签允许
+ * 沿用现有关闭交互，但关闭时会同步取消固定并持久化，防止隐藏 key 继续占用固定数量
+ * 或在下次挂载时重新出现。同一 tabKey 的并发关闭会在执行 Hook 前被拒绝。
  */
 export async function closeTab(
   set: SetProLayoutStoreState,
   get: GetProLayoutStoreState,
   runtime: ProLayoutStoreRuntime,
   tabKey: string,
-  options?: ProLayoutCloseOptions,
+  options?: InternalCloseOptions,
 ) {
   const initialState = get()
   // 关闭动作可能来自重复点击或跨窗口消息；不存在的 key 不执行 Hook 和回调。
   if (!initialState.tabs.some((tab) => tab.key === tabKey))
     return false
 
+  // 在执行任何 Hook 前占用关闭权。重复点击或并发命令直接失败，避免确认弹窗、
+  // 自动保存等 Hook 副作用被执行多次。
+  if (runtime.closingTabKeys.has(tabKey))
+    return false
+
+  runtime.closingTabKeys.add(tabKey)
+  try {
+    return await executeTabClose(set, get, runtime, tabKey, options)
+  } finally {
+    runtime.closingTabKeys.delete(tabKey)
+  }
+}
+
+/** 执行已经取得关闭权的单次页签关闭事务。 */
+async function executeTabClose(
+  set: SetProLayoutStoreState,
+  get: GetProLayoutStoreState,
+  runtime: ProLayoutStoreRuntime,
+  tabKey: string,
+  options?: InternalCloseOptions,
+) {
   if (!options?.skipBeforeClose) {
     // 同一页签的守卫并行执行，只有每个 Hook 都显式返回 true 才允许关闭；undefined、
     // false 或 rejection 都不会被当成同意。rejection 继续交给调用方处理。
     const hooks = runtime.beforeTabCloseMap.get(tabKey) || []
     if (hooks.length > 0) {
-      const results = await Promise.all(hooks.map((hook) => hook()))
+      const results = await Promise.all(
+        hooks.map((registration) => registration.handler()),
+      )
       if (!results.every((result) => result === true))
         return false
     }
   }
 
-  // 等待异步 Hook 期间另一个关闭操作可能已经完成，必须基于最新状态再次确认。
+  // 等待异步 Hook 期间，setTabs 等其它动作可能已经移除页签，必须再次确认。
   const state = get()
   if (!state.tabs.some((tab) => tab.key === tabKey))
     return false
@@ -303,7 +331,10 @@ export async function closeTab(
   runtime.pageLocationEmitterMap.delete(tabKey)
   latest.cache.clearTab(tabKey)
 
-  if (nextActive) {
+  if (options?.navigateAfterClose) {
+    // 关闭并打开新页属于一个组合事务，只执行调用方指定的最终导航。
+    options.navigateAfterClose()
+  } else if (nextActive) {
     // 回退页签可能是共享动态路由，必须恢复其真实 pathname、查询参数和 hash。
     const path = latest.cache.getParamsPathByTabKey(nextActive.key) || nextActive.key
     latest.navigate?.(
