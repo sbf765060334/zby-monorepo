@@ -56,6 +56,37 @@ describe('createRouteRegistry', () => {
     expect(registry.getCurrentSelectedPath('/docs')).toEqual(['/docs'])
   })
 
+  it('materializes dynamic directory children and skips unresolved parameter routes', () => {
+    const dynamicDirectoryRoutes: ProLayoutRoute[] = [
+      {
+        path: '/projects/:projectId',
+        title: 'Projects',
+        routes: [
+          {
+            path: '/projects/:projectId/tasks/:taskId',
+            title: 'Task',
+            element: TaskPage,
+          },
+          {
+            path: '/projects/:projectId/overview',
+            title: 'Overview',
+            element: ProjectPage,
+          },
+        ],
+      },
+    ]
+    const registry = createRouteRegistry({ routes: dynamicDirectoryRoutes })
+    const staticRegistry = createRouteRegistry({ routes })
+
+    expect(registry.findFirstAccessibleChild('/projects/42')).toBe(
+      '/projects/42/overview',
+    )
+    expect(registry.findFirstAccessibleChild('/projects/:projectId')).toBeNull()
+    expect(staticRegistry.findFirstAccessibleChild('/workspace/')).toBe(
+      '/workspace/dashboard',
+    )
+  })
+
   it('normalizes static paths without changing public mapping keys', () => {
     const dashboardRoute = routes[0]?.routes?.[0]
     const trailingSlashRoute: ProLayoutRoute = {

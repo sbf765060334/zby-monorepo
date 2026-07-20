@@ -135,8 +135,10 @@ export interface ProLayoutRouteRegistry {
   /** 获取权限路由树中按声明顺序出现的第一个可访问页面。 */
   findFirstAccessiblePath: () => string | null
   /**
-   * 获取指定已注册目录下的第一个可访问页面。pathname 当前必须是映射表中的
-   * 注册路径，真实动态参数路径不会在这里再次执行动态解析。
+   * 获取指定目录下第一个能够生成真实 URL 的可访问页面。
+   *
+   * pathname 可以是注册路径，也可以是带入参数或末尾斜杠的真实地址。子页面若
+   * 还需要父目录没有提供的新参数，则跳过该页面，避免返回包含占位符的导航地址。
    */
   findFirstAccessibleChild: (pathname: string) => string | null
   /** 判断路由是否可以作为默认落点或直接同步为页面。 */
@@ -239,14 +241,50 @@ export function createRouteRegistry(params: CreateRouteRegistryParams): ProLayou
     getCurrentSelectedPath: (pathname) => getCurrentRoutes(pathname).map((item) => item.realPath),
     findFirstAccessiblePath: () => findFirstAccessiblePath(authIndex.mapping, isPageRoute),
     findFirstAccessibleChild: (pathname) => {
-      // 这里只接受 authIndex 中已经注册的 path，不会调用 resolveRoute 做动态匹配。
-      const route = authIndex.mapping[pathname]
-      if (!route)
+      // 目录身份必须从权限索引动态解析，不能用真实 pathname 直接读取精确映射；否则
+      // `/projects/42` 和 `/settings/` 都无法找到各自注册的目录路由。
+      const parent = resolveRoute(pathname, authIndex)
+      if (
+        !parent ||
+        !Array.isArray(parent.route.routes) ||
+        parent.route.routes.length === 0
+      ) {
         return null
+      }
 
-      // 仅为目标目录的子树临时建索引，再按照原声明顺序查找首个页面。
-      const childIndex = createRouteIndex(route.routes || [])
-      return findFirstAccessiblePath(childIndex.mapping, isPageRoute)
+      // 父目录已经出现在真实地址中的参数可以安全传给后代页面。例如把
+      // `/projects/:projectId/overview` 具体化为 `/projects/42/overview`。
+      const paramsMap = getPathParams(
+        normalizeRoutePath(parent.routeKey),
+        normalizeRoutePath(pathname),
+      )
+
+      // 权限过滤后的 parent.route 只包含当前用户可访问的后代。继续复用 Registry
+      // 的深度优先索引顺序，但不能直接返回注册 pattern，必须找到首个可具体化页面。
+      const childIndex = createRouteIndex(parent.route.routes)
+      const childPaths = Object.keys(childIndex.mapping)
+
+      for (let index = 0; index < childPaths.length; index += 1) {
+        const childPath = childPaths[index]
+        if (!isPageRoute(childIndex.mapping[childPath]))
+          continue
+
+        // undefined 表示子页面引入了新参数；值仍等于占位符表示调用方传入的是注册
+        // pattern 而不是真实地址。两种情况都不能把 `:id` 或 `*` 导航到浏览器 URL。
+        const hasUnresolvedParams = childPath.split('/').some((part) => {
+          if (!part.startsWith(':') && part !== '*')
+            return false
+
+          const value = paramsMap[part]
+          return value === undefined || value === part
+        })
+        if (hasUnresolvedParams)
+          continue
+
+        return replacePathParams(childPath, paramsMap)
+      }
+
+      return null
     },
     isPageRoute,
   }

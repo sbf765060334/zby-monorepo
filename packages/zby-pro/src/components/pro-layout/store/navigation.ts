@@ -102,15 +102,10 @@ export function jumpTo(
     typeof params === 'string' ? parsedUrl!.searchParams.toString() : params.searchParams
   const hash = typeof params === 'string' ? parsedUrl!.hash : params.hash
 
-  const exactRoute = state.registry.routeMapping[pathname]
-  if (
-    exactRoute &&
-    !state.registry.isPageRoute(exactRoute) &&
-    Array.isArray(exactRoute.routes) &&
-    exactRoute.routes.length > 0
-  ) {
-    // 精确命中权限目录路由时打开其第一个可访问子页面；若没有子页则保留原地址，
-    // 由后续 Registry 解析和页面渲染流程按现有契约继续处理。
+  const targetLeaf = state.resolveLeafRoute(pathname, true)
+  if (targetLeaf && !state.registry.isPageRoute(targetLeaf.route)) {
+    // 目录判断和真实参数还原统一交给 Registry，因此动态目录和带末尾斜杠的目录
+    // 与精确注册路径具有相同导航语义。没有可具体化子页时继续保留原地址。
     pathname = state.registry.findFirstAccessibleChild(pathname) || pathname
   }
 

@@ -93,9 +93,23 @@ describe('ProLayoutContent', () => {
     expect(screen.getByText('Reports page')).toBeTruthy()
   })
 
-  it('renders 403 for an existing unauthorized page and 404 for an unknown path', () => {
+  it('renders 403 for unauthorized pages and directories, and 404 for unknown paths', () => {
     const hasAuth = (code: string) => code !== 'admin'
-    const registry = createRouteRegistry({ routes, hasAuth })
+    const registry = createRouteRegistry({
+      routes: routes.concat({
+        path: '/admin-settings',
+        title: '后台设置',
+        auth: 'admin',
+        routes: [
+          {
+            path: '/admin-settings/users',
+            title: '用户管理',
+            element: () => <div>Admin users page</div>,
+          },
+        ],
+      }),
+      hasAuth,
+    })
     const store = createTestStore({
       registry,
       hasAuth,
@@ -105,6 +119,15 @@ describe('ProLayoutContent', () => {
 
     expect(screen.getByText('暂无权限查看当前页面，若需当前页面权限，请联系管理员。')).toBeTruthy()
     expect(screen.queryByText('Admin page')).toBeNull()
+
+    act(() => {
+      store.getState().syncExternalDeps({ currentPathname: '/admin-settings' })
+      store.getState().syncByPathname('/admin-settings')
+    })
+    view.rerender(contentNode(store, '/admin-settings'))
+
+    expect(screen.getByText('暂无权限查看当前页面，若需当前页面权限，请联系管理员。')).toBeTruthy()
+    expect(screen.queryByText('访问的页面暂时不存在，请输入正确的地址')).toBeNull()
 
     act(() => {
       store.getState().syncExternalDeps({ currentPathname: '/missing' })

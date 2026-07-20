@@ -238,6 +238,46 @@ describe('ProLayout Effects', () => {
     expect(navigate).toHaveBeenLastCalledWith('/settings/profile')
   })
 
+  it('redirects normalized and dynamic directory pathnames to concrete pages', () => {
+    const navigate = vi.fn()
+    const dynamicRegistry = createRouteRegistry({
+      routes: routes.concat({
+        path: '/workspaces/:workspaceId',
+        title: '工作空间',
+        routes: [
+          {
+            path: '/workspaces/:workspaceId/overview',
+            title: '工作空间概览',
+            element: () => null,
+          },
+        ],
+      }),
+    })
+    const store = createTestStore({ registry: dynamicRegistry })
+    store.getState().syncExternalDeps({ navigate })
+    const view = render(
+      <PathnameSyncEffects
+        store={store}
+        pathname="/settings/"
+        registry={dynamicRegistry}
+      />,
+    )
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenLastCalledWith('/settings/profile')
+
+    view.rerender(
+      <PathnameSyncEffects
+        store={store}
+        pathname="/workspaces/42"
+        registry={dynamicRegistry}
+      />,
+    )
+
+    expect(navigate).toHaveBeenCalledTimes(2)
+    expect(navigate).toHaveBeenLastCalledWith('/workspaces/42/overview')
+  })
+
   it('does not navigate from root to itself when no accessible page exists', () => {
     const navigate = vi.fn()
     const registry = createRouteRegistry({

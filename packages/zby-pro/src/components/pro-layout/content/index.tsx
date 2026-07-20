@@ -58,7 +58,9 @@ function ProLayoutContent(props: ProLayoutContentProps) {
       )
     }
 
-    if (registry.isPageRoute(fullLeaf?.route) || registry.routeMapping[pathname]) {
+    // 完整索引能够解析就说明路由真实存在，只是当前权限索引无法提供可展示页面；
+    // 目录和动态真实 pathname 也应显示 403。只有完整索引都无法解析时才是 404。
+    if (fullLeaf) {
       return (
         <ExceptionPage
           prefixCls={prefixCls}
@@ -81,7 +83,7 @@ function ProLayoutContent(props: ProLayoutContentProps) {
         )}
       />
     )
-  }, [fullLeaf, intl, isLeafPage, pathname, prefixCls, registry])
+  }, [fullLeaf, intl, isLeafPage, pathname, prefixCls])
 
   return (
     <>

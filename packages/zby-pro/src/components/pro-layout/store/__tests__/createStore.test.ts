@@ -175,6 +175,44 @@ describe('proLayout Store initialization and navigation', () => {
     expect(navigate).toHaveBeenLastCalledWith('/project/101')
   })
 
+  it('opens concrete children for dynamic and normalized directory targets', () => {
+    const navigate = vi.fn()
+    const registry = createRouteRegistry({
+      routes: routes.concat(
+        {
+          path: '/workspaces/:workspaceId',
+          title: '工作空间',
+          routes: [
+            {
+              path: '/workspaces/:workspaceId/overview',
+              title: '工作空间概览',
+              element: () => null,
+            },
+          ],
+        },
+        {
+          path: '/settings',
+          title: '设置',
+          routes: [
+            {
+              path: '/settings/profile',
+              title: '个人设置',
+              element: () => null,
+            },
+          ],
+        },
+      ),
+    })
+    const store = createTestStore({ registry })
+    store.getState().syncExternalDeps({ navigate })
+
+    store.getState().jumpTo('/workspaces/42')
+    expect(navigate).toHaveBeenLastCalledWith('/workspaces/42/overview')
+
+    store.getState().jumpTo('/settings/')
+    expect(navigate).toHaveBeenLastCalledWith('/settings/profile')
+  })
+
   it('replaces the current location without adding history in smart navigation', () => {
     const navigate = vi.fn()
     const store = createTestStore()
