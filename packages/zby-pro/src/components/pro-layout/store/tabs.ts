@@ -263,9 +263,7 @@ async function executeTabClose(
     // false 或 rejection 都不会被当成同意。rejection 继续交给调用方处理。
     const hooks = runtime.beforeTabCloseMap.get(tabKey) || []
     if (hooks.length > 0) {
-      const results = await Promise.all(
-        hooks.map((registration) => registration.handler()),
-      )
+      const results = await Promise.all(hooks.map((hook) => hook()))
       if (!results.every((result) => result === true))
         return false
     }

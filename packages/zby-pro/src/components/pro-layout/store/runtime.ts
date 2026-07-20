@@ -38,15 +38,9 @@ export interface ProLayoutStoreRuntime {
     { emit: (payload: ProLayoutLocationEventPayload) => void }
   >
   /** 页签 key 到关闭前 Hook 注册记录的映射。 */
-  beforeTabCloseMap: Map<string, ProLayoutBeforeCloseRegistration[]>
+  beforeTabCloseMap: Map<string, ProLayoutBeforeCloseHook[]>
   /** 正在关闭的页签 key；防止重复执行关闭前 Hook。 */
   closingTabKeys: Set<string>
-}
-
-/** 关闭前 Hook 注册时保存的历史路由身份，不依赖后续 Registry 重新解析。 */
-export interface ProLayoutBeforeCloseRegistration {
-  handler: ProLayoutBeforeCloseHook
-  pathname: string
 }
 
 /** 为一个新 Store 创建完全隔离的私有运行时。 */

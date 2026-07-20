@@ -155,11 +155,11 @@ export interface ProLayoutProps {
   /** 应用标题，同时作为浏览器页面标题的基础文本。 */
   title: string
   /**
-   * 驱动菜单、权限、页签、面包屑和页面渲染的不可变路由快照。
+   * 驱动菜单、权限、页签、面包屑和页面渲染的挂载期路由快照。
    *
-   * 请在组件外定义，或使用 useMemo 保持引用稳定；每次传入新的数组或路由对象引用都会重建
-   * Route Registry，并同步相关路由元数据。多语言场景应仅在翻译后的标题实际变化时创建新快照，
-   * 不要直接修改现有数组或路由对象。
+   * ProLayout 只读取首次挂载时传入的 routes。挂载期间替换数组、路由对象或路由结构
+   * 都不会生效；需要更换路由时请重新挂载 ProLayout。当前迁移暂不处理路由标题的
+   * 运行时多语言切换，也不要直接修改首次传入的数组或路由对象。
    */
   routes: ProLayoutRoute[]
   /** Header 的 Logo 和右侧扩展内容配置。 */
@@ -185,7 +185,7 @@ export interface ProLayoutProps {
   minimumContentWidth?: number | string
   /** 是否隐藏侧边菜单和顶部页签栏。 */
   noBar?: boolean
-  /** 访问根路径或不可直接展示的目录时优先跳转的路径。 */
+  /** 挂载期固定的根路径或不可直接展示目录的优先跳转地址。 */
   defaultRedirectPath?: string
   /** 同时允许固定的最大页签数量。 */
   maxFixedTabCount?: 4 | 6 | 8 | number

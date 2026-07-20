@@ -33,7 +33,7 @@ export interface ProLayoutContextValue {
   /** 更新指定页签标题。 */
   setTabLabel: (key: string, label: string) => void
   /** 为 pathname 对应的页签注册关闭前 Hook。 */
-  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => () => void
+  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => void
   /** 清理指定或全部关闭前 Hook。 */
   clearBeforeCloseHook: (pathname: string, handler?: ProLayoutBeforeCloseHook) => void
   /** 在完整路由索引或权限索引中解析目标路由。 */
@@ -74,7 +74,7 @@ export const emptyProLayoutContext: ProLayoutContextValue = {
   closeTab: async () => false,
   setPathnameDescription: () => undefined,
   setTabLabel: () => undefined,
-  addBeforeCloseHook: () => () => undefined,
+  addBeforeCloseHook: () => undefined,
   clearBeforeCloseHook: () => undefined,
   resolveLeafRoute: () => null,
   getCurrentRoutes: () => [],

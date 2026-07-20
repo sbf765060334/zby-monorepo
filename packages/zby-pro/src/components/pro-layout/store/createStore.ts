@@ -31,11 +31,7 @@ import type {
   ProLayoutStoreState,
   SetProLayoutStoreState,
 } from './types'
-import type {
-  ProLayoutBeforeCloseHook,
-  ProLayoutCurrentRoute,
-  ProLayoutSystemItem,
-} from '../interface'
+import type { ProLayoutCurrentRoute, ProLayoutSystemItem } from '../interface'
 
 /**
  * 创建独立、与 React 生命周期解耦的 ProLayout Zustand Store。
@@ -141,8 +137,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 
       setTabLabel: (key, label) => {
         set((state) => {
-          // 不存在的页签不补建。即使文本相同，也要记录业务已接管标题，避免后续
-          // routes 元数据更新时把调用方明确设置的标题误判为默认标题并覆盖。
+          // 不存在的页签不补建。即使文本相同，也要记录业务已接管标题，明确区分
+          // 路由默认标题和调用方主动设置的标题。
           const hit = state.tabs.find((tab) => tab.key === key)
           if (!hit || (hit.label === label && hit.labelCustomized))
             return state
@@ -167,28 +163,34 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
         // 属于同一个页签，关闭时必须统一执行该页签下登记的全部 Hook。
         const tabKey = get().getTabKey(pathname)
         if (!tabKey)
-          return () => undefined
+          return
 
         const map = runtime.beforeTabCloseMap
-        map.set(
-          tabKey,
-          (map.get(tabKey) || []).concat({ handler, pathname }),
-        )
-
-        // disposer 捕获注册时的 tabKey。即使 routes 随后删除或改变该路由，页面卸载时
-        // 仍能清理原 Hook，不再依赖最新 Registry 重新解析历史 pathname。
-        return () => removeBeforeCloseHook(runtime, tabKey, handler)
+        map.set(tabKey, (map.get(tabKey) || []).concat(handler))
       },
 
       clearBeforeCloseHook: (pathname, handler) => {
-        // 正常情况使用最新 Registry；路由已经删除时，从注册记录恢复历史 tabKey。
-        const tabKey =
-          findRegisteredBeforeCloseTabKey(runtime, pathname, handler) ||
-          get().getTabKey(pathname)
+        const tabKey = get().getTabKey(pathname)
         if (!tabKey)
           return
 
-        removeBeforeCloseHook(runtime, tabKey, handler)
+        const map = runtime.beforeTabCloseMap
+        if (!handler) {
+          // 未指定 handler 表示页面整体清理，直接注销该页签的全部关闭守卫。
+          map.delete(tabKey)
+          return
+        }
+
+        const list = map.get(tabKey)
+        if (!list)
+          return
+
+        const next = list.filter((item) => item !== handler)
+        // Map 中不保留空数组，关闭页签时即可用“无记录”快速跳过 Hook 阶段。
+        if (next.length > 0)
+          map.set(tabKey, next)
+        else
+          map.delete(tabKey)
       },
 
       getTabKey: (pathname) => get().registry.getTabKey(pathname),
@@ -212,8 +214,8 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 /**
  * 把 Core 中可能变化的依赖同步进稳定 Store。
  *
- * storageAdapter 和 KeepAlive 都是 Store 创建时确定的挂载期配置，不通过本入口更新。
- * storageKey 仍可动态切换同一 Adapter 内的持久化命名空间：变化时递增 generation、
+ * Registry、storageAdapter 和 KeepAlive 都是 Store 创建时确定的挂载期配置，不通过
+ * 本入口更新。storageKey 仍可动态切换同一 Adapter 内的持久化命名空间：变化时递增 generation、
  * 重置 hydration 标记并立刻加载新命名空间；旧 key 的异步 load 即使晚到，也会因
  * generation 不一致而被 persistence 模块忽略。
  */
@@ -266,39 +268,14 @@ function syncExternalDeps(
     if ('systemList' in data && !areSystemListsEqual(state.systemList, data.systemList))
       next.systemList = data.systemList || []
 
-    const registry = data.registry || state.registry
     const currentPathname = data.currentPathname ?? state.currentPathname
-    const registryChanged = registry !== state.registry
     const currentPathnameChanged = currentPathname !== state.currentPathname
 
-    if (currentPathnameChanged)
+    if (currentPathnameChanged) {
       next.currentPathname = currentPathname
-
-    if (registryChanged) {
-      // Registry 更新表示调用方提交了新的不可变 routes 快照。除替换查询源外，还要
-      // 刷新默认页签标题和 KeepAlive 页面持有的 route 元数据；自定义标题保持不变。
-      next.registry = registry
-      const tabs = syncTabRouteMetadata(state, registry)
-      const pages = syncPageRouteMetadata(state.pages, registry)
-      if (tabs !== state.tabs)
-        next.tabs = tabs
-      if (pages !== state.pages)
-        next.pages = pages
-
-      const pathnameDescriptionMap = removeInvalidatedPathnameDescriptions(
-        state.pathnameDescriptionMap,
-        state.registry,
-        registry,
-      )
-      if (pathnameDescriptionMap !== state.pathnameDescriptionMap)
-        next.pathnameDescriptionMap = pathnameDescriptionMap
-    }
-
-    if (registryChanged || currentPathnameChanged) {
-      // currentRoutes/currentSelectedPath 都由同一份 Registry + pathname 派生，不能再由
-      // Core 独立提交，否则路由快照更新时可能出现新 Registry 搭配旧面包屑的状态。
+      // Registry 是 Store 创建时固定的路由事实；pathname 变化时只从该快照派生层级。
       const currentRoutes = currentPathname
-        ? registry.getCurrentRoutes(currentPathname)
+        ? state.registry.getCurrentRoutes(currentPathname)
         : []
       const currentSelectedPath = currentRoutes.map((item) => item.realPath)
 
@@ -332,7 +309,6 @@ function syncExternalDeps(
   latest.cache.hydrateFixedParamsPathMap(openParamsPathOverlay || {})
   void latest.hydrateStorage()
 }
-
 /**
  * 计算持久化来源切换时仍需保留的共享动态页签真实 pathname。
  *
@@ -350,8 +326,8 @@ function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
 
     const leaf = state.registry.resolveLeafRoute(pathname)
     const resolvedTabKey = state.registry.getTabKey(pathname)
-    // Registry 可能已变化：无法解析、tabKey 已不一致，或路由改为多页签模式时，旧映射
-    // 都不再符合当前页签语义，不能带入新持久化来源。
+    // 仅保留当前固定 Registry 仍能解析、且 tabKey 语义一致的共享动态页签映射；多页签
+    // 路由不使用这份共享 pathname 映射，避免把旧地址带入新的持久化来源。
     if (
       !leaf ||
       resolvedTabKey !== tab.key ||
@@ -363,119 +339,6 @@ function getOpenParamsPathOverlay(state: ProLayoutStoreState) {
     result[tab.key] = pathname
     return result
   }, {})
-}
-
-/** 从历史注册记录恢复 pathname 对应的 tabKey。 */
-function findRegisteredBeforeCloseTabKey(
-  runtime: ReturnType<typeof createProLayoutStoreRuntime>,
-  pathname: string,
-  handler?: ProLayoutBeforeCloseHook,
-) {
-  for (const [tabKey, registrations] of runtime.beforeTabCloseMap) {
-    if (
-      registrations.some(
-        (registration) =>
-          registration.pathname === pathname &&
-          (!handler || registration.handler === handler),
-      )
-    ) {
-      return tabKey
-    }
-  }
-
-  return null
-}
-
-/** 按注册时保存的 tabKey 删除指定 Hook，或清空该页签的全部 Hook。 */
-function removeBeforeCloseHook(
-  runtime: ReturnType<typeof createProLayoutStoreRuntime>,
-  tabKey: string,
-  handler?: ProLayoutBeforeCloseHook,
-) {
-  const registrations = runtime.beforeTabCloseMap.get(tabKey)
-  if (!registrations)
-    return
-
-  if (!handler) {
-    runtime.beforeTabCloseMap.delete(tabKey)
-    return
-  }
-
-  const next = registrations.filter(
-    (registration) => registration.handler !== handler,
-  )
-  if (next.length > 0)
-    runtime.beforeTabCloseMap.set(tabKey, next)
-  else
-    runtime.beforeTabCloseMap.delete(tabKey)
-}
-
-/**
- * Registry 改变路由身份时清理依赖旧映射的动态描述。
- *
- * 仅修改 title 或 element 时新旧 tabKey 相同，描述会原样保留；删除路由或改变
- * supportMultipleTabs 等身份语义时才移除旧记录。
- */
-function removeInvalidatedPathnameDescriptions(
-  descriptions: Record<string, string>,
-  previousRegistry: ProLayoutStoreState['registry'],
-  nextRegistry: ProLayoutStoreState['registry'],
-) {
-  let changed = false
-  const next = { ...descriptions }
-
-  Object.keys(next).forEach((pathname) => {
-    const previousTabKey = previousRegistry.getTabKey(pathname)
-    if (
-      previousTabKey &&
-      nextRegistry.getTabKey(pathname) !== previousTabKey
-    ) {
-      delete next[pathname]
-      changed = true
-    }
-  })
-
-  return changed ? next : descriptions
-}
-
-/** 使用新 Registry 刷新仍采用路由默认标题的页签，并保留业务自定义标题。 */
-function syncTabRouteMetadata(
-  state: ProLayoutStoreState,
-  registry: ProLayoutStoreState['registry'],
-) {
-  let changed = false
-  const tabs = state.tabs.map((tab) => {
-    if (tab.labelCustomized)
-      return tab
-
-    const pathname = state.cache.getParamsPathByTabKey(tab.key) || tab.key
-    const route = registry.resolveLeafRoute(pathname)?.route
-    if (!route || route.title === tab.label)
-      return tab
-
-    changed = true
-    return { ...tab, label: route.title }
-  })
-
-  return changed ? tabs : state.tabs
-}
-
-/** 替换 KeepAlive 页面持有的 route 元数据，不改变页面 key、URL 和 LRU 时间。 */
-function syncPageRouteMetadata(
-  pages: ProLayoutStoreState['pages'],
-  registry: ProLayoutStoreState['registry'],
-) {
-  let changed = false
-  const nextPages = pages.map((page) => {
-    const route = registry.resolveLeafRoute(page.pathname, { withinAuth: true })?.route
-    if (!route || route === page.route)
-      return page
-
-    changed = true
-    return { ...page, route }
-  })
-
-  return changed ? nextPages : pages
 }
 
 /** 仅当 data 明确包含字段且值不是 undefined 时同步普通标量依赖。 */

@@ -7,7 +7,7 @@ import type { ProLayoutExternalDeps, ProLayoutStoreState } from '../store'
 /** Core 每次渲染后需要同步到稳定 Store 的外部依赖。 */
 export type SyncExternalDepsEffectsProps = Omit<
   ProLayoutExternalDeps,
-  'currentPathname' | 'registry'
+  'currentPathname'
 > & {
   store: StoreApi<ProLayoutStoreState>
 }
@@ -40,7 +40,7 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
   } = props
 
   useLayoutEffect(() => {
-    // intl 必须跟随 locale 更新；storageKey 使用挂载时固定的 Adapter 切换命名空间，
+    // intl 仍可跟随 locale 更新；routes/Registry 是挂载时固定的快照，storageKey 使用固定 Adapter 切换命名空间，
     // 并利用 generation 丢弃旧 key 晚到的异步结果。
     store.getState().syncExternalDeps({
       afterTabClose,

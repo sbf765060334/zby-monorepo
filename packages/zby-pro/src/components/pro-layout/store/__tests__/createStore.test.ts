@@ -819,118 +819,6 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(navigate).toHaveBeenLastCalledWith('/orders')
   })
 
-  it('synchronizes route metadata while preserving customized tab labels', () => {
-    const store = createTestStore({ initialPathname: '/dashboard' })
-    store.getState().syncByPathname('/orders')
-    store.getState().setTabLabel('/orders', '我的订单')
-    const initialDashboardPage = store.getState().pages.find(
-      (page) => page.key === '/dashboard',
-    )!
-    const initialOrdersPage = store.getState().pages.find(
-      (page) => page.key === '/orders',
-    )!
-    const nextRoutes = routes.map((route) => ({
-      ...route,
-      title: `${route.title} EN`,
-    }))
-    const nextRegistry = createRouteRegistry({ routes: nextRoutes })
-
-    store.getState().syncExternalDeps({
-      registry: nextRegistry,
-    })
-
-    expect(store.getState().currentRoutes[0]?.route).toBe(nextRoutes[0])
-    expect(store.getState().currentSelectedPath).toEqual(['/dashboard'])
-    expect(store.getState().tabs).toMatchObject([
-      { key: '/dashboard', label: '工作台 EN', labelCustomized: false },
-      { key: '/orders', label: '我的订单', labelCustomized: true },
-    ])
-    expect(store.getState().pages.find((page) => page.key === '/dashboard')).toEqual({
-      ...initialDashboardPage,
-      route: nextRoutes[0],
-    })
-    expect(store.getState().pages.find((page) => page.key === '/orders')).toEqual({
-      ...initialOrdersPage,
-      route: nextRoutes[1],
-    })
-  })
-
-  it('cleans historical route resources after their Registry identity changes', async () => {
-    const beforeClose = vi.fn(() => false)
-    const legacyBeforeClose = vi.fn(() => false)
-    const store = createTestStore()
-    store.getState().syncByPathname('/project/42')
-    const disposeBeforeClose = store
-      .getState()
-      .addBeforeCloseHook(beforeClose, '/project/42')
-    store.getState().addBeforeCloseHook(legacyBeforeClose, '/project/42')
-    store.getState().setPathnameDescription({
-      '/project/42': '项目 42',
-      '/orders': '订单描述',
-    })
-
-    const multipleTabsRegistry = createRouteRegistry({
-      routes: routes.map((route) =>
-        route.path === '/project/:id'
-          ? { ...route, supportMultipleTabs: true }
-          : route,
-      ),
-    })
-    store.getState().syncExternalDeps({ registry: multipleTabsRegistry })
-    disposeBeforeClose()
-    store.getState().clearBeforeCloseHook('/project/42', legacyBeforeClose)
-
-    expect(store.getState().pathnameDescriptionMap).toEqual({
-      '/orders': '订单描述',
-    })
-    await expect(store.getState().closeTab('/project/:id')).resolves.toBe(true)
-    expect(beforeClose).not.toHaveBeenCalled()
-    expect(legacyBeforeClose).not.toHaveBeenCalled()
-  })
-
-  it('derives route hierarchy from the latest Registry without separate route inputs', () => {
-    const initialRoutes: ProLayoutRoute[] = [
-      {
-        path: '/system',
-        title: '系统管理',
-        routes: [
-          {
-            path: '/users',
-            title: '用户管理',
-            element: () => null,
-          },
-        ],
-      },
-    ]
-    const nextRoutes: ProLayoutRoute[] = [
-      {
-        path: '/organization',
-        title: 'Organization',
-        routes: [
-          {
-            path: '/users',
-            title: 'Users',
-            element: () => null,
-          },
-        ],
-      },
-    ]
-    const store = createTestStore({
-      registry: createRouteRegistry({ routes: initialRoutes }),
-      initialPathname: '/users',
-    })
-
-    store.getState().syncExternalDeps({
-      registry: createRouteRegistry({ routes: nextRoutes }),
-    })
-
-    expect(store.getState().currentRoutes.map((item) => item.route.title)).toEqual([
-      'Organization',
-      'Users',
-    ])
-    expect(store.getState().currentSelectedPath).toEqual(['/organization', '/users'])
-  })
-
   it('derives route hierarchy when the authoritative pathname changes', () => {
     const store = createTestStore({ initialPathname: '/dashboard' })
 
@@ -943,15 +831,8 @@ describe('proLayout Store tabs and KeepAlive', () => {
 
   it('marks an unchanged setTabLabel value as customized', () => {
     const store = createTestStore({ initialPathname: '/dashboard' })
-    store.getState().setTabLabel('/dashboard', '工作台')
-    const nextRoutes = routes.map((route) => ({
-      ...route,
-      title: `${route.title} EN`,
-    }))
 
-    store.getState().syncExternalDeps({
-      registry: createRouteRegistry({ routes: nextRoutes }),
-    })
+    store.getState().setTabLabel('/dashboard', '工作台')
 
     expect(store.getState().tabs[0]).toMatchObject({
       key: '/dashboard',
@@ -959,7 +840,6 @@ describe('proLayout Store tabs and KeepAlive', () => {
       labelCustomized: true,
     })
   })
-
   it('creates independent tabs and page instances for supportMultipleTabs routes', () => {
     const store = createTestStore()
 

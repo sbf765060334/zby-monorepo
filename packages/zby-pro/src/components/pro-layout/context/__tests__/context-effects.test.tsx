@@ -196,14 +196,12 @@ describe('ProLayout Effects', () => {
   it('redirects a directory entered after mount and avoids StrictMode duplicate navigation', () => {
     const navigate = vi.fn()
     const store = createTestStore()
-    const registry = store.getState().registry
     store.getState().syncExternalDeps({ navigate })
     const view = render(
       <StrictMode>
         <PathnameSyncEffects
           store={store}
           pathname="/settings"
-          registry={registry}
         />
       </StrictMode>,
     )
@@ -217,7 +215,6 @@ describe('ProLayout Effects', () => {
         <PathnameSyncEffects
           store={store}
           pathname="/dashboard"
-          registry={registry}
         />
       </StrictMode>,
     )
@@ -231,7 +228,6 @@ describe('ProLayout Effects', () => {
         <PathnameSyncEffects
           store={store}
           pathname="/settings"
-          registry={registry}
         />
       </StrictMode>,
     )
@@ -261,7 +257,6 @@ describe('ProLayout Effects', () => {
       <PathnameSyncEffects
         store={store}
         pathname="/settings/"
-        registry={dynamicRegistry}
       />,
     )
 
@@ -272,7 +267,6 @@ describe('ProLayout Effects', () => {
       <PathnameSyncEffects
         store={store}
         pathname="/workspaces/42"
-        registry={dynamicRegistry}
       />,
     )
 
@@ -292,36 +286,12 @@ describe('ProLayout Effects', () => {
       <PathnameSyncEffects
         store={store}
         pathname="/"
-        registry={registry}
       />,
     )
 
     expect(registry.defaultRoute).toBe('/')
     expect(navigate).not.toHaveBeenCalled()
     expect(store.getState().activeTabKey).toBeNull()
-  })
-
-  it('re-evaluates the root default after the authoritative Registry changes', () => {
-    const navigate = vi.fn()
-    const initialRegistry = createRouteRegistry({
-      routes: [{ path: '/empty', title: '空目录', routes: [] }],
-    })
-    const nextRegistry = createRouteRegistry({ routes })
-    const store = createTestStore({ registry: initialRegistry, initialPathname: '/' })
-    store.getState().syncExternalDeps({ navigate })
-    const view = render(
-      <PathnameSyncEffects store={store} pathname="/" registry={initialRegistry} />,
-    )
-
-    expect(navigate).not.toHaveBeenCalled()
-
-    view.rerender(
-      <PathnameSyncEffects store={store} pathname="/" registry={nextRegistry} />,
-    )
-
-    expect(store.getState().registry).toBe(nextRegistry)
-    expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/dashboard')
   })
 
   it('uses the validated Registry default when the configured default is unauthorized', () => {
@@ -340,7 +310,7 @@ describe('ProLayout Effects', () => {
     const store = createTestStore({ registry, hasAuth, initialPathname: '/' })
     store.getState().syncExternalDeps({ navigate })
 
-    render(<PathnameSyncEffects store={store} pathname="/" registry={registry} />)
+    render(<PathnameSyncEffects store={store} pathname="/" />)
 
     expect(registry.defaultRoute).toBe('/dashboard')
     expect(navigate).toHaveBeenCalledOnce()
@@ -362,7 +332,7 @@ describe('ProLayout Effects', () => {
     const store = createTestStore({ registry, hasAuth })
     store.getState().syncExternalDeps({ navigate })
 
-    render(<PathnameSyncEffects store={store} pathname="/admin" registry={registry} />)
+    render(<PathnameSyncEffects store={store} pathname="/admin" />)
 
     expect(navigate).not.toHaveBeenCalled()
     expect(store.getState().currentPathname).toBe('/admin')

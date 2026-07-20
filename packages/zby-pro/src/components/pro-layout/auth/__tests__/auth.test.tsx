@@ -61,9 +61,9 @@ describe('static ProLayout authorization snapshot', () => {
     expect(latestSnapshot!.registry.resolveLeafRoute('/admin', { withinAuth: true })).toBeNull()
   })
 
-  it('rebuilds routes with the initial permission function', () => {
-    const denyAdmin = (code: string) => code !== 'admin'
-    const allowAll = () => true
+  it('keeps routes, hasAuth and defaultRedirectPath fixed for the whole mount', () => {
+    const initialHasAuth = () => true
+    const nextHasAuth = (code: string) => code !== 'admin'
     const nextRoutes = routes.concat({
       path: '/audit',
       title: '审计',
@@ -75,16 +75,32 @@ describe('static ProLayout authorization snapshot', () => {
     function SnapshotProbe(props: {
       routes: ProLayoutRoute[]
       hasAuth: (code: string) => boolean
+      defaultRedirectPath?: string
     }) {
       latestSnapshot = useProLayoutAuthorization(props)
       return null
     }
 
-    const view = render(<SnapshotProbe routes={routes} hasAuth={denyAdmin} />)
-    view.rerender(<SnapshotProbe routes={nextRoutes} hasAuth={allowAll} />)
+    const view = render(
+      <SnapshotProbe
+        routes={routes}
+        hasAuth={initialHasAuth}
+        defaultRedirectPath="/dashboard"
+      />,
+    )
+    const initialSnapshot = latestSnapshot!
+    view.rerender(
+      <SnapshotProbe
+        routes={nextRoutes}
+        hasAuth={nextHasAuth}
+        defaultRedirectPath="/admin"
+      />,
+    )
 
-    expect(latestSnapshot!.registry.routes).toBe(nextRoutes)
-    expect(latestSnapshot!.hasAuth).toBe(denyAdmin)
+    expect(latestSnapshot).toBe(initialSnapshot)
+    expect(latestSnapshot!.registry.routes).toBe(routes)
+    expect(latestSnapshot!.registry.defaultRoute).toBe('/dashboard')
+    expect(latestSnapshot!.hasAuth).toBe(initialHasAuth)
     expect(latestSnapshot!.registry.resolveLeafRoute('/audit', { withinAuth: true })).toBeNull()
   })
 })

@@ -76,8 +76,8 @@ const MemoStableElement = memo(StableElement, (previous, next) => previous.node 
  * 持有单个 KeepAlive 页面实例及其独立 Page Context Store。
  *
  * 非活动页面仅隐藏 Content，不卸载业务组件；Store 从 pages 删除该描述时，React key
- * 随之消失并完成真正卸载。Registry 更新会重新解析 element 和权限，不能依赖稳定的
- * resolveLeafRoute 动作引用缓存旧结果。
+ * 随之消失并完成真正卸载。Registry 是挂载期固定的路由事实，页面只需按 pathname
+ * 解析当前稳定快照。
  */
 function PageContainer(props: PageContainerProps) {
   const {
@@ -92,7 +92,6 @@ function PageContainer(props: PageContainerProps) {
   const layoutContext = useProLayoutContext(stablePageLayoutContextSelector, shallow)
   const intl = useProLayoutStoreSelector((state) => state.intl)
   const registry = useProLayoutStoreSelector((state) => state.registry)
-  const cache = useProLayoutStoreSelector((state) => state.cache)
   const registerPageLocationEmitter = useProLayoutStoreSelector(
     (state) => state.registerPageLocationEmitter,
   )
@@ -118,8 +117,8 @@ function PageContainer(props: PageContainerProps) {
   )
 
   useLayoutEffect(() => {
-    // 共享动态页签切换真实 pathname，或 Registry 提交新元数据快照时，在绘制前同步
-    // Page Context，业务组件不会观察到宿主已更新而页面上下文仍停留在旧值的一帧。
+    // 共享动态页签切换真实 pathname 时，在绘制前同步 Page Context，业务组件不会
+    // 观察到宿主已更新而页面上下文仍停留在旧地址的一帧。
     pageStore.setState({
       ...layoutContext,
       currentPathname: data.pathname,
@@ -150,30 +149,16 @@ function PageContainer(props: PageContainerProps) {
 
     return leaf.route.element || null
   }, [data.pathname, intl, prefixCls, registry])
+  // Registry 和 route.element 都是挂载期固定的；页面实例只在共享动态 pathname 变化时
+  // 重置错误边界。相同 pathname 下替换 route.element 不属于当前支持的运行时能力。
   const errorBoundaryResetKeys = useMemo(
-    () => [data.pathname, elementNode] as const,
-    [data.pathname, elementNode],
+    () => [data.pathname] as const,
+    [data.pathname],
   )
-  const handlePageRecover = useCallback(
-    (previousResetKeys: readonly unknown[]) => {
-      // 报错时业务树已经被 React 卸载，恢复后的新订阅者需要重新收到当前显示状态。
-      lifecycle$.emit(active)
-
-      // pathname 变化时外层 LocationCacheEffects 会发布新 location；仅 element 在同一
-      // pathname 下替换时不会触发该 effect，因此从当前页签 Cache 补发完整地址。
-      if (previousResetKeys[0] !== data.pathname)
-        return
-
-      const searchParams = cache.getSearchParamsForTabKey(data.key)
-      location$.emit({
-        pathname: data.pathname,
-        search: searchParams ? `?${searchParams}` : '',
-        hash: cache.getHashForTabKey(data.key),
-      })
-    },
-    [active, cache, data.key, data.pathname, lifecycle$, location$],
-  )
-
+  const handlePageRecover = useCallback(() => {
+    // 报错时业务树已经被 React 卸载，恢复后的新订阅者需要重新收到当前显示状态。
+    lifecycle$.emit(active)
+  }, [active, lifecycle$])
   const contentHeight = useMemo(
     () => noBar ? '100vh' : `calc(100vh - ${headerHeight}px)`,
     [headerHeight, noBar],

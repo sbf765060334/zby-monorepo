@@ -63,7 +63,7 @@ export interface ProLayoutStoreState {
   messageApi: ProLayoutMessageApi | null
   /** 当前国际化对象；locale 变化时必须同步新引用。 */
   intl: ProLayoutIntl
-  /** 当前路由查询注册表。 */
+  /** Store 创建时固定的路由查询注册表。 */
   registry: ProLayoutRouteRegistry
   /** 当前持久化命名空间。 */
   storageKey: string
@@ -151,7 +151,7 @@ export interface ProLayoutStoreState {
     options?: ProLayoutCloseOptions,
   ) => Promise<boolean>
   /** 为 pathname 对应页签增加关闭前 Hook。 */
-  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => () => void
+  addBeforeCloseHook: (handler: ProLayoutBeforeCloseHook, pathname: string) => void
   /** 清理 pathname 对应的指定 Hook 或全部 Hook。 */
   clearBeforeCloseHook: (pathname: string, handler?: ProLayoutBeforeCloseHook) => void
   /** 计算 pathname 对应的页签 key。 */
@@ -184,14 +184,13 @@ export interface ProLayoutStoreState {
 /**
  * Store 创建后允许由 Core 动态同步的依赖。
  *
- * storageAdapter 和 keepAlive 属于挂载期配置，只能通过重新创建 Store 生效，因此不在
- * 动态依赖中暴露；storageKey 仍可切换固定 Adapter 内的持久化命名空间。
+ * routes、hasAuth、defaultRedirectPath、storageAdapter 和 keepAlive 都属于挂载期配置，
+ * 只能通过重新创建 Store/ProLayout 生效；storageKey 仍可切换固定 Adapter 内的命名空间。
  */
 export type ProLayoutExternalDeps = Partial<{
   navigate: ProLayoutNavigate | null
   messageApi: ProLayoutMessageApi | null
   intl: ProLayoutIntl
-  registry: ProLayoutRouteRegistry
   storageKey: string
   maxFixedTabCount: number
   headerHeight: number
