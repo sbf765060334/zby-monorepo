@@ -181,7 +181,12 @@ export interface ProLayoutStoreState {
   toggleFixed: (path: string) => void
 }
 
-/** Store 创建后允许由 Core 动态同步的依赖。 */
+/**
+ * Store 创建后允许由 Core 动态同步的依赖。
+ *
+ * storageAdapter 和 keepAlive 属于挂载期配置，只能通过重新创建 Store 生效，因此不在
+ * 动态依赖中暴露；storageKey 仍可切换固定 Adapter 内的持久化命名空间。
+ */
 export type ProLayoutExternalDeps = Partial<{
   navigate: ProLayoutNavigate | null
   messageApi: ProLayoutMessageApi | null
@@ -189,7 +194,6 @@ export type ProLayoutExternalDeps = Partial<{
   registry: ProLayoutRouteRegistry
   storageKey: string
   maxFixedTabCount: number
-  keepAlive: boolean | ProLayoutKeepAliveConfig
   headerHeight: number
   breadcrumbHeight: number
   currentPathname: string
@@ -199,8 +203,6 @@ export type ProLayoutExternalDeps = Partial<{
   afterTabClose: ProLayoutProps['afterTabClose'] | null
   renderLogo: ProLayoutLogoRenderer | null
   systemList: ProLayoutSystemItem[]
-  /** undefined 表示恢复默认 IndexedDB Adapter，false 表示纯内存模式。 */
-  storageAdapter: false | ProLayoutStorageAdapter | undefined
   onStorageLoadError: ProLayoutProps['onStorageLoadError'] | null
 }>
 

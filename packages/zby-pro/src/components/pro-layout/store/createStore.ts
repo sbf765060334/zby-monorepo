@@ -1,6 +1,5 @@
 import { createStore as createZustandStore } from 'zustand/vanilla'
 
-import { enforceKeepAliveLimit } from './keepAlive'
 import { createProLayoutInitialState } from './initialState'
 import {
   bootstrapByPathname,
@@ -215,8 +214,9 @@ export function createProLayoutStore(params: CreateProLayoutStoreParams) {
 /**
  * 把 Core 中可能变化的依赖同步进稳定 Store。
  *
- * storageKey/Adapter 被视为一组持久化来源身份。身份变化时递增 generation、重置
- * hydration 标记并立刻加载新来源；旧来源正在执行的异步 load 即使晚到，也会因
+ * storageAdapter 和 KeepAlive 都是 Store 创建时确定的挂载期配置，不通过本入口更新。
+ * storageKey 仍可动态切换同一 Adapter 内的持久化命名空间：变化时递增 generation、
+ * 重置 hydration 标记并立刻加载新命名空间；旧 key 的异步 load 即使晚到，也会因
  * generation 不一致而被 persistence 模块忽略。
  */
 function syncExternalDeps(
@@ -226,19 +226,12 @@ function syncExternalDeps(
   data: ProLayoutExternalDeps,
 ) {
   const previous = get()
-  // storageKey 与 Adapter 共同标识一个持久化来源。字段缺席表示沿用旧值；显式传入
-  // undefined 的 Adapter 则由 resolveStorageAdapter 恢复为默认 IndexedDB Adapter。
+  // storageKey 标识固定 Adapter 中的持久化命名空间；字段缺席时沿用当前 key。
   const nextStorageKey =
     'storageKey' in data && data.storageKey !== undefined
       ? data.storageKey
       : previous.storageKey
-  const nextStorageAdapter =
-    'storageAdapter' in data
-      ? resolveStorageAdapter(data.storageAdapter)
-      : previous.storageAdapter
-  const storageSourceChanged =
-    previous.storageKey !== nextStorageKey ||
-    previous.storageAdapter !== nextStorageAdapter
+  const storageSourceChanged = previous.storageKey !== nextStorageKey
   // 切换来源前先从旧 Cache 提取“仍打开页签”所需的动态 pathname。reset 只处理运行时
   // 版本，但后续 hydrate 会替换 Cache，若不保留该覆盖层，用户当前地址可能倒退。
   const openParamsPathOverlay = storageSourceChanged
@@ -309,22 +302,10 @@ function syncExternalDeps(
         next.currentSelectedPath = currentSelectedPath
     }
 
-    if ('keepAlive' in data && data.keepAlive !== undefined && state.keepAlive !== data.keepAlive) {
-      next.keepAlive = data.keepAlive
-      // 配置收紧时立即按新规则裁剪已有页面，不能等到下次导航才淘汰超限实例。
-      next.pages = enforceKeepAliveLimit(
-        next.pages || state.pages,
-        state.activePage,
-        data.keepAlive,
-        state.fixedSet,
-      )
-    }
-
     if (storageSourceChanged) {
-      // 新来源从未完成 hydration；纯内存模式没有外部数据可加载，因此直接视为完成。
+      // 新命名空间从未完成 hydration；纯内存模式没有外部数据可加载，因此直接视为完成。
       next.storageKey = nextStorageKey
-      next.storageAdapter = nextStorageAdapter
-      next.storageHydrated = nextStorageAdapter === false
+      next.storageHydrated = state.storageAdapter === false
       next.storageLoading = false
       next.storageLoadError = undefined
     }

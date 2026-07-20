@@ -99,12 +99,13 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - generation、字段修改版本、页面 emitter 和关闭前 Hook Map 由每个 Store 独享的闭包 runtime 保存；这些命令协调数据不参与 Zustand 订阅和 UI 更新。
 - hydration 使用 collection、fixedTabs、fixedParamsPathMap 三个字段各自的修改版本；只保护加载期间真正发生本地修改的字段。
 - 当前会话已经确认的动态 pathname 覆盖旧持久化值，避免首屏 `/project/99` 在加载后退回旧的 `/project/42`。
-- `storageKey` 或 `storageAdapter` 变化时重新加载新来源，并通过 generation 阻止旧来源晚到结果回写；仍打开的共享动态页签继续保留真实 pathname。
-- `storageAdapter={false}` 保持纯内存状态和完整内存 Cache；从 false 切换到真实 Adapter 后正常加载。
+- `storageAdapter` 和 KeepAlive 使用首次挂载配置，后续替换不会生效；调整后必须刷新浏览器或重新挂载 ProLayout。
+- `storageKey` 变化时使用首次 Adapter 重新加载命名空间，并通过 generation 阻止旧 key 的晚到结果回写；仍打开的共享动态页签继续保留真实 pathname。
+- `storageAdapter={false}` 在整个挂载期保持纯内存状态和完整内存 Cache。
 - 关闭固定页签时同步取消固定并持久化；并发关闭同一页签只允许一个操作完成清理和回调。
 - `setTabs` 对内容相同的页签数组不更新状态；普通页签重排不写 fixedTabs，固定页签组内重排同时更新内存顺序并只持久化一次。
 - `jumpTo` 和 `smartNavigate` 中，undefined 表示恢复页签 search/hash 缓存，null 或空字符串表示显式清空。
-- KeepAlive 动态缩容时一次达到上限；非正数上限只保留活动页和不可淘汰固定页，exclude 优先于 include。
+- KeepAlive 按首次配置执行；非正数上限只保留活动页和不可淘汰固定页，exclude 优先于 include。
 - 删除未消费的首屏动态路径 overlay 和一次性 Cache 持久化转发函数；测试 Storage Adapter 通过接口签名构造 mock，不再使用 `as never` 绕过类型检查。
 - 不迁移仅服务于 Next.js 页面缓存切换的 navigate `cache` 元数据。
 
@@ -319,8 +320,9 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - [x] 非法存储数据完成标准化。
 - [x] `initialStorageState` 不再触发异步覆盖。
 - [x] hydration 期间发生内存修改时不覆盖新状态，未冲突字段仍正常加载。
-- [x] `storageAdapter={false}` 不执行外部读写，并支持后续切换到真实 Adapter。
-- [x] `storageKey` 或 `storageAdapter` 变化后加载新来源，旧异步结果不能回写，非活动共享动态页签仍可恢复真实 pathname。
+- [x] `storageAdapter={false}` 在整个挂载期不执行外部读写。
+- [x] `storageAdapter` 和 KeepAlive 固定使用首次配置，后续替换被忽略。
+- [x] `storageKey` 变化后使用首次 Adapter 加载新命名空间，旧异步结果不能回写，非活动共享动态页签仍可恢复真实 pathname。
 - [x] 加载和保存失败提供正确 phase、storageKey 和 retry。
 - [x] 不同 storageKey 完全隔离。
 - [x] 收藏、固定页签和参数路径并发保存时全部保留。
@@ -363,7 +365,7 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
 - [x] 对象 selector 未传 equalityFn 时，同一 Store snapshot 的选择结果保持稳定。
 - [x] equalityFn 判定等价时保持选择结果引用稳定。
 - [x] locale 变化后 Store 使用最新 intl 对象。
-- [x] storageKey/Adapter 变化后加载新来源，并沿用 Store generation 竞态保护。
+- [x] storageKey 变化后使用首次 Adapter 加载新命名空间，并沿用 Store generation 竞态保护。
 - [x] 首屏根路径和目录路由能够跳转到默认可访问页面。
 - [x] 挂载后通过外部 Router 或浏览器历史进入目录，仍跳到首个可访问子页面。
 - [x] StrictMode 重放相同 pathname Effect 时不重复导航。

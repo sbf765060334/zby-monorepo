@@ -8,6 +8,7 @@ import { enforceKeepAliveLimit } from '../keepAlive'
 import { normalizeProLayoutStorageState } from '../storage'
 import type {
   CreateProLayoutStoreParams,
+  ProLayoutExternalDeps,
   ProLayoutIntl,
   ProLayoutMessageApi,
 } from '../types'
@@ -322,23 +323,23 @@ describe('proLayout Store persistence coordination', () => {
     )
   })
 
-  it('reloads a new storage source and ignores an older pending load result', async () => {
+  it('reloads a new storageKey and ignores an older pending load result', async () => {
     const firstLoad = createDeferred<ProLayoutStorageState>()
-    const firstAdapter = createAdapter({ load: vi.fn(() => firstLoad.promise) })
-    const secondAdapter = createAdapter({
-      load: vi.fn(async () => ({
+    const load = vi
+      .fn<ProLayoutStorageAdapter['load']>()
+      .mockImplementationOnce(() => firstLoad.promise)
+      .mockResolvedValueOnce({
         collection: ['/orders'],
         fixedTabs: ['/dashboard'],
         fixedParamsPathMap: {},
-      })),
+      })
+    const adapter = createAdapter({
+      load,
     })
-    const store = createTestStore({ storageAdapter: firstAdapter })
+    const store = createTestStore({ storageAdapter: adapter })
 
     const obsoleteHydration = store.getState().hydrateStorage()
-    store.getState().syncExternalDeps({
-      storageKey: 'second-layout',
-      storageAdapter: secondAdapter,
-    })
+    store.getState().syncExternalDeps({ storageKey: 'second-layout' })
 
     await vi.waitFor(() => {
       expect(store.getState().storageHydrated).toBe(true)
@@ -352,15 +353,19 @@ describe('proLayout Store persistence coordination', () => {
     })
     await obsoleteHydration
 
-    expect(secondAdapter.load).toHaveBeenCalledWith('second-layout')
+    expect(load).toHaveBeenNthCalledWith(1, 'test-pro-layout')
+    expect(load).toHaveBeenNthCalledWith(2, 'second-layout')
     expect(store.getState().storageKey).toBe('second-layout')
     expect(store.getState().collectionSet).toEqual(['/orders'])
   })
 
-  it('keeps inactive shared dynamic tab paths when the storage source changes', async () => {
+  it('keeps inactive shared dynamic tab paths when storageKey changes', async () => {
     const navigate = vi.fn()
-    const nextAdapter = createAdapter()
-    const store = createTestStore({ storageAdapter: false })
+    const adapter = createAdapter()
+    const store = createTestStore({
+      storageAdapter: adapter,
+      initialStorageState: normalizeProLayoutStorageState(),
+    })
 
     store.getState().syncExternalDeps({ navigate })
     store.getState().syncByPathname('/project/42')
@@ -371,8 +376,9 @@ describe('proLayout Store persistence coordination', () => {
       '/project/42',
     )
 
-    store.getState().syncExternalDeps({ storageAdapter: nextAdapter })
+    store.getState().syncExternalDeps({ storageKey: 'second-layout' })
     await vi.waitFor(() => {
+      expect(adapter.load).toHaveBeenCalledWith('second-layout')
       expect(store.getState().storageHydrated).toBe(true)
     })
 
@@ -384,36 +390,38 @@ describe('proLayout Store persistence coordination', () => {
     expect(navigate).toHaveBeenLastCalledWith('/project/42')
   })
 
-  it('keeps the complete in-memory path cache when persistence is disabled', () => {
-    const store = createTestStore({ storageAdapter: createAdapter() })
+  it('keeps pure memory mode fixed while storageKey changes', () => {
+    const store = createTestStore({ storageAdapter: false })
 
     store.getState().syncByPathname('/project/42')
     store.getState().syncByPathname('/dashboard')
-    store.getState().syncExternalDeps({ storageAdapter: false })
+    store.getState().syncExternalDeps({ storageKey: 'second-layout' })
 
     expect(store.getState().storageHydrated).toBe(true)
+    expect(store.getState().storageAdapter).toBe(false)
+    expect(store.getState().storageKey).toBe('second-layout')
     expect(store.getState().cache.getParamsPathByTabKey('/project/:id')).toBe(
       '/project/42',
     )
   })
 
-  it('loads an adapter introduced after starting in pure memory mode', async () => {
-    const adapter = createAdapter({
-      load: vi.fn(async () => ({
-        collection: ['/dashboard'],
-        fixedTabs: [],
-        fixedParamsPathMap: {},
-      })),
+  it('keeps storageAdapter and KeepAlive fixed after Store creation', () => {
+    const adapter = createAdapter()
+    const nextAdapter = createAdapter()
+    const keepAlive = { maxCachedPages: 2 }
+    const store = createTestStore({
+      storageAdapter: adapter,
+      keepAlive,
     })
-    const store = createTestStore({ storageAdapter: false })
 
-    expect(store.getState().storageHydrated).toBe(true)
-    store.getState().syncExternalDeps({ storageAdapter: adapter })
+    store.getState().syncExternalDeps({
+      storageAdapter: nextAdapter,
+      keepAlive: false,
+    } as unknown as ProLayoutExternalDeps)
 
-    await vi.waitFor(() => {
-      expect(adapter.load).toHaveBeenCalledOnce()
-      expect(store.getState().collectionSet).toEqual(['/dashboard'])
-    })
+    expect(store.getState().storageAdapter).toBe(adapter)
+    expect(store.getState().keepAlive).toBe(keepAlive)
+    expect(nextAdapter.load).not.toHaveBeenCalled()
   })
 
   it('keeps state fully in memory while storageAdapter is false', async () => {
@@ -697,16 +705,12 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(beforeClose).not.toHaveBeenCalled()
   })
 
-  it('immediately shrinks retained pages when maxCachedPages changes', () => {
-    const store = createTestStore({ keepAlive: true })
+  it('applies the initial maxCachedPages throughout the Store lifetime', () => {
+    const store = createTestStore({ keepAlive: { maxCachedPages: 1 } })
 
     store.getState().syncByPathname('/dashboard')
     store.getState().syncByPathname('/orders')
     store.getState().syncByPathname('/project/42')
-    expect(store.getState().pages).toHaveLength(3)
-
-    store.getState().syncExternalDeps({ keepAlive: { maxCachedPages: 1 } })
-
     expect(store.getState().pages.map((page) => page.key)).toEqual(['/project/:id'])
   })
 

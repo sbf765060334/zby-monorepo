@@ -26,7 +26,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     breadcrumbHeight,
     headerHeight,
     intl,
-    keepAlive,
     maxFixedTabCount,
     messageApi,
     navigate,
@@ -35,21 +34,19 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     onStorageLoadError,
     renderLogo,
     showBreadcrumb,
-    storageAdapter,
     storageKey,
     store,
     systemList,
   } = props
 
   useLayoutEffect(() => {
-    // intl 必须跟随 locale 更新；storageKey 与 storageAdapter 必须一起同步，Store 才能
-    // 切换持久化来源并利用 generation 丢弃旧来源晚到的异步结果。
+    // intl 必须跟随 locale 更新；storageKey 使用挂载时固定的 Adapter 切换命名空间，
+    // 并利用 generation 丢弃旧 key 晚到的异步结果。
     store.getState().syncExternalDeps({
       afterTabClose,
       breadcrumbHeight,
       headerHeight,
       intl,
-      keepAlive,
       maxFixedTabCount,
       messageApi,
       navigate,
@@ -58,7 +55,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
       onStorageLoadError,
       renderLogo,
       showBreadcrumb,
-      storageAdapter,
       storageKey,
       systemList,
     })
@@ -67,7 +63,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     breadcrumbHeight,
     headerHeight,
     intl,
-    keepAlive,
     maxFixedTabCount,
     messageApi,
     navigate,
@@ -76,7 +71,6 @@ function SyncExternalDepsEffects(props: SyncExternalDepsEffectsProps) {
     onStorageLoadError,
     renderLogo,
     showBreadcrumb,
-    storageAdapter,
     storageKey,
     store,
     systemList,

@@ -203,13 +203,16 @@ export interface ProLayoutProps {
   classNames?: ProLayoutClassNames
   /** 按语义区域追加的内联样式。 */
   styles?: ProLayoutStyles
-  /** 收藏、固定页签和参数路径持久化使用的命名空间。 */
+  /**
+   * 收藏、固定页签和参数路径持久化使用的命名空间。
+   * 挂载期可以更新；变化后使用首次固定的 storageAdapter 重新加载对应命名空间。
+   */
   storageKey?: string
   /**
    * 自定义持久化适配器；传入 false 时只保留当前挂载期间的内存状态。
    *
-   * 适配器引用代表当前持久化数据源，请勿在组件渲染期间直接创建。应在组件外创建，或使用
-   * useMemo 保持引用稳定；传入新引用会重置持久化任务的代次，并从新的数据源重新加载状态。
+   * 注意：ProLayout 只使用首次挂载时传入的 Adapter。挂载期间替换引用不会生效；
+   * 需要切换 Adapter 时，请刷新浏览器或重新挂载 ProLayout。
    */
   storageAdapter?: false | ProLayoutStorageAdapter
   /** 首次创建 Store 时使用的预加载持久化状态。 */
@@ -219,8 +222,8 @@ export interface ProLayoutProps {
   /**
    * 是否启用页面实例缓存，或提供详细的 KeepAlive 配置。
    *
-   * 使用对象形式时，请在组件外定义或使用 useMemo 保持配置引用稳定，其中 include、exclude
-   * 的函数引用也应保持稳定。新的配置引用会触发 Store 配置同步，但不会因此形成无限更新。
+   * 注意：ProLayout 只使用首次挂载时传入的配置。挂载期间替换对象、修改 include、
+   * exclude 或 maxCachedPages 不会生效；需要调整时，请刷新浏览器或重新挂载 ProLayout。
    */
   keepAlive?: boolean | ProLayoutKeepAliveConfig
 }

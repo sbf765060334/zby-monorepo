@@ -159,18 +159,21 @@ describe('ProLayout Context', () => {
 })
 
 describe('ProLayout Effects', () => {
-  it('synchronizes the latest intl and storage source into the stable Store', async () => {
-    const store = createTestStore({ storageAdapter: false })
+  it('synchronizes intl and switches storageKey through the initial Adapter', async () => {
+    const adapter = createAdapter()
+    const store = createTestStore({
+      storageKey: 'first-layout',
+      storageAdapter: adapter,
+      initialStorageState: normalizeProLayoutStorageState(),
+    })
     const nextIntl: ProLayoutIntl = {
       getMessage: () => '新语言文案',
     }
-    const nextAdapter = createAdapter()
     const view = render(
       <SyncExternalDepsEffects
         store={store}
         intl={intl}
         storageKey="first-layout"
-        storageAdapter={false}
       />,
     )
 
@@ -179,12 +182,11 @@ describe('ProLayout Effects', () => {
         store={store}
         intl={nextIntl}
         storageKey="second-layout"
-        storageAdapter={nextAdapter}
       />,
     )
 
     await waitFor(() => {
-      expect(nextAdapter.load).toHaveBeenCalledWith('second-layout')
+      expect(adapter.load).toHaveBeenCalledWith('second-layout')
       expect(store.getState().storageHydrated).toBe(true)
     })
     expect(store.getState().intl).toBe(nextIntl)
