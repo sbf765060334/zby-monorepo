@@ -220,12 +220,16 @@ function persistStorageAction(
   const adapter = state.storageAdapter
   const storageKey = state.storageKey
 
-  void action(adapter, storageKey).catch((error) => {
+  // 从 Promise 微任务中调用外部 Adapter，使同步 throw 和异步 rejection 进入同一错误
+  // 通道；同时让调用动作先完成内存提交，不被不规范的同步抛错中断。
+  const execute = () => Promise.resolve().then(() => action(adapter, storageKey))
+
+  void execute().catch((error) => {
     // 内存状态已经先行提交，持久化失败不回滚 UI；由调用方决定何时展示错误和重试。
     get().onStorageLoadError?.(error, {
       storageKey,
       phase,
-      retry: () => action(adapter, storageKey),
+      retry: execute,
     })
   })
 }

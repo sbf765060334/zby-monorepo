@@ -169,15 +169,19 @@ export function createRouteRegistry(params: CreateRouteRegistryParams): ProLayou
   const fullIndex = createRouteIndex(routes)
   const authIndex = createRouteIndex(permissionRoutes)
 
-  // 显式默认地址只有在权限索引中能够解析为页面时才生效。目录、未知地址或失权页面
-  // 都回退到声明顺序中的首个可访问页面，避免根路径进入 403 或静默停留。
-  const explicitDefaultLeaf = params.defaultRedirectPath
+  // 默认地址必须是能够直接导航的真实 URL，不能把 `:id` 或 `*` pattern 原样写入
+  // 浏览器。显式具体动态地址仍可通过权限索引解析并作为合法默认页面。
+  const explicitDefaultLeaf = params.defaultRedirectPath && isConcreteRoutePath(params.defaultRedirectPath)
     ? resolveRoute(params.defaultRedirectPath, authIndex)
     : null
   const defaultRoute =
     explicitDefaultLeaf && isPageRoute(explicitDefaultLeaf.route)
       ? params.defaultRedirectPath!
-      : findFirstAccessiblePath(authIndex.mapping, isPageRoute) || '/'
+      : findFirstAccessiblePath(
+        authIndex.mapping,
+        isPageRoute,
+        isConcreteRoutePath,
+      ) || '/'
 
   const resolveLeafRoute: ProLayoutRouteRegistry['resolveLeafRoute'] = (pathname, options) => {
     // 完整索引用于识别路由事实，权限索引用于回答“当前用户能否访问”。
@@ -187,13 +191,20 @@ export function createRouteRegistry(params: CreateRouteRegistryParams): ProLayou
 
   const getTabKey = (pathname: string) => {
     // 页签身份不受权限过滤影响，权限变化由后续 Store 同步逻辑负责清理。
-    const leaf = resolveRoute(pathname, fullIndex)
+    const normalizedPathname = normalizeRoutePath(pathname)
+    const leaf = resolveRoute(normalizedPathname, fullIndex)
     if (!leaf)
       return null
 
-    // 多页签参数路由使用真实 pathname；否则使用注册 pattern 共享同一个页签。
-    if (leaf.route.supportMultipleTabs && leaf.routeKey !== pathname)
-      return pathname
+    if (leaf.route.supportMultipleTabs) {
+      // 独立动态页签仍使用真实参数，但静态段采用注册 pattern 的稳定写法，同时移除
+      // 末尾斜杠。这样 `/Tasks/7` 与 `/tasks/7/` 不会创建两个语义相同的页签。
+      const routePattern = normalizeRoutePath(leaf.routeKey)
+      return replacePathParams(
+        routePattern,
+        getPathParams(routePattern, normalizedPathname),
+      )
+    }
 
     return leaf.routeKey
   }
@@ -363,7 +374,8 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
 
   const walk = (route: ProLayoutRoute, parentPath?: string) => {
     const normalizedPath = normalizeRoutePath(route.path)
-    const conflict = normalizedMapping[normalizedPath]
+    const normalizedLookupPath = normalizedPath.toLowerCase()
+    const conflict = normalizedMapping[normalizedLookupPath]
     if (conflict) {
       throw new Error(
         `[ProLayout] Duplicate route paths "${conflict.routeKey}" and "${route.path}" ` +
@@ -375,7 +387,7 @@ function createRouteIndex(routes: ProLayoutRoute[]): ProLayoutRouteIndex {
     mapping[route.path] = route
 
     // 标准化索引只用于内部回退查询，routeKey 始终保留调用方注册的原始 path。
-    normalizedMapping[normalizedPath] = {
+    normalizedMapping[normalizedLookupPath] = {
       routeKey: route.path,
       route,
     }
@@ -449,8 +461,8 @@ function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLea
   if (exact)
     return { routeKey: pathname, route: exact }
 
-  // 标准化回退同时兼容注册路径和实际 pathname 是否带有末尾斜杠。
-  const normalizedExact = index.normalizedMapping[normalizeRoutePath(pathname)]
+  // 标准化回退同时兼容末尾斜杠和 React Router 默认的大小写不敏感语义。
+  const normalizedExact = index.normalizedMapping[normalizeRoutePath(pathname).toLowerCase()]
   if (normalizedExact)
     return normalizedExact
 
@@ -473,10 +485,20 @@ function resolveRoute(pathname: string, index: ProLayoutRouteIndex): ResolvedLea
 function findFirstAccessiblePath(
   mapping: ProLayoutRouteMapping,
   isPageRoute: (route: ProLayoutRoute) => boolean,
+  isPathEligible?: (path: string) => boolean,
 ): string | null {
   const keys = Object.keys(mapping)
-  const hit = keys.find((key) => isPageRoute(mapping[key]))
+  const hit = keys.find(
+    (key) => (!isPathEligible || isPathEligible(key)) && isPageRoute(mapping[key]),
+  )
   return hit || null
+}
+
+/** 判断地址是否已经没有需要调用方补充的参数或通配符。 */
+function isConcreteRoutePath(path: string) {
+  return normalizeRoutePath(path)
+    .split('/')
+    .every((part) => !part.startsWith(':') && part !== '*')
 }
 
 /**

@@ -1,8 +1,9 @@
-import { Alert, Layout, Spin } from 'antd'
+import { Layout, Spin } from 'antd'
 import {
   isValidElement,
   memo,
   Suspense,
+  useCallback,
   useLayoutEffect,
   useMemo,
   useState,
@@ -10,7 +11,7 @@ import {
 import { shallow } from 'zustand/shallow'
 import { createStore } from 'zustand/vanilla'
 
-import type { ComponentType, CSSProperties, ElementType, PropsWithChildren } from 'react'
+import type { CSSProperties, ElementType } from 'react'
 import { ProLayoutPageContext, useProLayoutContext, useProLayoutStoreSelector } from '../context'
 import type { ProLayoutContextValue, ProLayoutPageContextValue } from '../context'
 import { createProLayoutEmitter } from '../context/emitter'
@@ -20,11 +21,9 @@ import type {
   ProLayoutRouteComponent,
 } from '../interface'
 import ExceptionPage from './ExceptionPage'
+import PageErrorBoundary from './PageErrorBoundary'
 
 const { Content } = Layout
-// antd 6 的 ErrorBoundary 声明使用了与本仓库 React 18 不同代的 ReactNode 类型；
-// 运行时仍是标准 class component，在此收窄为本地 children 契约，避免类型差异向外扩散。
-const PageErrorBoundary = Alert.ErrorBoundary as unknown as ComponentType<PropsWithChildren>
 
 type StablePageLayoutContext = Omit<ProLayoutContextValue, 'currentPathname' | 'currentRoutes'>
 
@@ -93,6 +92,7 @@ function PageContainer(props: PageContainerProps) {
   const layoutContext = useProLayoutContext(stablePageLayoutContextSelector, shallow)
   const intl = useProLayoutStoreSelector((state) => state.intl)
   const registry = useProLayoutStoreSelector((state) => state.registry)
+  const cache = useProLayoutStoreSelector((state) => state.cache)
   const registerPageLocationEmitter = useProLayoutStoreSelector(
     (state) => state.registerPageLocationEmitter,
   )
@@ -150,6 +150,29 @@ function PageContainer(props: PageContainerProps) {
 
     return leaf.route.element || null
   }, [data.pathname, intl, prefixCls, registry])
+  const errorBoundaryResetKeys = useMemo(
+    () => [data.pathname, elementNode] as const,
+    [data.pathname, elementNode],
+  )
+  const handlePageRecover = useCallback(
+    (previousResetKeys: readonly unknown[]) => {
+      // 报错时业务树已经被 React 卸载，恢复后的新订阅者需要重新收到当前显示状态。
+      lifecycle$.emit(active)
+
+      // pathname 变化时外层 LocationCacheEffects 会发布新 location；仅 element 在同一
+      // pathname 下替换时不会触发该 effect，因此从当前页签 Cache 补发完整地址。
+      if (previousResetKeys[0] !== data.pathname)
+        return
+
+      const searchParams = cache.getSearchParamsForTabKey(data.key)
+      location$.emit({
+        pathname: data.pathname,
+        search: searchParams ? `?${searchParams}` : '',
+        hash: cache.getHashForTabKey(data.key),
+      })
+    },
+    [active, cache, data.key, data.pathname, lifecycle$, location$],
+  )
 
   const contentHeight = useMemo(
     () => noBar ? '100vh' : `calc(100vh - ${headerHeight}px)`,
@@ -159,7 +182,10 @@ function PageContainer(props: PageContainerProps) {
   return (
     <ProLayoutPageContext.Provider value={pageStore}>
       <Content className={className} style={{ display: active ? 'block' : 'none' }}>
-        <PageErrorBoundary>
+        <PageErrorBoundary
+          resetKeys={errorBoundaryResetKeys}
+          onRecover={handlePageRecover}
+        >
           <div
             className={`${prefixCls}-page-body`}
             style={{

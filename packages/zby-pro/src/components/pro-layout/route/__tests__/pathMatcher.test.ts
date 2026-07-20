@@ -5,6 +5,7 @@ import { matchRoutePath } from '../../router/pathMatcher'
 describe('matchRoutePath', () => {
   it('matches exact paths after removing query, hash and trailing slashes', () => {
     expect(matchRoutePath('/projects/42/', '/projects/42?tab=detail#summary')).toBe(true)
+    expect(matchRoutePath('/Users', '/users')).toBe(true)
     expect(matchRoutePath('', '/')).toBe(true)
     expect(matchRoutePath('/projects/42', '/projects/43')).toBe(false)
   })
@@ -15,6 +16,7 @@ describe('matchRoutePath', () => {
     )
     expect(matchRoutePath('/projects/:projectId', '/projects')).toBe(false)
     expect(matchRoutePath('/projects/:projectId', '/projects/42/detail')).toBe(false)
+    expect(matchRoutePath('/project/:id/detail', '/project//detail')).toBe(false)
   })
 
   it('supports a terminal wildcard with zero or multiple remaining segments', () => {

@@ -1,4 +1,5 @@
 import { closeTab, ensureTabStateForPathname } from './tabs'
+import { enforceKeepAliveLimit } from './keepAlive'
 import type { ProLayoutStoreRuntime } from './runtime'
 import type {
   GetProLayoutStoreState,
@@ -24,7 +25,7 @@ export function bootstrapByPathname(
       return
     }
 
-    set({ activeTabKey: null, activePage: null })
+    setInactiveRouteState(set, null)
     return
   }
 
@@ -41,7 +42,7 @@ export function bootstrapByPathname(
     return
   }
 
-  set({ activeTabKey: null, activePage: null })
+  setInactiveRouteState(set, null)
 }
 
 /** 宿主路由 pathname 变化后，创建或激活对应的页面和页签。 */
@@ -65,11 +66,7 @@ export function syncByPathname(
         ? fullTabKey
         : null
 
-    set((previous) => {
-      if (previous.activeTabKey === activeTabKey && previous.activePage === null)
-        return previous
-      return { activeTabKey, activePage: null }
-    })
+    setInactiveRouteState(set, activeTabKey)
     return
   }
 
@@ -122,7 +119,7 @@ export function jumpTo(
     const activeTabKey = state.tabs.some((tab) => tab.key === tabKey)
       ? tabKey
       : null
-    set({ activeTabKey, activePage: null })
+    setInactiveRouteState(set, activeTabKey)
 
     const latest = get()
     const realPath = latest.cache.getParamsPathByTabKey(tabKey) || pathname
@@ -264,4 +261,34 @@ function resolveSearchParams(
 /** undefined 恢复缓存；其它值先规范化，因此 null/空字符串都会显式清空。 */
 function resolveHash(hash: string | null | undefined, cachedHash: string) {
   return hash === undefined ? cachedHash : normalizeHash(hash)
+}
+
+/**
+ * 进入目录、403 或 404 等没有活动业务页面的状态。
+ *
+ * 页签选中身份与页面实例集合分开处理：旧页签可以按既有策略保留，但 pages 必须立即
+ * 重新执行 KeepAlive 规则，确保 keepAlive=false 和 exclude 不会继续挂载隐藏业务页面。
+ */
+function setInactiveRouteState(
+  set: SetProLayoutStoreState,
+  activeTabKey: string | null,
+) {
+  set((previous) => {
+    const pages = enforceKeepAliveLimit(
+      previous.pages,
+      null,
+      previous.keepAlive,
+      previous.fixedSet,
+    )
+
+    if (
+      previous.activeTabKey === activeTabKey &&
+      previous.activePage === null &&
+      previous.pages === pages
+    ) {
+      return previous
+    }
+
+    return { activeTabKey, activePage: null, pages }
+  })
 }

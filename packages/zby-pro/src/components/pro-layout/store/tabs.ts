@@ -302,7 +302,6 @@ export async function closeTab(
   runtime.beforeTabCloseMap.delete(tabKey)
   runtime.pageLocationEmitterMap.delete(tabKey)
   latest.cache.clearTab(tabKey)
-  latest.afterTabClose?.(tabKey, { pathname: closedPathname })
 
   if (nextActive) {
     // 回退页签可能是共享动态路由，必须恢复其真实 pathname、查询参数和 hash。
@@ -318,6 +317,10 @@ export async function closeTab(
     // 最后一个活动页签关闭后回到根路径，由 bootstrap 流程决定默认可访问页面。
     latest.navigate?.('/')
   }
+
+  // 外部回调放在状态、资源清理和必要导航之后。即使回调同步抛错，closeTab 仍会把
+  // 异常交给调用方，但不会留下“页签已删除、浏览器仍停在旧 URL”的不一致状态。
+  latest.afterTabClose?.(tabKey, { pathname: closedPathname })
 
   return true
 }

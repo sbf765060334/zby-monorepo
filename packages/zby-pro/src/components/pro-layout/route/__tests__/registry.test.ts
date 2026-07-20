@@ -103,6 +103,18 @@ describe('createRouteRegistry', () => {
     expect(registry.fullRouteMapping['/legacy']).toBeUndefined()
   })
 
+  it('resolves static paths case-insensitively like React Router', () => {
+    const userRoute: ProLayoutRoute = {
+      path: '/Users/Profile',
+      title: 'Profile',
+      element: DashboardPage,
+    }
+    const registry = createRouteRegistry({ routes: [userRoute] })
+
+    expect(registry.resolveLeafRoute('/users/profile')?.route).toBe(userRoute)
+    expect(registry.getTabKey('/USERS/PROFILE/')).toBe('/Users/Profile')
+  })
+
   it('rejects duplicate route paths before building ambiguous indexes', () => {
     const duplicateRoutes: ProLayoutRoute[] = [
       { path: '/orders/:orderId', title: 'Order A', element: ProjectPage },
@@ -123,6 +135,18 @@ describe('createRouteRegistry', () => {
 
     expect(() => createRouteRegistry({ routes: duplicateRoutes })).toThrowError(
       '[ProLayout] Duplicate route paths "/reports" and "/reports/" ' +
+      'resolve to "/reports". Route paths must be unique.',
+    )
+  })
+
+  it('rejects route paths that differ only by static-segment casing', () => {
+    const duplicateRoutes: ProLayoutRoute[] = [
+      { path: '/Reports', title: 'Reports', element: ProjectPage },
+      { path: '/reports', title: 'Lowercase reports', element: TaskPage },
+    ]
+
+    expect(() => createRouteRegistry({ routes: duplicateRoutes })).toThrowError(
+      '[ProLayout] Duplicate route paths "/Reports" and "/reports" ' +
       'resolve to "/reports". Route paths must be unique.',
     )
   })
@@ -179,6 +203,51 @@ describe('createRouteRegistry', () => {
     })
 
     expect(registry.defaultRoute).toBe('/docs/guide')
+  })
+
+  it('uses only concrete URLs as dynamic route defaults', () => {
+    const dynamicRoutes: ProLayoutRoute[] = [
+      { path: '/projects/:projectId', title: 'Project', element: ProjectPage },
+    ]
+
+    expect(createRouteRegistry({ routes: dynamicRoutes }).defaultRoute).toBe('/')
+    expect(
+      createRouteRegistry({
+        routes: dynamicRoutes,
+        defaultRedirectPath: '/projects/:projectId',
+      }).defaultRoute,
+    ).toBe('/')
+    expect(
+      createRouteRegistry({
+        routes: dynamicRoutes,
+        defaultRedirectPath: '/projects/42',
+      }).defaultRoute,
+    ).toBe('/projects/42')
+  })
+
+  it('skips an earlier dynamic pattern when choosing an automatic default URL', () => {
+    const registry = createRouteRegistry({
+      routes: [
+        { path: '/projects/:projectId', title: 'Project', element: ProjectPage },
+        { path: '/dashboard', title: 'Dashboard', element: DashboardPage },
+      ],
+    })
+
+    expect(registry.defaultRoute).toBe('/dashboard')
+  })
+
+  it('canonicalizes multiple-tab keys without changing parameter casing', () => {
+    const registry = createRouteRegistry({
+      routes: [{
+        path: '/Tasks/:taskId',
+        title: 'Task',
+        supportMultipleTabs: true,
+        element: TaskPage,
+      }],
+    })
+
+    expect(registry.getTabKey('/tasks/AbC-7')).toBe('/Tasks/AbC-7')
+    expect(registry.getTabKey('/TASKS/AbC-7/')).toBe('/Tasks/AbC-7')
   })
 
   it.each([

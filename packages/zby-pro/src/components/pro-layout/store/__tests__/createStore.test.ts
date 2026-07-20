@@ -488,6 +488,34 @@ describe('proLayout Store persistence coordination', () => {
     await info.retry()
     expect(saveCollection).toHaveBeenCalledTimes(2)
   })
+
+  it('commits fixed state before reporting a synchronously thrown adapter error', async () => {
+    const error = new Error('sync save failed')
+    const saveFixedTabs = vi.fn<ProLayoutStorageAdapter['saveFixedTabs']>(() => {
+      throw error
+    })
+    const onStorageLoadError = vi.fn()
+    const store = createTestStore({
+      storageAdapter: createAdapter({ saveFixedTabs }),
+      onStorageLoadError,
+    })
+
+    expect(() => store.getState().toggleFixed('/dashboard')).not.toThrow()
+    expect(store.getState().fixedSet).toEqual(['/dashboard'])
+
+    await vi.waitFor(() => {
+      expect(onStorageLoadError).toHaveBeenCalledOnce()
+    })
+    const [reportedError, info] = onStorageLoadError.mock.lastCall!
+    expect(reportedError).toBe(error)
+    expect(info).toMatchObject({
+      storageKey: 'test-pro-layout',
+      phase: 'saveFixedTabs',
+    })
+
+    await expect(info.retry()).rejects.toBe(error)
+    expect(saveFixedTabs).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('proLayout Store tabs and KeepAlive', () => {
@@ -538,7 +566,7 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(adapter.saveFixedTabs).not.toHaveBeenCalled()
   })
 
-  it('updates and persists the fixed tab order exactly once', () => {
+  it('updates and persists the fixed tab order exactly once', async () => {
     const adapter = createAdapter()
     const store = createTestStore({
       storageAdapter: adapter,
@@ -557,7 +585,9 @@ describe('proLayout Store tabs and KeepAlive', () => {
       '/dashboard',
     ])
     expect(store.getState().fixedSet).toEqual(['/orders', '/dashboard'])
-    expect(adapter.saveFixedTabs).toHaveBeenCalledOnce()
+    await vi.waitFor(() => {
+      expect(adapter.saveFixedTabs).toHaveBeenCalledOnce()
+    })
     expect(adapter.saveFixedTabs).toHaveBeenCalledWith('test-pro-layout', [
       '/orders',
       '/dashboard',
@@ -609,6 +639,26 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(store.getState().tabs).toEqual([])
   })
 
+  it('finishes tab cleanup and fallback navigation before afterTabClose throws', async () => {
+    const error = new Error('after close failed')
+    const navigate = vi.fn()
+    const store = createTestStore({
+      afterTabClose: () => {
+        throw error
+      },
+    })
+    store.getState().syncExternalDeps({ navigate })
+    store.getState().syncByPathname('/dashboard')
+    store.getState().syncByPathname('/orders')
+
+    await expect(store.getState().closeTab('/orders')).rejects.toBe(error)
+
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(store.getState().activeTabKey).toBe('/dashboard')
+    expect(store.getState().activePage).toBe('/dashboard')
+    expect(navigate).toHaveBeenLastCalledWith('/dashboard')
+  })
+
   it('cleans page emitters, close hooks, descriptions and URL cache', async () => {
     const emitter = { emit: vi.fn() }
     const beforeClose = vi.fn(() => false)
@@ -658,6 +708,39 @@ describe('proLayout Store tabs and KeepAlive', () => {
     store.getState().syncExternalDeps({ keepAlive: { maxCachedPages: 1 } })
 
     expect(store.getState().pages.map((page) => page.key)).toEqual(['/project/:id'])
+  })
+
+  it('unmounts old pages on 404 and 403 when KeepAlive is disabled', () => {
+    const hasAuth = (code: string) => code !== 'admin'
+    const store = createTestStore({
+      registry: createRouteRegistry({ routes, hasAuth }),
+      hasAuth,
+      keepAlive: false,
+    })
+
+    store.getState().syncByPathname('/dashboard')
+    store.getState().syncByPathname('/missing')
+    expect(store.getState().pages).toEqual([])
+    expect(store.getState().activePage).toBeNull()
+
+    store.getState().syncByPathname('/orders')
+    store.getState().syncByPathname('/admin')
+    expect(store.getState().pages).toEqual([])
+    expect(store.getState().activePage).toBeNull()
+  })
+
+  it('reapplies object KeepAlive filters when entering a non-page route', () => {
+    const store = createTestStore({
+      keepAlive: {
+        exclude: (route) => route.path === '/dashboard',
+      },
+    })
+
+    store.getState().syncByPathname('/dashboard')
+    expect(store.getState().pages.map((page) => page.key)).toEqual(['/dashboard'])
+
+    store.getState().syncByPathname('/missing')
+    expect(store.getState().pages).toEqual([])
   })
 
   it('keeps activePage null while the next active tab has no cached page', async () => {
@@ -866,6 +949,7 @@ describe('proLayout Store tabs and KeepAlive', () => {
     expect(
       enforceKeepAliveLimit(pages, '/project/:id', { maxCachedPages: 0 }, []),
     ).toEqual([pages[2]])
+    expect(enforceKeepAliveLimit(pages, null, { maxCachedPages: 0 }, [])).toEqual([])
   })
 
   it('returns the original pages when object KeepAlive retains every page', () => {

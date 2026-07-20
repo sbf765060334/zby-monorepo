@@ -176,6 +176,115 @@ describe('ProLayoutContent', () => {
     expect(screen.getByText('New reports')).toBeTruthy()
   })
 
+  it('recovers a shared dynamic page after its pathname changes', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    function RecoverableProject() {
+      const pathname = useProLayoutPageContext((state) => state.pathname)
+      const lifecycle$ = useProLayoutPageContext((state) => state.lifecycle$)
+      const location$ = useProLayoutPageContext((state) => state.location$)
+      const [active, setActive] = useState<boolean | null>(null)
+      const [location, setLocation] = useState('')
+
+      lifecycle$.useSubscription(setActive)
+      location$.useSubscription((value) => setLocation(value.pathname))
+
+      if (pathname === '/project/1')
+        throw new Error('project 1 render failed')
+
+      return <div data-testid="recovered-project">{pathname}|{String(active)}|{location}</div>
+    }
+
+    const registry = createRouteRegistry({
+      routes: [{ path: '/project/:id', title: '项目', element: RecoverableProject }],
+    })
+    const store = createTestStore({
+      registry,
+      initialPathname: '/project/1',
+    })
+    const view = render(contentWithLocationNode(store, {
+      pathname: '/project/1',
+      search: '',
+      hash: '',
+    }))
+
+    expect(screen.getByText('Error: project 1 render failed')).toBeTruthy()
+
+    act(() => {
+      store.getState().syncExternalDeps({ currentPathname: '/project/2' })
+      store.getState().syncByPathname('/project/2')
+    })
+    view.rerender(contentWithLocationNode(store, {
+      pathname: '/project/2',
+      search: '',
+      hash: '',
+    }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('recovered-project').textContent).toBe(
+        '/project/2|true|/project/2',
+      )
+    })
+    expect(store.getState().tabs.map((tab) => tab.key)).toEqual(['/project/:id'])
+    expect(store.getState().pages.map((page) => page.key)).toEqual(['/project/:id'])
+  })
+
+  it('recovers after replacing a failed element at the same pathname', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    function FailedReportsPage(): null {
+      throw new Error('reports render failed')
+    }
+
+    function FixedReportsPage() {
+      const lifecycle$ = useProLayoutPageContext((state) => state.lifecycle$)
+      const location$ = useProLayoutPageContext((state) => state.location$)
+      const [active, setActive] = useState<boolean | null>(null)
+      const [location, setLocation] = useState('')
+
+      lifecycle$.useSubscription(setActive)
+      location$.useSubscription((value) => {
+        setLocation(`${value.pathname}${value.search}${value.hash}`)
+      })
+
+      return <div data-testid="fixed-reports">{String(active)}|{location}</div>
+    }
+
+    const initialRegistry = createRouteRegistry({
+      routes: [{ path: '/reports', title: '报表', element: FailedReportsPage }],
+    })
+    const nextRegistry = createRouteRegistry({
+      routes: [{ path: '/reports', title: 'Reports', element: FixedReportsPage }],
+    })
+    const store = createTestStore({
+      registry: initialRegistry,
+      initialPathname: '/reports',
+    })
+    const location = {
+      pathname: '/reports',
+      search: '?scope=mine',
+      hash: '#table',
+    }
+    const view = render(contentWithLocationNode(store, location))
+
+    expect(screen.getByText('Error: reports render failed')).toBeTruthy()
+
+    act(() => {
+      store.getState().syncExternalDeps({
+        registry: nextRegistry,
+        currentPathname: '/reports',
+      })
+      store.getState().syncByPathname('/reports')
+    })
+    view.rerender(contentWithLocationNode(store, location))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('fixed-reports').textContent).toBe(
+        'true|/reports?scope=mine#table',
+      )
+    })
+  })
+
   it('synchronizes Page Context and receives the initial lifecycle and location events', async () => {
     const mounted = vi.fn()
 

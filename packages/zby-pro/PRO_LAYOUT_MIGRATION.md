@@ -163,6 +163,16 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
   参数并跳转到首个可具体化子页面；需要额外未知参数的子页面不会生成占位符 URL。
 - 内容层使用完整 Registry 事实区分异常状态，已存在但不可访问的目录显示 403，只有完整
   索引也无法解析的地址才显示 404；这两项修复不沿用 Shuzhi 的精确映射缺陷。
+- 路径匹配对齐 React Router 默认语义：静态段大小写不敏感，动态参数不能匹配空路径段；
+  仅大小写不同的重复注册路径会在建索引时直接报错。
+- 默认落点只接受不含 `:param` 或 `*` 的具体 URL；自动回退会跳过动态 pattern，避免把
+  占位符原样写入浏览器地址。
+- `supportMultipleTabs` 页签 key 会移除末尾斜杠并恢复注册路径的静态段大小写，同时保留
+  真实参数值的原始大小写，避免同一地址创建重复页签。
+- 进入目录、403 或 404 等非业务页状态时会以空 activePage 重新执行 KeepAlive 过滤；
+  `keepAlive=false`、exclude 和零缓存上限不会继续保留隐藏业务页面。
+- 持久化 Adapter 的同步 throw 与 Promise rejection 统一进入错误回调和 retry；关闭后
+  回调移动到状态、资源清理和回退导航之后，外部异常不会留下半完成的 Store 状态。
 
 ### 3.11 迁移页面渲染与 KeepAlive
 
@@ -182,6 +192,8 @@ ProLayout 只保存首次挂载时传入的 `hasAuth`。后续替换函数引用
   卸载并替换为异常内容；页签和 page 描述的最终关闭策略仍遵循第 6 节的待确认项。
 - 使用 antd 的 Layout、Result、Spin 和 Alert.ErrorBoundary 等价适配参考 UI，不引入
   `shuzhi-ui`；不迁移 Next.js 专属 `NextProLayoutPageLoading` 配置。
+- 页面错误边界支持按 pathname 或 Registry element 变化恢复；健康页面的 reset key 变化
+  不会重建组件，恢复提交后会补发生命周期事件，并在同 pathname 换 element 时补发地址。
 
 ## 4. 必须保留的功能范围
 

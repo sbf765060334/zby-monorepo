@@ -62,8 +62,9 @@ export function enforceKeepAliveLimit(
   if (!Number.isFinite(keepAlive.maxCachedPages))
     return retainedPages
 
-  // 至少给活动页面保留一个名额；小数向下取整，保持“最多 N 个页面”的直觉语义。
-  const limit = Math.max(1, Math.floor(keepAlive.maxCachedPages))
+  // 有活动页面时至少保留一个名额；403/404 等没有活动页面的状态允许真正收敛到 0。
+  // 小数继续向下取整，保持“最多 N 个页面”的直觉语义。
+  const limit = Math.max(activeKey ? 1 : 0, Math.floor(keepAlive.maxCachedPages))
 
   while (retainedPages.length > limit) {
     // 活动页和固定页签都是不可淘汰项；剩余候选按 touchedAt 升序取最久未访问页面。
