@@ -203,10 +203,7 @@ export interface ProLayoutProps {
   classNames?: ProLayoutClassNames
   /** 按语义区域追加的内联样式。 */
   styles?: ProLayoutStyles
-  /**
-   * 收藏、固定页签和参数路径持久化使用的命名空间。
-   * 挂载期可以更新；变化后使用首次固定的 storageAdapter 重新加载对应命名空间。
-   */
+  /** 收藏、固定页签和参数路径持久化使用的命名空间。 */
   storageKey?: string
   /**
    * 自定义持久化适配器；传入 false 时只保留当前挂载期间的内存状态。
