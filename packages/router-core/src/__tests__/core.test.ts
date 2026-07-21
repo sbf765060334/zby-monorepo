@@ -29,6 +29,14 @@ const routes: RouterRoute[] = [
   { path: '/admin', title: 'Admin', element: {}, auth: 'admin' },
 ]
 
+/** 模拟 ProLayout 在 core 基础字段之外声明的强类型 UI 元数据。 */
+interface PlatformRoute extends RouterRoute {
+  routes?: PlatformRoute[]
+  icon?: { name: string }
+  tag?: 'beta' | 'stable'
+  element?: { kind: 'page' }
+}
+
 describe('route registry', () => {
   it('matches static, parameter and wildcard paths', () => {
     expect(matchRoutePath('/Dashboard', '/dashboard/')).toBe(true)
@@ -63,6 +71,52 @@ describe('route registry', () => {
 
     expect(registry.routes[0].title).toBe('Before')
     expect(registry.resolveLeafRoute('/later')).toBeNull()
+  })
+
+  it('preserves caller route metadata types through registry and core', () => {
+    const platformRoutes: PlatformRoute[] = [
+      {
+        path: '/business',
+        title: 'Business',
+        routes: [
+          {
+            path: '/business/orders',
+            title: 'Orders',
+            icon: { name: 'orders' },
+            tag: 'beta',
+            element: { kind: 'page' },
+          },
+        ],
+      },
+    ]
+    const registry = createRouteRegistry({
+      routes: platformRoutes,
+      isPageRoute: (route) => route.element?.kind === 'page',
+    })
+    const iconName: string | undefined =
+      registry.resolveLeafRoute('/business/orders')?.route.icon?.name
+
+    const router = createRouterCore({
+      routes: platformRoutes,
+      storageAdapter: false,
+      initial: { pathname: '/business/orders' },
+      isPageRoute: (route) => route.element?.kind === 'page',
+      keepAlive: {
+        include: (route) => {
+          const tag: PlatformRoute['tag'] = route.tag
+          return tag === 'beta'
+        },
+      },
+    })
+    const currentRoutes = router.getCurrentRoutes('/business/orders')
+    const currentTag: PlatformRoute['tag'] =
+      currentRoutes[currentRoutes.length - 1]?.route.tag
+    const pageKind: 'page' | undefined =
+      router.getState().pages[0]?.route.element?.kind
+
+    expect(iconName).toBe('orders')
+    expect(currentTag).toBe('beta')
+    expect(pageKind).toBe('page')
   })
 
   it('isolates synchronous and asynchronous preload failures', async () => {

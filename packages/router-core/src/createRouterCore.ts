@@ -1,6 +1,7 @@
 import { createStore } from 'zustand/vanilla'
 
 import { createRouteRegistry } from './registry'
+import type { RouteRegistry } from './registry'
 import { createIndexedDBRouterStorageAdapter, normalizeRouterStorageState } from './storage'
 import type {
   CreateRouterCoreOptions,
@@ -196,9 +197,14 @@ class RouterCache {
   }
 }
 
-export function createRouterCore(
-  options: CreateRouterCoreOptions,
-): RouterCore {
+/**
+ * 创建一套完全独立的路由领域实例。
+ *
+ * @typeParam Route 调用方路由节点类型；创建参数会自动推导，并贯穿 Registry 与状态。
+ */
+export function createRouterCore<Route extends RouterRoute>(
+  options: CreateRouterCoreOptions<Route>,
+): RouterCore<Route> {
   // Registry 先于 Store 创建，并独立复制路由树；它是整个实例生命周期的路由事实。
   const registry = createRouteRegistry({
     routes: options.routes,
@@ -258,7 +264,7 @@ export function createRouterCore(
   )
   const currentPathname = initialPathname || options.initial?.pathname || ''
   // Store 在创建时直接拥有同步首屏快照，不需要额外 initialization setState。
-  const store = createStore<RouterCoreState>(() => ({
+  const store = createStore<RouterCoreState<Route>>(() => ({
     currentPathname,
     currentRoutes: currentPathname
       ? registry.getCurrentRoutes(currentPathname)
@@ -316,7 +322,7 @@ export function createRouterCore(
     if (storageChanged)
       resetStorageRuntime(runtime)
 
-    const statePatch: Partial<RouterCoreState> = {}
+    const statePatch: Partial<RouterCoreState<Route>> = {}
     if (
       next.maxFixedTabCount !== undefined &&
       next.maxFixedTabCount !== previous.maxFixedTabCount
@@ -1202,9 +1208,9 @@ export function createRouterCore(
 }
 
 /** 复制 KeepAlive 数组配置，形成不会受调用方原地修改影响的实例快照。 */
-function snapshotKeepAlive(
-  value: boolean | RouterKeepAliveConfig,
-): boolean | RouterKeepAliveConfig {
+function snapshotKeepAlive<Route extends RouterRoute>(
+  value: boolean | RouterKeepAliveConfig<Route>,
+): boolean | RouterKeepAliveConfig<Route> {
   if (typeof value !== 'object')
     return value
   return {
@@ -1222,9 +1228,9 @@ function resolveStorageAdapter(
 }
 
 /** 将根路径、目录或页面入口解析成首屏真正可以展示的授权页面。 */
-function resolveInitialPathname(
+function resolveInitialPathname<Route extends RouterRoute>(
   pathname: string | undefined,
-  registry: ReturnType<typeof createRouteRegistry>,
+  registry: RouteRegistry<Route>,
 ) {
   if (!pathname)
     return null
@@ -1238,20 +1244,20 @@ function resolveInitialPathname(
 }
 
 /** 只有 pathname、tabKey 和授权 route 都存在时才创建首个页面实例。 */
-function createInitialPages(
+function createInitialPages<Route extends RouterRoute>(
   pathname: string | null,
   tabKey: string | null,
-  route?: RouterRoute,
-): RouterPage[] {
+  route?: Route,
+): RouterPage<Route>[] {
   return pathname && tabKey && route
     ? [{ key: tabKey, pathname, route, touchedAt: 0 }]
     : []
 }
 
 /** 清理持久化固定页签中的重复、已删除或非页面 key，同时保持首次出现顺序。 */
-function sanitizeFixedTabKeys(
+function sanitizeFixedTabKeys<Route extends RouterRoute>(
   fixedTabs: string[],
-  registry: ReturnType<typeof createRouteRegistry>,
+  registry: RouteRegistry<Route>,
 ) {
   const seen = new Set<string>()
   return fixedTabs.filter((key) => {
@@ -1264,11 +1270,11 @@ function sanitizeFixedTabKeys(
 }
 
 /** 用固定页签和可选首屏页面创建顺序稳定的初始页签模型。 */
-function createInitialTabs(
+function createInitialTabs<Route extends RouterRoute>(
   fixedSet: string[],
   initialTabKey: string | null,
-  initialRoute: RouterRoute | undefined,
-  registry: ReturnType<typeof createRouteRegistry>,
+  initialRoute: Route | undefined,
+  registry: RouteRegistry<Route>,
 ) {
   const tabs = fixedSet.reduce<RouterTab[]>((result, key) => {
     const route = registry.resolveLeafRoute(key)?.route
@@ -1288,10 +1294,10 @@ function createInitialTabs(
 }
 
 /** hydration 只补入新固定页签，不删除当前会话已经打开的普通页签。 */
-function mergeTabsWithFixedSet(
+function mergeTabsWithFixedSet<Route extends RouterRoute>(
   tabs: RouterTab[],
   fixedSet: string[],
-  registry: ReturnType<typeof createRouteRegistry>,
+  registry: RouteRegistry<Route>,
 ) {
   const map = new Map(tabs.map((tab) => [tab.key, tab]))
   createInitialTabs(fixedSet, null, undefined, registry).forEach((tab) => {
@@ -1309,8 +1315,8 @@ function sortTabs(tabs: RouterTab[], fixedSet: string[]) {
 }
 
 /** 只有启用有限 LRU 时，重访页面才需要更新 touchedAt。 */
-function shouldRefreshTouchedAt(
-  keepAlive: boolean | RouterKeepAliveConfig,
+function shouldRefreshTouchedAt<Route extends RouterRoute>(
+  keepAlive: boolean | RouterKeepAliveConfig<Route>,
 ) {
   return typeof keepAlive === 'object' &&
     typeof keepAlive.maxCachedPages === 'number'
@@ -1322,10 +1328,10 @@ function shouldRefreshTouchedAt(
  * 当前活动页始终保留；固定页签不参与普通淘汰。配置数量小于不可淘汰页面数时允许
  * 超出 limit，不能为了满足数量上限破坏固定页签语义。
  */
-function enforceKeepAlive(
-  pages: RouterPage[],
+function enforceKeepAlive<Route extends RouterRoute>(
+  pages: RouterPage<Route>[],
   activeKey: string | null,
-  keepAlive: boolean | RouterKeepAliveConfig,
+  keepAlive: boolean | RouterKeepAliveConfig<Route>,
   fixedSet: string[],
 ) {
   if (keepAlive === false) {
@@ -1366,7 +1372,10 @@ function enforceKeepAlive(
 }
 
 /** 应用单页 include/exclude；exclude 优先级高于 include。 */
-function shouldKeepPage(page: RouterPage, config: RouterKeepAliveConfig) {
+function shouldKeepPage<Route extends RouterRoute>(
+  page: RouterPage<Route>,
+  config: RouterKeepAliveConfig<Route>,
+) {
   if (Array.isArray(config.exclude) && config.exclude.includes(page.key))
     return false
   if (typeof config.exclude === 'function' && config.exclude(page.route))

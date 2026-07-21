@@ -7,24 +7,28 @@ import type { RouterCurrentRoute, RouterRoute } from './types'
  * 动态路由优先级、父子层级和真实 pathname 到注册 pattern 的解析。
  */
 
-/** 一个真实 pathname 在 Registry 中解析出的注册路由。 */
-export interface ResolvedRoute {
+/**
+ * 一个真实 pathname 在 Registry 中解析出的注册路由。
+ *
+ * @typeParam Route 命中的调用方路由节点类型。
+ */
+export interface ResolvedRoute<Route extends RouterRoute = RouterRoute> {
   /** 注册 pattern；普通动态路由也使用它作为共享页签 key。 */
   routeKey: string
   /** 命中的路由快照对象。 */
-  route: RouterRoute
+  route: Route
 }
 
 /** 一棵路由树生成的内部查询索引。 */
-interface RouteIndex {
+interface RouteIndex<Route extends RouterRoute = RouterRoute> {
   /** 原始注册 path 到路由节点的精确映射。 */
-  mapping: Record<string, RouterRoute>
+  mapping: Record<string, Route>
   /** 标准化且小写后的 path 到解析结果的映射，用于大小写和尾斜杠兼容。 */
-  normalizedMapping: Record<string, ResolvedRoute>
+  normalizedMapping: Record<string, ResolvedRoute<Route>>
   /** 按路径具体程度降序保存的参数路由和通配符路由。 */
   dynamicRoutes: Array<{
     path: string
-    route: RouterRoute
+    route: Route
     score: number
     declarationOrder: number
   }>
@@ -32,27 +36,31 @@ interface RouteIndex {
   parentMap: Record<string, string>
 }
 
-/** 创建时固定的路由查询能力。返回的路由对象都属于内部快照。 */
-export interface RouteRegistry {
+/**
+ * 创建时固定的路由查询能力。返回的路由对象都属于内部快照。
+ *
+ * @typeParam Route 调用方路由节点类型；所有查询结果会保留其扩展元数据类型。
+ */
+export interface RouteRegistry<Route extends RouterRoute = RouterRoute> {
   /** 未经过权限过滤的完整路由树。 */
-  readonly routes: readonly RouterRoute[]
+  readonly routes: readonly Route[]
   /** 使用创建时 hasAuth 结果过滤后的路由树。 */
-  readonly permissionRoutes: readonly RouterRoute[]
+  readonly permissionRoutes: readonly Route[]
   /** 完整路由树的精确 path 映射，用于区分 403 与 404。 */
-  readonly fullRouteMapping: Readonly<Record<string, RouterRoute>>
+  readonly fullRouteMapping: Readonly<Record<string, Route>>
   /** 权限路由树的精确 path 映射。 */
-  readonly routeMapping: Readonly<Record<string, RouterRoute>>
+  readonly routeMapping: Readonly<Record<string, Route>>
   /** 根路径使用的首个具体、可访问页面；不存在时为 `/`。 */
   readonly defaultRoute: string
   /** 在完整索引或权限索引中解析真实 pathname。 */
   resolveLeafRoute: (
     pathname: string,
     options?: { withinAuth?: boolean },
-  ) => ResolvedRoute | null
+  ) => ResolvedRoute<Route> | null
   /** 根据路由配置决定共享 route pattern 或独立真实 pathname 页签 key。 */
   getTabKey: (pathname: string) => string | null
   /** 获取从根到当前路由的层级，并把已知参数替换成真实值。 */
-  getCurrentRoutes: (pathname: string) => RouterCurrentRoute[]
+  getCurrentRoutes: (pathname: string) => RouterCurrentRoute<Route>[]
   /** 获取菜单选中使用的真实层级路径列表。 */
   getCurrentSelectedPath: (pathname: string) => string[]
   /** 返回权限树中第一个可作为页面访问的具体注册路径。 */
@@ -60,39 +68,48 @@ export interface RouteRegistry {
   /** 返回指定目录下第一个能使用现有参数具体化的可访问页面。 */
   findFirstAccessibleChild: (pathname: string) => string | null
   /** 使用创建时固定的页面判断规则判断路由节点。 */
-  isPageRoute: (route?: RouterRoute | null) => boolean
+  isPageRoute: (route?: Route | null) => boolean
 }
 
-/** 创建 RouteRegistry 所需的固定输入。 */
-export interface CreateRouteRegistryOptions {
+/**
+ * 创建 RouteRegistry 所需的固定输入。
+ *
+ * @typeParam Route 创建快照并贯穿所有查询结果的调用方路由节点类型。
+ */
+export interface CreateRouteRegistryOptions<
+  Route extends RouterRoute = RouterRoute,
+> {
   /** 原始路由树；函数内部会递归复制。 */
-  routes: RouterRoute[]
+  routes: Route[]
   /** 权限码判断函数；只用于生成本次权限快照。 */
   hasAuth?: (code: string) => boolean
   /** 校验通过时优先使用的具体默认页面地址。 */
   defaultRedirectPath?: string
   /** 自定义页面节点判断；默认检查 element 是否存在。 */
-  isPageRoute?: (route: RouterRoute) => boolean
+  isPageRoute?: (route: Route) => boolean
 }
 
 /** 创建一份不再受调用方后续数组或对象修改影响的路由树快照。 */
-export function snapshotRoutes(routes: RouterRoute[]): RouterRoute[] {
+export function snapshotRoutes<Route extends RouterRoute>(routes: Route[]): Route[] {
   return (Array.isArray(routes) ? routes : []).map((route) => ({
     ...route,
     ...(Array.isArray(route.routes)
-      ? { routes: snapshotRoutes(route.routes) }
+      ? {
+          // 一棵 Registry 路由树共享同一节点契约；递归复制后仍按调用方 Route 返回。
+          routes: snapshotRoutes(route.routes as Route[]),
+        }
       : {}),
-  }))
+  }) as Route)
 }
 
-export function createRouteRegistry(
-  options: CreateRouteRegistryOptions,
-): RouteRegistry {
+export function createRouteRegistry<Route extends RouterRoute>(
+  options: CreateRouteRegistryOptions<Route>,
+): RouteRegistry<Route> {
   // 先复制路由树，调用方随后替换数组或修改 title 都不会改变当前 Registry 的事实。
   const routes = snapshotRoutes(options.routes)
   // 页面判断规则与 Registry 同生命周期；所有索引和查询必须复用同一个判定函数。
   const pageMatcher = options.isPageRoute || isAccessibleRoute
-  const isPageRoute: RouteRegistry['isPageRoute'] = (route) =>
+  const isPageRoute: RouteRegistry<Route>['isPageRoute'] = (route) =>
     Boolean(route && pageMatcher(route))
   // 权限树和两份索引一次性生成。后续 hasAuth 闭包结果变化不会隐式刷新当前实例。
   const permissionRoutes = filterAuthorizedRoutes(
@@ -113,7 +130,7 @@ export function createRouteRegistry(
       ? options.defaultRedirectPath!
       : findFirstAccessiblePath(authIndex.mapping, isPageRoute, isConcreteRoutePath) || '/'
 
-  const resolveLeafRoute: RouteRegistry['resolveLeafRoute'] = (pathname, params) =>
+  const resolveLeafRoute: RouteRegistry<Route>['resolveLeafRoute'] = (pathname, params) =>
     resolveRoute(pathname, params?.withinAuth ? authIndex : fullIndex)
 
   const getTabKey = (pathname: string) => {
@@ -142,8 +159,8 @@ export function createRouteRegistry(
 
     // 参数只提取一次；向父级回溯时复用相同映射，保持每层真实路径一致。
     const paramsMap = getPathParams(leaf.routeKey, normalizeRoutePath(pathname))
-    const list: RouterCurrentRoute[] = []
-    let current: RouterRoute | undefined = leaf.route
+    const list: RouterCurrentRoute<Route>[] = []
+    let current: Route | undefined = leaf.route
     let currentPath = leaf.routeKey
 
     while (current) {
@@ -186,7 +203,7 @@ export function createRouteRegistry(
         normalizeRoutePath(parent.routeKey),
         normalizeRoutePath(pathname),
       )
-      const childIndex = createRouteIndex(parent.route.routes)
+      const childIndex = createRouteIndex(parent.route.routes as Route[])
 
       for (const childPath of Object.keys(childIndex.mapping)) {
         if (!isPageRoute(childIndex.mapping[childPath]))
@@ -209,11 +226,11 @@ export function createRouteRegistry(
   }
 }
 
-export function filterAuthorizedRoutes(
-  routes: RouterRoute[],
+export function filterAuthorizedRoutes<Route extends RouterRoute>(
+  routes: Route[],
   hasAuth?: (code: string) => boolean,
-  isPageRoute: (route: RouterRoute) => boolean = isAccessibleRoute,
-): RouterRoute[] {
+  isPageRoute: (route: Route) => boolean = isAccessibleRoute,
+): Route[] {
   // 父节点拒绝权限时整棵子树都不可见；允许时才继续递归处理后代。
   return routes
     .map((route) => {
@@ -221,16 +238,20 @@ export function filterAuthorizedRoutes(
         return null
 
       if (route.routes?.length) {
-        const children = filterAuthorizedRoutes(route.routes, hasAuth, isPageRoute)
+        const children = filterAuthorizedRoutes(
+          route.routes as Route[],
+          hasAuth,
+          isPageRoute,
+        )
         // 空目录只有自身也是页面时才保留，避免默认路由落到无法展示的节点。
         return children.length > 0 || isPageRoute(route)
-          ? { ...route, routes: children }
+          ? { ...route, routes: children } as Route
           : null
       }
 
       return route
     })
-    .filter((route): route is RouterRoute => route !== null)
+    .filter((route): route is Route => route !== null)
 }
 
 export function isAccessibleRoute(route?: RouterRoute | null) {
@@ -308,13 +329,13 @@ export function normalizeRoutePath(path: string) {
   return pathname.replace(/\/+$/, '')
 }
 
-function createRouteIndex(routes: RouterRoute[]): RouteIndex {
-  const mapping: Record<string, RouterRoute> = {}
-  const normalizedMapping: Record<string, ResolvedRoute> = {}
-  const dynamicRoutes: RouteIndex['dynamicRoutes'] = []
+function createRouteIndex<Route extends RouterRoute>(routes: Route[]): RouteIndex<Route> {
+  const mapping: Record<string, Route> = {}
+  const normalizedMapping: Record<string, ResolvedRoute<Route>> = {}
+  const dynamicRoutes: RouteIndex<Route>['dynamicRoutes'] = []
   const parentMap: Record<string, string> = {}
 
-  const walk = (route: RouterRoute, parentPath?: string) => {
+  const walk = (route: Route, parentPath?: string) => {
     const normalizedPath = normalizeRoutePath(route.path)
     const lookupPath = normalizedPath.toLowerCase()
     const conflict = normalizedMapping[lookupPath]
@@ -338,7 +359,7 @@ function createRouteIndex(routes: RouterRoute[]): RouteIndex {
     }
     if (parentPath)
       parentMap[route.path] = parentPath
-    route.routes?.forEach((child) => walk(child, route.path))
+    route.routes?.forEach((child) => walk(child as Route, route.path))
   }
 
   routes.forEach((route) => walk(route))
@@ -363,7 +384,10 @@ function computeRouteScore(path: string) {
     }, initial)
 }
 
-function resolveRoute(pathname: string, index: RouteIndex): ResolvedRoute | null {
+function resolveRoute<Route extends RouterRoute>(
+  pathname: string,
+  index: RouteIndex<Route>,
+): ResolvedRoute<Route> | null {
   if (!pathname)
     return null
   // 原始精确查询最快，也允许调用方直接用注册 pattern 查询动态路由。
@@ -384,9 +408,9 @@ function resolveRoute(pathname: string, index: RouteIndex): ResolvedRoute | null
   return null
 }
 
-function findFirstAccessiblePath(
-  mapping: Record<string, RouterRoute>,
-  isPageRoute: (route: RouterRoute) => boolean,
+function findFirstAccessiblePath<Route extends RouterRoute>(
+  mapping: Record<string, Route>,
+  isPageRoute: (route: Route) => boolean,
   isEligible?: (path: string) => boolean,
 ) {
   // mapping 的插入顺序来自路由树深度优先遍历，因此 find 保持配置声明顺序。

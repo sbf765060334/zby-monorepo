@@ -31,21 +31,34 @@ export interface RouterRoute {
   [key: string]: unknown
 }
 
-export interface RouterCurrentRoute {
+/**
+ * 当前 pathname 匹配到的单层路由信息。
+ *
+ * @typeParam Route 调用方传入的路由节点类型；扩展的 UI 元数据会原样保留。
+ */
+export interface RouterCurrentRoute<
+  Route extends RouterRoute = RouterRoute,
+> {
   /** 当前层级匹配到的 Registry 路由快照。 */
-  route: RouterRoute
+  route: Route
   /** 已使用当前 pathname 参数替换占位符的真实层级路径。 */
   realPath: string
 }
 
-/** 页面实例保留规则；exclude 的优先级高于 include。 */
-export interface RouterKeepAliveConfig {
+/**
+ * 页面实例保留规则；exclude 的优先级高于 include。
+ *
+ * @typeParam Route KeepAlive 判断函数接收的调用方路由节点类型。
+ */
+export interface RouterKeepAliveConfig<
+  Route extends RouterRoute = RouterRoute,
+> {
   /** 最多保留的页面实例数；活动页和固定页签不会被普通 LRU 淘汰。 */
   maxCachedPages?: number
   /** 允许保留的页签 key 白名单，或按路由判断的白名单函数。 */
-  include?: string[] | ((route: RouterRoute) => boolean)
+  include?: string[] | ((route: Route) => boolean)
   /** 禁止保留的页签 key 黑名单，或按路由判断的黑名单函数。 */
-  exclude?: string[] | ((route: RouterRoute) => boolean)
+  exclude?: string[] | ((route: Route) => boolean)
 }
 
 /** 与具体 Tabs 组件无关的页签领域模型。 */
@@ -58,14 +71,18 @@ export interface RouterTab {
   labelCustomized: boolean
 }
 
-/** 当前仍保有实际页面实例的路由描述，用于 KeepAlive 与渲染层。 */
-export interface RouterPage {
+/**
+ * 当前仍保有实际页面实例的路由描述，用于 KeepAlive 与渲染层。
+ *
+ * @typeParam Route 创建页面实例时保存的调用方路由节点类型。
+ */
+export interface RouterPage<Route extends RouterRoute = RouterRoute> {
   /** 与 RouterTab 共用的页签身份。 */
   key: string
   /** 页面实例最后对应的真实 pathname。 */
   pathname: string
   /** 创建该页面实例所使用的路由快照。 */
-  route: RouterRoute
+  route: Route
   /** 最近访问时间，用于有限 KeepAlive 的 LRU 淘汰。 */
   touchedAt: number
 }
@@ -166,18 +183,22 @@ export interface RouterStorageAdapter {
  *
  * 这些字段决定 Registry、页面身份或实例生命周期。调用方要变更它们时应创建新的
  * core 实例，不应期待后续 React render 自动覆盖当前实例。
+ *
+ * @typeParam Route 调用方路由节点类型；扩展元数据会贯穿 Registry、State 和 KeepAlive。
  */
-export interface CreateRouterCoreOptions {
+export interface CreateRouterCoreOptions<
+  Route extends RouterRoute = RouterRoute,
+> {
   /** 用于生成完整索引与权限索引的路由树；创建时递归复制为内部快照。 */
-  routes: RouterRoute[]
+  routes: Route[]
   /** 创建权限路由快照时使用的权限判断函数。 */
   hasAuth?: (code: string) => boolean
   /** 根路径或目录无法直接展示时优先跳转的具体页面地址。 */
   defaultRedirectPath?: string
   /** 页面路由判断规则；默认以 element 是否存在为准。 */
-  isPageRoute?: (route: RouterRoute) => boolean
+  isPageRoute?: (route: Route) => boolean
   /** 固定的页面实例缓存策略；省略时等同于 true。 */
-  keepAlive?: boolean | RouterKeepAliveConfig
+  keepAlive?: boolean | RouterKeepAliveConfig<Route>
   /** 固定的持久化驱动；false 表示本实例仅使用内存状态。 */
   storageAdapter?: false | RouterStorageAdapter
   /** 只在创建首屏同步快照时消费的一次性输入。 */
@@ -217,12 +238,16 @@ export interface RouterRuntimeOptions {
   ) => void
 }
 
-/** 可订阅的纯路由运行状态；命令与不可观察协调数据不放入该快照。 */
-export interface RouterCoreState {
+/**
+ * 可订阅的纯路由运行状态；命令与不可观察协调数据不放入该快照。
+ *
+ * @typeParam Route currentRoutes 与 pages 中保留的调用方路由节点类型。
+ */
+export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   /** 最近一次由宿主同步的 pathname。 */
   currentPathname: string
   /** 当前 pathname 从根到叶子的路由层级。 */
-  currentRoutes: RouterCurrentRoute[]
+  currentRoutes: RouterCurrentRoute<Route>[]
   /** currentRoutes 对应的真实路径列表，供菜单选中使用。 */
   currentSelectedPath: string[]
   /** 当前 UI 选中的页签 key；403/404 时可能存在而 activePage 为空。 */
@@ -232,7 +257,7 @@ export interface RouterCoreState {
   /** 本次会话已打开的全部页签。 */
   tabs: RouterTab[]
   /** 仍被 KeepAlive 保留的页面实例描述。 */
-  pages: RouterPage[]
+  pages: RouterPage<Route>[]
   /** 当前固定页签 key，顺序与固定页签显示顺序一致。 */
   fixedSet: string[]
   /** 真实 pathname 到业务描述文本的增量映射。 */
@@ -254,16 +279,18 @@ export interface RouterCoreState {
  *
  * 每次调用 createRouterCore 都会返回一套新的 Store、Cache 和私有运行时。业务代码
  * 应复用同一个实例，而不是在每次 React render 中直接重新调用 factory。
+ *
+ * @typeParam Route 创建时推导的调用方路由节点类型；省略时保持 RouterRoute 兼容类型。
  */
-export interface RouterCore {
+export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   /** 创建时固定的路由查询注册表。 */
-  readonly registry: RouteRegistry
+  readonly registry: RouteRegistry<Route>
   /** 提供给 React 绑定或高级调用方的 vanilla Zustand Store。 */
-  readonly store: StoreApi<RouterCoreState>
+  readonly store: StoreApi<RouterCoreState<Route>>
   /** 读取当前同步状态快照。 */
-  getState: () => RouterCoreState
+  getState: () => RouterCoreState<Route>
   /** 订阅状态变化；返回值由 Zustand 负责取消订阅。 */
-  subscribe: StoreApi<RouterCoreState>['subscribe']
+  subscribe: StoreApi<RouterCoreState<Route>>['subscribe']
   /** 绑定或解绑实际改变地址的宿主路由。 */
   bindHost: (host: RouterHost | null) => void
   /** 同步允许变化的命名空间、限制与回调引用。 */
@@ -290,7 +317,7 @@ export interface RouterCore {
   /** 根据真实 pathname 计算平台页签身份。 */
   getTabKey: (pathname: string) => string | null
   /** 获取真实 pathname 从根到叶子的路由层级。 */
-  getCurrentRoutes: (pathname: string) => RouterCurrentRoute[]
+  getCurrentRoutes: (pathname: string) => RouterCurrentRoute<Route>[]
   /**
    * 按完整 key 排列调整现有页签顺序。
    *
