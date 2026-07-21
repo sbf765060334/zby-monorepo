@@ -371,6 +371,8 @@ export function createRouterCore(
 
     const tabKey = registry.getTabKey(pathname)
     if (tabKey) {
+      // search/hash 可以高频变化，只写入实例私有 Cache，不进入 Zustand；相同 pathname
+      // 会在后面的 bootstrap 去重分支返回，因此不会通知菜单、面包屑和页签订阅者。
       cache.setSearch(tabKey, location.search)
       cache.setHash(tabKey, location.hash)
       const leaf = registry.resolveLeafRoute(pathname)
@@ -466,6 +468,17 @@ export function createRouterCore(
           keepAlive,
           previous.fixedSet,
         )
+      }
+
+      // jumpTo 可能再次打开已经处于活动状态的 KeepAlive 页面。若页签、页面和活动身份
+      // 都没有变化，必须返回原 state，避免仅因新对象引用通知全部 Zustand 订阅者。
+      if (
+        tabs === previous.tabs &&
+        pages === previous.pages &&
+        previous.activeTabKey === tabKey &&
+        (!ensurePage || previous.activePage === tabKey)
+      ) {
+        return previous
       }
 
       return {
@@ -804,17 +817,31 @@ export function createRouterCore(
 
   /** 进入目录、403 或 404 等没有活动业务页面的状态。 */
   function setInactiveState(activeTabKey: string | null) {
-    setState((state) => ({
-      ...state,
-      activeTabKey,
-      activePage: null,
-      pages: enforceKeepAlive(
+    setState((state) => {
+      const pages = enforceKeepAlive(
         state.pages,
         null,
         keepAlive,
         state.fixedSet,
-      ),
-    }))
+      )
+
+      // 重复进入同一个 403/404/空目录时，如果活动身份和 KeepAlive 结果都没有变化，
+      // 继续复用原 state，避免无业务变化的通知。
+      if (
+        state.activeTabKey === activeTabKey &&
+        state.activePage === null &&
+        pages === state.pages
+      ) {
+        return state
+      }
+
+      return {
+        ...state,
+        activeTabKey,
+        activePage: null,
+        pages,
+      }
+    })
   }
 
   /** 将固定页签保存委托给统一字段持久化流程。 */
@@ -1113,17 +1140,22 @@ function enforceKeepAlive(
   keepAlive: boolean | RouterKeepAliveConfig,
   fixedSet: string[],
 ) {
-  if (keepAlive === false)
+  if (keepAlive === false) {
     // 完全关闭时只保留当前活动实例，切页后旧页面立即卸载。
-    return pages.filter((page) => page.key === activeKey)
+    const activePages = pages.filter((page) => page.key === activeKey)
+    return activePages.length === pages.length ? pages : activePages
+  }
 
   // 活动页即使命中 exclude 也保留到导航完成，避免当前视图在同一轮先被卸载。
-  let retained = typeof keepAlive === 'object'
+  const filteredPages = typeof keepAlive === 'object'
     ? pages.filter(
         (page) =>
           page.key === activeKey || shouldKeepPage(page, keepAlive),
       )
     : pages
+  // filter 即使保留全部页面也会创建新数组；领域结果未变化时复用原引用，使上层
+  // ensureTabState/setInactiveState 能准确识别 no-op 更新。
+  let retained = filteredPages.length === pages.length ? pages : filteredPages
   if (
     typeof keepAlive !== 'object' ||
     typeof keepAlive.maxCachedPages !== 'number' ||

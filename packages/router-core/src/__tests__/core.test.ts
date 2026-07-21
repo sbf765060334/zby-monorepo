@@ -105,6 +105,60 @@ describe('createRouterCore', () => {
     )
   })
 
+  it('updates URL cache without publishing state when only search or hash changes', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+    router.syncLocation({
+      pathname: '/dashboard',
+      search: '?page=2',
+      hash: '#table',
+    })
+
+    expect(subscriber).not.toHaveBeenCalled()
+
+    router.jumpTo({ pathname: '/dashboard' })
+    expect(navigate).toHaveBeenLastCalledWith('/dashboard?page=2#table')
+    unsubscribe()
+  })
+
+  it('does not publish state when reopening the active page changes no domain state', () => {
+    const router = createRouterCore({
+      routes,
+      keepAlive: { include: ['/dashboard'] },
+      storageAdapter: false,
+    })
+    router.bindHost({ navigate: vi.fn() })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+    router.jumpTo('/dashboard')
+
+    expect(subscriber).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('does not publish state when an unauthorized route keeps the same inactive state', () => {
+    const router = createRouterCore({
+      routes,
+      hasAuth: (code) => code !== 'admin',
+      storageAdapter: false,
+    })
+    router.bindHost({ navigate: vi.fn() })
+
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+    router.jumpTo('/admin')
+
+    expect(subscriber).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
   it('delegates smartNavigate to jumpTo when pathname changes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
