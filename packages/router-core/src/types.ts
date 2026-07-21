@@ -200,11 +200,16 @@ export interface RouterRuntimeOptions {
   storageKey?: string
   /** 后续新增固定页签时执行的数量限制。 */
   maxFixedTabCount?: number
-  /** 页签状态、缓存和必要导航全部完成后的回调。 */
+  /**
+   * 页签关闭状态提交、Cache 和关联资源清理完成后的通知回调。
+   *
+   * 回调不能撤销已经提交的关闭；需要拒绝关闭时应注册 RouterBeforeCloseHook。core
+   * 不等待异步结果，并会隔离、报告同步异常和异步 rejection，避免通知失败阻断导航。
+   */
   onTabClose?: (
     tabKey: string,
     info: RouterAfterTabCloseInfo,
-  ) => void
+  ) => void | Promise<void>
   /** 持久化加载或保存失败时的统一通知。 */
   onStorageError?: (
     error: unknown,

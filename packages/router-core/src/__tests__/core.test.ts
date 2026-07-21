@@ -503,6 +503,145 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary')
   })
 
+  it('keeps the old tab when the replacement target is unknown', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+    const snapshot = router.getState()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/unknown',
+      }),
+    ).toBe(false)
+
+    expect(router.getState()).toBe(snapshot)
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('navigates before onTabClose can unbind the host', async () => {
+    const events: string[] = []
+    const navigate = vi.fn(() => events.push('navigate'))
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({
+      onTabClose: () => {
+        events.push('onTabClose')
+        router.bindHost(null)
+      },
+    })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).toBe(true)
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/project/42')
+    expect(events).toEqual(['navigate', 'onTabClose'])
+  })
+
+  it('keeps the old tab when the host is unbound during a close guard', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.addBeforeCloseHook(async () => {
+      router.bindHost(null)
+      return true
+    }, '/settings/profile')
+    navigate.mockClear()
+    const snapshot = router.getState()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).toBe(false)
+
+    expect(router.getState()).toBe(snapshot)
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('continues the replacement navigation when onTabClose throws', async () => {
+    const error = new Error('callback failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({
+      onTabClose: () => {
+        throw error
+      },
+    })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    try {
+      expect(
+        await router.closeThisTabOpenNewOne({
+          oldPath: '/settings/profile',
+          newPath: '/project/42',
+        }),
+      ).toBe(true)
+      expect(navigate).toHaveBeenCalledOnce()
+      expect(navigate).toHaveBeenCalledWith('/project/42')
+      expect(consoleError).toHaveBeenCalledWith(
+        '[RouterCore] onTabClose callback failed.',
+        error,
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it('does not wait for or leak an asynchronous onTabClose rejection', async () => {
+    const error = new Error('async callback failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({
+      onTabClose: async () => {
+        throw error
+      },
+    })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    try {
+      expect(
+        await router.closeThisTabOpenNewOne({
+          oldPath: '/settings/profile',
+          newPath: '/project/42',
+        }),
+      ).toBe(true)
+      expect(navigate).toHaveBeenCalledOnce()
+      expect(navigate).toHaveBeenCalledWith('/project/42')
+      await vi.waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith(
+          '[RouterCore] onTabClose callback failed.',
+          error,
+        )
+      })
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
   it('updates callback references without publishing a state change', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const subscriber = vi.fn()

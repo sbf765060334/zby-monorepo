@@ -4,6 +4,7 @@ import { createRouteRegistry } from './registry'
 import { createIndexedDBRouterStorageAdapter, normalizeRouterStorageState } from './storage'
 import type {
   CreateRouterCoreOptions,
+  RouterAfterTabCloseInfo,
   RouterBeforeCloseHook,
   RouterCloseOptions,
   RouterCore,
@@ -44,6 +45,33 @@ type PersistedField = 'fixedTabs' | 'fixedParamsPathMap'
  */
 type BootstrapResult = 'continue' | 'redirected' | 'settled' | 'deferred'
 
+/** jumpTo 与组合关闭命令共同接受的平台导航输入。 */
+type RouterNavigationInput =
+  | string
+  | { pathname: string, searchParams?: string | null, hash?: string | null }
+
+/** 已通过 Registry 验证、可以安全执行的最终导航计划。 */
+interface RouterNavigationPlan {
+  pathname: string
+  searchParams?: string | null
+  hash?: string | null
+  tabKey: string
+  authorized: boolean
+}
+
+/**
+ * 仅供 core 内部组合关闭命令使用的事务控制参数。
+ *
+ * 普通 closeTab 不传该参数，继续执行原有的相邻页或根路径回退；组合命令则可以在
+ * 守卫完成后再次确认外部条件，并把最终导航放进同一次关闭提交中。
+ */
+interface CloseTabTransaction {
+  /** 返回 false 时取消提交，页签状态和相关资源保持不变。 */
+  canCommit?: () => boolean
+  /** 关闭状态和资源清理完成后立即执行的最终导航。 */
+  navigateAfterClose?: () => boolean
+}
+
 /** 单个 core 实例私有、不可观察的命令与异步协调状态。 */
 interface RouterRuntime {
   /** 实际执行地址变化的宿主；未绑定时业务导航安全 no-op。 */
@@ -70,8 +98,6 @@ interface RouterRuntime {
   >
   /** 正在执行关闭事务的页签，防止重复点击并发运行守卫。 */
   closingTabKeys: Set<string>
-  /** 组合关闭命令需要跳过中间回退导航的页签。 */
-  silentCloseTabKeys: Set<string>
   /** 当前 hydration Promise；并发调用方共享同一任务。 */
   storageHydrationPromise: Promise<void> | null
   /** storageKey 变化时递增，使旧来源晚到结果立即失效。 */
@@ -220,7 +246,6 @@ export function createRouterCore(
     beforeCloseMap: new Map(),
     locationEmitterMap: new Map(),
     closingTabKeys: new Set(),
-    silentCloseTabKeys: new Set(),
     storageHydrationPromise: null,
     storageSourceGeneration: 0,
     storageMutationVersions: createMutationVersions(),
@@ -520,19 +545,14 @@ export function createRouterCore(
   }
 
   /**
-   * 执行完整平台导航。
+   * 解析并验证一次平台导航，但不修改 Store、Cache 或宿主地址。
    *
-   * 字符串被视为完整目标 URL；结构化参数中 undefined 表示恢复页签缓存，null/空串
-   * 表示显式清空。目录、权限、共享页签与 KeepAlive 都在调用宿主前完成处理。
+   * 组合关闭命令必须在删除旧页签前完成本步骤；未知路由返回 null，使调用方可以保留
+   * 原页面。已注册但无权限的路由仍是合法计划，执行阶段会导航到原地址展示 403。
    */
-  function jumpTo(
-    input:
-      | string
-      | { pathname: string, searchParams?: string | null, hash?: string | null },
-  ) {
-    if (!runtime.host)
-      return
-
+  function resolveNavigationPlan(
+    input: RouterNavigationInput,
+  ): RouterNavigationPlan | null {
     // 字符串先拆成三个独立片段；结构化输入保留 undefined/null 的业务区别。
     const parsed = typeof input === 'string' ? parseUrl(input) : null
     let pathname = typeof input === 'string' ? parsed!.pathname : input.pathname
@@ -547,38 +567,74 @@ export function createRouterCore(
 
     const tabKey = registry.getTabKey(pathname)
     if (!tabKey)
-      return
+      return null
 
     const authorized = registry.resolveLeafRoute(pathname, { withinAuth: true })
-    if (!registry.isPageRoute(authorized?.route)) {
+    return {
+      pathname,
+      searchParams,
+      hash,
+      tabKey,
+      authorized: registry.isPageRoute(authorized?.route),
+    }
+  }
+
+  /** 执行已经验证的导航计划；返回 false 表示宿主已解绑或页面状态无法建立。 */
+  function executeNavigationPlan(plan: RouterNavigationPlan) {
+    const host = runtime.host
+    if (!host)
+      return false
+
+    if (!plan.authorized) {
       // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。
-      const activeTabKey = getState().tabs.some((tab) => tab.key === tabKey)
-        ? tabKey
+      const activeTabKey = getState().tabs.some((tab) => tab.key === plan.tabKey)
+        ? plan.tabKey
         : null
       setInactiveState(activeTabKey)
-      runtime.host.navigate(
+      host.navigate(
         buildUrl({
-          pathname: cache.getParamsPath(tabKey) || pathname,
-          searchParams: resolveSearch(searchParams, cache.getSearch(tabKey)),
-          hash: resolveHash(hash, cache.getHash(tabKey)),
+          pathname: cache.getParamsPath(plan.tabKey) || plan.pathname,
+          searchParams: resolveSearch(
+            plan.searchParams,
+            cache.getSearch(plan.tabKey),
+          ),
+          hash: resolveHash(plan.hash, cache.getHash(plan.tabKey)),
         }),
       )
-      return
+      return true
     }
 
     const shouldActivateCachedPage =
-      keepAlive !== false && getState().pages.some((page) => page.key === tabKey)
-    if (!ensureTabState(pathname, shouldActivateCachedPage))
-      return
+      keepAlive !== false && getState().pages.some((page) => page.key === plan.tabKey)
+    if (!ensureTabState(plan.pathname, shouldActivateCachedPage))
+      return false
 
     // 共享动态页签恢复最后真实 pathname；未指定 search/hash 时恢复对应缓存。
-    runtime.host.navigate(
+    host.navigate(
       buildUrl({
-        pathname: cache.getParamsPath(tabKey) || pathname,
-        searchParams: resolveSearch(searchParams, cache.getSearch(tabKey)),
-        hash: resolveHash(hash, cache.getHash(tabKey)),
+        pathname: cache.getParamsPath(plan.tabKey) || plan.pathname,
+        searchParams: resolveSearch(
+          plan.searchParams,
+          cache.getSearch(plan.tabKey),
+        ),
+        hash: resolveHash(plan.hash, cache.getHash(plan.tabKey)),
       }),
     )
+    return true
+  }
+
+  /**
+   * 执行完整平台导航。
+   *
+   * 字符串被视为完整目标 URL；结构化参数中 undefined 表示恢复页签缓存，null/空串
+   * 表示显式清空。目录、权限、共享页签与 KeepAlive 都在调用宿主前完成处理。
+   */
+  function jumpTo(input: RouterNavigationInput) {
+    if (!runtime.host)
+      return
+    const plan = resolveNavigationPlan(input)
+    if (plan)
+      executeNavigationPlan(plan)
   }
 
   /** 同页 URL 状态使用 replace；真正切换 pathname 时转交完整 jumpTo 流程。 */
@@ -710,13 +766,43 @@ export function createRouterCore(
     return true
   }
 
+  /** 把通知回调错误暴露到开发控制台，但不改变已经提交的关闭结果。 */
+  function reportTabCloseError(error: unknown) {
+    console.error('[RouterCore] onTabClose callback failed.', error)
+  }
+
+  /**
+   * 触发关闭完成通知，并同时隔离同步 throw 与异步 rejection。
+   *
+   * onTabClose 是提交后的通知而不是守卫，因此不等待 Promise；业务若需要在关闭前完成
+   * 保存或校验，应使用 before-close Hook 返回明确结果。
+   */
+  function notifyTabClose(
+    tabKey: string,
+    info: RouterAfterTabCloseInfo,
+  ) {
+    const callback = runtime.onTabClose
+    if (!callback)
+      return
+
+    try {
+      void Promise.resolve(callback(tabKey, info)).catch(reportTabCloseError)
+    } catch (error) {
+      reportTabCloseError(error)
+    }
+  }
+
   /**
    * 执行单个页签关闭事务。
    *
    * 顺序固定为：取得关闭权、运行守卫、重新确认页签、提交状态、清理命令资源、执行
    * 必要导航、通知回调。同一 key 的重复关闭在运行守卫前直接失败。
    */
-  async function closeTab(tabKey: string, closeOptions?: RouterCloseOptions) {
+  async function closeTab(
+    tabKey: string,
+    closeOptions?: RouterCloseOptions,
+    transaction?: CloseTabTransaction,
+  ) {
     if (!getState().tabs.some((tab) => tab.key === tabKey))
       return false
     if (runtime.closingTabKeys.has(tabKey))
@@ -735,6 +821,9 @@ export function createRouterCore(
       const state = getState()
       // 等待异步守卫期间其它命令可能已经移除页签，提交前必须再次确认。
       if (!state.tabs.some((tab) => tab.key === tabKey))
+        return false
+      // 组合命令还要确认宿主等事务前提；失败时不能先删旧页再报告导航失败。
+      if (transaction?.canCommit && !transaction.canCommit())
         return false
       const closedIndex = state.tabs.findIndex((tab) => tab.key === tabKey)
       const nextTabs = state.tabs.filter((tab) => tab.key !== tabKey)
@@ -780,8 +869,11 @@ export function createRouterCore(
       runtime.locationEmitterMap.delete(tabKey)
       cache.clear(tabKey)
 
-      // 组合关闭命令会自行打开最终地址，因此这里必须抑制相邻页/根路径中间导航。
-      if (!runtime.silentCloseTabKeys.has(tabKey)) {
+      let result = true
+      if (transaction?.navigateAfterClose) {
+        // 最终导航必须早于通知回调，避免 onTabClose 解绑宿主后丢失本次导航。
+        result = transaction.navigateAfterClose()
+      } else {
         if (nextActive) {
           runtime.host?.navigate(
             buildUrl({
@@ -795,39 +887,39 @@ export function createRouterCore(
         }
       }
 
-      runtime.onTabClose?.(tabKey, { pathname: closedPathname })
-      return true
+      notifyTabClose(tabKey, { pathname: closedPathname })
+      return result
     } finally {
       runtime.closingTabKeys.delete(tabKey)
     }
   }
 
-  /** 组合“关闭旧页签 + 打开新地址”，保证只产生一次最终宿主导航。 */
+  /**
+   * 组合“关闭旧页签 + 打开新地址”，保证只产生一次最终宿主导航。
+   *
+   * 新目标必须在关闭事务前完成 Registry 验证；未知目标或未绑定宿主都直接失败并保留
+   * 旧页签，避免浏览器仍停留在旧地址但对应页面状态已经被删除。
+   */
   async function closeThisTabOpenNewOne(
     data: { oldPath: string, newPath: string },
     closeOptions?: RouterCloseOptions,
   ) {
-    const target = parseUrl(data.newPath)
+    const host = runtime.host
+    if (!host)
+      return false
+    const target = resolveNavigationPlan(data.newPath)
+    if (!target)
+      return false
+
     const oldTabKey = registry.getTabKey(parseUrl(data.oldPath).pathname)
     if (oldTabKey && getState().tabs.some((tab) => tab.key === oldTabKey)) {
-      // 已有关闭事务时不能抢占静默标记，否则会破坏原事务的导航语义。
-      if (runtime.closingTabKeys.has(oldTabKey))
-        return false
-      runtime.silentCloseTabKeys.add(oldTabKey)
-      try {
-        const closed = await closeTab(oldTabKey, closeOptions)
-        if (!closed)
-          return false
-      } finally {
-        runtime.silentCloseTabKeys.delete(oldTabKey)
-      }
+      return closeTab(oldTabKey, closeOptions, {
+        // 守卫可能触发组件卸载；宿主已变化时保留旧页，避免状态与地址脱节。
+        canCommit: () => runtime.host === host,
+        navigateAfterClose: () => executeNavigationPlan(target),
+      })
     }
-    jumpTo({
-      pathname: target.pathname,
-      searchParams: target.searchParams.toString(),
-      hash: target.hash,
-    })
-    return true
+    return executeNavigationPlan(target)
   }
 
   /** 关闭守卫按 tabKey 归组，共享动态 pathname 因而属于同一个关闭事务。 */
