@@ -176,6 +176,35 @@ describe('createRouterCore', () => {
     expect(router.getState().activePage).toBeNull()
   })
 
+  it('retries a deferred directory bootstrap after the host is bound', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+
+    router.syncLocation({ pathname: '/settings', search: '', hash: '' })
+    expect(router.getState().currentPathname).toBe('/settings')
+    expect(router.getState().activePage).toBeNull()
+
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/settings', search: '', hash: '' })
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+  })
+
+  it('clears an older bootstrap marker when a later pathname is deferred', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate: vi.fn() })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().activePage).toBe('/dashboard')
+
+    router.bindHost(null)
+    router.syncLocation({ pathname: '/settings', search: '', hash: '' })
+    expect(router.getState().activePage).toBeNull()
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().activePage).toBe('/dashboard')
+  })
+
   it('redirects directories and creates no page for unauthorized routes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({

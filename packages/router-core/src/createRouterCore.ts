@@ -39,9 +39,10 @@ type PersistedField = 'fixedTabs' | 'fixedParamsPathMap'
  *
  * `continue` 表示宿主地址已经是最终地址，应继续确认页签和页面状态；`redirected`
  * 表示根路径或目录已经发起新导航，必须等待宿主回传最终 pathname；`settled` 表示
- * 当前地址没有可跳转页面，并且非活动页面状态已经在 bootstrap 阶段完成。
+ * 当前地址没有可跳转页面，并且非活动页面状态已经在 bootstrap 阶段完成；`deferred`
+ * 表示当前需要重定向但宿主尚未绑定，本次只同步状态并允许相同 pathname 后续重试。
  */
-type BootstrapResult = 'continue' | 'redirected' | 'settled'
+type BootstrapResult = 'continue' | 'redirected' | 'settled' | 'deferred'
 
 /** 单个 core 实例私有、不可观察的命令与异步协调状态。 */
 interface RouterRuntime {
@@ -314,6 +315,11 @@ export function createRouterCore(
   function bootstrapByPathname(pathname: string): BootstrapResult {
     if (pathname === '/') {
       if (registry.defaultRoute !== '/') {
+        // Core 可以早于宿主 Adapter 创建。此时不能把未执行的默认页导航记为已完成，
+        // 否则 host 绑定后再次同步相同根路径也不会重试。
+        if (!runtime.host)
+          return 'deferred'
+
         jumpTo(registry.defaultRoute)
         return 'redirected'
       }
@@ -329,6 +335,11 @@ export function createRouterCore(
 
     const child = registry.findFirstAccessibleChild(pathname)
     if (child) {
+      // 目录地址只有在宿主真实可用时才算完成 bootstrap；未绑定时继续确认当前
+      // 非活动状态，但保留下一次相同 pathname 的重试资格。
+      if (!runtime.host)
+        return 'deferred'
+
       jumpTo(child)
       return 'redirected'
     }
@@ -374,9 +385,16 @@ export function createRouterCore(
     if (runtime.lastBootstrappedPathname === pathname)
       return
 
-    runtime.lastBootstrappedPathname = pathname
     const bootstrapResult = bootstrapByPathname(pathname)
-    if (bootstrapResult === 'continue')
+    // deferred 没有真正完成导航，既不能记录当前 pathname，也不能保留更早路径的
+    // 去重标记；否则离开旧路径后再次返回时可能跳过页面重新激活。其它结果都已完成
+    // 本轮落点判断，可以安全记录。
+    if (bootstrapResult === 'deferred')
+      runtime.lastBootstrappedPathname = null
+    else
+      runtime.lastBootstrappedPathname = pathname
+
+    if (bootstrapResult === 'continue' || bootstrapResult === 'deferred')
       syncByPathname(pathname)
   }
 
