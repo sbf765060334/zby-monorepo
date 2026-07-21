@@ -153,14 +153,23 @@ describe('createRouterCore', () => {
   it('creates a new independent state container on every factory call', () => {
     const first = createRouterCore({ routes, storageAdapter: false })
     const second = createRouterCore({ routes, storageAdapter: false })
+    const storeSubscriber = vi.fn()
+    const unsubscribe = first.store.subscribe(storeSubscriber)
+    const exposesSetState: 'setState' extends keyof typeof first.store
+      ? true
+      : false = false
 
     expect(first).not.toBe(second)
     expect(first.store).not.toBe(second.store)
+    expect(exposesSetState).toBe(false)
+    expect('setState' in first.store).toBe(false)
 
     first.bindHost({ navigate: vi.fn() })
     first.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(storeSubscriber).toHaveBeenCalled()
     expect(first.getState().tabs).toHaveLength(1)
     expect(second.getState().tabs).toHaveLength(0)
+    unsubscribe()
   })
 
   it('opens pages with jumpTo and replaces current-page URL with smartNavigate', () => {

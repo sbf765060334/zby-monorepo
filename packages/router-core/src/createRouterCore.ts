@@ -15,6 +15,7 @@ import type {
   RouterLocation,
   RouterLocationEventPayload,
   RouterPage,
+  RouterReadableStore,
   RouterRoute,
   RouterRuntimeOptions,
   RouterStorageAdapter,
@@ -284,6 +285,14 @@ export function createRouterCore<Route extends RouterRoute>(
     storageLoading: false,
     storageLoadError: undefined,
   }))
+
+  // 对外返回独立 facade，而不是仅在类型上隐藏 setState；JavaScript 调用方同样无法
+  // 绕过领域命令直接写 Store。三个方法仍是 Zustand useStore 所需的完整只读契约。
+  const readableStore: RouterReadableStore<Route> = {
+    getState: store.getState,
+    getInitialState: store.getInitialState,
+    subscribe: store.subscribe,
+  }
 
   const cache = new RouterCache(
     initialParamsPathMap,
@@ -1180,7 +1189,7 @@ export function createRouterCore<Route extends RouterRoute>(
   // 对外只暴露领域查询与命令；Cache、runtime 和持久化协调函数继续封装在实例闭包内。
   return {
     registry,
-    store,
+    store: readableStore,
     getState,
     subscribe: store.subscribe,
     bindHost,

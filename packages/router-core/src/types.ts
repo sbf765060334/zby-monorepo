@@ -275,6 +275,19 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
 }
 
 /**
+ * 提供给 React selector 和状态观察者的只读 Zustand Store 契约。
+ *
+ * 只暴露读取初始/当前快照与订阅能力，不暴露 setState。页签、页面、Cache 和持久化
+ * 必须通过 RouterCore 领域命令修改，避免调用方绕过关闭守卫和状态不变量。
+ *
+ * @typeParam Route Store 快照中保留的调用方路由节点类型。
+ */
+export type RouterReadableStore<Route extends RouterRoute = RouterRoute> = Pick<
+  StoreApi<RouterCoreState<Route>>,
+  'getState' | 'getInitialState' | 'subscribe'
+>
+
+/**
  * 一个独立 router-core 实例提供的查询、订阅和业务命令。
  *
  * 每次调用 createRouterCore 都会返回一套新的 Store、Cache 和私有运行时。业务代码
@@ -285,8 +298,8 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
 export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   /** 创建时固定的路由查询注册表。 */
   readonly registry: RouteRegistry<Route>
-  /** 提供给 React 绑定或高级调用方的 vanilla Zustand Store。 */
-  readonly store: StoreApi<RouterCoreState<Route>>
+  /** 提供给 React 绑定或状态观察者的只读 vanilla Zustand Store。 */
+  readonly store: RouterReadableStore<Route>
   /** 读取当前同步状态快照。 */
   getState: () => RouterCoreState<Route>
   /** 订阅状态变化；返回值由 Zustand 负责取消订阅。 */
