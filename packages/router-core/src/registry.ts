@@ -242,12 +242,17 @@ export function isAccessibleRoute(route?: RouterRoute | null) {
  * 触发路由资源预加载。
  *
  * 优先使用 route.preload；为兼容现有 ProLayout 路由，再识别 element.preload。
- * core 不导入 React，也不对返回 Promise 做额外包装。
+ * 预加载只是 hover、focus 等场景的推测性性能优化，因此统一放进 Promise 微任务，
+ * 同时隔离同步 throw 与异步 rejection，不能让预加载失败打断当前页面交互。
  */
-export function preloadRoute(route?: RouterRoute | null) {
+export function preloadRoute(route?: RouterRoute | null): void {
   const directPreload = route?.preload
-  if (typeof directPreload === 'function')
-    return directPreload()
+  if (typeof directPreload === 'function') {
+    void Promise.resolve()
+      .then(() => directPreload())
+      .catch(() => undefined)
+    return
+  }
 
   const element = route?.element
   if (
@@ -256,7 +261,11 @@ export function preloadRoute(route?: RouterRoute | null) {
     'preload' in element &&
     typeof element.preload === 'function'
   ) {
-    return element.preload()
+    // 局部常量把类型收窄带进异步闭包；call 保留对象方法可能依赖的 this 绑定。
+    const elementPreload = element.preload
+    void Promise.resolve()
+      .then(() => elementPreload.call(element))
+      .catch(() => undefined)
   }
 }
 

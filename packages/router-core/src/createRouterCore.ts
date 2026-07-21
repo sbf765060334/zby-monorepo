@@ -1070,6 +1070,19 @@ export function createRouterCore(
     return promise
   }
 
+  /**
+   * 在当前 hydration 完全结束后发起一次真正的新加载。
+   *
+   * 错误回调执行时旧 Promise 尚未进入 finally；直接再次调用 hydrateStorage 只会复用
+   * 失败任务。这里先等待旧任务清理，再进入统一入口，多个立即重试仍会合并为一个任务。
+   */
+  function retryHydration(): Promise<void> {
+    const pending = runtime.storageHydrationPromise
+    if (!pending)
+      return hydrateStorage()
+    return pending.then(() => hydrateStorage())
+  }
+
   /** 执行一次绑定 Adapter、storageKey 与 generation 的实际加载事务。 */
   async function executeHydration() {
     if (storageAdapter === false)
@@ -1099,10 +1112,16 @@ export function createRouterCore(
         : state.fixedSet
       if (paramsUnchanged) {
         // 当前会话确认的动态地址比存储旧值更新，展开顺序确保 currentParams 胜出。
-        cache.hydrateParamsPathMap({
+        const mergedParamsPathMap = {
           ...loaded.fixedParamsPathMap,
           ...currentParams,
-        })
+        }
+        cache.hydrateParamsPathMap(mergedParamsPathMap)
+        if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap)) {
+          // 在发布状态前绑定已校验的 storageKey，避免同步订阅者切换命名空间后写错来源。
+          // Adapter 实际保存位于 Promise 微任务，不会阻塞下面的 hydration 状态提交。
+          persistParamsPathMap(mergedParamsPathMap)
+        }
       }
       setState({
         fixedSet: nextFixedSet,
@@ -1122,7 +1141,7 @@ export function createRouterCore(
       runtime.onStorageError?.(error, {
         storageKey,
         phase: 'load',
-        retry: hydrateStorage,
+        retry: retryHydration,
       })
     }
   }
@@ -1418,4 +1437,16 @@ function areStringArraysEqual(left: string[], right: string[]) {
     left.length === right.length &&
     left.every((item, index) => item === right[index])
   )
+}
+
+/** 按键和值比较字符串记录，避免 hydration 对未变化的动态路径执行重复回写。 */
+function areStringRecordsEqual(
+  left: Record<string, string>,
+  right: Record<string, string>,
+) {
+  if (left === right)
+    return true
+  const leftKeys = Object.keys(left)
+  return leftKeys.length === Object.keys(right).length &&
+    leftKeys.every((key) => left[key] === right[key])
 }

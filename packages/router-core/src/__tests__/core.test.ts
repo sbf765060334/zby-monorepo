@@ -4,6 +4,7 @@ import {
   createRouteRegistry,
   createRouterCore,
   matchRoutePath,
+  preloadRoute,
   type normalizeRouterStorageState,
   type RouterRoute,
   type RouterStorageAdapter,
@@ -62,6 +63,35 @@ describe('route registry', () => {
 
     expect(registry.routes[0].title).toBe('Before')
     expect(registry.resolveLeafRoute('/later')).toBeNull()
+  })
+
+  it('isolates synchronous and asynchronous preload failures', async () => {
+    const directPreload = vi.fn(() => {
+      throw new Error('synchronous preload failed')
+    })
+    const elementPreload = vi.fn(async () => {
+      throw new Error('asynchronous preload failed')
+    })
+    const element = Object.assign(() => undefined, { preload: elementPreload })
+
+    expect(preloadRoute({
+      path: '/direct-preload',
+      title: 'Direct preload',
+      element: {},
+      preload: directPreload,
+    })).toBeUndefined()
+    expect(directPreload).not.toHaveBeenCalled()
+    await Promise.resolve()
+    expect(directPreload).toHaveBeenCalledOnce()
+
+    expect(preloadRoute({
+      path: '/element-preload',
+      title: 'Element preload',
+      element,
+    })).toBeUndefined()
+    await Promise.resolve()
+    expect(elementPreload).toHaveBeenCalledOnce()
+    await Promise.resolve()
   })
 })
 
@@ -651,6 +681,64 @@ describe('createRouterCore', () => {
 
     expect(subscriber).not.toHaveBeenCalled()
     unsubscribe()
+  })
+
+  it('writes back a current dynamic pathname that overrides hydrated storage', async () => {
+    const saveFixedParamsPathMap = vi.fn(async () => undefined)
+    const adapter: RouterStorageAdapter = {
+      load: vi.fn(async () => ({
+        fixedTabs: [],
+        fixedParamsPathMap: { '/project/:id': '/project/1' },
+      })),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap,
+    }
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+      initial: { pathname: '/project/42' },
+    })
+
+    await router.hydrateStorage()
+    await vi.waitFor(() => {
+      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
+        'default',
+        { '/project/:id': '/project/42' },
+      )
+    })
+
+    await router.hydrateStorage()
+    expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
+  })
+
+  it('starts a new load when hydration retry is called immediately', async () => {
+    let attempts = 0
+    let retryPromise: Promise<void> | undefined
+    const adapter: RouterStorageAdapter = {
+      load: vi.fn(async () => {
+        attempts += 1
+        if (attempts === 1)
+          throw new Error('temporary load failure')
+        return { fixedTabs: [], fixedParamsPathMap: {} }
+      }),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+    }
+    const router = createRouterCore({ routes, storageAdapter: adapter })
+    router.configureRuntime({
+      onStorageError: (_error, info) => {
+        if (info.phase === 'load')
+          retryPromise = info.retry()
+      },
+    })
+
+    await router.hydrateStorage()
+    expect(retryPromise).toBeDefined()
+    await retryPromise
+
+    expect(attempts).toBe(2)
+    expect(router.getState().storageHydrated).toBe(true)
+    expect(router.getState().storageLoadError).toBeUndefined()
   })
 
   it('hydrates fixed tabs without overwriting local changes made in flight', async () => {
