@@ -434,6 +434,34 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  it('does not fix unknown or unopened tab keys', async () => {
+    const saveFixedTabs = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: [],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs,
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+    })
+    const snapshot = router.getState()
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+
+    // 已注册但尚未打开的页面和完全未知的 key 都不能旁路创建固定状态。
+    expect(router.toggleFixed('/dashboard')).toBe(false)
+    expect(router.toggleFixed('/unknown')).toBe(false)
+    await Promise.resolve()
+
+    expect(router.getState()).toBe(snapshot)
+    expect(subscriber).not.toHaveBeenCalled()
+    expect(saveFixedTabs).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
   it('enforces fixed-tab limits and runs close guards', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })

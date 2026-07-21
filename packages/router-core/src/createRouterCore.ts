@@ -691,9 +691,14 @@ export function createRouterCore(
     })
   }
 
-  /** 固定或取消固定页签；新增固定项才受最大数量限制。 */
+  /** 固定或取消固定页签；只允许操作当前已经打开的页签。 */
   function toggleFixed(tabKey: string) {
     const state = getState()
+    // 固定状态是已打开页签的附属属性。拒绝未知或尚未打开的 key，避免 fixedSet、
+    // tabs 与持久化数据产生无法在当前界面解释的不一致项。
+    if (!state.tabs.some((tab) => tab.key === tabKey))
+      return false
+
     const isFixed = state.fixedSet.includes(tabKey)
     if (!isFixed && state.fixedSet.length >= state.maxFixedTabCount)
       return false

@@ -298,7 +298,7 @@ export interface RouterCore {
   setTabLabel: (key: string, label: string) => void
   /** 增量合并真实 pathname 的业务描述。 */
   setPathnameDescription: (map: Record<string, string>) => void
-  /** 固定或取消固定页签；超过数量限制时返回 false。 */
+  /** 固定或取消固定页签；页签未打开或超过数量限制时返回 false。 */
   toggleFixed: (tabKey: string) => boolean
   /** 运行关闭守卫并清理页签、页面、Cache 和相关资源。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
