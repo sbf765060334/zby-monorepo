@@ -16,6 +16,7 @@ export default defineConfig({
       'antd',
       '@ant-design/cssinjs',
       'react-router-dom',
+      '@zby/hooks',
       '@zby/intl',
       '@zby/ui',
     ],

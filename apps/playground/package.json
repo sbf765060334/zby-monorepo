@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/cssinjs": "2.1.2",
+    "@zby/hooks": "workspace:*",
     "@zby/intl": "workspace:*",
     "@zby/pro": "workspace:*",
     "@zby/ui": "workspace:*",

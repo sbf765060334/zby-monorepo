@@ -30,6 +30,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@zby/hooks": "workspace:*",
     "@zby/intl": "workspace:*",
     "@zby/ui": "workspace:*",
     "idb-keyval": "6.3.0",

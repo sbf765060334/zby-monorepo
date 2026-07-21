@@ -60,6 +60,9 @@ importers:
       '@ant-design/cssinjs':
         specifier: 2.1.2
         version: 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@zby/hooks':
+        specifier: workspace:*
+        version: link:../../packages/hooks
       '@zby/intl':
         specifier: workspace:*
         version: link:../../packages/zby-intl
@@ -82,6 +85,15 @@ importers:
         specifier: 7.18.1
         version: 7.18.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
+  packages/hooks:
+    dependencies:
+      react:
+        specifier: '>=18.0.0'
+        version: 18.3.1
+      react-dom:
+        specifier: '>=18.0.0'
+        version: 18.3.1(react@18.3.1)
+
   packages/zby-intl:
     dependencies:
       i18next:
@@ -99,6 +111,9 @@ importers:
       '@ant-design/cssinjs':
         specifier: '>=1.0.0'
         version: 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@zby/hooks':
+        specifier: workspace:*
+        version: link:../hooks
       '@zby/intl':
         specifier: workspace:*
         version: link:../zby-intl

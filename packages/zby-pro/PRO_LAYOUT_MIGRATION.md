@@ -16,7 +16,7 @@
 1. 不迁移 Next.js 相关代码、入口、类型、测试和依赖。
 2. 不迁移 AI 主题和主题 preset。
 3. 主题模式保留跟随系统、浅色主题和暗黑主题三种；对外值沿用参考实现的 `auto`、`light` 和 `dark`。
-4. 主题切换动画复用 `packages/zby-pro/src/hooks/useThemeModeTransition.ts`；跟随系统模式先解析实际的 Light/Dark 外观，再把解析结果交给该 Hook。
+4. 主题切换动画复用 `packages/hooks/useThemeModeTransition.ts`；跟随系统模式先解析实际的 Light/Dark 外观，再把解析结果交给该 Hook。
 5. 普通 UI 组件使用 antd，不引入整套 `shuzhi-ui`。
 6. ScrollArea 使用 `@zby/ui` 已有实现。
 7. 允许按需引入 `ahooks`、`zustand`、`clsx`、`@dnd-kit/*` 等直接依赖。

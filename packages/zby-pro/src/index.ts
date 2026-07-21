@@ -1,8 +1,8 @@
 export { zbyProEnUS, zbyProLocales, zbyProZhCN } from './locales'
-export { useThemeModeTransition } from './hooks'
+export { useThemeModeTransition } from '@zby/hooks'
 export type {
   UseThemeModeTransitionOptions,
   UseThemeModeTransitionReturn,
   ZbyThemeMode,
   ZbyThemeTransitionOrigin,
-} from './hooks'
+} from '@zby/hooks'

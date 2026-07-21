@@ -1,6 +1,6 @@
 import { Button, Segmented, Switch, Tabs, Typography, theme } from 'antd'
+import { useThemeModeTransition } from '@zby/hooks'
 import { useIntl } from '@zby/intl'
-import { useThemeModeTransition } from '@zby/pro'
 import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
