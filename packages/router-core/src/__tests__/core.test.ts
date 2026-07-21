@@ -116,6 +116,66 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenLastCalledWith('/settings/profile')
   })
 
+  it('bootstraps a directory location once and waits for its leaf location', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    router.syncLocation({ pathname: '/settings', search: '', hash: '' })
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    // 目录只发起宿主导航；最终叶子地址回传前不清空当前可见页面。
+    expect(router.getState().activePage).toBe('/dashboard')
+
+    // StrictMode 重放或 Adapter 重复通知同一目录时不得重复导航。
+    router.syncLocation({ pathname: '/settings', search: '?source=menu', hash: '' })
+    expect(navigate).toHaveBeenCalledOnce()
+
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    expect(router.getState().activeTabKey).toBe('/settings/profile')
+    expect(router.getState().activePage).toBe('/settings/profile')
+  })
+
+  it('bootstraps the root location once through syncLocation', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+
+    router.syncLocation({ pathname: '/', search: '', hash: '' })
+    router.syncLocation({ pathname: '/', search: '?replayed=1', hash: '' })
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('bootstraps the first host location even when initial pathname matches it', () => {
+    const router = createRouterCore({
+      routes,
+      hasAuth: (code) => code !== 'admin',
+      storageAdapter: false,
+      initial: {
+        pathname: '/admin',
+        storageState: {
+          fixedTabs: ['/admin'],
+          fixedParamsPathMap: {},
+        },
+      },
+    })
+    router.bindHost({ navigate: vi.fn() })
+
+    expect(router.getState().currentPathname).toBe('/admin')
+    expect(router.getState().activeTabKey).toBeNull()
+
+    router.syncLocation({ pathname: '/admin', search: '', hash: '' })
+
+    // 首次同步仍需确认 403 的固定页签身份，不能因初始 pathname 相同而被跳过。
+    expect(router.getState().activeTabKey).toBe('/admin')
+    expect(router.getState().activePage).toBeNull()
+  })
+
   it('redirects directories and creates no page for unauthorized routes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({

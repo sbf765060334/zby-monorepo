@@ -34,10 +34,21 @@ const DEFAULT_STORAGE_ADAPTER = createIndexedDBRouterStorageAdapter()
 /** 可以独立发生本地修改、因而需要独立 hydration 版本号的持久化字段。 */
 type PersistedField = 'fixedTabs' | 'fixedParamsPathMap'
 
+/**
+ * 入口 pathname 的落点处理结果。
+ *
+ * `continue` 表示宿主地址已经是最终地址，应继续确认页签和页面状态；`redirected`
+ * 表示根路径或目录已经发起新导航，必须等待宿主回传最终 pathname；`settled` 表示
+ * 当前地址没有可跳转页面，并且非活动页面状态已经在 bootstrap 阶段完成。
+ */
+type BootstrapResult = 'continue' | 'redirected' | 'settled'
+
 /** 单个 core 实例私有、不可观察的命令与异步协调状态。 */
 interface RouterRuntime {
   /** 实际执行地址变化的宿主；未绑定时业务导航安全 no-op。 */
   host: RouterHost | null
+  /** 最近一次完成落点判断的 pathname，用于过滤 StrictMode 与 Adapter 的重复通知。 */
+  lastBootstrappedPathname: string | null
   /** 始终使用最新引用的页签关闭回调。 */
   onTabClose: RouterRuntimeOptions['onTabClose'] | null
   /** 始终使用最新引用的持久化错误回调。 */
@@ -194,6 +205,7 @@ export function createRouterCore(
   // runtime 每个实例独立创建，多个平台区域或测试实例不会共享守卫与异步版本。
   const runtime: RouterRuntime = {
     host: null,
+    lastBootstrappedPathname: null,
     onTabClose: null,
     onStorageError: null,
     beforeCloseMap: new Map(),
@@ -293,25 +305,37 @@ export function createRouterCore(
     }
   }
 
-  /** 根据入口 pathname 处理根路径、目录路径与无页面状态。 */
-  function bootstrapByPathname(pathname: string) {
+  /**
+   * 解析入口 pathname 是否需要重定向，并把处理结果交还给 location 同步流程。
+   *
+   * 叶子页面、403、404 和无子页面的目录继续交给 syncByPathname 统一确认；只有已经
+   * 发起宿主导航或根路径确定没有可访问页面时，才阻止旧 pathname 创建临时页面状态。
+   */
+  function bootstrapByPathname(pathname: string): BootstrapResult {
     if (pathname === '/') {
-      if (registry.defaultRoute !== '/')
+      if (registry.defaultRoute !== '/') {
         jumpTo(registry.defaultRoute)
-      else
-        setInactiveState(null)
-      return
+        return 'redirected'
+      }
+
+      setInactiveState(null)
+      return 'settled'
     }
 
     const leaf = registry.resolveLeafRoute(pathname, { withinAuth: true })
     // 已是授权页面时不二次导航，真正页签创建交给 location 同步流程。
     if (registry.isPageRoute(leaf?.route))
-      return
+      return 'continue'
+
     const child = registry.findFirstAccessibleChild(pathname)
-    if (child)
+    if (child) {
       jumpTo(child)
-    else
-      setInactiveState(null)
+      return 'redirected'
+    }
+
+    // 无权限页面、未知地址和空目录仍要进入 syncByPathname，统一保留合法的旧页签选中
+    // 身份并清理活动页面；bootstrap 只决定是否需要改变宿主地址。
+    return 'continue'
   }
 
   /**
@@ -322,13 +346,17 @@ export function createRouterCore(
    */
   function syncLocation(location: RouterLocation) {
     const pathname = location.pathname || '/'
-    const currentRoutes = registry.getCurrentRoutes(pathname)
-    setState((state) => ({
-      ...state,
-      currentPathname: pathname,
-      currentRoutes,
-      currentSelectedPath: currentRoutes.map((item) => item.realPath),
-    }))
+    const pathnameChanged = getState().currentPathname !== pathname
+
+    if (pathnameChanged) {
+      const currentRoutes = registry.getCurrentRoutes(pathname)
+      setState((state) => ({
+        ...state,
+        currentPathname: pathname,
+        currentRoutes,
+        currentSelectedPath: currentRoutes.map((item) => item.realPath),
+      }))
+    }
 
     const tabKey = registry.getTabKey(pathname)
     if (tabKey) {
@@ -340,9 +368,15 @@ export function createRouterCore(
         cache.setParamsPath(tabKey, pathname)
     }
 
-    if (pathname === '/')
-      bootstrapByPathname(pathname)
-    else
+    // currentPathname 可能已经由 initial.pathname 建立首屏快照，因此不能用 Store 字段
+    // 判断 bootstrap 是否执行过；私有标记只过滤 StrictMode、重复 Adapter 通知以及
+    // 单纯 search/hash 变化，同时允许浏览器离开后再次进入同一路径时重新处理落点。
+    if (runtime.lastBootstrappedPathname === pathname)
+      return
+
+    runtime.lastBootstrappedPathname = pathname
+    const bootstrapResult = bootstrapByPathname(pathname)
+    if (bootstrapResult === 'continue')
       syncByPathname(pathname)
   }
 
@@ -911,7 +945,6 @@ export function createRouterCore(
     bindHost,
     configureRuntime,
     hydrateStorage,
-    bootstrapByPathname,
     syncLocation,
     jumpTo,
     smartNavigate,

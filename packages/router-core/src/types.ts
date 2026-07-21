@@ -262,9 +262,10 @@ export interface RouterCore {
   configureRuntime: (options: RouterRuntimeOptions) => void
   /** 从当前 Adapter/storageKey 加载固定页签和动态 pathname。 */
   hydrateStorage: () => Promise<void>
-  /** 处理根路径、目录和无页面路由的首次落点。 */
-  bootstrapByPathname: (pathname: string) => void
-  /** 接收宿主最新地址，并同步层级、Cache、页签和页面实例。 */
+  /**
+   * 接收宿主最新地址，并统一处理根路径/目录落点、路由层级、URL Cache、页签和页面实例。
+   * Adapter 不需要也不应分别触发内部 bootstrap 或 pathname 状态确认流程。
+   */
   syncLocation: (location: RouterLocation) => void
   /** 执行完整平台导航；会处理目录、权限、页签和 URL Cache。 */
   jumpTo: (
