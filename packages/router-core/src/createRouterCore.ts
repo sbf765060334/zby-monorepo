@@ -50,6 +50,13 @@ interface RouterRuntime {
   host: RouterHost | null
   /** 最近一次完成落点判断的 pathname，用于过滤 StrictMode 与 Adapter 的重复通知。 */
   lastBootstrappedPathname: string | null
+  /**
+   * 最近一次由宿主确认的标准化 location。
+   *
+   * 页面实例可能晚于首次 syncLocation 创建；保留该快照后，新注册的页面 emitter
+   * 可以立即补收当前地址，而不要求 Adapter 额外重放一次 location。
+   */
+  latestLocation: RouterLocationEventPayload | null
   /** 始终使用最新引用的页签关闭回调。 */
   onTabClose: RouterRuntimeOptions['onTabClose'] | null
   /** 始终使用最新引用的持久化错误回调。 */
@@ -207,6 +214,7 @@ export function createRouterCore(
   const runtime: RouterRuntime = {
     host: null,
     lastBootstrappedPathname: null,
+    latestLocation: null,
     onTabClose: null,
     onStorageError: null,
     beforeCloseMap: new Map(),
@@ -358,6 +366,16 @@ export function createRouterCore(
   function syncLocation(location: RouterLocation) {
     const pathname = location.pathname || '/'
     const pathnameChanged = getState().currentPathname !== pathname
+    const normalizedSearch = normalizeSearchParams(location.search)
+    const locationPayload: RouterLocationEventPayload = {
+      pathname,
+      search: normalizedSearch ? `?${normalizedSearch}` : '',
+      hash: normalizeHash(location.hash),
+    }
+
+    // location 不进入 Zustand，但必须始终保留最新值：search/hash 变化不会触发页面状态
+    // 更新，却仍然属于页面需要接收的地址事件；首个页面晚挂载时也依赖该快照补发。
+    runtime.latestLocation = locationPayload
 
     if (pathnameChanged) {
       const currentRoutes = registry.getCurrentRoutes(pathname)
@@ -384,20 +402,25 @@ export function createRouterCore(
     // currentPathname 可能已经由 initial.pathname 建立首屏快照，因此不能用 Store 字段
     // 判断 bootstrap 是否执行过；私有标记只过滤 StrictMode、重复 Adapter 通知以及
     // 单纯 search/hash 变化，同时允许浏览器离开后再次进入同一路径时重新处理落点。
-    if (runtime.lastBootstrappedPathname === pathname)
-      return
+    if (runtime.lastBootstrappedPathname !== pathname) {
+      const bootstrapResult = bootstrapByPathname(pathname)
+      // deferred 没有真正完成导航，既不能记录当前 pathname，也不能保留更早路径的
+      // 去重标记；否则离开旧路径后再次返回时可能跳过页面重新激活。其它结果都已完成
+      // 本轮落点判断，可以安全记录。
+      if (bootstrapResult === 'deferred')
+        runtime.lastBootstrappedPathname = null
+      else
+        runtime.lastBootstrappedPathname = pathname
 
-    const bootstrapResult = bootstrapByPathname(pathname)
-    // deferred 没有真正完成导航，既不能记录当前 pathname，也不能保留更早路径的
-    // 去重标记；否则离开旧路径后再次返回时可能跳过页面重新激活。其它结果都已完成
-    // 本轮落点判断，可以安全记录。
-    if (bootstrapResult === 'deferred')
-      runtime.lastBootstrappedPathname = null
-    else
-      runtime.lastBootstrappedPathname = pathname
+      if (bootstrapResult === 'continue' || bootstrapResult === 'deferred')
+        syncByPathname(pathname)
+    }
 
-    if (bootstrapResult === 'continue' || bootstrapResult === 'deferred')
-      syncByPathname(pathname)
+    // 页面事件和 pathname bootstrap 具有不同的去重语义：即使 pathname 没变，新的
+    // search/hash 也必须发布。新页面尚未注册时不会丢失，register 会从 latestLocation
+    // 补发当前快照。
+    if (tabKey)
+      runtime.locationEmitterMap.get(tabKey)?.emit(locationPayload)
   }
 
   /** 根据确认后的 pathname 创建授权页面，或进入 403/404 的非活动页面状态。 */
@@ -800,7 +823,12 @@ export function createRouterCore(
       runtime.beforeCloseMap.delete(tabKey)
   }
 
-  /** 注册当前页面实例的 location 接收器，并返回不会误删新实例的清理函数。 */
+  /**
+   * 注册当前页面实例的 location 接收器，并补发属于该页签的最近地址。
+   *
+   * 注册发生在首次 syncLocation 之后时，补发保证页面仍能收到首个 pathname/search/hash；
+   * 清理函数只删除当前 emitter，避免旧页面卸载时误删已接管同一 tabKey 的新实例。
+   */
   function registerPageLocationEmitter(
     tabKey: string,
     emitter: { emit: (payload: RouterLocationEventPayload) => void } | null,
@@ -808,6 +836,15 @@ export function createRouterCore(
     if (!tabKey || !emitter)
       return () => undefined
     runtime.locationEmitterMap.set(tabKey, emitter)
+
+    const latestLocation = runtime.latestLocation
+    if (
+      latestLocation &&
+      registry.getTabKey(latestLocation.pathname) === tabKey
+    ) {
+      emitter.emit(latestLocation)
+    }
+
     return () => {
       // 同一 key 可能已由新页面实例接管，旧实例卸载时只能删除自己的引用。
       if (runtime.locationEmitterMap.get(tabKey) === emitter)
@@ -1008,8 +1045,6 @@ export function createRouterCore(
     addBeforeCloseHook,
     clearBeforeCloseHook,
     registerPageLocationEmitter,
-    emitPageLocationEvent: (tabKey, payload) =>
-      runtime.locationEmitterMap.get(tabKey)?.emit(payload),
   }
 }
 

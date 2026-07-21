@@ -126,6 +126,64 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  it('emits every confirmed location to the current page emitter', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const emit = vi.fn()
+    router.registerPageLocationEmitter('/dashboard', { emit })
+
+    router.syncLocation({
+      pathname: '/dashboard',
+      search: '',
+      hash: '',
+    })
+    router.syncLocation({
+      pathname: '/dashboard',
+      search: 'page=2',
+      hash: 'table',
+    })
+
+    expect(emit).toHaveBeenNthCalledWith(1, {
+      pathname: '/dashboard',
+      search: '',
+      hash: '',
+    })
+    expect(emit).toHaveBeenNthCalledWith(2, {
+      pathname: '/dashboard',
+      search: '?page=2',
+      hash: '#table',
+    })
+  })
+
+  it('replays the latest location when its page emitter registers later', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({
+      pathname: '/project/42',
+      search: 'tab=detail',
+      hash: 'summary',
+    })
+
+    const emit = vi.fn()
+    const unregister = router.registerPageLocationEmitter(
+      '/project/:id',
+      { emit },
+    )
+
+    expect(emit).toHaveBeenCalledOnce()
+    expect(emit).toHaveBeenCalledWith({
+      pathname: '/project/42',
+      search: '?tab=detail',
+      hash: '#summary',
+    })
+
+    unregister()
+    router.syncLocation({
+      pathname: '/project/42',
+      search: 'tab=activity',
+      hash: '',
+    })
+    expect(emit).toHaveBeenCalledOnce()
+  })
+
   it('does not publish state when reopening the active page changes no domain state', () => {
     const router = createRouterCore({
       routes,

@@ -113,8 +113,11 @@ export interface RouterAfterTabCloseInfo {
 
 /** 向指定页面实例广播的地址变更事件。 */
 export interface RouterLocationEventPayload {
+  /** 当前真实路径，不包含 query 和 hash。 */
   pathname: string
+  /** 标准化查询字符串；非空时始终包含 `?` 前缀。 */
   search: string
+  /** 标准化锚点；非空时始终包含 `#` 前缀。 */
   hash: string
 }
 
@@ -305,14 +308,12 @@ export interface RouterCore {
     pathname: string,
     handler?: RouterBeforeCloseHook,
   ) => void
-  /** 注册页签级 location 事件发射器，并返回安全的清理函数。 */
+  /**
+   * 注册页签级 location 事件发射器，并返回安全的清理函数。
+   * 当前页签已经存在宿主 location 时，注册过程会立即补发一次最新地址。
+   */
   registerPageLocationEmitter: (
     tabKey: string,
     emitter: { emit: (payload: RouterLocationEventPayload) => void } | null,
   ) => () => void
-  /** 向指定页签当前注册的页面实例发送 location 事件。 */
-  emitPageLocationEvent: (
-    tabKey: string,
-    payload: RouterLocationEventPayload,
-  ) => void
 }
