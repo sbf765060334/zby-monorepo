@@ -94,6 +94,15 @@ importers:
         specifier: '>=18.0.0'
         version: 18.3.1(react@18.3.1)
 
+  packages/router-core:
+    dependencies:
+      idb-keyval:
+        specifier: 6.3.0
+        version: 6.3.0
+      zustand:
+        specifier: 5.0.12
+        version: 5.0.12(@types/react@18.3.31)(react@18.3.1)
+
   packages/zby-intl:
     dependencies:
       i18next:
