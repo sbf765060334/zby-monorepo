@@ -286,8 +286,14 @@ export interface RouterCore {
   getTabKey: (pathname: string) => string | null
   /** 获取真实 pathname 从根到叶子的路由层级。 */
   getCurrentRoutes: (pathname: string) => RouterCurrentRoute[]
-  /** 替换页签顺序，并同步固定组的持久化顺序。 */
-  setTabs: (tabs: RouterTab[]) => void
+  /**
+   * 按完整 key 排列调整现有页签顺序。
+   *
+   * 参数必须且只能包含当前全部页签 key，每个 key 恰好出现一次，并保持固定页签组在
+   * 普通页签组之前。合法但顺序未变化时返回 true 且不发布状态；非法排列返回 false，
+   * 不修改页签、活动页面或持久化数据。
+   */
+  reorderTabs: (tabKeys: readonly string[]) => boolean
   /** 由业务覆盖指定页签标题。 */
   setTabLabel: (key: string, label: string) => void
   /** 增量合并真实 pathname 的业务描述。 */

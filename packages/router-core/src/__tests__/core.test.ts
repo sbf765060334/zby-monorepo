@@ -351,6 +351,89 @@ describe('createRouterCore', () => {
     ])
   })
 
+  it('reorders the complete tab set and persists only a changed fixed order', async () => {
+    const saveFixedTabs = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: [],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs,
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+    })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.toggleFixed('/dashboard')
+    router.toggleFixed('/settings/profile')
+    await vi.waitFor(() => expect(saveFixedTabs).toHaveBeenCalledTimes(2))
+    saveFixedTabs.mockClear()
+
+    const previousTabs = new Map(
+      router.getState().tabs.map((tab) => [tab.key, tab]),
+    )
+    expect(
+      router.reorderTabs([
+        '/settings/profile',
+        '/dashboard',
+        '/project/:id',
+      ]),
+    ).toBe(true)
+
+    const state = router.getState()
+    expect(state.tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+      '/dashboard',
+      '/project/:id',
+    ])
+    expect(state.fixedSet).toEqual(['/settings/profile', '/dashboard'])
+    expect(state.activeTabKey).toBe('/project/:id')
+    expect(state.tabs[0]).toBe(previousTabs.get('/settings/profile'))
+    expect(state.tabs[1]).toBe(previousTabs.get('/dashboard'))
+    await vi.waitFor(() => {
+      expect(saveFixedTabs).toHaveBeenCalledOnce()
+    })
+    expect(saveFixedTabs).toHaveBeenCalledWith('default', [
+      '/settings/profile',
+      '/dashboard',
+    ])
+
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+    expect(
+      router.reorderTabs([
+        '/settings/profile',
+        '/dashboard',
+        '/project/:id',
+      ]),
+    ).toBe(true)
+    expect(subscriber).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('rejects incomplete, duplicate, unknown and cross-group tab arrangements', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.toggleFixed('/dashboard')
+
+    const snapshot = router.getState()
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+
+    expect(router.reorderTabs(['/dashboard'])).toBe(false)
+    expect(router.reorderTabs(['/dashboard', '/dashboard'])).toBe(false)
+    expect(router.reorderTabs(['/dashboard', '/unknown'])).toBe(false)
+    expect(router.reorderTabs(['/settings/profile', '/dashboard'])).toBe(false)
+
+    expect(router.getState()).toBe(snapshot)
+    expect(subscriber).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
   it('enforces fixed-tab limits and runs close guards', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })

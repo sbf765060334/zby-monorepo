@@ -625,18 +625,55 @@ export function createRouterCore(
     )
   }
 
-  /** 替换页签顺序；只有固定组相对顺序变化时才写入持久化。 */
-  function setTabs(tabs: RouterTab[]) {
+  /**
+   * 调整当前完整页签集合的显示顺序。
+   *
+   * 只接收 key 可以避免拖拽层借排序覆盖页签标题等领域数据；完整排列校验则保证排序
+   * 不能成为新增、删除或重复页签的旁路。固定和普通页签属于两个稳定分组，跨组排列
+   * 会破坏平台“固定项始终在前”的语义，因此同样拒绝并保持原状态。
+   */
+  function reorderTabs(tabKeys: readonly string[]) {
     const state = getState()
-    // 拖拽组件可能返回内容相同的新数组，领域数据相同就不通知订阅者。
-    if (areTabsEqual(state.tabs, tabs))
-      return
-    const fixedSet = tabs
-      .filter((tab) => state.fixedSet.includes(tab.key))
-      .map((tab) => tab.key)
-    if (!areStringArraysEqual(state.fixedSet, fixedSet))
+    if (!Array.isArray(tabKeys) || tabKeys.length !== state.tabs.length)
+      return false
+
+    const tabMap = new Map(state.tabs.map((tab) => [tab.key, tab]))
+    const fixedKeySet = new Set(state.fixedSet)
+    const seen = new Set<string>()
+    let normalTabReached = false
+
+    for (const key of tabKeys) {
+      // 长度相同仍可能包含未知或重复 key；两者都会让某个现有页签从排列中消失。
+      if (seen.has(key) || !tabMap.has(key))
+        return false
+      seen.add(key)
+
+      if (fixedKeySet.has(key)) {
+        if (normalTabReached)
+          return false
+      } else {
+        normalTabReached = true
+      }
+    }
+
+    const currentKeys = state.tabs.map((tab) => tab.key)
+    // 无效拖拽常产生内容相同的新数组；合法 no-op 仍返回成功，但不通知订阅者。
+    if (areStringArraysEqual(currentKeys, [...tabKeys]))
+      return true
+
+    // 只按 key 读取 core 持有的规范页签对象，不保存调用方创建的可变对象。
+    const tabs = tabKeys.map((key) => tabMap.get(key)!)
+    const fixedSet = tabKeys.filter((key) => fixedKeySet.has(key))
+    const fixedOrderChanged = !areStringArraysEqual(state.fixedSet, fixedSet)
+
+    if (fixedOrderChanged)
       persistFixedTabs(fixedSet)
-    setState({ tabs, fixedSet })
+
+    setState({
+      tabs,
+      ...(fixedOrderChanged ? { fixedSet } : {}),
+    })
+    return true
   }
 
   /** 覆盖业务页签标题，并记录标题不再跟随 route.title。 */
@@ -1032,7 +1069,7 @@ export function createRouterCore(
     smartNavigate,
     getTabKey: registry.getTabKey,
     getCurrentRoutes: registry.getCurrentRoutes,
-    setTabs,
+    reorderTabs,
     setTabLabel,
     setPathnameDescription: (map) =>
       setState((state) => ({
@@ -1283,18 +1320,5 @@ function areStringArraysEqual(left: string[], right: string[]) {
   return left === right || (
     left.length === right.length &&
     left.every((item, index) => item === right[index])
-  )
-}
-
-/** 比较页签领域字段，过滤拖拽组件只创建新对象造成的无效更新。 */
-function areTabsEqual(left: RouterTab[], right: RouterTab[]) {
-  return left === right || (
-    left.length === right.length &&
-    left.every(
-      (tab, index) =>
-        tab.key === right[index]?.key &&
-        tab.label === right[index]?.label &&
-        tab.labelCustomized === right[index]?.labelCustomized,
-    )
   )
 }
