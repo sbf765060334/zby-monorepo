@@ -157,8 +157,6 @@ export interface RouterStorageErrorInfo {
   storageKey: string
   /** 失败的加载或保存阶段。 */
   phase: RouterStorageErrorPhase
-  /** 使用原 Adapter、key 和数据重放本次失败操作。 */
-  retry: () => Promise<void>
 }
 
 /**

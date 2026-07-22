@@ -1022,8 +1022,8 @@ export function createRouterCore<Route extends RouterRoute>(
   /**
    * 发送持久化错误通知，并隔离同步 throw 与异步 rejection。
    *
-   * onStorageError 只负责观察失败和触发可选 retry；Adapter 原始错误已经写入状态或由
-   * 当前保存任务持有，因此通知失败不能覆盖原始错误，也不能制造未处理 Promise。
+   * onStorageError 只负责观察失败；Adapter 原始错误已经写入状态或由当前保存任务
+   * 持有，因此通知失败不能覆盖原始错误，也不能制造未处理 Promise。
    */
   function notifyStorageError(
     error: unknown,
@@ -1045,7 +1045,7 @@ export function createRouterCore<Route extends RouterRoute>(
    * 执行一个字段保存动作。
    *
    * 先递增本地版本，确保在途 hydration 不覆盖用户刚完成的操作；纯内存模式仍需
-   * 递增版本。Adapter 失败不回滚内存状态，而是暴露绑定当前快照的 retry。
+   * 递增版本。Adapter 失败只发送通知，不回滚当前内存状态。
    */
   function persist(
     field: PersistedField,
@@ -1057,13 +1057,12 @@ export function createRouterCore<Route extends RouterRoute>(
       return
     const storageKey = getState().storageKey
     // Promise.resolve 同时收敛不规范 Adapter 的同步 throw 与异步 rejection。
-    const execute = () => Promise.resolve().then(() => action(storageAdapter, storageKey))
-    void execute().catch((error) => {
-      notifyStorageError(error, { storageKey, phase, retry: execute })
+    void Promise.resolve().then(() => action(storageAdapter, storageKey)).catch((error) => {
+      notifyStorageError(error, { storageKey, phase })
     })
   }
 
-  /** 启动或复用当前持久化来源的 hydration 任务。 */
+  /** 启动或复用固定持久化来源的 hydration 任务。 */
   function hydrateStorage() {
     // 并发调用方必须等待同一个 Promise，而不是看到 loading 后提前返回。
     if (runtime.storageHydrationPromise)
@@ -1072,25 +1071,10 @@ export function createRouterCore<Route extends RouterRoute>(
       return Promise.resolve()
 
     const promise = executeHydration().finally(() => {
-      // storageKey 切换可能已经安装新任务，旧任务不能清空新 Promise 引用。
-      if (runtime.storageHydrationPromise === promise)
-        runtime.storageHydrationPromise = null
+      runtime.storageHydrationPromise = null
     })
     runtime.storageHydrationPromise = promise
     return promise
-  }
-
-  /**
-   * 在当前 hydration 完全结束后发起一次真正的新加载。
-   *
-   * 错误回调执行时旧 Promise 尚未进入 finally；直接再次调用 hydrateStorage 只会复用
-   * 失败任务。这里先等待旧任务清理，再进入统一入口，多个立即重试仍会合并为一个任务。
-   */
-  function retryHydration(): Promise<void> {
-    const pending = runtime.storageHydrationPromise
-    if (!pending)
-      return hydrateStorage()
-    return pending.then(() => hydrateStorage())
   }
 
   /** 执行一次绑定固定 Adapter 与 storageKey 的实际加载事务。 */
@@ -1144,7 +1128,6 @@ export function createRouterCore<Route extends RouterRoute>(
       notifyStorageError(error, {
         storageKey,
         phase: 'load',
-        retry: retryHydration,
       })
     }
   }

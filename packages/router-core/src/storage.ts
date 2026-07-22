@@ -6,7 +6,7 @@ import type { RouterStorageAdapter, RouterStorageState } from './types'
  * router-core 的持久化边界。
  *
  * 本模块只负责数据标准化和 Adapter 实现，不决定何时 hydration，也不直接修改
- * RouterCoreState。异步加载冲突由 createRouterCore 中的 generation/version 处理。
+ * RouterCoreState。异步加载冲突由 createRouterCore 中的字段版本处理。
  */
 
 /** 默认 IndexedDB 数据库与 object store，和旧 ProLayout 存储空间相互隔离。 */

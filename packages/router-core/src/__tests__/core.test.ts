@@ -824,34 +824,47 @@ describe('createRouterCore', () => {
     expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
   })
 
-  it('starts a new load when hydration retry is called immediately', async () => {
+  it('reports a failed save and persists the next complete field snapshot', async () => {
+    const saveError = new Error('temporary save failure')
+    const persistedFixedTabs: string[][] = []
     let attempts = 0
-    let retryPromise: Promise<void> | undefined
+    const onStorageError = vi.fn()
     const adapter: RouterStorageAdapter = {
-      load: vi.fn(async () => {
+      load: vi.fn(async () => ({ fixedTabs: [], fixedParamsPathMap: {} })),
+      saveFixedTabs: vi.fn(async (_storageKey, fixedTabs) => {
         attempts += 1
         if (attempts === 1)
-          throw new Error('temporary load failure')
-        return { fixedTabs: [], fixedParamsPathMap: {} }
+          throw saveError
+        persistedFixedTabs.push([...fixedTabs])
       }),
-      saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
     }
-    const router = createRouterCore({ routes, storageAdapter: adapter })
-    router.configureRuntime({
-      onStorageError: (_error, info) => {
-        if (info.phase === 'load')
-          retryPromise = info.retry()
-      },
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+      initial: { pathname: '/dashboard' },
+    })
+    router.configureRuntime({ onStorageError })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    expect(router.toggleFixed('/dashboard')).toBe(true)
+    await vi.waitFor(() => expect(onStorageError).toHaveBeenCalledOnce())
+    expect(onStorageError).toHaveBeenCalledWith(saveError, {
+      storageKey: 'default',
+      phase: 'saveFixedTabs',
     })
 
-    await router.hydrateStorage()
-    expect(retryPromise).toBeDefined()
-    await retryPromise
-
+    expect(router.toggleFixed('/settings/profile')).toBe(true)
+    await vi.waitFor(() => {
+      expect(persistedFixedTabs).toEqual([
+        ['/dashboard', '/settings/profile'],
+      ])
+    })
     expect(attempts).toBe(2)
-    expect(router.getState().storageHydrated).toBe(true)
-    expect(router.getState().storageLoadError).toBeUndefined()
+    expect(router.getState().fixedSet).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
   })
 
   it('isolates a synchronous onStorageError failure from hydration', async () => {
