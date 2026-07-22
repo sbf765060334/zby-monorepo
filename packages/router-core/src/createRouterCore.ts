@@ -281,7 +281,9 @@ export function createRouterCore<Route extends RouterRoute>(
     // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
     storageKey: options.storageKey ?? 'default',
     maxFixedTabCount: options.maxFixedTabCount ?? 4,
-    storageHydrated: options.initial?.storageState != null || storageAdapter === false,
+    // 未传 storageState 才允许后续从 Adapter 加载；空对象也代表宿主已确认无持久化数据。
+    storageHydrated:
+      options.initial?.storageState !== undefined || storageAdapter === false,
     storageLoading: false,
     storageLoadError: undefined,
   }))

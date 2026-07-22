@@ -209,8 +209,8 @@ export interface CreateRouterCoreOptions<
   initial?: {
     /** 首屏宿主 pathname，用于同步创建合法初始页签和页面。 */
     pathname?: string
-    /** SSR 或宿主预加载完成的持久化状态；提供后不再自动异步 hydrate。 */
-    storageState?: Partial<RouterStorageState> | null
+    /** SSR 或宿主预加载完成的持久化状态；传入对象后不再自动异步 hydrate。 */
+    storageState?: Partial<RouterStorageState>
   }
 }
 

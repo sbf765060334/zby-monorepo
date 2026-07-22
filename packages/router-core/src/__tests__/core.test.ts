@@ -163,6 +163,27 @@ describe('createRouterCore', () => {
     expect(router.getState().maxFixedTabCount).toBe(6)
   })
 
+  it('treats an initial storage object as an authoritative snapshot', async () => {
+    const load = vi.fn(async () => ({
+      fixedTabs: ['/dashboard'],
+      fixedParamsPathMap: {},
+    }))
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load,
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+      initial: { storageState: {} },
+    })
+
+    expect(router.getState().storageHydrated).toBe(true)
+    expect(router.getState().fixedSet).toEqual([])
+    await router.hydrateStorage()
+    expect(load).not.toHaveBeenCalled()
+  })
+
   it('creates a new independent state container on every factory call', () => {
     const first = createRouterCore({ routes, storageAdapter: false })
     const second = createRouterCore({ routes, storageAdapter: false })
