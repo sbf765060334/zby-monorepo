@@ -11,6 +11,7 @@ import {
   useRouterCore,
   useRouterCoreSelector,
   useRouterPage,
+  useRouterPageSelector,
 } from '../index'
 
 interface TestRoute extends RouterRoute {
@@ -116,7 +117,7 @@ describe('RouterCoreProvider', () => {
 })
 
 describe('RouterPageProvider', () => {
-  it('publishes initial and subsequent page lifecycle and location', () => {
+  it('exposes current and subsequent page active and location snapshots', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.bindHost({ navigate: vi.fn() })
     router.syncLocation({
@@ -125,18 +126,18 @@ describe('RouterPageProvider', () => {
       hash: '#detail',
     })
 
-    const lifecycleValues: boolean[] = []
-    const locationValues: string[] = []
-
     function PageProbe() {
       const page = useRouterPage<TestRoute>()
       const currentRoute = page.currentRoutes[page.currentRoutes.length - 1]
-      page.lifecycle$.useSubscription((active) => lifecycleValues.push(active))
-      page.location$.useSubscription((location) => locationValues.push(
-        `${location.pathname}${location.search}${location.hash}`,
-      ))
+      const location = page.location
+        ? `${page.location.pathname}${page.location.search}${page.location.hash}`
+        : 'null'
 
-      return <span>{`${page.pathname}:${currentRoute?.route.element}`}</span>
+      return (
+        <span>
+          {`${page.pathname}:${currentRoute?.route.element}:${page.active}:${location}`}
+        </span>
+      )
     }
 
     const firstPage = router.getState().pages[0]
@@ -150,9 +151,9 @@ describe('RouterPageProvider', () => {
       </RouterCoreProvider>,
     )
 
-    expect(screen.getByText('/project/1:project')).toBeTruthy()
-    expect(lifecycleValues).toEqual([true])
-    expect(locationValues).toEqual(['/project/1?tab=base#detail'])
+    expect(
+      screen.getByText('/project/1:project:true:/project/1?tab=base#detail'),
+    ).toBeTruthy()
 
     act(() => {
       router.syncLocation({ pathname: '/project/2', search: '?tab=next', hash: '' })
@@ -167,11 +168,57 @@ describe('RouterPageProvider', () => {
       </RouterCoreProvider>,
     )
 
-    expect(screen.getByText('/project/2:project')).toBeTruthy()
-    expect(lifecycleValues).toEqual([true, false])
-    expect(locationValues).toEqual([
-      '/project/1?tab=base#detail',
-      '/project/2?tab=next',
-    ])
+    expect(
+      screen.getByText('/project/2:project:false:/project/2?tab=next'),
+    ).toBeTruthy()
+  })
+
+  it('provides snapshots to late consumers without notifying duplicate location', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({
+      pathname: '/project/1',
+      search: '?tab=base',
+      hash: '#detail',
+    })
+    const page = router.getState().pages[0]
+    let probeRenderCount = 0
+
+    function LateProbe() {
+      probeRenderCount += 1
+      const active = useRouterPageSelector((context) => context.active)
+      const location = useRouterPageSelector((context) => context.location)
+
+      return (
+        <span>
+          {`${active}:${location?.pathname}${location?.search}${location?.hash}`}
+        </span>
+      )
+    }
+
+    function PageTree(props: { show: boolean }) {
+      return (
+        <RouterCoreProvider router={router}>
+          <RouterPageProvider page={page!} active>
+            {props.show ? <LateProbe /> : null}
+          </RouterPageProvider>
+        </RouterCoreProvider>
+      )
+    }
+
+    const view = render(<PageTree show={false} />)
+    view.rerender(<PageTree show />)
+
+    expect(screen.getByText('true:/project/1?tab=base#detail')).toBeTruthy()
+    const renderCountAfterMount = probeRenderCount
+
+    act(() => {
+      router.syncLocation({
+        pathname: '/project/1',
+        search: '?tab=base',
+        hash: '#detail',
+      })
+    })
+
+    expect(probeRenderCount).toBe(renderCountAfterMount)
   })
 })

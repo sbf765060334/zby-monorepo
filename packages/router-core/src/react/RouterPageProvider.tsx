@@ -10,8 +10,6 @@ import type {
   RouterPage,
   RouterRoute,
 } from '../types'
-import { createRouterReactEmitter } from './emitter'
-import type { RouterReactEvent } from './emitter'
 import { useRouterCore } from './RouterCoreProvider'
 import { useStoreSelector } from './useStoreSelector'
 import type { RouterSelectorEqualityFn } from './useStoreSelector'
@@ -28,10 +26,10 @@ export interface RouterPageContextValue<
   readonly tabKey: string
   /** 当前页面 pathname 从根到叶子的路由层级。 */
   readonly currentRoutes: readonly RouterCurrentRoute<Route>[]
-  /** 页面实例显示或隐藏时发布 boolean 状态。 */
-  readonly lifecycle$: RouterReactEvent<boolean>
-  /** 当前页签的 pathname、search 或 hash 生效时发布完整地址。 */
-  readonly location$: RouterReactEvent<RouterLocationEventPayload>
+  /** 页面实例当前是否实际显示；晚挂载的业务组件也可以立即读取该快照。 */
+  readonly active: boolean
+  /** 当前页签最后生效的完整地址；尚未收到宿主 location 时为 null。 */
+  readonly location: RouterLocationEventPayload | null
 }
 
 /** RouterPageProvider 接收的最小页面渲染信息。 */
@@ -60,43 +58,65 @@ export function RouterPageProvider<Route extends RouterRoute>(
 ) {
   const { active, children, page } = props
   const router = useRouterCore<Route>()
-  const [lifecycle$] = useState(() => createRouterReactEmitter<boolean>())
-  const [location$] = useState(
-    () => createRouterReactEmitter<RouterLocationEventPayload>(),
-  )
   const [pageStore] = useState(() =>
     createStore<RouterPageContextValue<Route>>(() => ({
       router,
       pathname: page.pathname,
       tabKey: page.key,
       currentRoutes: router.getCurrentRoutes(page.pathname),
-      lifecycle$,
-      location$,
+      active,
+      location: null,
     })),
   )
+  const [locationReceiver] = useState(
+    () => ({
+      emit(location: RouterLocationEventPayload) {
+        pageStore.setState((state) => {
+          // core 在注册接收器和宿主重复同步时都可能交付相同地址。相同快照继续复用
+          // 原 state，避免 StrictMode 重放或重复 location 触发页面订阅者更新。
+          if (isSameLocation(state.location, location))
+            return state
 
-  useLayoutEffect(
-    () => router.registerPageLocationEmitter(page.key, location$),
-    [location$, page.key, router],
+          return { ...state, location }
+        })
+      },
+    }),
   )
 
   useLayoutEffect(() => {
     // 共享动态页签切换真实 pathname 时要在浏览器绘制前更新页面 Context，避免宿主
     // 地址已经变化而业务页面仍读取到旧 pathname 的中间帧。
-    pageStore.setState({
-      router,
-      pathname: page.pathname,
-      tabKey: page.key,
-      currentRoutes: router.getCurrentRoutes(page.pathname),
-      lifecycle$,
-      location$,
+    pageStore.setState((state) => {
+      const pageIdentityChanged = state.router !== router || state.tabKey !== page.key
+
+      return {
+        ...state,
+        router,
+        pathname: page.pathname,
+        tabKey: page.key,
+        currentRoutes: router.getCurrentRoutes(page.pathname),
+        // 新页面身份尚未收到宿主地址时不能继续暴露旧页面 location；同一共享动态
+        // 页签只改变真实 pathname，不重置已经由 core 推送的新地址快照。
+        location: pageIdentityChanged ? null : state.location,
+      }
     })
-  }, [lifecycle$, location$, page.key, page.pathname, pageStore, router])
+  }, [page.key, page.pathname, pageStore, router])
+
+  useLayoutEffect(
+    () => router.registerPageLocationEmitter(page.key, locationReceiver),
+    [locationReceiver, page.key, router],
+  )
 
   useLayoutEffect(() => {
-    // 子页面的 layout effect 先完成事件订阅，随后这里发布首次可见状态。
-    lifecycle$.emit(active)
-  }, [active, lifecycle$])
+    pageStore.setState((state) => {
+      // active 是页面当前状态而不是一次性事件。相同值返回原快照，晚挂载组件则可以
+      // 直接通过 useRouterPageSelector 读取已经保存的值。
+      if (state.active === active)
+        return state
+
+      return { ...state, active }
+    })
+  }, [active, pageStore])
 
   return (
     <RouterPageContext.Provider value={pageStore}>
@@ -141,4 +161,16 @@ function useRouterPageStore<Route extends RouterRoute>() {
 /** 完整上下文订阅直接返回 Store 快照，不创建额外对象。 */
 function identity<Route extends RouterRoute>(context: RouterPageContextValue<Route>) {
   return context
+}
+
+/** 比较页面地址快照，避免相同 location 生成新的 Store 状态。 */
+function isSameLocation(
+  left: RouterLocationEventPayload | null,
+  right: RouterLocationEventPayload,
+) {
+  return (
+    left?.pathname === right.pathname &&
+    left.search === right.search &&
+    left.hash === right.hash
+  )
 }

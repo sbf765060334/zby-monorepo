@@ -17,6 +17,5 @@ export type {
   RouterPageProviderProps,
 } from './RouterPageProvider'
 
-/** React 事件流和 selector 比较函数的公共类型。 */
-export type { RouterReactEvent } from './emitter'
+/** selector 比较函数的公共类型。 */
 export type { RouterSelectorEqualityFn } from './useStoreSelector'
