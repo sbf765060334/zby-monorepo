@@ -12,6 +12,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./react": {
+      "types": "./dist/react/index.d.mts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -27,5 +32,8 @@
   "dependencies": {
     "idb-keyval": "6.3.0",
     "zustand": "5.0.12"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
   }
 }
