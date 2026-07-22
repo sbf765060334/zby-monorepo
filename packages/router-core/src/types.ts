@@ -40,9 +40,9 @@ export interface RouterCurrentRoute<
   Route extends RouterRoute = RouterRoute,
 > {
   /** 当前层级匹配到的 Registry 路由快照。 */
-  route: Route
+  readonly route: Route
   /** 已使用当前 pathname 参数替换占位符的真实层级路径。 */
-  realPath: string
+  readonly realPath: string
 }
 
 /**
@@ -64,11 +64,11 @@ export interface RouterKeepAliveConfig<
 /** 与具体 Tabs 组件无关的页签领域模型。 */
 export interface RouterTab {
   /** 稳定页签身份；共享动态路由通常使用注册 pattern。 */
-  key: string
+  readonly key: string
   /** 当前显示标题，默认来自 route.title。 */
-  label: string
+  readonly label: string
   /** 是否已由业务调用 `setTabLabel` 覆盖默认标题。 */
-  labelCustomized: boolean
+  readonly labelCustomized: boolean
 }
 
 /**
@@ -78,13 +78,13 @@ export interface RouterTab {
  */
 export interface RouterPage<Route extends RouterRoute = RouterRoute> {
   /** 与 RouterTab 共用的页签身份。 */
-  key: string
+  readonly key: string
   /** 页面实例最后对应的真实 pathname。 */
-  pathname: string
+  readonly pathname: string
   /** 创建该页面实例所使用的路由快照。 */
-  route: Route
+  readonly route: Route
   /** 最近访问时间，用于有限 KeepAlive 的 LRU 淘汰。 */
-  touchedAt: number
+  readonly touchedAt: number
 }
 
 /** core 从宿主路由接收的标准化地址。 */
@@ -231,11 +231,16 @@ export interface RouterRuntimeOptions {
     tabKey: string,
     info: RouterAfterTabCloseInfo,
   ) => void | Promise<void>
-  /** 持久化加载或保存失败时的统一通知。 */
+  /**
+   * 持久化加载或保存失败后的通知回调。
+   *
+   * 回调不能替换原始存储错误或改变已经提交的内存状态。core 不等待异步结果，并会
+   * 隔离、报告同步异常和异步 rejection，避免错误处理逻辑产生新的未处理异常。
+   */
   onStorageError?: (
     error: unknown,
     info: RouterStorageErrorInfo,
-  ) => void
+  ) => void | Promise<void>
 }
 
 /**
@@ -245,33 +250,33 @@ export interface RouterRuntimeOptions {
  */
 export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   /** 最近一次由宿主同步的 pathname。 */
-  currentPathname: string
+  readonly currentPathname: string
   /** 当前 pathname 从根到叶子的路由层级。 */
-  currentRoutes: RouterCurrentRoute<Route>[]
+  readonly currentRoutes: readonly RouterCurrentRoute<Route>[]
   /** currentRoutes 对应的真实路径列表，供菜单选中使用。 */
-  currentSelectedPath: string[]
+  readonly currentSelectedPath: readonly string[]
   /** 当前 UI 选中的页签 key；403/404 时可能存在而 activePage 为空。 */
-  activeTabKey: string | null
+  readonly activeTabKey: string | null
   /** 当前实际显示的页面实例 key。 */
-  activePage: string | null
+  readonly activePage: string | null
   /** 本次会话已打开的全部页签。 */
-  tabs: RouterTab[]
+  readonly tabs: readonly RouterTab[]
   /** 仍被 KeepAlive 保留的页面实例描述。 */
-  pages: RouterPage<Route>[]
+  readonly pages: readonly RouterPage<Route>[]
   /** 当前固定页签 key，顺序与固定页签显示顺序一致。 */
-  fixedSet: string[]
+  readonly fixedSet: readonly string[]
   /** 真实 pathname 到业务描述文本的增量映射。 */
-  pathnameDescriptionMap: Record<string, string>
+  readonly pathnameDescriptionMap: Readonly<Record<string, string>>
   /** 当前持久化命名空间。 */
-  storageKey: string
+  readonly storageKey: string
   /** 当前允许固定的最大页签数量。 */
-  maxFixedTabCount: number
+  readonly maxFixedTabCount: number
   /** 当前 storageKey 是否已经完成首次数据加载。 */
-  storageHydrated: boolean
+  readonly storageHydrated: boolean
   /** 当前是否存在进行中的 hydration。 */
-  storageLoading: boolean
+  readonly storageLoading: boolean
   /** 最近一次 hydration 错误；重试开始时会清空。 */
-  storageLoadError: unknown
+  readonly storageLoadError: unknown
 }
 
 /**

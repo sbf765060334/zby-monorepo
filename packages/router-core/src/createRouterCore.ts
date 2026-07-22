@@ -19,6 +19,7 @@ import type {
   RouterRoute,
   RouterRuntimeOptions,
   RouterStorageAdapter,
+  RouterStorageErrorInfo,
   RouterStorageErrorPhase,
   RouterTab,
 } from './types'
@@ -331,18 +332,21 @@ export function createRouterCore<Route extends RouterRoute>(
     if (storageChanged)
       resetStorageRuntime(runtime)
 
-    const statePatch: Partial<RouterCoreState<Route>> = {}
-    if (
+    const maxFixedTabCountChanged =
       next.maxFixedTabCount !== undefined &&
       next.maxFixedTabCount !== previous.maxFixedTabCount
-    ) {
-      statePatch.maxFixedTabCount = next.maxFixedTabCount
-    }
-    if (storageChanged) {
-      statePatch.storageKey = nextStorageKey
-      statePatch.storageHydrated = storageAdapter === false
-      statePatch.storageLoading = false
-      statePatch.storageLoadError = undefined
+    const statePatch: Partial<RouterCoreState<Route>> = {
+      ...(maxFixedTabCountChanged
+        ? { maxFixedTabCount: next.maxFixedTabCount }
+        : {}),
+      ...(storageChanged
+        ? {
+            storageKey: nextStorageKey,
+            storageHydrated: storageAdapter === false,
+            storageLoading: false,
+            storageLoadError: undefined,
+          }
+        : {}),
     }
     if (Object.keys(statePatch).length > 0)
       setState(statePatch)
@@ -1031,9 +1035,9 @@ export function createRouterCore<Route extends RouterRoute>(
   }
 
   /** 将固定页签保存委托给统一字段持久化流程。 */
-  function persistFixedTabs(value: string[]) {
+  function persistFixedTabs(value: readonly string[]) {
     persist('fixedTabs', 'saveFixedTabs', (adapter, storageKey) =>
-      adapter.saveFixedTabs(storageKey, value))
+      adapter.saveFixedTabs(storageKey, [...value]))
   }
 
   /** 将共享动态 pathname 映射保存委托给统一字段持久化流程。 */
@@ -1044,6 +1048,33 @@ export function createRouterCore<Route extends RouterRoute>(
       (adapter, storageKey) =>
         adapter.saveFixedParamsPathMap(storageKey, value),
     )
+  }
+
+  /** 报告错误通知回调自身的异常，但不能再次进入 onStorageError 形成递归通知。 */
+  function reportStorageErrorCallbackError(error: unknown) {
+    console.error('[RouterCore] onStorageError callback failed.', error)
+  }
+
+  /**
+   * 发送持久化错误通知，并隔离同步 throw 与异步 rejection。
+   *
+   * onStorageError 只负责观察失败和触发可选 retry；Adapter 原始错误已经写入状态或由
+   * 当前保存任务持有，因此通知失败不能覆盖原始错误，也不能制造未处理 Promise。
+   */
+  function notifyStorageError(
+    error: unknown,
+    info: RouterStorageErrorInfo,
+  ) {
+    const callback = runtime.onStorageError
+    if (!callback)
+      return
+
+    try {
+      void Promise.resolve(callback(error, info))
+        .catch(reportStorageErrorCallbackError)
+    } catch (callbackError) {
+      reportStorageErrorCallbackError(callbackError)
+    }
   }
 
   /**
@@ -1064,7 +1095,7 @@ export function createRouterCore<Route extends RouterRoute>(
     // Promise.resolve 同时收敛不规范 Adapter 的同步 throw 与异步 rejection。
     const execute = () => Promise.resolve().then(() => action(storageAdapter, storageKey))
     void execute().catch((error) => {
-      runtime.onStorageError?.(error, { storageKey, phase, retry: execute })
+      notifyStorageError(error, { storageKey, phase, retry: execute })
     })
   }
 
@@ -1153,7 +1184,7 @@ export function createRouterCore<Route extends RouterRoute>(
       if (generation !== runtime.storageSourceGeneration)
         return
       setState({ storageLoading: false, storageLoadError: error })
-      runtime.onStorageError?.(error, {
+      notifyStorageError(error, {
         storageKey,
         phase: 'load',
         retry: retryHydration,
@@ -1265,7 +1296,7 @@ function createInitialPages<Route extends RouterRoute>(
 
 /** 清理持久化固定页签中的重复、已删除或非页面 key，同时保持首次出现顺序。 */
 function sanitizeFixedTabKeys<Route extends RouterRoute>(
-  fixedTabs: string[],
+  fixedTabs: readonly string[],
   registry: RouteRegistry<Route>,
 ) {
   const seen = new Set<string>()
@@ -1280,7 +1311,7 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
 
 /** 用固定页签和可选首屏页面创建顺序稳定的初始页签模型。 */
 function createInitialTabs<Route extends RouterRoute>(
-  fixedSet: string[],
+  fixedSet: readonly string[],
   initialTabKey: string | null,
   initialRoute: Route | undefined,
   registry: RouteRegistry<Route>,
@@ -1304,8 +1335,8 @@ function createInitialTabs<Route extends RouterRoute>(
 
 /** hydration 只补入新固定页签，不删除当前会话已经打开的普通页签。 */
 function mergeTabsWithFixedSet<Route extends RouterRoute>(
-  tabs: RouterTab[],
-  fixedSet: string[],
+  tabs: readonly RouterTab[],
+  fixedSet: readonly string[],
   registry: RouteRegistry<Route>,
 ) {
   const map = new Map(tabs.map((tab) => [tab.key, tab]))
@@ -1317,7 +1348,7 @@ function mergeTabsWithFixedSet<Route extends RouterRoute>(
 }
 
 /** 把固定页签稳定分组到前面，并保持固定组与普通组各自的原始顺序。 */
-function sortTabs(tabs: RouterTab[], fixedSet: string[]) {
+function sortTabs(tabs: readonly RouterTab[], fixedSet: readonly string[]) {
   return tabs
     .filter((tab) => fixedSet.includes(tab.key))
     .concat(tabs.filter((tab) => !fixedSet.includes(tab.key)))
@@ -1338,10 +1369,10 @@ function shouldRefreshTouchedAt<Route extends RouterRoute>(
  * 超出 limit，不能为了满足数量上限破坏固定页签语义。
  */
 function enforceKeepAlive<Route extends RouterRoute>(
-  pages: RouterPage<Route>[],
+  pages: readonly RouterPage<Route>[],
   activeKey: string | null,
   keepAlive: boolean | RouterKeepAliveConfig<Route>,
-  fixedSet: string[],
+  fixedSet: readonly string[],
 ) {
   if (keepAlive === false) {
     // 完全关闭时只保留当前活动实例，切页后旧页面立即卸载。
@@ -1450,7 +1481,10 @@ function resetStorageRuntime(runtime: RouterRuntime) {
 }
 
 /** 按顺序比较字符串数组；固定页签的顺序本身属于业务状态。 */
-function areStringArraysEqual(left: string[], right: string[]) {
+function areStringArraysEqual(
+  left: readonly string[],
+  right: readonly string[],
+) {
   return left === right || (
     left.length === right.length &&
     left.every((item, index) => item === right[index])

@@ -8,6 +8,7 @@ import {
   type normalizeRouterStorageState,
   type RouterRoute,
   type RouterStorageAdapter,
+  type RouterStorageErrorInfo,
 } from '../index'
 
 const routes: RouterRoute[] = [
@@ -155,13 +156,26 @@ describe('createRouterCore', () => {
     const second = createRouterCore({ routes, storageAdapter: false })
     const storeSubscriber = vi.fn()
     const unsubscribe = first.store.subscribe(storeSubscriber)
+    type StateSnapshot = ReturnType<typeof first.getState>
     const exposesSetState: 'setState' extends keyof typeof first.store
+      ? true
+      : false = false
+    const tabsExposePush: 'push' extends keyof StateSnapshot['tabs']
+      ? true
+      : false = false
+    const pagesExposePush: 'push' extends keyof StateSnapshot['pages']
+      ? true
+      : false = false
+    const fixedSetExposesPush: 'push' extends keyof StateSnapshot['fixedSet']
       ? true
       : false = false
 
     expect(first).not.toBe(second)
     expect(first.store).not.toBe(second.store)
     expect(exposesSetState).toBe(false)
+    expect(tabsExposePush).toBe(false)
+    expect(pagesExposePush).toBe(false)
+    expect(fixedSetExposesPush).toBe(false)
     expect('setState' in first.store).toBe(false)
 
     first.bindHost({ navigate: vi.fn() })
@@ -802,6 +816,77 @@ describe('createRouterCore', () => {
     expect(attempts).toBe(2)
     expect(router.getState().storageHydrated).toBe(true)
     expect(router.getState().storageLoadError).toBeUndefined()
+  })
+
+  it('isolates a synchronous onStorageError failure from hydration', async () => {
+    const loadError = new Error('load failed')
+    const callbackError = new Error('storage callback failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const adapter: RouterStorageAdapter = {
+      load: vi.fn(async () => {
+        throw loadError
+      }),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+    }
+    const router = createRouterCore({ routes, storageAdapter: adapter })
+    router.configureRuntime({
+      onStorageError: () => {
+        throw callbackError
+      },
+    })
+
+    try {
+      await expect(router.hydrateStorage()).resolves.toBeUndefined()
+      expect(router.getState().storageLoadError).toBe(loadError)
+      expect(consoleError).toHaveBeenCalledWith(
+        '[RouterCore] onStorageError callback failed.',
+        callbackError,
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it('does not leak an asynchronous onStorageError rejection after save failure', async () => {
+    const saveError = new Error('save failed')
+    const callbackError = new Error('async storage callback failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const onStorageError = vi.fn(async (
+      _error: unknown,
+      _info: RouterStorageErrorInfo,
+    ) => {
+      throw callbackError
+    })
+    const adapter: RouterStorageAdapter = {
+      load: vi.fn(async () => ({ fixedTabs: [], fixedParamsPathMap: {} })),
+      saveFixedTabs: vi.fn(async () => {
+        throw saveError
+      }),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+    }
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+      initial: { pathname: '/dashboard' },
+    })
+    router.configureRuntime({ onStorageError })
+
+    try {
+      expect(router.toggleFixed('/dashboard')).toBe(true)
+      await vi.waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith(
+          '[RouterCore] onStorageError callback failed.',
+          callbackError,
+        )
+      })
+      expect(onStorageError).toHaveBeenCalledOnce()
+      expect(onStorageError.mock.calls[0][0]).toBe(saveError)
+      expect(onStorageError.mock.calls[0][1].phase).toBe('saveFixedTabs')
+      expect(router.getState().fixedSet).toEqual(['/dashboard'])
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   it('hydrates fixed tabs without overwriting local changes made in flight', async () => {
