@@ -324,6 +324,33 @@ describe('createRouterCore', () => {
     expect(listener).toHaveBeenCalledOnce()
   })
 
+  it('removes a page listener when its immediate replay throws', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({
+      pathname: '/project/42',
+      search: 'tab=detail',
+      hash: 'summary',
+    })
+    const error = new Error('page listener failed')
+    const listener = vi.fn(() => {
+      throw error
+    })
+
+    expect(() =>
+      router.subscribePageLocation('/project/:id', listener),
+    ).toThrow(error)
+    expect(listener).toHaveBeenCalledOnce()
+
+    expect(() =>
+      router.syncLocation({
+        pathname: '/project/42',
+        search: 'tab=activity',
+        hash: '',
+      }),
+    ).not.toThrow()
+    expect(listener).toHaveBeenCalledOnce()
+  })
+
   it('does not publish state when reopening the active page changes no domain state', () => {
     const router = createRouterCore({
       routes,

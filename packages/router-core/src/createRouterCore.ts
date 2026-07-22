@@ -954,19 +954,28 @@ export function createRouterCore<Route extends RouterRoute>(
       return () => undefined
     runtime.pageLocationListenerMap.set(tabKey, listener)
 
-    const latestLocation = runtime.latestLocation
-    if (
-      latestLocation &&
-      registry.getTabKey(latestLocation.pathname) === tabKey
-    ) {
-      listener(latestLocation)
-    }
-
-    return () => {
+    const unsubscribe = () => {
       // 同一 key 可能已由新页面实例接管，旧实例卸载时只能删除自己的引用。
       if (runtime.pageLocationListenerMap.get(tabKey) === listener)
         runtime.pageLocationListenerMap.delete(tabKey)
     }
+
+    try {
+      const latestLocation = runtime.latestLocation
+      if (
+        latestLocation &&
+        registry.getTabKey(latestLocation.pathname) === tabKey
+      ) {
+        listener(latestLocation)
+      }
+    } catch (error) {
+      // 初始化补发失败表示本次订阅没有成功建立；先撤销已写入的 listener，再把原始
+      // 页面错误交给调用方或 React ErrorBoundary，避免坏 listener 持续破坏路由同步。
+      unsubscribe()
+      throw error
+    }
+
+    return unsubscribe
   }
 
   /** 进入目录、403 或 404 等没有活动业务页面的状态。 */
