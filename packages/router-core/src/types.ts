@@ -201,6 +201,10 @@ export interface CreateRouterCoreOptions<
   keepAlive?: boolean | RouterKeepAliveConfig<Route>
   /** 固定的持久化驱动；false 表示本实例仅使用内存状态。 */
   storageAdapter?: false | RouterStorageAdapter
+  /** 固定的持久化命名空间；省略时使用 `default`。 */
+  storageKey?: string
+  /** 固定页签数量上限；省略时使用 4。 */
+  maxFixedTabCount?: number
   /** 只在创建首屏同步快照时消费的一次性输入。 */
   initial?: {
     /** 首屏宿主 pathname，用于同步创建合法初始页签和页面。 */
@@ -211,16 +215,12 @@ export interface CreateRouterCoreOptions<
 }
 
 /**
- * 创建后允许显式更新的运行时依赖。
+ * 创建后允许显式更新的运行时回调。
  *
- * 与 CreateRouterCoreOptions 不同，这些值不会改变路由身份或重建 Registry，可以由
- * React Provider 在后续 render 中同步最新引用。
+ * 回调不会改变路由身份或 Store 状态，可以由 React Provider 在后续 render 中同步
+ * 最新引用；storageKey 和 maxFixedTabCount 等固定配置不属于运行时更新范围。
  */
 export interface RouterRuntimeOptions {
-  /** 固定 Adapter 内当前使用的持久化命名空间。 */
-  storageKey?: string
-  /** 后续新增固定页签时执行的数量限制。 */
-  maxFixedTabCount?: number
   /**
    * 页签关闭状态提交、Cache 和关联资源清理完成后的通知回调。
    *
@@ -267,9 +267,9 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   readonly fixedSet: readonly string[]
   /** 真实 pathname 到业务描述文本的增量映射。 */
   readonly pathnameDescriptionMap: Readonly<Record<string, string>>
-  /** 当前持久化命名空间。 */
+  /** 实例创建时固定的持久化命名空间。 */
   readonly storageKey: string
-  /** 当前允许固定的最大页签数量。 */
+  /** 实例创建时固定的最大页签数量。 */
   readonly maxFixedTabCount: number
   /** 当前 storageKey 是否已经完成首次数据加载。 */
   readonly storageHydrated: boolean
@@ -311,9 +311,9 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   subscribe: StoreApi<RouterCoreState<Route>>['subscribe']
   /** 绑定或解绑实际改变地址的宿主路由。 */
   bindHost: (host: RouterHost | null) => void
-  /** 同步允许变化的命名空间、限制与回调引用。 */
+  /** 同步允许随宿主生命周期变化的回调引用。 */
   configureRuntime: (options: RouterRuntimeOptions) => void
-  /** 从当前 Adapter/storageKey 加载固定页签和动态 pathname。 */
+  /** 从固定 Adapter/storageKey 加载固定页签和动态 pathname。 */
   hydrateStorage: () => Promise<void>
   /**
    * 接收宿主最新地址，并统一处理根路径/目录落点、路由层级、URL Cache、页签和页面实例。

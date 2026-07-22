@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRouterCore } from '../../createRouterCore'
 import { RouterCoreProvider } from '../../react'
-import type { RouterRoute } from '../../types'
+import type { RouterRoute, RouterStorageAdapter } from '../../types'
 import { RouterCoreReactRouterAdapter } from '../index'
 
 const routes: RouterRoute[] = [
@@ -25,6 +25,46 @@ afterEach(() => {
 })
 
 describe('RouterCoreReactRouterAdapter', () => {
+  it('uses the fixed storage key for the first dynamic location sync', async () => {
+    const loadedStorageKeys: string[] = []
+    const savedStorageKeys: string[] = []
+    const storageAdapter: RouterStorageAdapter = {
+      async load(storageKey) {
+        loadedStorageKeys.push(storageKey)
+        return { fixedTabs: [], fixedParamsPathMap: {} }
+      },
+      async saveFixedTabs(storageKey) {
+        savedStorageKeys.push(storageKey)
+      },
+      async saveFixedParamsPathMap(storageKey) {
+        savedStorageKeys.push(storageKey)
+      },
+    }
+    const router = createRouterCore({
+      routes,
+      storageAdapter,
+      storageKey: 'user-1',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/project/1']}>
+        <RouterCoreProvider router={router}>
+          <RouterCoreReactRouterAdapter>
+            <span>content</span>
+          </RouterCoreReactRouterAdapter>
+        </RouterCoreProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(router.getState().storageHydrated).toBe(true)
+      expect(savedStorageKeys.length).toBeGreaterThan(0)
+    })
+    expect(loadedStorageKeys).toEqual(['user-1'])
+    expect(savedStorageKeys).not.toContain('default')
+    expect(new Set(savedStorageKeys)).toEqual(new Set(['user-1']))
+  })
+
   it('synchronizes BrowserRouter location and forwards Core navigation commands', async () => {
     window.history.replaceState(null, '', '/home?source=browser#top')
     const router = createRouterCore({ routes, storageAdapter: false })

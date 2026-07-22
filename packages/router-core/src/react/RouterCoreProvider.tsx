@@ -19,8 +19,9 @@ const RouterCoreContext = createContext<unknown>(null)
 /**
  * 把既有 RouterCore 实例接入 React 树时允许提供的参数。
  *
- * routes、hasAuth、keepAlive 和 storageAdapter 等固定配置只传给 createRouterCore，
- * Provider 不重复接收。这里的运行时参数可以随 React render 更新而不重建 core。
+ * routes、hasAuth、keepAlive、storageAdapter、storageKey 和 maxFixedTabCount 等
+ * 固定配置只传给 createRouterCore，Provider 不重复接收。这里只同步允许随 React
+ * render 更新的回调引用。
  */
 export interface RouterCoreProviderProps<
   Route extends RouterRoute = RouterRoute,
@@ -32,7 +33,7 @@ export interface RouterCoreProviderProps<
 }
 
 /**
- * 向 React 子树提供 RouterCore，并同步可变化的运行时配置和持久化加载。
+ * 向 React 子树提供 RouterCore，并同步可变化的运行时回调和持久化加载。
  *
  * Provider 不拥有 router 的生命周期，也不会在 render 中调用 createRouterCore。切换
  * router prop 会让后代改用新实例，并为新实例执行一次幂等 hydration；旧实例是否继续
@@ -43,31 +44,25 @@ export function RouterCoreProvider<Route extends RouterRoute>(
 ) {
   const {
     children,
-    maxFixedTabCount,
     onStorageError,
     onTabClose,
     router,
-    storageKey,
   } = props
 
   useLayoutEffect(() => {
-    // 所有字段都显式传递，使移除回调 prop 时 core 也能清理旧回调引用。
-    // storageKey/maxFixedTabCount 的 undefined 语义由 core 保持为“沿用当前值”。
+    // 两个字段都显式传递，使移除回调 prop 时 core 也能清理旧回调引用。
     router.configureRuntime({
-      maxFixedTabCount,
       onStorageError,
       onTabClose,
-      storageKey,
     })
-  }, [maxFixedTabCount, onStorageError, onTabClose, router, storageKey])
+  }, [onStorageError, onTabClose, router])
 
   useEffect(() => {
     // hydrateStorage 自身负责 StrictMode 重放、并发复用和已完成状态判断。
     void router.hydrateStorage()
   }, [router])
 
-  // 不在 Context value 中混入 runtime props，避免回调或 storageKey 更新使所有消费者
-  // 被动重渲染；需要观察的运行状态已经由 router.store 精确发布。
+  // 不在 Context value 中混入回调，避免回调更新使所有消费者被动重渲染。
   return (
     <RouterCoreContext.Provider value={router}>
       {children}

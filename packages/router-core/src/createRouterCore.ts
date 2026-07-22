@@ -104,8 +104,6 @@ interface RouterRuntime {
   closingTabKeys: Set<string>
   /** 当前 hydration Promise；并发调用方共享同一任务。 */
   storageHydrationPromise: Promise<void> | null
-  /** storageKey 变化时递增，使旧来源晚到结果立即失效。 */
-  storageSourceGeneration: number
   /** 加载期间每个字段的本地修改版本，用于字段级冲突合并。 */
   storageMutationVersions: Record<PersistedField, number>
 }
@@ -256,7 +254,6 @@ export function createRouterCore<Route extends RouterRoute>(
     pageLocationListenerMap: new Map(),
     closingTabKeys: new Set(),
     storageHydrationPromise: null,
-    storageSourceGeneration: 0,
     storageMutationVersions: createMutationVersions(),
   }
 
@@ -281,8 +278,9 @@ export function createRouterCore<Route extends RouterRoute>(
     pages: initialPages,
     fixedSet,
     pathnameDescriptionMap: {},
-    storageKey: 'default',
-    maxFixedTabCount: 4,
+    // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
+    storageKey: options.storageKey ?? 'default',
+    maxFixedTabCount: options.maxFixedTabCount ?? 4,
     storageHydrated: options.initial?.storageState != null || storageAdapter === false,
     storageLoading: false,
     storageLoadError: undefined,
@@ -310,53 +308,16 @@ export function createRouterCore<Route extends RouterRoute>(
   }
 
   /**
-   * 同步允许变化的运行时依赖。
+   * 同步允许变化的运行时回调。
    *
-   * 回调保存在闭包中，不触发 Store 订阅；只有状态字段真正变化时才提交 setState。
-   * storageKey 切换属于持久化来源切换，会废弃旧 hydration 并加载新命名空间。
+   * 回调保存在闭包中，不触发 Store 订阅；显式传入 undefined 时会清理旧引用。
+   * storageKey 和 maxFixedTabCount 在实例创建时固定，不在这里隐式修改 Store。
    */
   function configureRuntime(next: RouterRuntimeOptions) {
     if ('onTabClose' in next)
       runtime.onTabClose = next.onTabClose || null
     if ('onStorageError' in next)
       runtime.onStorageError = next.onStorageError || null
-
-    const previous = getState()
-    const nextStorageKey =
-      'storageKey' in next && next.storageKey !== undefined
-        ? next.storageKey
-        : previous.storageKey
-    const storageChanged = nextStorageKey !== previous.storageKey
-    // 新来源加载前保留仍打开共享页签的真实 pathname，避免当前地址被旧存储覆盖。
-    const overlay = storageChanged ? getOpenParamsPathOverlay() : null
-
-    if (storageChanged)
-      resetStorageRuntime(runtime)
-
-    const maxFixedTabCountChanged =
-      next.maxFixedTabCount !== undefined &&
-      next.maxFixedTabCount !== previous.maxFixedTabCount
-    const statePatch: Partial<RouterCoreState<Route>> = {
-      ...(maxFixedTabCountChanged
-        ? { maxFixedTabCount: next.maxFixedTabCount }
-        : {}),
-      ...(storageChanged
-        ? {
-            storageKey: nextStorageKey,
-            storageHydrated: storageAdapter === false,
-            storageLoading: false,
-            storageLoadError: undefined,
-          }
-        : {}),
-    }
-    if (Object.keys(statePatch).length > 0)
-      setState(statePatch)
-
-    if (storageChanged && storageAdapter !== false) {
-      // 先安装当前会话覆盖层，再异步合并新命名空间中的旧数据。
-      cache.hydrateParamsPathMap(overlay || {})
-      void hydrateStorage()
-    }
   }
 
   /**
@@ -1130,13 +1091,12 @@ export function createRouterCore<Route extends RouterRoute>(
     return pending.then(() => hydrateStorage())
   }
 
-  /** 执行一次绑定 Adapter、storageKey 与 generation 的实际加载事务。 */
+  /** 执行一次绑定固定 Adapter 与 storageKey 的实际加载事务。 */
   async function executeHydration() {
     if (storageAdapter === false)
       return
     const storageKey = getState().storageKey
-    // 请求来源和字段版本都在 await 前快照，完成后据此决定哪些结果仍可提交。
-    const generation = runtime.storageSourceGeneration
+    // 字段版本在 await 前快照，完成后据此决定加载结果是否会覆盖本地修改。
     const mutationVersions = { ...runtime.storageMutationVersions }
     const currentParams = cache.getParamsPathMap()
     setState({ storageLoading: true, storageLoadError: undefined })
@@ -1145,9 +1105,6 @@ export function createRouterCore<Route extends RouterRoute>(
       const loaded = normalizeRouterStorageState(
         await storageAdapter.load(storageKey),
       )
-      // 新命名空间已经接管实例时，旧请求不得修改 loading、error 或业务状态。
-      if (generation !== runtime.storageSourceGeneration)
-        return
       const state = getState()
       const fixedUnchanged =
         mutationVersions.fixedTabs === runtime.storageMutationVersions.fixedTabs
@@ -1165,7 +1122,6 @@ export function createRouterCore<Route extends RouterRoute>(
         }
         cache.hydrateParamsPathMap(mergedParamsPathMap)
         if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap)) {
-          // 在发布状态前绑定已校验的 storageKey，避免同步订阅者切换命名空间后写错来源。
           // Adapter 实际保存位于 Promise 微任务，不会阻塞下面的 hydration 状态提交。
           persistParamsPathMap(mergedParamsPathMap)
         }
@@ -1182,8 +1138,6 @@ export function createRouterCore<Route extends RouterRoute>(
         // 清理无效/重复固定 key 后回写，避免下次加载重复清理。
         persistFixedTabs(nextFixedSet)
     } catch (error) {
-      if (generation !== runtime.storageSourceGeneration)
-        return
       setState({ storageLoading: false, storageLoadError: error })
       notifyStorageError(error, {
         storageKey,
@@ -1191,31 +1145,6 @@ export function createRouterCore<Route extends RouterRoute>(
         retry: retryHydration,
       })
     }
-  }
-
-  /**
-   * 切换 storageKey 时提取仍打开共享动态页签的真实 pathname。
-   *
-   * 以 tabs 而不是 pages 为准：页面实例可能已被 KeepAlive LRU 淘汰，但只要页签仍
-   * 打开，用户再次点击时就必须恢复当前会话最后访问的参数地址。
-   */
-  function getOpenParamsPathOverlay() {
-    const state = getState()
-    const map = cache.getParamsPathMap()
-    return state.tabs.reduce<Record<string, string>>((result, tab) => {
-      const pathname = map[tab.key]
-      const leaf = pathname ? registry.resolveLeafRoute(pathname) : null
-      if (
-        pathname &&
-        leaf &&
-        registry.getTabKey(pathname) === tab.key &&
-        !leaf.route.supportMultipleTabs
-      ) {
-        // 仅保留当前 Registry 仍能解析且页签身份一致的共享动态路由映射。
-        result[tab.key] = pathname
-      }
-      return result
-    }, {})
   }
 
   // 对外只暴露领域查询与命令；Cache、runtime 和持久化协调函数继续封装在实例闭包内。
@@ -1472,13 +1401,6 @@ function buildUrl(data: {
 /** 为两个独立持久化字段建立从 0 开始的本地修改版本。 */
 function createMutationVersions(): Record<PersistedField, number> {
   return { fixedTabs: 0, fixedParamsPathMap: 0 }
-}
-
-/** 切换持久化来源时废弃旧任务，并为新来源建立干净字段版本基线。 */
-function resetStorageRuntime(runtime: RouterRuntime) {
-  runtime.storageHydrationPromise = null
-  runtime.storageSourceGeneration += 1
-  runtime.storageMutationVersions = createMutationVersions()
 }
 
 /** 按顺序比较字符串数组；固定页签的顺序本身属于业务状态。 */

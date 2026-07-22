@@ -151,6 +151,18 @@ describe('route registry', () => {
 })
 
 describe('createRouterCore', () => {
+  it('uses fixed configuration in the first store snapshot', () => {
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      storageKey: 'user-1',
+      maxFixedTabCount: 6,
+    })
+
+    expect(router.getState().storageKey).toBe('user-1')
+    expect(router.getState().maxFixedTabCount).toBe(6)
+  })
+
   it('creates a new independent state container on every factory call', () => {
     const first = createRouterCore({ routes, storageAdapter: false })
     const second = createRouterCore({ routes, storageAdapter: false })
@@ -571,9 +583,12 @@ describe('createRouterCore', () => {
 
   it('enforces fixed-tab limits and runs close guards', async () => {
     const navigate = vi.fn()
-    const router = createRouterCore({ routes, storageAdapter: false })
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      maxFixedTabCount: 1,
+    })
     router.bindHost({ navigate })
-    router.configureRuntime({ maxFixedTabCount: 1 })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
 
@@ -900,13 +915,17 @@ describe('createRouterCore', () => {
       saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
     }
-    const router = createRouterCore({ routes, storageAdapter: adapter })
-    router.configureRuntime({ storageKey: 'user-1' })
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+      storageKey: 'user-1',
+    })
+    const hydration = router.hydrateStorage()
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.toggleFixed('/dashboard')
 
     resolveLoad({ fixedTabs: ['/settings/profile'], fixedParamsPathMap: {} })
-    await router.hydrateStorage()
+    await hydration
 
     expect(router.getState().fixedSet).toEqual(['/dashboard'])
     expect(router.getState().storageHydrated).toBe(true)

@@ -29,8 +29,13 @@ afterEach(() => {
 })
 
 describe('RouterCoreProvider', () => {
-  it('provides the existing core and synchronizes runtime configuration', async () => {
-    const router = createRouterCore({ routes, storageAdapter: false })
+  it('provides the existing core and synchronizes runtime callbacks', async () => {
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      storageKey: 'first',
+      maxFixedTabCount: 3,
+    })
     const configureRuntime = vi.spyOn(router, 'configureRuntime')
     const hydrateStorage = vi.spyOn(router, 'hydrateStorage')
     const onTabClose = vi.fn()
@@ -44,8 +49,6 @@ describe('RouterCoreProvider', () => {
     const view = render(
       <RouterCoreProvider
         router={router}
-        storageKey="first"
-        maxFixedTabCount={3}
         onTabClose={onTabClose}
       >
         <Probe />
@@ -54,27 +57,24 @@ describe('RouterCoreProvider', () => {
 
     expect(receivedRouter).toBe(router)
     expect(configureRuntime).toHaveBeenLastCalledWith({
-      maxFixedTabCount: 3,
       onStorageError: undefined,
       onTabClose,
-      storageKey: 'first',
     })
     await waitFor(() => expect(hydrateStorage).toHaveBeenCalled())
 
     view.rerender(
-      <RouterCoreProvider router={router} storageKey="second">
+      <RouterCoreProvider router={router}>
         <Probe />
       </RouterCoreProvider>,
     )
 
     // 移除回调 prop 时仍显式传入 undefined，core 才能清理旧回调引用。
     expect(configureRuntime).toHaveBeenLastCalledWith({
-      maxFixedTabCount: undefined,
       onStorageError: undefined,
       onTabClose: undefined,
-      storageKey: 'second',
     })
-    expect(router.getState().storageKey).toBe('second')
+    expect(router.getState().storageKey).toBe('first')
+    expect(router.getState().maxFixedTabCount).toBe(3)
   })
 
   it('recomputes changed selectors without rerendering for unrelated state', () => {
