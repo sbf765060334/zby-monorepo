@@ -365,11 +365,13 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
     handler?: RouterBeforeCloseHook,
   ) => void
   /**
-   * 注册页签级 location 事件发射器，并返回安全的清理函数。
-   * 当前页签已经存在宿主 location 时，注册过程会立即补发一次最新地址。
+   * 订阅指定页签的完整 location，并返回取消订阅函数。
+   *
+   * 当前页签已经存在宿主 location 时会立即向 listener 补发一次最新地址。同一 tabKey
+   * 只绑定当前页面实例的一个 listener；新订阅会接管旧订阅，旧清理函数不会误删新订阅。
    */
-  registerPageLocationEmitter: (
+  subscribePageLocation: (
     tabKey: string,
-    emitter: { emit: (payload: RouterLocationEventPayload) => void } | null,
+    listener: (location: RouterLocationEventPayload) => void,
   ) => () => void
 }

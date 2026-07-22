@@ -84,7 +84,7 @@ interface RouterRuntime {
   /**
    * 最近一次由宿主确认的标准化 location。
    *
-   * 页面实例可能晚于首次 syncLocation 创建；保留该快照后，新注册的页面 emitter
+   * 页面实例可能晚于首次 syncLocation 创建；保留该快照后，新订阅的页面 listener
    * 可以立即补收当前地址，而不要求 Adapter 额外重放一次 location。
    */
   latestLocation: RouterLocationEventPayload | null
@@ -95,9 +95,10 @@ interface RouterRuntime {
   /** 页签 key 到关闭前守卫列表的映射。 */
   beforeCloseMap: Map<string, RouterBeforeCloseHook[]>
   /** 页签 key 到当前页面 location 事件接收器的映射。 */
-  locationEmitterMap: Map<
+  /** 每个页签当前页面实例绑定的 location 监听器。 */
+  pageLocationListenerMap: Map<
     string,
-    { emit: (payload: RouterLocationEventPayload) => void }
+    (location: RouterLocationEventPayload) => void
   >
   /** 正在执行关闭事务的页签，防止重复点击并发运行守卫。 */
   closingTabKeys: Set<string>
@@ -252,7 +253,7 @@ export function createRouterCore<Route extends RouterRoute>(
     onTabClose: null,
     onStorageError: null,
     beforeCloseMap: new Map(),
-    locationEmitterMap: new Map(),
+    pageLocationListenerMap: new Map(),
     closingTabKeys: new Set(),
     storageHydrationPromise: null,
     storageSourceGeneration: 0,
@@ -461,10 +462,10 @@ export function createRouterCore<Route extends RouterRoute>(
     }
 
     // 页面事件和 pathname bootstrap 具有不同的去重语义：即使 pathname 没变，新的
-    // search/hash 也必须发布。新页面尚未注册时不会丢失，register 会从 latestLocation
+    // search/hash 也必须发布。新页面尚未订阅时不会丢失，subscribe 会从 latestLocation
     // 补发当前快照。
     if (tabKey)
-      runtime.locationEmitterMap.get(tabKey)?.emit(locationPayload)
+      runtime.pageLocationListenerMap.get(tabKey)?.(locationPayload)
   }
 
   /** 根据确认后的 pathname 创建授权页面，或进入 403/404 的非活动页面状态。 */
@@ -885,7 +886,7 @@ export function createRouterCore<Route extends RouterRoute>(
       })
 
       runtime.beforeCloseMap.delete(tabKey)
-      runtime.locationEmitterMap.delete(tabKey)
+      runtime.pageLocationListenerMap.delete(tabKey)
       cache.clear(tabKey)
 
       let result = true
@@ -977,31 +978,31 @@ export function createRouterCore<Route extends RouterRoute>(
   }
 
   /**
-   * 注册当前页面实例的 location 接收器，并补发属于该页签的最近地址。
+   * 订阅当前页面实例的 location，并补发属于该页签的最近地址。
    *
-   * 注册发生在首次 syncLocation 之后时，补发保证页面仍能收到首个 pathname/search/hash；
-   * 清理函数只删除当前 emitter，避免旧页面卸载时误删已接管同一 tabKey 的新实例。
+   * 订阅发生在首次 syncLocation 之后时，补发保证页面仍能收到首个 pathname/search/hash；
+   * 清理函数只删除当前 listener，避免旧页面卸载时误删已接管同一 tabKey 的新实例。
    */
-  function registerPageLocationEmitter(
+  function subscribePageLocation(
     tabKey: string,
-    emitter: { emit: (payload: RouterLocationEventPayload) => void } | null,
+    listener: (location: RouterLocationEventPayload) => void,
   ) {
-    if (!tabKey || !emitter)
+    if (!tabKey)
       return () => undefined
-    runtime.locationEmitterMap.set(tabKey, emitter)
+    runtime.pageLocationListenerMap.set(tabKey, listener)
 
     const latestLocation = runtime.latestLocation
     if (
       latestLocation &&
       registry.getTabKey(latestLocation.pathname) === tabKey
     ) {
-      emitter.emit(latestLocation)
+      listener(latestLocation)
     }
 
     return () => {
       // 同一 key 可能已由新页面实例接管，旧实例卸载时只能删除自己的引用。
-      if (runtime.locationEmitterMap.get(tabKey) === emitter)
-        runtime.locationEmitterMap.delete(tabKey)
+      if (runtime.pageLocationListenerMap.get(tabKey) === listener)
+        runtime.pageLocationListenerMap.delete(tabKey)
     }
   }
 
@@ -1243,7 +1244,7 @@ export function createRouterCore<Route extends RouterRoute>(
     closeThisTabOpenNewOne,
     addBeforeCloseHook,
     clearBeforeCloseHook,
-    registerPageLocationEmitter,
+    subscribePageLocation,
   }
 }
 

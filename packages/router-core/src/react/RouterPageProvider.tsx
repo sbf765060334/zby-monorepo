@@ -40,7 +40,7 @@ export interface RouterPageProviderProps<
   page: RouterPage<Route>
   /** 当前页面实例是否实际显示。 */
   active: boolean
-  /** 使用页面级 pathname、路由层级和事件流的业务页面子树。 */
+  /** 使用页面级 pathname、路由层级和当前状态的业务页面子树。 */
   children: ReactNode
 }
 
@@ -68,19 +68,17 @@ export function RouterPageProvider<Route extends RouterRoute>(
       location: null,
     })),
   )
-  const [locationReceiver] = useState(
-    () => ({
-      emit(location: RouterLocationEventPayload) {
-        pageStore.setState((state) => {
-          // core 在注册接收器和宿主重复同步时都可能交付相同地址。相同快照继续复用
-          // 原 state，避免 StrictMode 重放或重复 location 触发页面订阅者更新。
-          if (isSameLocation(state.location, location))
-            return state
+  const [handleLocation] = useState(
+    () => (location: RouterLocationEventPayload) => {
+      pageStore.setState((state) => {
+        // core 在建立订阅和宿主重复同步时都可能交付相同地址。相同快照继续复用
+        // 原 state，避免 StrictMode 重放或重复 location 触发页面订阅者更新。
+        if (isSameLocation(state.location, location))
+          return state
 
-          return { ...state, location }
-        })
-      },
-    }),
+        return { ...state, location }
+      })
+    },
   )
 
   useLayoutEffect(() => {
@@ -103,8 +101,8 @@ export function RouterPageProvider<Route extends RouterRoute>(
   }, [page.key, page.pathname, pageStore, router])
 
   useLayoutEffect(
-    () => router.registerPageLocationEmitter(page.key, locationReceiver),
-    [locationReceiver, page.key, router],
+    () => router.subscribePageLocation(page.key, handleLocation),
+    [handleLocation, page.key, router],
   )
 
   useLayoutEffect(() => {

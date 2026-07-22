@@ -233,10 +233,10 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
-  it('emits every confirmed location to the current page emitter', () => {
+  it('publishes every confirmed location to the current page listener', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
-    const emit = vi.fn()
-    router.registerPageLocationEmitter('/dashboard', { emit })
+    const listener = vi.fn()
+    router.subscribePageLocation('/dashboard', listener)
 
     router.syncLocation({
       pathname: '/dashboard',
@@ -249,19 +249,19 @@ describe('createRouterCore', () => {
       hash: 'table',
     })
 
-    expect(emit).toHaveBeenNthCalledWith(1, {
+    expect(listener).toHaveBeenNthCalledWith(1, {
       pathname: '/dashboard',
       search: '',
       hash: '',
     })
-    expect(emit).toHaveBeenNthCalledWith(2, {
+    expect(listener).toHaveBeenNthCalledWith(2, {
       pathname: '/dashboard',
       search: '?page=2',
       hash: '#table',
     })
   })
 
-  it('replays the latest location when its page emitter registers later', () => {
+  it('replays the latest location when its page listener subscribes later', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({
       pathname: '/project/42',
@@ -269,26 +269,26 @@ describe('createRouterCore', () => {
       hash: 'summary',
     })
 
-    const emit = vi.fn()
-    const unregister = router.registerPageLocationEmitter(
+    const listener = vi.fn()
+    const unsubscribe = router.subscribePageLocation(
       '/project/:id',
-      { emit },
+      listener,
     )
 
-    expect(emit).toHaveBeenCalledOnce()
-    expect(emit).toHaveBeenCalledWith({
+    expect(listener).toHaveBeenCalledOnce()
+    expect(listener).toHaveBeenCalledWith({
       pathname: '/project/42',
       search: '?tab=detail',
       hash: '#summary',
     })
 
-    unregister()
+    unsubscribe()
     router.syncLocation({
       pathname: '/project/42',
       search: 'tab=activity',
       hash: '',
     })
-    expect(emit).toHaveBeenCalledOnce()
+    expect(listener).toHaveBeenCalledOnce()
   })
 
   it('does not publish state when reopening the active page changes no domain state', () => {
