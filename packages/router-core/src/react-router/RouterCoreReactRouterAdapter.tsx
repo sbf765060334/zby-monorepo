@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useHref, useLocation, useNavigate } from 'react-router-dom'
 
 import type { ReactNode } from 'react'
@@ -30,6 +30,14 @@ export function RouterCoreReactRouterAdapter(
   const router = useRouterCore()
   const location = useLocation()
   const reactRouterNavigate = useNavigate()
+  const navigateRef = useRef(reactRouterNavigate)
+
+  useLayoutEffect(() => {
+    // BrowserRouter/MemoryRouter 的 useNavigate 引用可能随 pathname 变化。Host 代表的
+    // 是 Adapter 生命周期而不是单次地址快照，因此只更新底层函数，不重新解绑 Host。
+    navigateRef.current = reactRouterNavigate
+  }, [reactRouterNavigate])
+
   // useHref 会读取当前 React Router 的 basename；从应用根 href 推导动态路径，可以
   // 避免调用方再次向 Adapter 重复传入 basename，也不会直接依赖 React Router 内部 Context。
   const rootHref = useHref('/')
@@ -37,14 +45,14 @@ export function RouterCoreReactRouterAdapter(
     const navigate: RouterNavigate = (target, options) => {
       // React Router 6/7 都接受与 RouterNavigateTarget 兼容的 string 或 pathname 对象。
       // 返回的 Promise（仅部分 Data Router 实现存在）不属于 Core 的同步宿主契约。
-      void reactRouterNavigate(target, options)
+      void navigateRef.current(target, options)
     }
 
     return {
       navigate,
       createHref: (path) => createHrefFromRoot(rootHref, path),
     }
-  }, [reactRouterNavigate, rootHref])
+  }, [rootHref])
 
   useLayoutEffect(() => {
     // Core 只保存当前 Adapter 提供的宿主引用；重新绑定不会重建 Core 或修改领域状态。

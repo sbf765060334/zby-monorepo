@@ -28,6 +28,7 @@ describe('RouterCoreReactRouterAdapter', () => {
   it('synchronizes BrowserRouter location and forwards Core navigation commands', async () => {
     window.history.replaceState(null, '', '/home?source=browser#top')
     const router = createRouterCore({ routes, storageAdapter: false })
+    const bindHost = vi.spyOn(router, 'bindHost')
 
     render(
       <BrowserRouter>
@@ -42,6 +43,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     expect(screen.getByTestId('location').textContent)
       .toBe('/home?source=browser#top')
     expect(router.getState().currentPathname).toBe('/home')
+    expect(bindHost).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'jump' }))
 
@@ -49,6 +51,9 @@ describe('RouterCoreReactRouterAdapter', () => {
       expect(screen.getByTestId('location').textContent).toBe('/project/42')
       expect(router.getState().currentPathname).toBe('/project/42')
     })
+    // 普通 BrowserRouter 的 useNavigate 引用会随 pathname 变化；Adapter 应只更新
+    // navigateRef，不能把同一个 RouterCore 宿主重复解绑和绑定。
+    expect(bindHost).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'replace' }))
 
@@ -56,6 +61,7 @@ describe('RouterCoreReactRouterAdapter', () => {
       expect(screen.getByTestId('location').textContent)
         .toBe('/project/42?tab=detail#summary')
     })
+    expect(bindHost).toHaveBeenCalledTimes(1)
   })
 
   it('preserves smartNavigate replace semantics in MemoryRouter history', async () => {
