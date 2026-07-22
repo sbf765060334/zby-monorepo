@@ -1,6 +1,6 @@
 import { createStore } from 'zustand/vanilla'
 
-import { createRouteRegistry } from './registry'
+import { createRouteRegistry, isConcreteRoutePath } from './registry'
 import type { RouteRegistry } from './registry'
 import { createIndexedDBRouterStorageAdapter, normalizeRouterStorageState } from './storage'
 import type {
@@ -218,8 +218,6 @@ export function createRouterCore<Route extends RouterRoute>(
   const storageAdapter = resolveStorageAdapter(options.storageAdapter)
   // 初始持久化数据始终在边界标准化，后续首屏逻辑只处理可信完整结构。
   const initialStorage = normalizeRouterStorageState(options.initial?.storageState)
-  // 旧存储可能包含已经删除或不再是页面的固定 key，创建页签前先清理。
-  const fixedSet = sanitizeFixedTabKeys(initialStorage.fixedTabs, registry)
   // 根路径和目录在首屏解析到可展示页面，避免订阅者先观察到无效空页签状态。
   const initialPathname = resolveInitialPathname(
     options.initial?.pathname,
@@ -242,6 +240,12 @@ export function createRouterCore<Route extends RouterRoute>(
     // 当前首屏真实 URL 必须覆盖存储中的旧动态地址，保证共享页签不会倒退。
     initialParamsPathMap[initialTabKey] = initialPathname
   }
+  // 首屏真实地址可能刚补齐共享动态页签映射，因此必须在它之后清理固定页签。
+  const fixedSet = sanitizeFixedTabKeys(
+    initialStorage.fixedTabs,
+    initialParamsPathMap,
+    registry,
+  )
 
   // runtime 每个实例独立创建，多个平台区域或测试实例不会共享守卫与异步版本。
   const runtime: RouterRuntime = {
@@ -551,6 +555,19 @@ export function createRouterCore<Route extends RouterRoute>(
     const tabKey = registry.getTabKey(pathname)
     if (!tabKey)
       return null
+
+    if (!isConcreteRoutePath(pathname)) {
+      const cachedPathname = cache.getParamsPath(tabKey)
+      if (
+        !cachedPathname ||
+        !isConcreteRoutePath(cachedPathname) ||
+        registry.getTabKey(cachedPathname) !== tabKey
+      ) {
+        // 路由 pattern 只是页签身份；缺少同页签的真实 pathname 时不能交给宿主导航。
+        return null
+      }
+      pathname = cachedPathname
+    }
 
     const authorized = registry.resolveLeafRoute(pathname, { withinAuth: true })
     return {
@@ -1106,8 +1123,18 @@ export function createRouterCore<Route extends RouterRoute>(
       const paramsUnchanged =
         mutationVersions.fixedParamsPathMap ===
         runtime.storageMutationVersions.fixedParamsPathMap
+      // 固定动态页签可以由存储映射或加载期间刚确认的宿主 pathname 恢复；后者优先，
+      // 避免异步加载返回旧数据时误删当前会话仍在使用的固定页签。
+      const restorableParamsPathMap = {
+        ...loaded.fixedParamsPathMap,
+        ...cache.getParamsPathMap(),
+      }
       const nextFixedSet = fixedUnchanged
-        ? sanitizeFixedTabKeys(loaded.fixedTabs, registry)
+        ? sanitizeFixedTabKeys(
+            loaded.fixedTabs,
+            restorableParamsPathMap,
+            registry,
+          )
         : state.fixedSet
       if (paramsUnchanged) {
         // 当前会话确认的动态地址比存储旧值更新，展开顺序确保 currentParams 胜出。
@@ -1218,9 +1245,15 @@ function createInitialPages<Route extends RouterRoute>(
     : []
 }
 
-/** 清理持久化固定页签中的重复、已删除或非页面 key，同时保持首次出现顺序。 */
+/**
+ * 清理重复、已删除或无法恢复真实地址的固定页签，同时保持首次出现顺序。
+ *
+ * 静态页签的 key 本身就是可导航地址；共享动态页签使用注册 pattern 作为 key，必须
+ * 同时存在能够解析回同一 tabKey 的具体 pathname，否则该持久化缓存无法安全恢复。
+ */
 function sanitizeFixedTabKeys<Route extends RouterRoute>(
   fixedTabs: readonly string[],
+  fixedParamsPathMap: Readonly<Record<string, string>>,
   registry: RouteRegistry<Route>,
 ) {
   const seen = new Set<string>()
@@ -1228,6 +1261,18 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
     const route = registry.resolveLeafRoute(key)?.route
     if (seen.has(key) || !registry.isPageRoute(route))
       return false
+
+    if (!isConcreteRoutePath(key)) {
+      const pathname = fixedParamsPathMap[key]
+      if (
+        !pathname ||
+        !isConcreteRoutePath(pathname) ||
+        registry.getTabKey(pathname) !== key
+      ) {
+        return false
+      }
+    }
+
     seen.add(key)
     return true
   })

@@ -245,6 +245,78 @@ describe('createRouterCore', () => {
     )
   })
 
+  it('does not navigate an unresolved dynamic route pattern', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+
+    router.jumpTo('/project/:id')
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState().tabs).toEqual([])
+  })
+
+  it('drops fixed dynamic tabs that have no concrete pathname', () => {
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      initial: {
+        pathname: '/dashboard',
+        storageState: {
+          fixedTabs: ['/dashboard', '/project/:id'],
+          fixedParamsPathMap: {},
+        },
+      },
+    })
+
+    expect(router.getState().fixedSet).toEqual(['/dashboard'])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+    ])
+  })
+
+  it('restores a fixed dynamic tab from its persisted concrete pathname', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      initial: {
+        pathname: '/dashboard',
+        storageState: {
+          fixedTabs: ['/project/:id'],
+          fixedParamsPathMap: {
+            '/project/:id': '/project/42',
+          },
+        },
+      },
+    })
+    router.bindHost({ navigate })
+
+    expect(router.getState().fixedSet).toEqual(['/project/:id'])
+    router.jumpTo('/project/:id')
+    expect(navigate).toHaveBeenCalledWith('/project/42')
+  })
+
+  it('uses the current pathname to repair a fixed dynamic tab mapping', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({
+      routes,
+      storageAdapter: false,
+      initial: {
+        pathname: '/project/42',
+        storageState: {
+          fixedTabs: ['/project/:id'],
+          fixedParamsPathMap: {},
+        },
+      },
+    })
+    router.bindHost({ navigate })
+
+    expect(router.getState().fixedSet).toEqual(['/project/:id'])
+    router.jumpTo('/project/:id')
+    expect(navigate).toHaveBeenCalledWith('/project/42')
+  })
+
   it('updates URL cache without publishing state when only search or hash changes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -849,6 +921,29 @@ describe('createRouterCore', () => {
 
     await router.hydrateStorage()
     expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
+  })
+
+  it('removes an unrestorable fixed dynamic tab loaded from storage', async () => {
+    const saveFixedTabs = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: ['/project/:id'],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs,
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+    })
+
+    await router.hydrateStorage()
+
+    expect(router.getState().fixedSet).toEqual([])
+    expect(router.getState().tabs).toEqual([])
+    await vi.waitFor(() => {
+      expect(saveFixedTabs).toHaveBeenCalledWith('default', [])
+    })
   })
 
   it('reports a failed save and persists the next complete field snapshot', async () => {

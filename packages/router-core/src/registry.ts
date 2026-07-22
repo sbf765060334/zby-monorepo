@@ -419,7 +419,8 @@ function findFirstAccessiblePath<Route extends RouterRoute>(
   ) || null
 }
 
-function isConcreteRoutePath(path: string) {
+/** 判断路径是否已经提供全部动态参数，可以安全交给宿主导航。 */
+export function isConcreteRoutePath(path: string) {
   return normalizeRoutePath(path)
     .split('/')
     .every((part) => !part.startsWith(':') && part !== '*')
