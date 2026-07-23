@@ -895,6 +895,39 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  it('publishes pathname descriptions only when their values change', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const initialState = router.getState()
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+
+    router.setPathnameDescription({})
+    expect(router.getState()).toBe(initialState)
+    expect(subscriber).not.toHaveBeenCalled()
+
+    router.setPathnameDescription({ '/project/42': 'Project 42' })
+    const changedState = router.getState()
+    const changedMap = changedState.pathnameDescriptionMap
+    expect(changedMap).toEqual({ '/project/42': 'Project 42' })
+    expect(subscriber).toHaveBeenCalledOnce()
+
+    router.setPathnameDescription({ '/project/42': 'Project 42' })
+    expect(router.getState()).toBe(changedState)
+    expect(router.getState().pathnameDescriptionMap).toBe(changedMap)
+    expect(subscriber).toHaveBeenCalledOnce()
+
+    router.setPathnameDescription({
+      '/project/42': 'Project 42',
+      '/project/43': 'Project 43',
+    })
+    expect(router.getState().pathnameDescriptionMap).toEqual({
+      '/project/42': 'Project 42',
+      '/project/43': 'Project 43',
+    })
+    expect(subscriber).toHaveBeenCalledTimes(2)
+    unsubscribe()
+  })
+
   it('writes back a current dynamic pathname that overrides hydrated storage', async () => {
     const saveFixedParamsPathMap = vi.fn(async () => undefined)
     const adapter: RouterStorageAdapter = {

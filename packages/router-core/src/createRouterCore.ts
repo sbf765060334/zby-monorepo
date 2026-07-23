@@ -1185,10 +1185,21 @@ export function createRouterCore<Route extends RouterRoute>(
     reorderTabs,
     setTabLabel,
     setPathnameDescription: (map) =>
-      setState((state) => ({
-        ...state,
-        pathnameDescriptionMap: { ...state.pathnameDescriptionMap, ...map },
-      })),
+      setState((state) => {
+        const hasChanged = Object.keys(map).some(
+          (pathname) => state.pathnameDescriptionMap[pathname] !== map[pathname],
+        )
+
+        // Zustand 以 state 引用判断是否需要通知订阅者；空输入或重复描述没有领域变化，
+        // 返回原对象可避免无意义的全局通知，同时保留真实增量更新的合并语义。
+        if (!hasChanged)
+          return state
+
+        return {
+          ...state,
+          pathnameDescriptionMap: { ...state.pathnameDescriptionMap, ...map },
+        }
+      }),
     toggleFixed,
     closeTab,
     closeThisTabOpenNewOne,
