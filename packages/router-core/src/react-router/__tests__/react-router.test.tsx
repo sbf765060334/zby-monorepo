@@ -25,19 +25,27 @@ afterEach(() => {
 })
 
 describe('RouterCoreReactRouterAdapter', () => {
-  it('uses the fixed storage key for the first dynamic location sync', async () => {
+  it('hydrates before persisting the first dynamic location', async () => {
     const loadedStorageKeys: string[] = []
     const savedStorageKeys: string[] = []
+    const operations: string[] = []
+    const savedParamsPathMaps: Array<Record<string, string>> = []
     const storageAdapter: RouterStorageAdapter = {
       async load(storageKey) {
         loadedStorageKeys.push(storageKey)
-        return { fixedTabs: [], fixedParamsPathMap: {} }
+        operations.push('load')
+        return {
+          fixedTabs: [],
+          fixedParamsPathMap: { '/customer/:id': '/customer/7' },
+        }
       },
       async saveFixedTabs(storageKey) {
         savedStorageKeys.push(storageKey)
       },
-      async saveFixedParamsPathMap(storageKey) {
+      async saveFixedParamsPathMap(storageKey, fixedParamsPathMap) {
         savedStorageKeys.push(storageKey)
+        operations.push('saveFixedParamsPathMap')
+        savedParamsPathMaps.push({ ...fixedParamsPathMap })
       },
     }
     const router = createRouterCore({
@@ -63,6 +71,13 @@ describe('RouterCoreReactRouterAdapter', () => {
     expect(loadedStorageKeys).toEqual(['user-1'])
     expect(savedStorageKeys).not.toContain('default')
     expect(new Set(savedStorageKeys)).toEqual(new Set(['user-1']))
+    // React Router 的首个动态地址先进入本地覆盖层；完整存储加载成功后才允许保存，
+    // 因而不会删除本次会话尚未触达的其它动态页签映射。
+    expect(operations[0]).toBe('load')
+    expect(savedParamsPathMaps).toEqual([{
+      '/customer/:id': '/customer/7',
+      '/project/:id': '/project/1',
+    }])
   })
 
   it('synchronizes BrowserRouter location and forwards Core navigation commands', async () => {

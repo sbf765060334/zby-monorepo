@@ -35,9 +35,6 @@ import type {
 /** 未显式注入 Adapter 时复用同一个懒加载 IndexedDB 实现。 */
 const DEFAULT_STORAGE_ADAPTER = createIndexedDBRouterStorageAdapter()
 
-/** 可以独立发生本地修改、因而需要独立 hydration 版本号的持久化字段。 */
-type PersistedField = 'fixedTabs' | 'fixedParamsPathMap'
-
 /**
  * 入口 pathname 的落点处理结果。
  *
@@ -104,8 +101,15 @@ interface RouterRuntime {
   closingTabKeys: Set<string>
   /** 当前 hydration Promise；并发调用方共享同一任务。 */
   storageHydrationPromise: Promise<void> | null
-  /** 加载期间每个字段的本地修改版本，用于字段级冲突合并。 */
-  storageMutationVersions: Record<PersistedField, number>
+  /** 加载期间固定页签集合的本地修改版本，防止旧加载结果覆盖用户操作。 */
+  fixedTabsMutationVersion: number
+  /**
+   * 首次 hydration 完成前发生的动态 pathname 增量；null 表示删除。
+   *
+   * Cache 此时还没有存储中的完整 Map，不能直接保存它的局部快照，否则首个动态
+   * pathname 会覆盖其它已持久化映射。加载完成后再把这些增量覆盖到完整结果上。
+   */
+  pendingParamsPathMutations: Map<string, string | null>
 }
 
 /**
@@ -116,30 +120,23 @@ interface RouterRuntime {
  */
 class RouterCache {
   /** 共享动态页签 key 到最后真实 pathname 的映射。 */
-  private paramsPathMap: Record<string, string>
+  private paramsPathMap: Record<string, string> = {}
   /** 页签 key 到不含 `?` 前缀的查询字符串。 */
   private searchParamsMap: Record<string, string> = {}
   /** 页签 key 到包含 `#` 前缀的锚点。 */
   private hashMap: Record<string, string> = {}
 
   constructor(
-    initial: Record<string, string>,
     private readonly onParamsPathMapChange: (
       value: Record<string, string>,
+      tabKey: string,
+      pathname: string | null,
     ) => void,
-  ) {
-    // 拷贝初始映射，调用方不能绕过变更通知直接修改 Cache 内部状态。
-    this.paramsPathMap = { ...initial }
-  }
+  ) {}
 
   /** 获取共享动态页签最后使用的真实 pathname。 */
   getParamsPath(tabKey: string) {
     return this.paramsPathMap[tabKey] || ''
-  }
-
-  /** 返回参数路径副本，供 hydration 记录当前会话覆盖层。 */
-  getParamsPathMap() {
-    return { ...this.paramsPathMap }
   }
 
   /** 使用加载结果替换映射，但不把“刚加载的数据”再次当成本地修改保存。 */
@@ -159,7 +156,11 @@ class RouterCache {
       this.paramsPathMap[tabKey] = pathname
     }
     // 回调接收副本，持久化实现无法借此修改 Cache 内部对象。
-    this.onParamsPathMapChange({ ...this.paramsPathMap })
+    this.onParamsPathMapChange(
+      { ...this.paramsPathMap },
+      tabKey,
+      pathname || null,
+    )
   }
 
   /** 获取不含 `?` 的查询字符串。 */
@@ -216,36 +217,6 @@ export function createRouterCore<Route extends RouterRoute>(
   // KeepAlive 对象中的数组同样复制，避免调用方原地修改后偷偷改变页面淘汰规则。
   const keepAlive = snapshotKeepAlive(options.keepAlive ?? true)
   const storageAdapter = resolveStorageAdapter(options.storageAdapter)
-  // 初始持久化数据始终在边界标准化，后续首屏逻辑只处理可信完整结构。
-  const initialStorage = normalizeRouterStorageState(options.initial?.storageState)
-  // 根路径和目录在首屏解析到可展示页面，避免订阅者先观察到无效空页签状态。
-  const initialPathname = resolveInitialPathname(
-    options.initial?.pathname,
-    registry,
-  )
-  const initialLeaf = initialPathname
-    ? registry.resolveLeafRoute(initialPathname, { withinAuth: true })
-    : null
-  const initialTabKey = initialPathname
-    ? registry.getTabKey(initialPathname)
-    : null
-  const initialParamsPathMap = { ...initialStorage.fixedParamsPathMap }
-
-  if (
-    initialPathname &&
-    initialTabKey &&
-    initialTabKey !== initialPathname &&
-    !initialLeaf?.route.supportMultipleTabs
-  ) {
-    // 当前首屏真实 URL 必须覆盖存储中的旧动态地址，保证共享页签不会倒退。
-    initialParamsPathMap[initialTabKey] = initialPathname
-  }
-  // 首屏真实地址可能刚补齐共享动态页签映射，因此必须在它之后清理固定页签。
-  const fixedSet = sanitizeFixedTabKeys(
-    initialStorage.fixedTabs,
-    initialParamsPathMap,
-    registry,
-  )
 
   // runtime 每个实例独立创建，多个平台区域或测试实例不会共享守卫与异步版本。
   const runtime: RouterRuntime = {
@@ -258,36 +229,27 @@ export function createRouterCore<Route extends RouterRoute>(
     pageLocationListenerMap: new Map(),
     closingTabKeys: new Set(),
     storageHydrationPromise: null,
-    storageMutationVersions: createMutationVersions(),
+    fixedTabsMutationVersion: 0,
+    pendingParamsPathMutations: new Map(),
   }
 
-  const initialPages = createInitialPages(
-    initialPathname,
-    initialTabKey,
-    initialLeaf?.route,
-  )
-  const currentPathname = initialPathname || options.initial?.pathname || ''
-  // Store 在创建时直接拥有同步首屏快照，不需要额外 initialization setState。
+  // Core 创建阶段不猜测宿主地址或预加载外部数据；页面只由 syncLocation 建立，
+  // 固定页签只由 hydrateStorage 恢复，使两类状态各自只有一个权威入口。
   const store = createStore<RouterCoreState<Route>>(() => ({
-    currentPathname,
-    currentRoutes: currentPathname
-      ? registry.getCurrentRoutes(currentPathname)
-      : [],
-    currentSelectedPath: currentPathname
-      ? registry.getCurrentSelectedPath(currentPathname)
-      : [],
-    activeTabKey: initialPages.length > 0 ? initialTabKey : null,
-    activePage: initialPages.length > 0 ? initialTabKey : null,
-    tabs: createInitialTabs(fixedSet, initialTabKey, initialLeaf?.route, registry),
-    pages: initialPages,
-    fixedSet,
+    currentPathname: '',
+    currentRoutes: [],
+    currentSelectedPath: [],
+    activeTabKey: null,
+    activePage: null,
+    tabs: [],
+    pages: [],
+    fixedSet: [],
     pathnameDescriptionMap: {},
     // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
     storageKey: options.storageKey ?? 'default',
     maxFixedTabCount: options.maxFixedTabCount ?? 4,
-    // 未传 storageState 才允许后续从 Adapter 加载；空对象也代表宿主已确认无持久化数据。
-    storageHydrated:
-      options.initial?.storageState !== undefined || storageAdapter === false,
+    // 只要存在外部 Adapter，就必须通过 hydrateStorage 建立完整持久化快照。
+    storageHydrated: storageAdapter === false,
     storageLoading: false,
     storageLoadError: undefined,
   }))
@@ -300,13 +262,19 @@ export function createRouterCore<Route extends RouterRoute>(
     subscribe: store.subscribe,
   }
 
-  const cache = new RouterCache(
-    initialParamsPathMap,
-    (value) => persistParamsPathMap(value),
-  )
-
   const setState = store.setState
   const getState = store.getState
+  const cache = new RouterCache(
+    (value, tabKey, pathname) => {
+      if (!getState().storageHydrated) {
+        // hydration 前 Cache 只包含本次会话触达的局部数据。记录最后一次增量即可，
+        // 不能把局部 Map 当成完整快照保存，加载成功后会统一合并并回写。
+        runtime.pendingParamsPathMutations.set(tabKey, pathname)
+        return
+      }
+      persistParamsPathMap(value)
+    },
+  )
 
   /** 由宿主 Adapter 在挂载/卸载时绑定或清除底层导航能力。 */
   function bindHost(host: RouterHost | null) {
@@ -1026,14 +994,15 @@ export function createRouterCore<Route extends RouterRoute>(
 
   /** 将固定页签保存委托给统一字段持久化流程。 */
   function persistFixedTabs(value: readonly string[]) {
-    persist('fixedTabs', 'saveFixedTabs', (adapter, storageKey) =>
+    // 即使处于纯内存模式也要记录版本，保证在途 hydration 不会覆盖本地操作。
+    runtime.fixedTabsMutationVersion += 1
+    persist('saveFixedTabs', (adapter, storageKey) =>
       adapter.saveFixedTabs(storageKey, [...value]))
   }
 
   /** 将共享动态 pathname 映射保存委托给统一字段持久化流程。 */
   function persistParamsPathMap(value: Record<string, string>) {
     persist(
-      'fixedParamsPathMap',
       'saveFixedParamsPathMap',
       (adapter, storageKey) =>
         adapter.saveFixedParamsPathMap(storageKey, value),
@@ -1070,15 +1039,13 @@ export function createRouterCore<Route extends RouterRoute>(
   /**
    * 执行一个字段保存动作。
    *
-   * 先递增本地版本，确保在途 hydration 不覆盖用户刚完成的操作；纯内存模式仍需
-   * 递增版本。Adapter 失败只发送通知，不回滚当前内存状态。
+   * Adapter 失败只发送通知，不回滚当前内存状态。需要参与 hydration 冲突判断的
+   * 固定页签版本由调用方在进入本函数前递增；动态 pathname 使用独立增量 Map 合并。
    */
   function persist(
-    field: PersistedField,
     phase: Exclude<RouterStorageErrorPhase, 'load'>,
     action: (adapter: RouterStorageAdapter, storageKey: string) => Promise<void>,
   ) {
-    runtime.storageMutationVersions[field] += 1
     if (storageAdapter === false)
       return
     const storageKey = getState().storageKey
@@ -1108,9 +1075,9 @@ export function createRouterCore<Route extends RouterRoute>(
     if (storageAdapter === false)
       return
     const storageKey = getState().storageKey
-    // 字段版本在 await 前快照，完成后据此决定加载结果是否会覆盖本地修改。
-    const mutationVersions = { ...runtime.storageMutationVersions }
-    const currentParams = cache.getParamsPathMap()
+    // 固定页签仍以字段版本判断加载期间是否被用户修改；动态 pathname 则保留每个
+    // tabKey 的增量，避免一个局部变化覆盖尚未加载的其它映射。
+    const fixedTabsMutationVersion = runtime.fixedTabsMutationVersion
     setState({ storageLoading: true, storageLoadError: undefined })
 
     try {
@@ -1119,35 +1086,29 @@ export function createRouterCore<Route extends RouterRoute>(
       )
       const state = getState()
       const fixedUnchanged =
-        mutationVersions.fixedTabs === runtime.storageMutationVersions.fixedTabs
-      const paramsUnchanged =
-        mutationVersions.fixedParamsPathMap ===
-        runtime.storageMutationVersions.fixedParamsPathMap
-      // 固定动态页签可以由存储映射或加载期间刚确认的宿主 pathname 恢复；后者优先，
-      // 避免异步加载返回旧数据时误删当前会话仍在使用的固定页签。
-      const restorableParamsPathMap = {
-        ...loaded.fixedParamsPathMap,
-        ...cache.getParamsPathMap(),
-      }
+        fixedTabsMutationVersion === runtime.fixedTabsMutationVersion
+
+      // 增量 Map 包含 load 前和 load 期间的全部本地变化。字符串覆盖存储旧值，null
+      // 显式删除旧映射；未触达的 key 原样保留，避免首个动态页覆盖其它页签历史。
+      const mergedParamsPathMap = { ...loaded.fixedParamsPathMap }
+      runtime.pendingParamsPathMutations.forEach((pathname, tabKey) => {
+        if (pathname)
+          mergedParamsPathMap[tabKey] = pathname
+        else
+          delete mergedParamsPathMap[tabKey]
+      })
       const nextFixedSet = fixedUnchanged
         ? sanitizeFixedTabKeys(
             loaded.fixedTabs,
-            restorableParamsPathMap,
+            mergedParamsPathMap,
             registry,
           )
         : state.fixedSet
-      if (paramsUnchanged) {
-        // 当前会话确认的动态地址比存储旧值更新，展开顺序确保 currentParams 胜出。
-        const mergedParamsPathMap = {
-          ...loaded.fixedParamsPathMap,
-          ...currentParams,
-        }
-        cache.hydrateParamsPathMap(mergedParamsPathMap)
-        if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap)) {
-          // Adapter 实际保存位于 Promise 微任务，不会阻塞下面的 hydration 状态提交。
-          persistParamsPathMap(mergedParamsPathMap)
-        }
-      }
+
+      // 使用 hydrate 方法替换完整 Cache 不会产生保存回调；清空增量后再把 Store 标记为
+      // hydrated，后续 pathname 更新即可按普通完整快照直接持久化。
+      cache.hydrateParamsPathMap(mergedParamsPathMap)
+      runtime.pendingParamsPathMutations.clear()
       setState({
         fixedSet: nextFixedSet,
         tabs: fixedUnchanged
@@ -1159,6 +1120,10 @@ export function createRouterCore<Route extends RouterRoute>(
       if (fixedUnchanged && !areStringArraysEqual(nextFixedSet, loaded.fixedTabs))
         // 清理无效/重复固定 key 后回写，避免下次加载重复清理。
         persistFixedTabs(nextFixedSet)
+      if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap)) {
+        // 本次会话的动态地址在完整加载结果上合并后只回写一次，不会覆盖未触达 key。
+        persistParamsPathMap(mergedParamsPathMap)
+      }
     } catch (error) {
       setState({ storageLoading: false, storageLoadError: error })
       notifyStorageError(error, {
@@ -1229,33 +1194,6 @@ function resolveStorageAdapter(
   return value === false ? false : value || DEFAULT_STORAGE_ADAPTER
 }
 
-/** 将根路径、目录或页面入口解析成首屏真正可以展示的授权页面。 */
-function resolveInitialPathname<Route extends RouterRoute>(
-  pathname: string | undefined,
-  registry: RouteRegistry<Route>,
-) {
-  if (!pathname)
-    return null
-  // `/` 是入口语义，不直接创建业务页签；默认页不存在时保持空页面状态。
-  if (pathname === '/')
-    return registry.defaultRoute === '/' ? null : registry.defaultRoute
-  const leaf = registry.resolveLeafRoute(pathname, { withinAuth: true })
-  if (registry.isPageRoute(leaf?.route))
-    return pathname
-  return registry.findFirstAccessibleChild(pathname)
-}
-
-/** 只有 pathname、tabKey 和授权 route 都存在时才创建首个页面实例。 */
-function createInitialPages<Route extends RouterRoute>(
-  pathname: string | null,
-  tabKey: string | null,
-  route?: Route,
-): RouterPage<Route>[] {
-  return pathname && tabKey && route
-    ? [{ key: tabKey, pathname, route, touchedAt: 0 }]
-    : []
-}
-
 /**
  * 清理重复、已删除或无法恢复真实地址的固定页签，同时保持首次出现顺序。
  *
@@ -1289,11 +1227,9 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
   })
 }
 
-/** 用固定页签和可选首屏页面创建顺序稳定的初始页签模型。 */
-function createInitialTabs<Route extends RouterRoute>(
+/** 用已清理的固定页签创建顺序稳定的页签模型。 */
+function createTabsFromFixedSet<Route extends RouterRoute>(
   fixedSet: readonly string[],
-  initialTabKey: string | null,
-  initialRoute: Route | undefined,
   registry: RouteRegistry<Route>,
 ) {
   const tabs = fixedSet.reduce<RouterTab[]>((result, key) => {
@@ -1303,13 +1239,6 @@ function createInitialTabs<Route extends RouterRoute>(
     }
     return result
   }, [])
-  if (initialTabKey && initialRoute && !tabs.some((tab) => tab.key === initialTabKey)) {
-    tabs.push({
-      key: initialTabKey,
-      label: initialRoute.title,
-      labelCustomized: false,
-    })
-  }
   return sortTabs(tabs, fixedSet)
 }
 
@@ -1320,7 +1249,7 @@ function mergeTabsWithFixedSet<Route extends RouterRoute>(
   registry: RouteRegistry<Route>,
 ) {
   const map = new Map(tabs.map((tab) => [tab.key, tab]))
-  createInitialTabs(fixedSet, null, undefined, registry).forEach((tab) => {
+  createTabsFromFixedSet(fixedSet, registry).forEach((tab) => {
     if (!map.has(tab.key))
       map.set(tab.key, tab)
   })
@@ -1446,11 +1375,6 @@ function buildUrl(data: {
 }) {
   const search = normalizeSearchParams(data.searchParams)
   return `${data.pathname}${search ? `?${search}` : ''}${normalizeHash(data.hash)}`
-}
-
-/** 为两个独立持久化字段建立从 0 开始的本地修改版本。 */
-function createMutationVersions(): Record<PersistedField, number> {
-  return { fixedTabs: 0, fixedParamsPathMap: 0 }
 }
 
 /** 按顺序比较字符串数组；固定页签的顺序本身属于业务状态。 */

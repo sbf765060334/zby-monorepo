@@ -203,13 +203,6 @@ export interface CreateRouterCoreOptions<
   storageKey?: string
   /** 固定页签数量上限；省略时使用 4。 */
   maxFixedTabCount?: number
-  /** 只在创建首屏同步快照时消费的一次性输入。 */
-  initial?: {
-    /** 首屏宿主 pathname，用于同步创建合法初始页签和页面。 */
-    pathname?: string
-    /** SSR 或宿主预加载完成的持久化状态；传入对象后不再自动异步 hydrate。 */
-    storageState?: Partial<RouterStorageState>
-  }
 }
 
 /**

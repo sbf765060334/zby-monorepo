@@ -100,7 +100,6 @@ describe('route registry', () => {
     const router = createRouterCore({
       routes: platformRoutes,
       storageAdapter: false,
-      initial: { pathname: '/business/orders' },
       isPageRoute: (route) => route.element?.kind === 'page',
       keepAlive: {
         include: (route) => {
@@ -108,6 +107,11 @@ describe('route registry', () => {
           return tag === 'beta'
         },
       },
+    })
+    router.syncLocation({
+      pathname: '/business/orders',
+      search: '',
+      hash: '',
     })
     const currentRoutes = router.getCurrentRoutes('/business/orders')
     const currentTag: PlatformRoute['tag'] =
@@ -151,7 +155,7 @@ describe('route registry', () => {
 })
 
 describe('createRouterCore', () => {
-  it('uses fixed configuration in the first store snapshot', () => {
+  it('uses fixed configuration in an otherwise empty first store snapshot', () => {
     const router = createRouterCore({
       routes,
       storageAdapter: false,
@@ -161,27 +165,11 @@ describe('createRouterCore', () => {
 
     expect(router.getState().storageKey).toBe('user-1')
     expect(router.getState().maxFixedTabCount).toBe(6)
-  })
-
-  it('treats an initial storage object as an authoritative snapshot', async () => {
-    const load = vi.fn(async () => ({
-      fixedTabs: ['/dashboard'],
-      fixedParamsPathMap: {},
-    }))
-    const router = createRouterCore({
-      routes,
-      storageAdapter: {
-        load,
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-      },
-      initial: { storageState: {} },
-    })
-
-    expect(router.getState().storageHydrated).toBe(true)
+    expect(router.getState().currentPathname).toBe('')
+    expect(router.getState().tabs).toEqual([])
+    expect(router.getState().pages).toEqual([])
     expect(router.getState().fixedSet).toEqual([])
-    await router.hydrateStorage()
-    expect(load).not.toHaveBeenCalled()
+    expect(router.getState().storageHydrated).toBe(true)
   })
 
   it('creates a new independent state container on every factory call', () => {
@@ -256,65 +244,59 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs).toEqual([])
   })
 
-  it('drops fixed dynamic tabs that have no concrete pathname', () => {
-    const router = createRouterCore({
-      routes,
-      storageAdapter: false,
-      initial: {
-        pathname: '/dashboard',
-        storageState: {
-          fixedTabs: ['/dashboard', '/project/:id'],
-          fixedParamsPathMap: {},
-        },
-      },
-    })
-
-    expect(router.getState().fixedSet).toEqual(['/dashboard'])
-    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
-      '/dashboard',
-    ])
-  })
-
-  it('restores a fixed dynamic tab from its persisted concrete pathname', () => {
+  it('restores a fixed dynamic tab from its persisted concrete pathname', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({
       routes,
-      storageAdapter: false,
-      initial: {
-        pathname: '/dashboard',
-        storageState: {
+      storageAdapter: {
+        load: vi.fn(async () => ({
           fixedTabs: ['/project/:id'],
           fixedParamsPathMap: {
             '/project/:id': '/project/42',
           },
-        },
+        })),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
       },
     })
     router.bindHost({ navigate })
+    await router.hydrateStorage()
 
     expect(router.getState().fixedSet).toEqual(['/project/:id'])
     router.jumpTo('/project/:id')
     expect(navigate).toHaveBeenCalledWith('/project/42')
   })
 
-  it('uses the current pathname to repair a fixed dynamic tab mapping', () => {
+  it('uses a pre-hydration pathname to repair a fixed dynamic tab mapping', async () => {
     const navigate = vi.fn()
+    const saveFixedParamsPathMap = vi.fn(async () => undefined)
     const router = createRouterCore({
       routes,
-      storageAdapter: false,
-      initial: {
-        pathname: '/project/42',
-        storageState: {
+      storageAdapter: {
+        load: vi.fn(async () => ({
           fixedTabs: ['/project/:id'],
           fixedParamsPathMap: {},
-        },
+        })),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap,
       },
     })
     router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+
+    // 未加载完整 Map 前只能记录本地增量，不能先保存局部快照。
+    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
+    await router.hydrateStorage()
 
     expect(router.getState().fixedSet).toEqual(['/project/:id'])
     router.jumpTo('/project/:id')
     expect(navigate).toHaveBeenCalledWith('/project/42')
+    await vi.waitFor(() => {
+      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
+        'default',
+        { '/project/:id': '/project/42' },
+      )
+    })
   })
 
   it('updates URL cache without publishing state when only search or hash changes', () => {
@@ -500,31 +482,6 @@ describe('createRouterCore', () => {
 
     expect(navigate).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith('/dashboard')
-  })
-
-  it('bootstraps the first host location even when initial pathname matches it', () => {
-    const router = createRouterCore({
-      routes,
-      hasAuth: (code) => code !== 'admin',
-      storageAdapter: false,
-      initial: {
-        pathname: '/admin',
-        storageState: {
-          fixedTabs: ['/admin'],
-          fixedParamsPathMap: {},
-        },
-      },
-    })
-    router.bindHost({ navigate: vi.fn() })
-
-    expect(router.getState().currentPathname).toBe('/admin')
-    expect(router.getState().activeTabKey).toBeNull()
-
-    router.syncLocation({ pathname: '/admin', search: '', hash: '' })
-
-    // 首次同步仍需确认 403 的固定页签身份，不能因初始 pathname 相同而被跳过。
-    expect(router.getState().activeTabKey).toBe('/admin')
-    expect(router.getState().activePage).toBeNull()
   })
 
   it('retries a deferred directory bootstrap after the host is bound', () => {
@@ -933,7 +890,10 @@ describe('createRouterCore', () => {
     const adapter: RouterStorageAdapter = {
       load: vi.fn(async () => ({
         fixedTabs: [],
-        fixedParamsPathMap: { '/project/:id': '/project/1' },
+        fixedParamsPathMap: {
+          '/project/:id': '/project/1',
+          '/customer/:id': '/customer/7',
+        },
       })),
       saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap,
@@ -941,19 +901,62 @@ describe('createRouterCore', () => {
     const router = createRouterCore({
       routes,
       storageAdapter: adapter,
-      initial: { pathname: '/project/42' },
     })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
 
+    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
     await router.hydrateStorage()
     await vi.waitFor(() => {
       expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
         'default',
-        { '/project/:id': '/project/42' },
+        {
+          '/project/:id': '/project/42',
+          '/customer/:id': '/customer/7',
+        },
       )
     })
 
     await router.hydrateStorage()
     expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
+  })
+
+  it('merges a dynamic pathname confirmed while hydration is in flight', async () => {
+    let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
+    const saveFixedParamsPathMap = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(
+          () => new Promise<ReturnType<typeof normalizeRouterStorageState>>((resolve) => {
+            resolveLoad = resolve
+          }),
+        ),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap,
+      },
+    })
+
+    const hydration = router.hydrateStorage()
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
+
+    resolveLoad({
+      fixedTabs: [],
+      fixedParamsPathMap: {
+        '/project/:id': '/project/1',
+        '/customer/:id': '/customer/7',
+      },
+    })
+    await hydration
+    await vi.waitFor(() => {
+      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
+        'default',
+        {
+          '/project/:id': '/project/42',
+          '/customer/:id': '/customer/7',
+        },
+      )
+    })
   })
 
   it('removes an unrestorable fixed dynamic tab loaded from storage', async () => {
@@ -997,9 +1000,9 @@ describe('createRouterCore', () => {
     const router = createRouterCore({
       routes,
       storageAdapter: adapter,
-      initial: { pathname: '/dashboard' },
     })
     router.configureRuntime({ onStorageError })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
 
     expect(router.toggleFixed('/dashboard')).toBe(true)
@@ -1072,9 +1075,9 @@ describe('createRouterCore', () => {
     const router = createRouterCore({
       routes,
       storageAdapter: adapter,
-      initial: { pathname: '/dashboard' },
     })
     router.configureRuntime({ onStorageError })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
 
     try {
       expect(router.toggleFixed('/dashboard')).toBe(true)
