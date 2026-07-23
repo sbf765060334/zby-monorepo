@@ -191,7 +191,7 @@ export interface CreateRouterCoreOptions<
   routes: Route[]
   /** 创建权限路由快照时使用的权限判断函数。 */
   hasAuth?: (code: string) => boolean
-  /** 根路径或目录无法直接展示时优先跳转的具体页面地址。 */
+  /** 访问根路径 `/` 时优先跳转的具体页面地址。 */
   defaultRedirectPath?: string
   /** 页面路由判断规则；默认以 element 是否存在为准。 */
   isPageRoute?: (route: Route) => boolean

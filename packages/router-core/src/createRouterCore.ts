@@ -379,9 +379,9 @@ export function createRouterCore<Route extends RouterRoute>(
         cache.setParamsPath(tabKey, pathname)
     }
 
-    // currentPathname 可能已经由 initial.pathname 建立首屏快照，因此不能用 Store 字段
-    // 判断 bootstrap 是否执行过；私有标记只过滤 StrictMode、重复 Adapter 通知以及
-    // 单纯 search/hash 变化，同时允许浏览器离开后再次进入同一路径时重新处理落点。
+    // currentPathname 会在 bootstrap 前写入 Store，因此不能用 Store 字段判断本次落点
+    // 是否已经处理；私有标记只过滤 StrictMode、重复 Adapter 通知以及单纯 search/hash
+    // 变化，同时允许浏览器离开后再次进入同一路径时重新处理落点。
     if (runtime.lastBootstrappedPathname !== pathname) {
       const bootstrapResult = bootstrapByPathname(pathname)
       // deferred 没有真正完成导航，既不能记录当前 pathname，也不能保留更早路径的
@@ -554,14 +554,16 @@ export function createRouterCore<Route extends RouterRoute>(
       return false
 
     if (!plan.authorized) {
-      // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。
+      // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。导航计划已经把动态
+      // pattern 恢复为具体路径；这里使用本次计划地址，避免同页签的旧 Cache 参数覆盖
+      // 调用方明确传入的新 pathname。
       const activeTabKey = getState().tabs.some((tab) => tab.key === plan.tabKey)
         ? plan.tabKey
         : null
       setInactiveState(activeTabKey)
       host.navigate(
         buildUrl({
-          pathname: cache.getParamsPath(plan.tabKey) || plan.pathname,
+          pathname: plan.pathname,
           searchParams: resolveSearch(
             plan.searchParams,
             cache.getSearch(plan.tabKey),
@@ -1097,12 +1099,14 @@ export function createRouterCore<Route extends RouterRoute>(
         else
           delete mergedParamsPathMap[tabKey]
       })
+      // 持久化数组顺序就是固定页签显示顺序；旧数据超过当前上限时只保留前 N 项，
+      // 后面的差异检测会回写清理结果，避免下次 hydration 再次恢复超限数据。
       const nextFixedSet = fixedUnchanged
         ? sanitizeFixedTabKeys(
             loaded.fixedTabs,
             mergedParamsPathMap,
             registry,
-          )
+          ).slice(0, state.maxFixedTabCount)
         : state.fixedSet
 
       // 使用 hydrate 方法替换完整 Cache 不会产生保存回调；清空增量后再把 Store 标记为
@@ -1206,25 +1210,32 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
   registry: RouteRegistry<Route>,
 ) {
   const seen = new Set<string>()
-  return fixedTabs.filter((key) => {
-    const route = registry.resolveLeafRoute(key)?.route
-    if (seen.has(key) || !registry.isPageRoute(route))
-      return false
+  const sanitized: string[] = []
 
-    if (!isConcreteRoutePath(key)) {
-      const pathname = fixedParamsPathMap[key]
+  fixedTabs.forEach((key) => {
+    // Registry 匹配大小写和末尾斜杠时会返回规范页签身份。持久化数据必须统一使用该
+    // 身份，否则 `/Dashboard/` 与后续访问产生的 `/dashboard` 会成为两个页签。
+    const tabKey = registry.getTabKey(key)
+    const route = tabKey ? registry.resolveLeafRoute(tabKey)?.route : null
+    if (!tabKey || seen.has(tabKey) || !registry.isPageRoute(route))
+      return
+
+    if (!isConcreteRoutePath(tabKey)) {
+      const pathname = fixedParamsPathMap[tabKey]
       if (
         !pathname ||
         !isConcreteRoutePath(pathname) ||
-        registry.getTabKey(pathname) !== key
+        registry.getTabKey(pathname) !== tabKey
       ) {
-        return false
+        return
       }
     }
 
-    seen.add(key)
-    return true
+    seen.add(tabKey)
+    sanitized.push(tabKey)
   })
+
+  return sanitized
 }
 
 /** 用已清理的固定页签创建顺序稳定的页签模型。 */

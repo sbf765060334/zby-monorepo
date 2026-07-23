@@ -438,6 +438,35 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  it('keeps an explicit pathname for unauthorized shared dynamic routes', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({
+      routes: [
+        {
+          path: '/secret/:id',
+          title: 'Secret',
+          element: {},
+          auth: 'secret',
+        },
+      ],
+      hasAuth: () => false,
+      storageAdapter: false,
+    })
+    router.bindHost({ navigate })
+    router.syncLocation({
+      pathname: '/secret/1',
+      search: '',
+      hash: '',
+    })
+    navigate.mockClear()
+
+    router.jumpTo('/secret/2')
+    expect(navigate).toHaveBeenLastCalledWith('/secret/2')
+
+    router.jumpTo('/secret/:id')
+    expect(navigate).toHaveBeenLastCalledWith('/secret/1')
+  })
+
   it('delegates smartNavigate to jumpTo when pathname changes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -979,6 +1008,54 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs).toEqual([])
     await vi.waitFor(() => {
       expect(saveFixedTabs).toHaveBeenCalledWith('default', [])
+    })
+  })
+
+  it('normalizes and deduplicates persisted fixed tab keys', async () => {
+    const saveFixedTabs = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: ['/Dashboard/', '/dashboard'],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs,
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+    })
+
+    await router.hydrateStorage()
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    expect(router.getState().fixedSet).toEqual(['/dashboard'])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    await vi.waitFor(() => {
+      expect(saveFixedTabs).toHaveBeenCalledWith('default', ['/dashboard'])
+    })
+  })
+
+  it('limits hydrated fixed tabs and writes back the cleaned set', async () => {
+    const saveFixedTabs = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      maxFixedTabCount: 1,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: ['/dashboard', '/settings/profile'],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs,
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+      },
+    })
+
+    await router.hydrateStorage()
+
+    expect(router.getState().fixedSet).toEqual(['/dashboard'])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    await vi.waitFor(() => {
+      expect(saveFixedTabs).toHaveBeenCalledWith('default', ['/dashboard'])
     })
   })
 
