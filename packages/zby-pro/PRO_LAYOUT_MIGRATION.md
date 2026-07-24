@@ -191,7 +191,7 @@ export function App() {
 | `_blank`、`target` | UI 职责 | UI 使用原生链接/新窗口；内部路径必须带 React Router basename。 |
 | `prompt`、`tag`、`tooltipProps` | UI 职责 | core 的泛型路由快照会保留元数据，菜单负责展示与交互。 |
 | `anchorPoints` | UI 职责 | 菜单调用 `smartNavigate({ hash })` 或等价的现有语义。 |
-| 页面内任意权限码 `ProLayoutAuth/useProLayoutAuth` | **【router-core 不支持】** | core 只保存过滤后的路由快照，没有公开创建时的 `hasAuth(code)`。迁移权限组件前需要增加最小只读权限查询，或者明确由上层权限系统提供；不能偷偷再给 ProLayout 传一份 `hasAuth`。 |
+| 页面内任意权限码查询 | 已支持 | core 公开创建时固定的 `router.hasAuth(code)`；`useProLayoutAuth` 等业务 Hook 由业务侧按需实现，ProLayout 不重复封装。 |
 
 ### 5.2 菜单与系统切换
 
@@ -350,21 +350,17 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 
 ## 6. 当前 router-core 缺口清单
 
-下面四项不能在迁移时假装已经支持：
+下面三项不能在迁移时假装已经支持：
 
-1. **页面内任意权限码查询**
-
-   Route Registry 已经完成路由权限过滤，但 core 没有公开创建时固定的 `hasAuth(code)`。`ProLayoutAuth` 无法只靠当前公开 API 保持原语义。
-
-2. **供 UI 使用的 basename-aware `createHref`**
+1. **供 UI 使用的 basename-aware `createHref`**
 
    React Router Adapter 已在 Host 内生成正确 href，但 Host 是 core 私有运行时，ProLayout 菜单拿不到。直接拼 `window.location.origin` 会重现 Shuzhi bug。
 
-3. **菜单收藏与收藏持久化**
+2. **菜单收藏与收藏持久化**
 
    这是刻意没有进入 router-core 的 UI 能力。ProLayout 需要独立维护，尤其要明确远程存储是否继续支持收藏字段。
 
-4. **跨窗口 navigator 协议**
+3. **跨窗口 navigator 协议**
 
    core 不监听 `window.message`。ProLayout 可以调用已有命令完成行为，但可信 origin/source 和 `skipBeforeClose` 权限必须先确定。
 
@@ -533,7 +529,7 @@ export interface ProLayoutRoute extends RouterRoute {
 - 浏览器 title。
 - `setPage`。
 - `beforeUnload`。
-- `ProLayoutAuth/useProLayoutAuth`，前提是页面权限查询契约已确定。
+- 页面权限 Hook 由业务侧按需基于 `router.hasAuth(code)` 实现，ProLayout 不迁移 `ProLayoutAuth/useProLayoutAuth`。
 - 如继续保留跨窗口导航，加入可信来源校验和卸载清理。
 
 验收：副作用随当前页面更新且无重复监听；恶意/未知 message 不能触发导航或绕过关闭 Hook。
@@ -664,11 +660,10 @@ git status --short
 
 ## 12. 开始改代码前必须先确认的事项
 
-只有四项需要产品/架构确认，其余可以按本文顺序直接迁移：
+只有三项需要产品/架构确认，其余可以按本文顺序直接迁移：
 
-1. `ProLayoutAuth` 的任意权限码查询由 router-core 暴露最小只读 API，还是由公司统一权限上下文提供。
-2. router-core 如何把 Adapter 中已有的 basename-aware `createHref` 最小化公开给 UI。
-3. 收藏是否只需默认 IndexedDB，还是必须继续支持远程 Adapter。
-4. 跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
+1. router-core 如何把 Adapter 中已有的 basename-aware `createHref` 最小化公开给 UI。
+2. 收藏是否只需默认 IndexedDB，还是必须继续支持远程 Adapter。
+3. 跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
 
-在这四项没有确认前，可以先完成装配骨架、页面渲染、普通页签、图标栏与 Drawer 菜单、异常页、ContentContainer 和基础主题；不得用临时绕行方案固化错误契约。
+在这三项没有确认前，可以先完成装配骨架、页面渲染、普通页签、图标栏与 Drawer 菜单、异常页、ContentContainer 和基础主题；不得用临时绕行方案固化错误契约。

@@ -294,6 +294,8 @@ export type RouterReadableStore<Route extends RouterRoute = RouterRoute> = Pick<
 export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   /** 创建时固定的路由查询注册表。 */
   readonly registry: RouteRegistry<Route>
+  /** 使用创建实例时固定的权限函数查询任意权限码；未配置时始终返回 true。 */
+  readonly hasAuth: (code: string) => boolean
   /** 提供给 React 绑定或状态观察者的只读 vanilla Zustand Store。 */
   readonly store: RouterReadableStore<Route>
   /** 读取当前同步状态快照。 */

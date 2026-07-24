@@ -155,6 +155,25 @@ describe('route registry', () => {
 })
 
 describe('createRouterCore', () => {
+  it('exposes the fixed authorization query with an allow-all default', () => {
+    const restricted = createRouterCore({
+      routes,
+      hasAuth: (code) => code !== 'admin',
+      storageAdapter: false,
+    })
+    const allowAll = createRouterCore({ routes, storageAdapter: false })
+
+    expect(restricted.hasAuth('dashboard')).toBe(true)
+    expect(restricted.hasAuth('admin')).toBe(false)
+    expect(
+      restricted.registry.resolveLeafRoute('/admin', { withinAuth: true }),
+    ).toBeNull()
+    expect(allowAll.hasAuth('unknown-permission')).toBe(true)
+    expect(
+      allowAll.registry.resolveLeafRoute('/admin', { withinAuth: true }),
+    ).not.toBeNull()
+  })
+
   it('uses fixed configuration in an otherwise empty first store snapshot', () => {
     const router = createRouterCore({
       routes,

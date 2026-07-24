@@ -207,10 +207,13 @@ class RouterCache {
 export function createRouterCore<Route extends RouterRoute>(
   options: CreateRouterCoreOptions<Route>,
 ): RouterCore<Route> {
+  // 权限函数与 Registry 同生命周期；未配置时沿用现有的“全部允许”语义。
+  // 页面级权限可以复用该只读 API，但权限变化仍应通过创建新 core 重建路由快照。
+  const hasAuth = options.hasAuth ?? (() => true)
   // Registry 先于 Store 创建，并独立复制路由树；它是整个实例生命周期的路由事实。
   const registry = createRouteRegistry({
     routes: options.routes,
-    hasAuth: options.hasAuth,
+    hasAuth,
     defaultRedirectPath: options.defaultRedirectPath,
     isPageRoute: options.isPageRoute,
   })
@@ -1140,6 +1143,7 @@ export function createRouterCore<Route extends RouterRoute>(
   // 对外只暴露领域查询与命令；Cache、runtime 和持久化协调函数继续封装在实例闭包内。
   return {
     registry,
+    hasAuth,
     store: readableStore,
     getState,
     subscribe: store.subscribe,
