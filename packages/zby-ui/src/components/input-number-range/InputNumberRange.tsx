@@ -530,8 +530,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const placeholder: [string, string] =
       placeholderProp ??
       ([
-        intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', 'Min Value'),
-        intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', 'Max Value'),
+        intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', '最小值'),
+        intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', '最大值'),
       ] as [string, string])
 
     /** 两侧输入框共享同一组数字规则，保证 start/end 的输入行为一致。 */

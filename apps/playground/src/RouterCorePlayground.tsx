@@ -193,7 +193,8 @@ export function DynamicOrderPlayground() {
   const intl = useIntl()
   const page = useRouterPage<ProLayoutRoute>()
   const [note, setNote] = React.useState('')
-  const orderId = page.pathname.split('/').filter(Boolean).at(-1) || '—'
+  const pathnameParts = page.pathname.split('/').filter(Boolean)
+  const orderId = pathnameParts[pathnameParts.length - 1] || '—'
 
   return (
     <PageFrame
