@@ -77,9 +77,9 @@
 
 ProLayout 应通过 selector 读取 `currentPathname`、`currentRoutes`、`currentSelectedPath`、`tabs`、`pages`、`activeTabKey`、`activePage`、`fixedSet` 和 `pathnameDescriptionMap`，不能在 UI 内再次派生一套可写路由状态。
 
-### 3.2 ZBY ProLayout 当前状态
+### 3.2 ZBY ProLayout 迁移前基线
 
-`packages/zby-pro/src/components/pro-layout` 中已有 route、router、store、effects、context、auth 和 content 代码，但它们仍是迁移 router-core 之前的 ProLayout 私有实现：
+以下内容记录开始本轮重构前的代码状态，用于解释为什么需要彻底迁移；不代表当前完成进度：
 
 - `store/**`、`route/**`、`router/**` 与 router-core 职责重复。
 - `effects/**` 仍使用旧 Store 的 pathname/location 同步链路。
@@ -204,8 +204,8 @@ export function App() {
 | Inline 受控/非受控折叠与 popup | 不迁移 | 不保留 `collapsed/defaultCollapsed/onCollapsedChange` 及相关状态和样式。 |
 | 当前菜单选中与父级展开 | 已支持底层路径 | 使用 `currentSelectedPath`，UI 维护展开交互状态。 |
 | 菜单 hover/focus 预加载 | 已支持底层 preload | UI 触发 `preloadRoute`，失败不得打断交互。 |
-| 收藏按钮、收藏面板、移除收藏 | **【router-core 不支持】** | 收藏是菜单 UI 状态，在 ProLayout 内实现，不塞回路由 core。 |
-| 收藏 IndexedDB/远程持久化 | **【router-core 不支持】** | core 的 `RouterStorageState` 明确不含收藏。迁移前需确定 ProLayout 自己的收藏存储契约；固定页签 Adapter 不能被 UI 私自扩字段。 |
+| 收藏按钮、收藏面板、移除收藏 | UI 职责，已实现 | 收藏由 ProLayout 独立 Zustand Store 维护，导航复用 `jumpTo`，不进入路由 core。 |
+| 收藏 IndexedDB/远程持久化 | UI 职责，本地存储已实现 | 使用独立 IndexedDB object store 和串行写队列；当前没有远程同步需求，因此不增加 Adapter。 |
 | 系统切换入口、当前系统标识 | UI 职责 | 保留 `systemList`，点击行为仍是外部系统导航。 |
 | Logo | UI 职责 | 保留图标栏顶部 Logo；不迁移 Inline 折叠态 Logo。 |
 
@@ -225,7 +225,7 @@ export function App() {
 | 关闭旧页签并打开新页 | 已支持 | 使用 `closeThisTabOpenNewOne`，只产生一次最终导航。 |
 | 关闭后通知 | 已支持 | 由 `RouterCoreProvider` 同步 `onTabClose` 运行时回调。 |
 | 页签下拉列表 | UI 职责 | 可由 antd Tabs 的 more/dropdown 能力实现。 |
-| 收藏面板入口 | **【router-core 不支持】** | 与菜单收藏使用同一份 ProLayout UI 状态。 |
+| 收藏面板入口 | UI 职责，已实现 | 与 Drawer 菜单收藏使用同一份 ProLayout Zustand 状态。 |
 
 ### 5.4 页面渲染、KeepAlive 和异常页
 
@@ -259,7 +259,7 @@ export function App() {
 | 异步 hydration | 已支持 | Provider 挂载后执行，能防止 hydration 覆盖期间的新内存修改。 |
 | 首屏同步 `initialStorageState` | 不支持且不迁移 | 已明确删除；固定页签刷新后会在 hydration 完成后异步出现。 |
 | 保存失败 retry | 不支持且不迁移 | 当前精简语义是通知错误，后续任意成功保存会持久化当时的完整最新字段快照。 |
-| 收藏持久化 | **【router-core 不支持】** | 属于 ProLayout UI，单独设计最小存储边界。 |
+| 收藏持久化 | UI 职责，已实现 | ProLayout 使用独立 IndexedDB object store，不扩展 router-core Adapter。 |
 
 ### 5.6 Layout Context、页面副作用与浏览器行为
 
@@ -350,13 +350,9 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 
 ## 6. 当前 router-core 缺口清单
 
-下面两项不能在迁移时假装已经支持：
+下面这项不能在迁移时假装已经支持：
 
-1. **菜单收藏与收藏持久化**
-
-   这是刻意没有进入 router-core 的 UI 能力。ProLayout 需要独立维护，尤其要明确远程存储是否继续支持收藏字段。
-
-2. **跨窗口 navigator 协议**
+1. **跨窗口 navigator 协议**
 
    core 不监听 `window.message`。ProLayout 可以调用已有命令完成行为，但可信 origin/source 和 `skipBeforeClose` 权限必须先确定。
 
@@ -372,7 +368,7 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 | --- | --- | --- |
 | 跨窗口消息不校验来源 | `core/ProLayoutCore.tsx` 的 message handler 只检查 `data.type/url`，不检查 `event.origin` 或 `event.source`；任意可向窗口发消息的页面都能导航，甚至传 `skipBeforeClose`。 | UI 迁移必须处理；未确定可信来源前不实现。 |
 | `hasAuth` 缺省语义错误 | `route/registry.ts` 使用 `route.auth && !hasAuth?.(route.auth)`；未传 `hasAuth` 时，所有带 auth 的路由都会被删除，与页面权限 Hook 的“未传则允许”语义冲突。 | core 已规避：只有提供 `hasAuth` 且返回 false 才过滤。 |
-| IndexedDB 字段更新可能丢失 | `store/storage.ts` 先用 readonly transaction 读取，再开独立 readwrite transaction 写回。收藏、固定页签、参数路径并发更新时可能都基于旧快照，后写覆盖先写。 | core 已规避；收藏存储的新实现也必须避免 read-modify-write 竞态。 |
+| IndexedDB 字段更新可能丢失 | `store/storage.ts` 先用 readonly transaction 读取，再开独立 readwrite transaction 写回。收藏、固定页签、参数路径并发更新时可能都基于旧快照，后写覆盖先写。 | core 已规避；ZBY 收藏使用独立记录和串行快照写入，也没有复制该竞态。 |
 | hydration 使用单一 mutation version | `store/createStore.ts` 只要任意字段在加载期间变化，就整批放弃收藏、固定页签和参数路径 hydration，未冲突字段也无法恢复。 | core 已按字段保护，不复制旧 Store。 |
 | 保存 retry 捕获旧快照 | `persistStorageAction` 的 retry 重放失败时捕获的旧 action，可能在后续状态已更新后覆盖新数据。 | core 已删除 retry，保留错误通知和后续最新快照保存。 |
 | 同一页签并发关闭无锁 | 两次 `closeTab` 可同时通过首次存在性判断和异步 Hook，随后重复清理、回调和导航。 | core 已有同页签关闭事务保护。 |
@@ -444,7 +440,7 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 - semantic `classNames/styles`
 - `afterTabClose`、存储错误通知：如为兼容旧 API 保留，只作为 Provider runtime callback，不进入 UI Store。
 
-收藏持久化属性暂不在本节凭空命名；应先确认是否只要默认 IndexedDB，还是必须兼容远程收藏保存，再确定最小 API。
+收藏已确认只使用 ProLayout 内部默认 IndexedDB，因此不增加收藏持久化属性或远程 Adapter API。
 
 ### 8.3 Route 类型
 
@@ -513,10 +509,12 @@ export interface ProLayoutRoute extends RouterRoute {
 
 ### 阶段 5：迁移收藏
 
+状态：已完成本地收藏与 IndexedDB 持久化。
+
 - 收藏状态只属于 ProLayout UI。
 - 实现菜单收藏按钮和收藏面板。
 - 默认 IndexedDB 更新必须具备并发安全性。
-- 如确认需要远程收藏，再增加明确的 UI Storage Adapter；不能扩展 router-core 的固定页签状态假装兼容。
+- 当前没有远程收藏需求，不增加 Adapter；未来如出现真实需求，再定义独立 UI Storage Adapter。
 
 验收：收藏不触发导航，刷新可恢复，并发收藏/取消不会丢更新，不同 storage namespace 隔离。
 
@@ -601,14 +599,14 @@ export interface ProLayoutRoute extends RouterRoute {
 - [ ] prompt、tag、tooltip 和 anchor。
 - [ ] hover/focus preload 的同步 throw/异步 rejection 不影响交互。
 - [x] 外部 URL 与带 basename 的应用内 `_blank` 正确区分。
-- [ ] 收藏和系统切换不误触发内部导航。
+- [x] 收藏和系统切换不误触发内部导航。
 
 ### 10.5 持久化与副作用
 
 - [ ] 固定页签与动态 pathname 在 hydration 后恢复。
 - [ ] hydration 期间新操作不被旧数据覆盖。
 - [ ] 保存失败只通知，不提供旧快照 retry。
-- [ ] 收藏持久化并发安全。
+- [x] 收藏持久化并发安全。
 - [ ] title、setPage、beforeUnload 不重复注册或发布。
 - [ ] message 只接受可信来源，卸载后清理监听。
 
@@ -656,9 +654,6 @@ git status --short
 
 ## 12. 开始改代码前必须先确认的事项
 
-只有两项需要产品/架构确认，其余可以按本文顺序直接迁移：
+当前仅剩一项需要产品/架构确认：跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
 
-1. 收藏是否只需默认 IndexedDB，还是必须继续支持远程 Adapter。
-2. 跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
-
-在这两项没有确认前，可以先完成装配骨架、页面渲染、普通页签、图标栏与 Drawer 菜单、异常页、ContentContainer 和基础主题；不得用临时绕行方案固化错误契约。
+在该协议没有确认前，不得用临时绕行方案注册不受信任的 `window.message` 导航入口。

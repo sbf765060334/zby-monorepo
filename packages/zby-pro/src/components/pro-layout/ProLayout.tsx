@@ -97,6 +97,7 @@ function ProLayout(props: ProLayoutProps) {
         {!noBar ? (
           <Header
             prefixCls={prefixCls}
+            hashId={hashId}
             extra={header?.extra}
             classNames={classNames}
             styles={styles}

@@ -4,6 +4,7 @@ import { memo } from 'react'
 
 import ProLayout from './ProLayout'
 import { ProLayoutThemeProvider } from './components/ThemeProvider'
+import { FavoriteMenusProvider } from './favorites/FavoriteMenusProvider'
 import type { ReactRouterProLayoutProps } from './types'
 
 /**
@@ -22,9 +23,11 @@ export function ReactRouterProLayout(props: ReactRouterProLayoutProps) {
       onTabClose={onTabClose}
     >
       <RouterCoreReactRouterAdapter>
-        <ProLayoutThemeProvider config={layoutProps.theme}>
-          <ProLayout {...layoutProps} />
-        </ProLayoutThemeProvider>
+        <FavoriteMenusProvider router={router}>
+          <ProLayoutThemeProvider config={layoutProps.theme}>
+            <ProLayout {...layoutProps} />
+          </ProLayoutThemeProvider>
+        </FavoriteMenusProvider>
       </RouterCoreReactRouterAdapter>
     </RouterCoreProvider>
   )

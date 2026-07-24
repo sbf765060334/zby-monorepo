@@ -8,6 +8,7 @@ import { ThemeSwitch, useProLayoutTheme } from './ThemeProvider'
 
 export interface HeaderProps {
   prefixCls: string
+  hashId: string
   extra?: ReactNode
   classNames?: ProLayoutClassNames
   styles?: ProLayoutStyles
@@ -15,7 +16,7 @@ export interface HeaderProps {
 
 /** 顶部全局页签栏及业务扩展区域。 */
 function Header(props: HeaderProps) {
-  const { classNames, extra, prefixCls, styles } = props
+  const { classNames, extra, hashId, prefixCls, styles } = props
   const { enabled: themeEnabled } = useProLayoutTheme()
 
   return (
@@ -33,7 +34,7 @@ function Header(props: HeaderProps) {
         className={clsx(`${prefixCls}-tabs`, classNames?.tabs)}
         style={{ minWidth: 0, flex: 1, ...styles?.tabs }}
       >
-        <PageTabs prefixCls={prefixCls} />
+        <PageTabs prefixCls={prefixCls} hashId={hashId} />
       </div>
       {themeEnabled || (extra !== undefined && extra !== null && extra !== false) ? (
         <div

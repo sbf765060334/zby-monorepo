@@ -16,6 +16,11 @@ import {
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
 
+import {
+  isFavoriteMenuRoute,
+  useFavoriteMenusSelector,
+  useToggleFavoriteMenu,
+} from '../favorites/FavoriteMenusProvider'
 import type { RouterCoreState } from '@zby/router-core'
 import type { ReactNode } from 'react'
 import type {
@@ -24,6 +29,7 @@ import type {
   ProLayoutStyles,
   ProLayoutSystemItem,
 } from '../types'
+import MenuFavoriteButton from './MenuFavoriteButton'
 
 export interface IconDrawerMenuProps {
   prefixCls: string
@@ -42,6 +48,9 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
   const selectedPath = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentSelectedPath,
   )
+  const favoritePaths = useFavoriteMenusSelector((state) => state.favoritePaths)
+  const toggleFavorite = useToggleFavoriteMenu()
+  const favoritePathSet = useMemo(() => new Set(favoritePaths), [favoritePaths])
   const routes = router.registry.permissionRoutes.filter((route) => isVisibleRoute(route))
   const [drawerRoute, setDrawerRoute] = useState<ProLayoutRoute | null>(null)
   const drawerColumns = drawerRoute?.routes?.filter((route) => isVisibleRoute(route)) || []
@@ -163,6 +172,9 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
               createHref={createHref}
               onSelect={handleRoute}
               onPreload={(route) => preloadVisibleRoute(route, router)}
+              favoritePaths={favoritePathSet}
+              onToggleFavorite={toggleFavorite}
+              isFavoriteRoute={(route) => isFavoriteMenuRoute(router, route)}
             />
           ))}
         </div>
@@ -178,8 +190,21 @@ function MenuColumn(props: {
   createHref: (path: string) => string
   onSelect: (route: ProLayoutRoute, anchor?: string) => void
   onPreload: (route: ProLayoutRoute) => void
+  favoritePaths: ReadonlySet<string>
+  onToggleFavorite: (path: string) => void
+  isFavoriteRoute: (route: ProLayoutRoute) => boolean
 }) {
-  const { createHref, onPreload, onSelect, prefixCls, route, selectedPath } = props
+  const {
+    createHref,
+    favoritePaths,
+    isFavoriteRoute,
+    onPreload,
+    onSelect,
+    onToggleFavorite,
+    prefixCls,
+    route,
+    selectedPath,
+  } = props
   return (
     <section className={`${prefixCls}-menu-column`}>
       <MenuRoute
@@ -189,6 +214,9 @@ function MenuColumn(props: {
         createHref={createHref}
         onSelect={onSelect}
         onPreload={onPreload}
+        favoritePaths={favoritePaths}
+        onToggleFavorite={onToggleFavorite}
+        isFavoriteRoute={isFavoriteRoute}
         level={0}
       />
     </section>
@@ -202,9 +230,23 @@ function MenuRoute(props: {
   createHref: (path: string) => string
   onSelect: (route: ProLayoutRoute, anchor?: string) => void
   onPreload: (route: ProLayoutRoute) => void
+  favoritePaths: ReadonlySet<string>
+  onToggleFavorite: (path: string) => void
+  isFavoriteRoute: (route: ProLayoutRoute) => boolean
   level: number
 }) {
-  const { createHref, level, onPreload, onSelect, prefixCls, route, selectedPath } = props
+  const {
+    createHref,
+    favoritePaths,
+    isFavoriteRoute,
+    level,
+    onPreload,
+    onSelect,
+    onToggleFavorite,
+    prefixCls,
+    route,
+    selectedPath,
+  } = props
   const children = route.routes?.filter((item) => isVisibleRoute(item)) || []
   const tag = typeof route.tag === 'string' ? { text: route.tag } : route.tag
   const className = clsx(`${prefixCls}-menu-route`, {
@@ -219,32 +261,42 @@ function MenuRoute(props: {
   )
   return (
     <div className={`${prefixCls}-menu-group`}>
-      {route._blank && !route.prompt
-        ? (
-            <a
-              href={createHref(route.path)}
-              target={route.target || '_blank'}
-              rel={(route.target || '_blank') === '_blank' ? 'noopener noreferrer' : undefined}
-              className={className}
-              style={{ paddingInlineStart: level * 12 + 8 }}
-              onFocus={() => onPreload(route)}
-              onMouseEnter={() => onPreload(route)}
-            >
-              {content}
-            </a>
-          )
-        : (
-            <button
-              type="button"
-              className={className}
-              style={{ paddingInlineStart: level * 12 + 8 }}
-              onClick={() => onSelect(route)}
-              onFocus={() => onPreload(route)}
-              onMouseEnter={() => onPreload(route)}
-            >
-              {content}
-            </button>
-          )}
+      <div className={`${prefixCls}-menu-route-row`}>
+        {route._blank && !route.prompt
+          ? (
+              <a
+                href={createHref(route.path)}
+                target={route.target || '_blank'}
+                rel={(route.target || '_blank') === '_blank' ? 'noopener noreferrer' : undefined}
+                className={className}
+                style={{ paddingInlineStart: level * 12 + 8 }}
+                onFocus={() => onPreload(route)}
+                onMouseEnter={() => onPreload(route)}
+              >
+                {content}
+              </a>
+            )
+          : (
+              <button
+                type="button"
+                className={className}
+                style={{ paddingInlineStart: level * 12 + 8 }}
+                onClick={() => onSelect(route)}
+                onFocus={() => onPreload(route)}
+                onMouseEnter={() => onPreload(route)}
+              >
+                {content}
+              </button>
+            )}
+        {isFavoriteRoute(route) ? (
+          <MenuFavoriteButton
+            prefixCls={prefixCls}
+            title={route.title}
+            favorite={favoritePaths.has(route.path)}
+            onToggle={() => onToggleFavorite(route.path)}
+          />
+        ) : null}
+      </div>
       {route.anchorPoints?.map((anchor) => (
         <button
           key={anchor.anchor}

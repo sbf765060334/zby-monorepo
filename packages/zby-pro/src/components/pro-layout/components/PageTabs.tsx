@@ -8,15 +8,17 @@ import { memo, useMemo } from 'react'
 import type { RouterCoreState } from '@zby/router-core'
 import type { TabsProps } from 'antd'
 import type { ProLayoutRoute } from '../types'
+import FavoriteMenuPanel from './FavoriteMenuPanel'
 import SortableTabs from './SortableTabs'
 
 export interface PageTabsProps {
   prefixCls: string
+  hashId: string
 }
 
 /** 全局路由页签，只通过 RouterCore 命令改变领域状态。 */
 function PageTabs(props: PageTabsProps) {
-  const { prefixCls } = props
+  const { hashId, prefixCls } = props
   const router = useRouterCore<ProLayoutRoute>()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.tabs,
@@ -107,6 +109,7 @@ function PageTabs(props: PageTabsProps) {
       onEdit={handleEdit}
       onPreload={handlePreload}
       onReorder={(keys) => router.reorderTabs(keys)}
+      tabBarExtraContent={<FavoriteMenuPanel prefixCls={prefixCls} hashId={hashId} />}
     />
   )
 }
