@@ -58,14 +58,17 @@ function PageTabs(props: PageTabsProps) {
       const label = (
         <Flex
           align="center"
-          gap={4}
           className={clsx(`${prefixCls}-tab-label-wrap`, {
             [`${prefixCls}-tab-label-wrap-fixed`]: fixed,
+            [`${prefixCls}-tab-label-wrap-unfixed`]: !fixed,
           })}
         >
           <button
             type="button"
-            className={`${prefixCls}-fixed-icon`}
+            className={clsx(`${prefixCls}-fixed-icon`, {
+              [`${prefixCls}-fixed-icon-active`]: fixed,
+              [`${prefixCls}-fixed-icon-unfixed`]: !fixed,
+            })}
             aria-label={pinLabel}
             aria-pressed={fixed}
             title={pinLabel}
@@ -78,14 +81,21 @@ function PageTabs(props: PageTabsProps) {
           >
             <PinIcon />
           </button>
-          <span className={`${prefixCls}-tab-label`}>{tab.label}</span>
+          <span
+            className={clsx(`${prefixCls}-tab-label`, {
+              [`${prefixCls}-tab-label-fixed`]: fixed,
+              [`${prefixCls}-tab-label-unfixed`]: !fixed,
+            })}
+          >
+            {tab.label}
+          </span>
         </Flex>
       )
 
       return {
         key: tab.key,
         label: description ? (
-          <Tooltip placement="bottomLeft" title={description}>
+          <Tooltip arrow={false} placement="bottomLeft" title={description}>
             {label}
           </Tooltip>
         ) : label,
@@ -106,13 +116,16 @@ function PageTabs(props: PageTabsProps) {
     preloadRoute(leaf?.route)
   }
 
+  const tabType = items.length <= 1 ? 'card' : 'editable-card'
+
   return (
     <SortableTabs
+      key={tabType}
       prefixCls={prefixCls}
       items={items}
       fixedKeys={fixedKeys}
       activeKey={activeKey || undefined}
-      type={items.length <= 1 ? 'card' : 'editable-card'}
+      type={tabType}
       size="small"
       hideAdd
       removeIcon={<CloseOutlined onPointerDown={stopEvent} />}
@@ -121,6 +134,7 @@ function PageTabs(props: PageTabsProps) {
       onPreload={handlePreload}
       onReorder={(keys) => router.reorderTabs(keys)}
       tabBarExtraContent={<FavoriteMenuPanel prefixCls={prefixCls} hashId={hashId} />}
+      style={{ maxWidth: '100%' }}
     />
   )
 }

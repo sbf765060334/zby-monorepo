@@ -45,6 +45,13 @@ export default function SortableTabs(props: SortableTabsProps) {
     [fixedKeys, items],
   )
   const keys = useMemo(() => orderedItems.map((item) => String(item.key)), [orderedItems])
+  const { nextKey, previousKey } = useMemo(() => {
+    const activeIndex = keys.indexOf(String(activeKey))
+    return {
+      previousKey: activeIndex > -1 ? keys[activeIndex - 1] || null : null,
+      nextKey: activeIndex > -1 ? keys[activeIndex + 1] || null : null,
+    }
+  }, [activeKey, keys])
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -82,6 +89,8 @@ export default function SortableTabs(props: SortableTabsProps) {
               id={String(node.key)}
               prefixCls={prefixCls}
               active={String(activeKey) === String(node.key)}
+              activePrevious={previousKey === String(node.key)}
+              activeNext={nextKey === String(node.key)}
               onPreload={onPreload}
             >
               {node}
@@ -106,30 +115,56 @@ function SortableTabNode(props: {
   id: string
   prefixCls: string
   active: boolean
+  activePrevious: boolean
+  activeNext: boolean
   onPreload?: (key: string) => void
   children: ReactNode
 }) {
-  const { active, children, id, onPreload, prefixCls } = props
-  const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({ id })
+  const {
+    active,
+    activeNext,
+    activePrevious,
+    children,
+    id,
+    onPreload,
+    prefixCls,
+  } = props
+  const {
+    attributes,
+    isDragging,
+    isOver,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id })
 
   return (
-    <div
-      ref={setNodeRef}
-      className={clsx(`${prefixCls}-tab-node`, {
-        [`${prefixCls}-tab-node-active`]: active,
-        [`${prefixCls}-tab-node-dragging`]: isDragging,
-      })}
-      style={{
-        transform: CSS.Transform.toString(transform ? { ...transform, y: 0, scaleX: 1, scaleY: 1 } : null),
-        transition,
-      }}
-      onFocus={() => onPreload?.(id)}
-      onMouseEnter={() => onPreload?.(id)}
-      {...attributes}
-      {...listeners}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        ref={setNodeRef}
+        className={clsx(`${prefixCls}-tab-node`, {
+          [`${prefixCls}-tab-node-active`]: active,
+          [`${prefixCls}-tab-node-active-prev`]: activePrevious,
+          [`${prefixCls}-tab-node-active-next`]: activeNext,
+          [`${prefixCls}-tab-node-dragging`]: isDragging,
+          [`${prefixCls}-tab-node-dropping`]: isOver,
+        })}
+        style={{
+          transform: CSS.Transform.toString(
+            transform ? { ...transform, y: 0, scaleX: 1, scaleY: 1 } : null,
+          ),
+          transition,
+        }}
+        onFocus={() => onPreload?.(id)}
+        onMouseEnter={() => onPreload?.(id)}
+        {...attributes}
+        {...listeners}
+      >
+        {children}
+      </div>
+      {!active && !activePrevious ? <div className={`${prefixCls}-tab-split`} /> : null}
+    </>
   )
 }
 

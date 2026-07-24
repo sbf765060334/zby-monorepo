@@ -100,6 +100,43 @@ describe('ReactRouterProLayout', () => {
     await waitFor(() => expect(screen.getByTestId('dashboard-page').textContent).toContain('active'))
   })
 
+  it('按 Shuzhi 语义切换 Drawer，并渲染分栏菜单和页签分隔符', async () => {
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+    const menuContainer = container.querySelector('.zby-pro-layout-sider-menu-container')
+    expect(main.style.paddingBlockStart).toBe('38px')
+    expect(header.style.paddingInlineStart).toBe('60px')
+    expect(menuContainer?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    const orderMenu = screen.getByRole('button', { name: /订单管理/ })
+    fireEvent.click(orderMenu)
+
+    const drawer = await screen.findByRole('dialog')
+    expect(drawer.querySelector('.zby-pro-layout-menu-columns')).toBeTruthy()
+    expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
+    const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
+    expect(drawerRoot.style.left).toBe('60px')
+    expect(drawerRoot.style.zIndex).toBe('999')
+    expect(menuContainer?.querySelector('.zby-pro-layout-menu-drawer')).toBeTruthy()
+
+    // 再次点击当前一级目录会关闭 Drawer，不会重复创建一层菜单。
+    fireEvent.click(orderMenu)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    act(() => router.jumpTo('/reports'))
+    await screen.findByTestId('reports-page')
+    expect(container.querySelectorAll('.zby-pro-layout-tab-split')).toHaveLength(1)
+  })
+
   it('noBar 模式不渲染图标栏和全局页签', async () => {
     const router = createTestRouter()
     const { container } = render(
@@ -145,6 +182,14 @@ describe('ReactRouterProLayout', () => {
       .toBe('rgb(1, 2, 3)')
     expect(screen.getByRole('button', { name: '固定页签：工作台' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '切换系统' })).toBeTruthy()
+
+    const pinButton = screen.getByRole('button', { name: '固定页签：工作台' })
+    expect(pinButton.classList.contains('zby-pro-layout-fixed-icon-unfixed')).toBe(true)
+    fireEvent.click(pinButton)
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '取消固定页签：工作台' })
+        .classList.contains('zby-pro-layout-fixed-icon-active')).toBe(true)
+    })
   })
 
   it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {

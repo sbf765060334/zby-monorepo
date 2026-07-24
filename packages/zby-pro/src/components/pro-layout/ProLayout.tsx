@@ -74,7 +74,6 @@ function ProLayout(props: ProLayoutProps) {
     <Layout
       className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
       style={{
-        minWidth: minimumContentWidth,
         minHeight: '100vh',
         viewTransitionName,
         ...styles?.root,
@@ -92,12 +91,21 @@ function ProLayout(props: ProLayoutProps) {
           styles={styles}
         />
       ) : null}
-      <Layout className={`${prefixCls}-main`}>
+      <Layout
+        className={`${prefixCls}-main`}
+        style={{
+          width: '100%',
+          minWidth: minimumContentWidth,
+          paddingInlineStart: noBar ? 0 : 60,
+          paddingBlockStart: noBar ? 0 : 38,
+        }}
+      >
         {!noBar ? (
           <Header
             prefixCls={prefixCls}
             hashId={hashId}
             extra={header?.extra}
+            paddingLeft={60}
             classNames={classNames}
             styles={styles}
           />

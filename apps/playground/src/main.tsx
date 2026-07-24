@@ -1,18 +1,26 @@
 import 'antd/dist/reset.css'
-
 import { App as AntdApp, ConfigProvider } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
 import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
-import { zbyProLocales } from '@zby/pro'
+import { type ProLayoutRoute, ReactRouterProLayout, zbyProLocales } from '@zby/pro'
 import { zbyUiLocales } from '@zby/ui'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-
-import ProLayoutPlayground from './ProLayoutPlayground'
 import { playgroundLocales } from './playgroundIntl'
 import type { PlaygroundLocale } from './playgroundIntl'
+import { createRouterCore } from '@zby/router-core'
+import { appRouters } from './routes'
+import PlaygroundHeaderActions from './PlaygroundHeaderActions'
+
+const routers = createRouterCore<ProLayoutRoute>({
+  routes: appRouters,
+  defaultRedirectPath: '/dashboard',
+  keepAlive: { maxCachedPages: 8 },
+  storageKey: 'zby-playground:pro-layout',
+  maxFixedTabCount: 4,
+})
 
 const resources = mergeIntlResources(zbyUiLocales, zbyProLocales, playgroundLocales)
 
@@ -38,7 +46,36 @@ function PlaygroundApp() {
             setLocale(nextLocale === 'en-US' ? 'en-US' : 'zh-CN')
           }}
         >
-          <ProLayoutPlayground locale={locale} />
+          <ReactRouterProLayout
+            router={routers}
+            title="ZBY"
+            header={{
+              logo: (
+                <span
+                  style={{ color: '#fff', fontSize: 18, fontWeight: 700, letterSpacing: 1 }}
+                  title="ZBY"
+                >
+                  ZBY
+                </span>
+              ),
+              extra: <PlaygroundHeaderActions />,
+            }}
+            theme={{
+              enabled: true,
+              defaultMode: 'auto',
+              storageKey: 'zby-playground:pro-layout-theme',
+            }}
+            minimumContentWidth={900}
+            styles={{
+              page: {
+                boxSizing: 'border-box',
+                padding: 24,
+              },
+            }}
+            onStorageError={(error, info) => {
+              console.error(`[Playground] Router storage ${info.phase} failed.`, error)
+            }}
+          />
         </ZbyIntlProvider>
       </AntdApp>
     </ConfigProvider>
