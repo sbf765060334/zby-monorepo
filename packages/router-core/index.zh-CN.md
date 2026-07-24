@@ -1,6 +1,6 @@
 # @zby/router-core
 
-[English](./README.md) | 简体中文
+[English](./index.en-US.md) | 简体中文
 
 面向 ZBY 数字化平台的路由、页签、KeepAlive 与持久化基础能力。
 

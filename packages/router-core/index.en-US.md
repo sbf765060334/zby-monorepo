@@ -1,6 +1,6 @@
 # @zby/router-core
 
-English | [简体中文](./README.zh-CN.md)
+English | [简体中文](./index.zh-CN.md)
 
 Routing, tabs, KeepAlive, and persistence primitives for ZBY digital platforms.
 
