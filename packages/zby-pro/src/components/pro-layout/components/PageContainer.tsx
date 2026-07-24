@@ -52,13 +52,13 @@ function PageContainer(props: PageContainerProps) {
       <div
         className={className}
         style={{
-          display: active ? 'block' : 'none',
           width: '100%',
           height: '100%',
           minWidth: 0,
           minHeight: 0,
           overflow: 'auto',
           ...style,
+          display: active ? (style?.display ?? 'block') : 'none',
         }}
       >
         <PageErrorBoundary resetKeys={resetKeys}>
