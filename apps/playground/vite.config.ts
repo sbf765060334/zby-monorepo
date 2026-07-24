@@ -9,6 +9,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@zby/intl': sourcePath('../../packages/zby-intl/src/index.ts'),
+      '@zby/router-core/react-router': sourcePath('../../packages/router-core/src/react-router/index.ts'),
+      '@zby/router-core/react': sourcePath('../../packages/router-core/src/react/index.ts'),
+      '@zby/router-core': sourcePath('../../packages/router-core/src/index.ts'),
       '@zby/pro': sourcePath('../../packages/zby-pro/src/index.ts'),
       '@zby/ui': sourcePath('../../packages/zby-ui/src/index.ts'),
     },
