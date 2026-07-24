@@ -1,5 +1,6 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
+import { useIntl } from '@zby/intl'
 import { Breadcrumb, Space } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
@@ -24,6 +25,7 @@ export interface LayoutBreadcrumbProps {
  */
 function BreadcrumbView(props: LayoutBreadcrumbProps) {
   const { className, prefixCls, style } = props
+  const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
   const currentPathname = useRouterCoreSelector(
@@ -75,7 +77,9 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
       className={clsx(`${prefixCls}-breadcrumb`, className)}
       style={style}
     >
-      <span className={`${prefixCls}-breadcrumb-label`}>当前位置：</span>
+      <span className={`${prefixCls}-breadcrumb-label`}>
+        {intl.getMessage('zby.pro.layout.breadcrumb.currentLocation', '当前位置：')}
+      </span>
       <Breadcrumb items={items} />
     </Space>
   )

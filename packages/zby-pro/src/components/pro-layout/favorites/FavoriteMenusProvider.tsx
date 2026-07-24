@@ -1,3 +1,4 @@
+import { useIntl } from '@zby/intl'
 import { message } from 'antd'
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import { useStore } from 'zustand'
@@ -34,11 +35,16 @@ export function FavoriteMenusProvider(props: {
   children: ReactNode
 }) {
   const { children, router } = props
+  const intl = useIntl()
   const [messageApi, messageContextHolder] = message.useMessage()
   const reportStorageError = useCallback((error: unknown, phase: 'load' | 'save') => {
     console.error(`[ProLayout] Failed to ${phase} favorite menus.`, error)
-    void messageApi.error(phase === 'load' ? '菜单收藏加载失败' : '菜单收藏保存失败')
-  }, [messageApi])
+    void messageApi.error(
+      phase === 'load'
+        ? intl.getMessage('zby.pro.layout.favorites.loadError', '菜单收藏加载失败')
+        : intl.getMessage('zby.pro.layout.favorites.saveError', '菜单收藏保存失败'),
+    )
+  }, [intl, messageApi])
   const controller = useMemo(
     () => createFavoriteMenusController(router, reportStorageError),
     [reportStorageError, router],

@@ -1,4 +1,5 @@
 import { StarFilled, StarOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 import { memo } from 'react'
 
@@ -12,7 +13,10 @@ export interface MenuFavoriteButtonProps {
 /** Drawer 菜单项中的收藏按钮；独立阻止事件，避免收藏操作同时触发页面导航。 */
 function MenuFavoriteButton(props: MenuFavoriteButtonProps) {
   const { favorite, onToggle, prefixCls, title } = props
-  const label = favorite ? `取消收藏：${title}` : `收藏：${title}`
+  const intl = useIntl()
+  const label = favorite
+    ? intl.getMessage('zby.pro.layout.favorites.remove', '取消收藏：{{title}}', { title })
+    : intl.getMessage('zby.pro.layout.favorites.add', '收藏：{{title}}', { title })
   const Icon = favorite ? StarFilled : StarOutlined
 
   return (

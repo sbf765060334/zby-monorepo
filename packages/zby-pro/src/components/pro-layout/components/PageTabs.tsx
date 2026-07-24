@@ -1,6 +1,7 @@
 import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
 import { Flex, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
@@ -19,6 +20,7 @@ export interface PageTabsProps {
 /** 全局路由页签，只通过 RouterCore 命令改变领域状态。 */
 function PageTabs(props: PageTabsProps) {
   const { hashId, prefixCls } = props
+  const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.tabs,
@@ -46,7 +48,13 @@ function PageTabs(props: PageTabsProps) {
       const pathname = pagePathnameMap.get(tab.key) || tab.key
       const description = descriptions[pathname]
       const PinIcon = fixed ? PushpinFilled : PushpinOutlined
-      const pinLabel = fixed ? `取消固定页签：${tab.label}` : `固定页签：${tab.label}`
+      const pinLabel = fixed
+        ? intl.getMessage('zby.pro.layout.tabs.unpin', '取消固定页签：{{title}}', {
+            title: tab.label,
+          })
+        : intl.getMessage('zby.pro.layout.tabs.pin', '固定页签：{{title}}', {
+            title: tab.label,
+          })
       const label = (
         <Flex
           align="center"
@@ -84,7 +92,7 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    [descriptions, fixedKeySet, pagePathnameMap, prefixCls, router, tabs],
+    [descriptions, fixedKeySet, intl, pagePathnameMap, prefixCls, router, tabs],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {

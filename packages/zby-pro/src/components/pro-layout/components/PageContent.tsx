@@ -1,4 +1,5 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
 
@@ -77,9 +78,16 @@ function ExceptionContent(props: {
   status: '403' | '404'
   style?: CSSProperties
 }) {
+  const intl = useIntl()
   const description = props.status === '403'
-    ? '暂无权限查看当前页面，若需当前页面权限，请联系管理员。'
-    : '访问的页面暂时不存在，请输入正确的地址。'
+    ? intl.getMessage(
+        'zby.pro.layout.exception.forbidden',
+        '暂无权限查看当前页面，若需当前页面权限，请联系管理员。',
+      )
+    : intl.getMessage(
+        'zby.pro.layout.exception.notFound',
+        '访问的页面暂时不存在，请输入正确的地址。',
+      )
 
   return (
     <div

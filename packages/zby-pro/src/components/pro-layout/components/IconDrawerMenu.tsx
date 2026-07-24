@@ -2,6 +2,7 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { AppstoreOutlined, SwapOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
 import {
   Button,
   Drawer,
@@ -43,6 +44,7 @@ export interface IconDrawerMenuProps {
 /** ZBY 唯一保留的“一级图标栏 + 多列 Drawer”导航。 */
 function IconDrawerMenu(props: IconDrawerMenuProps) {
   const { classNames, hashId, logo, prefixCls, styles, systemList = [] } = props
+  const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
   const [messageApi, messageContextHolder] = message.useMessage()
@@ -59,7 +61,11 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
 
   const handleRoute = (route: ProLayoutRoute, anchor?: string) => {
     if (route.prompt) {
-      void messageApi.info(typeof route.prompt === 'string' ? route.prompt : '功能暂未开放')
+      void messageApi.info(
+        typeof route.prompt === 'string'
+          ? route.prompt
+          : intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放'),
+      )
       return
     }
 
@@ -323,8 +329,11 @@ function MenuRoute(props: {
 }
 
 function SystemSwitcher(props: { prefixCls: string, systemList: ProLayoutSystemItem[] }) {
+  const intl = useIntl()
   const activeSystem = props.systemList.find((item) => item.active)
-  const triggerLabel = activeSystem?.description || activeSystem?.name || '切换系统'
+  const triggerLabel = activeSystem?.description ||
+    activeSystem?.name ||
+    intl.getMessage('zby.pro.layout.menu.switchSystem', '切换系统')
   const content = useMemo(() => (
     <Space direction="vertical" size={4} className={`${props.prefixCls}-system-list`}>
       {props.systemList.map((system) => (

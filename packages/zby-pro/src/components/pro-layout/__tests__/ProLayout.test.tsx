@@ -2,14 +2,25 @@
 
 import 'fake-indexeddb/auto'
 
+import { ZbyIntlProvider } from '@zby/intl'
 import { createRouterCore } from '@zby/router-core'
 import { useRouterPageSelector } from '@zby/router-core/react'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as testingLibraryRender,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { zbyProLocales } from '../../../locales'
 import * as favoriteStorage from '../favorites/storage'
 import ReactRouterProLayout from '../ReactRouterProLayout'
+import type { ReactNode } from 'react'
 import type { ProLayoutRoute } from '../types'
 
 beforeAll(() => {
@@ -40,6 +51,15 @@ afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
 })
+
+/** 测试与业务入口保持一致，默认使用中文并注册 @zby/pro 自带语言包。 */
+function render(node: ReactNode, locale = 'zh-CN') {
+  return testingLibraryRender(
+    <ZbyIntlProvider locale={locale} fallbackLocale="zh-CN" resources={zbyProLocales}>
+      {node}
+    </ZbyIntlProvider>,
+  )
+}
 
 describe('ReactRouterProLayout', () => {
   it('装配 router-core 并渲染全局页签、面包屑和页面 Context', async () => {
@@ -125,6 +145,38 @@ describe('ReactRouterProLayout', () => {
       .toBe('rgb(1, 2, 3)')
     expect(screen.getByRole('button', { name: '固定页签：工作台' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '切换系统' })).toBeTruthy()
+  })
+
+  it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={router}
+          title="Digital Platform"
+          theme={{ enabled: true }}
+        />
+      </MemoryRouter>,
+      'en-US',
+    )
+
+    await screen.findByTestId('dashboard-page')
+    expect(screen.getByText('Current location:')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Pin tab: 工作台' })).toBeTruthy()
+
+    const themeTrigger = container.querySelector('.zby-pro-layout-theme-trigger')
+    expect(themeTrigger).toBeTruthy()
+    fireEvent.click(themeTrigger as HTMLElement)
+    expect(await screen.findByText('Follow system')).toBeTruthy()
+    expect(screen.getByText('Light theme')).toBeTruthy()
+    expect(screen.getByText('Dark theme')).toBeTruthy()
+    fireEvent.click(screen.getByText('Follow system'))
+
+    fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add to favorites: 订单列表' }))
+    expect(screen.getByRole('button', { name: 'Remove from favorites: 订单列表' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Favorite menus' }))
+    expect(await screen.findByText('Favorite menus (1)')).toBeTruthy()
   })
 
   it('为应用内新窗口菜单和可点击面包屑生成 basename-aware 原生链接', async () => {
