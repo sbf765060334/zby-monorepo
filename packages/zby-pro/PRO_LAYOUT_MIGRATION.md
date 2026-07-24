@@ -239,7 +239,7 @@ export function App() {
 | 固定页签免于普通 LRU | 已支持 | 不在 UI 重复判断。 |
 | 页面 pathname/search/hash 缓存与恢复 | 已支持 | Adapter 调用 `syncLocation` 后由 core 统一处理。 |
 | 每页独立 pathname、tabKey、active、location | 已支持 | 每个页面外包 `RouterPageProvider`，页面用 `useRouterPageSelector` 精确订阅。 |
-| Shuzhi `lifecycle$` 事件流 | 部分支持 | core 提供稳定 `active` 状态，不提供同名 emitter。ZBY 应优先让页面订阅 `active`；如果必须兼容旧 Hook，只在 ProLayout React 兼容层适配，不能写入 core。 |
+| Shuzhi `lifecycle$` 事件流 | 明确不迁移 | ZBY 只提供稳定 `active` 状态，页面通过 `useRouterPageSelector` 订阅；不构造兼容 emitter。 |
 | 403 | 已支持底层判断 | 完整索引存在、权限索引不可访问时由 UI 展示 403。 |
 | 404 | 已支持底层判断 | 完整索引也无法解析时由 UI 展示 404。 |
 | 全局路由面包屑 | 已支持底层路由链 | ProLayout 在 Header/全局页签下方统一渲染，业务页面无需依赖 ContentContainer。 |
@@ -269,11 +269,11 @@ export function App() {
 | 全局命令 | 已支持 | 使用 `useRouterCore`。 |
 | 页面级 selector | 已支持 | 使用 `useRouterPageSelector`。 |
 | `useProLayoutContext` 兼容 API | UI/兼容层 | 可以基于 core Hooks 做薄封装，不得保存重复状态。 |
-| `useProLayoutPageContext` 兼容 API | UI/兼容层 | 基于 `RouterPageProvider` 做薄封装。 |
+| `useProLayoutPageContext` 兼容 API | 明确不迁移 | 页面直接使用 `useRouterPage/useRouterPageSelector`，不保留 Shuzhi Context 兼容层。 |
 | 浏览器标题 | **【router-core 不支持】** | UI effect 根据应用 title、当前路由标题和 pathname 描述更新 `document.title`。 |
 | `setPage` 外部页面名称通知 | **【router-core 不支持】** | UI effect 负责，属于平台集成副作用。 |
 | `beforeUnload` | **【router-core 不支持】** | 保留在 ProLayout Hook，不应进入 core。 |
-| 跨窗口 `message type=navigator` | **【router-core 不支持】** | 如保留，由 ProLayout 装配层解析消息后调用 `jumpTo/closeThisTabOpenNewOne`；必须先确定可信来源。 |
+| 跨窗口 `message type=navigator` | 明确不迁移 | ZBY 不注册跨窗口导航监听，也不预留消息配置 API。 |
 | React Router location 同步 | 已支持 | 使用 `RouterCoreReactRouterAdapter`。 |
 | React Router basename href | 已支持 | `useRouterCoreCreateHref` 在渲染期读取 React Router basename/Hash 前缀；不依赖 core 私有 Host，也不拼接 `window.location.origin`。 |
 
@@ -348,15 +348,9 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 
 这两个组件可以迁移，但优先级应晚于主 Layout、菜单、全局页签和页面渲染链路。
 
-## 6. 当前 router-core 缺口清单
+## 6. 明确排除的兼容范围
 
-下面这项不能在迁移时假装已经支持：
-
-1. **跨窗口 navigator 协议**
-
-   core 不监听 `window.message`。ProLayout 可以调用已有命令完成行为，但可信 origin/source 和 `skipBeforeClose` 权限必须先确定。
-
-`beforeUnload`、浏览器标题、`setPage` 和主题不列为 core 缺陷，因为这些能力本来就属于 UI/浏览器装配层。
+ZBY 不迁移跨窗口 `navigator` 消息和 Shuzhi `lifecycle$` 事件流，也不为两者保留类型、Props、Hook 或监听器。页面显示状态统一读取 `active`；应用内导航统一由业务代码直接调用 router-core 命令。
 
 ## 7. Shuzhi 中确认存在的问题：禁止照搬
 
@@ -366,7 +360,6 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 
 | 问题 | 代码证据与影响 | ZBY 处理 |
 | --- | --- | --- |
-| 跨窗口消息不校验来源 | `core/ProLayoutCore.tsx` 的 message handler 只检查 `data.type/url`，不检查 `event.origin` 或 `event.source`；任意可向窗口发消息的页面都能导航，甚至传 `skipBeforeClose`。 | UI 迁移必须处理；未确定可信来源前不实现。 |
 | `hasAuth` 缺省语义错误 | `route/registry.ts` 使用 `route.auth && !hasAuth?.(route.auth)`；未传 `hasAuth` 时，所有带 auth 的路由都会被删除，与页面权限 Hook 的“未传则允许”语义冲突。 | core 已规避：只有提供 `hasAuth` 且返回 false 才过滤。 |
 | IndexedDB 字段更新可能丢失 | `store/storage.ts` 先用 readonly transaction 读取，再开独立 readwrite transaction 写回。收藏、固定页签、参数路径并发更新时可能都基于旧快照，后写覆盖先写。 | core 已规避；ZBY 收藏使用独立记录和串行快照写入，也没有复制该竞态。 |
 | hydration 使用单一 mutation version | `store/createStore.ts` 只要任意字段在加载期间变化，就整批放弃收藏、固定页签和参数路径 hydration，未冲突字段也无法恢复。 | core 已按字段保护，不复制旧 Store。 |
@@ -518,15 +511,14 @@ export interface ProLayoutRoute extends RouterRoute {
 
 验收：收藏不触发导航，刷新可恢复，并发收藏/取消不会丢更新，不同 storage namespace 隔离。
 
-### 阶段 6：浏览器副作用与兼容 API
+### 阶段 6：浏览器副作用
 
 - 浏览器 title。
 - `setPage`。
 - `beforeUnload`。
 - 页面权限 Hook 由业务侧按需基于 `router.hasAuth(code)` 实现，ProLayout 不迁移 `ProLayoutAuth/useProLayoutAuth`。
-- 如继续保留跨窗口导航，加入可信来源校验和卸载清理。
 
-验收：副作用随当前页面更新且无重复监听；恶意/未知 message 不能触发导航或绕过关闭 Hook。
+验收：副作用随当前页面更新且无重复监听。
 
 ### 阶段 7：ContentContainer 与 ContentTabs
 
@@ -608,7 +600,6 @@ export interface ProLayoutRoute extends RouterRoute {
 - [ ] 保存失败只通知，不提供旧快照 retry。
 - [x] 收藏持久化并发安全。
 - [ ] title、setPage、beforeUnload 不重复注册或发布。
-- [ ] message 只接受可信来源，卸载后清理监听。
 
 ### 10.6 UI、主题与内容容器
 
@@ -651,9 +642,3 @@ git status --short
 - 没有恢复 `initialStorageState` 或 storage retry。
 - 没有在 ProLayout 内创建第二套 Registry、页签 Store、KeepAlive Cache 或固定页签持久化。
 - 没有为了 UI 便利绕过 `jumpTo`、`smartNavigate`、`reorderTabs`、`closeTab` 等现有命令直接改 core 状态。
-
-## 12. 开始改代码前必须先确认的事项
-
-当前仅剩一项需要产品/架构确认：跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
-
-在该协议没有确认前，不得用临时绕行方案注册不受信任的 `window.message` 导航入口。
