@@ -100,20 +100,35 @@ export type ProLayoutStyles = Partial<Record<ProLayoutSemanticName, CSSPropertie
 
 /** 不包含任何 router-core 固定配置的纯 UI 属性。 */
 export interface ProLayoutProps {
+  /** 应用标题；当前页面存在标题时，浏览器标题显示为“页面标题 - 应用标题”。 */
   title: string
+  /** 顶部 Logo 与页签栏右侧扩展内容。 */
   header?: ProLayoutHeaderConfig
+  /** 跟随系统、亮色和暗色主题的开关、受控状态与本地持久化配置。 */
   theme?: ProLayoutThemeConfig
+  /** 是否在页签栏下方显示全局路由面包屑；默认为 true。 */
   showBreadcrumb?: boolean
+  /** 当前页面标题变化后的通知回调；无匹配页面时传入空字符串。 */
   setPage?: (pageName: string) => void
+  /** 离开或刷新页面前是否提示；函数返回 true 时阻止直接离开。 */
   beforeUnload?: boolean | (() => boolean)
+  /** 布局根容器的最小宽度；数字按像素处理，用于避免内容区域被过度压缩。 */
   minimumContentWidth?: number | string
+  /** 是否隐藏左侧图标栏和顶部页签栏；默认为 false。 */
   noBar?: boolean
+  /** 左侧图标栏底部的系统切换入口；空数组或省略时不显示。 */
   systemList?: ProLayoutSystemItem[]
+  /** ProLayout 生成 CSS 类名时使用的前缀；默认为 zby-pro-layout。 */
   prefixCls?: string
+  /** 追加到布局根节点的 className。 */
   className?: string
+  /** 追加到布局根节点的稳定 className，语义与 antd rootClassName 保持一致。 */
   rootClassName?: string
+  /** 布局根节点的内联样式；优先级高于 styles.root。 */
   style?: CSSProperties
+  /** 按语义节点追加 className，不依赖内部生成的 CSS 类名。 */
   classNames?: ProLayoutClassNames
+  /** 按语义节点覆盖内联样式。 */
   styles?: ProLayoutStyles
 }
 

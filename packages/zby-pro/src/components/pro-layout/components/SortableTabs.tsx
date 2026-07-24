@@ -134,7 +134,8 @@ function SortableTabNode(props: {
 }
 
 function sortByFixedGroup(items: NonNullable<TabsProps['items']>, fixedKeys: readonly string[]) {
+  const fixedKeySet = new Set(fixedKeys)
   return items
-    .filter((item) => fixedKeys.includes(String(item.key)))
-    .concat(items.filter((item) => !fixedKeys.includes(String(item.key))))
+    .filter((item) => fixedKeySet.has(String(item.key)))
+    .concat(items.filter((item) => !fixedKeySet.has(String(item.key))))
 }

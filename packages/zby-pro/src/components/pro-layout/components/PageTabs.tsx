@@ -35,11 +35,18 @@ function PageTabs(props: PageTabsProps) {
   const descriptions = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pathnameDescriptionMap,
   )
+  const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
+  const pagePathnameMap = useMemo(
+    () => new Map(pages.map((page) => [page.key, page.pathname])),
+    [pages],
+  )
   const items = useMemo<NonNullable<TabsProps['items']>>(
     () => tabs.map((tab) => {
-      const fixed = fixedKeys.includes(tab.key)
-      const pathname = pages.find((page) => page.key === tab.key)?.pathname || tab.key
+      const fixed = fixedKeySet.has(tab.key)
+      const pathname = pagePathnameMap.get(tab.key) || tab.key
       const description = descriptions[pathname]
+      const PinIcon = fixed ? PushpinFilled : PushpinOutlined
+      const pinLabel = fixed ? `取消固定页签：${tab.label}` : `固定页签：${tab.label}`
       const label = (
         <Flex
           align="center"
@@ -48,25 +55,21 @@ function PageTabs(props: PageTabsProps) {
             [`${prefixCls}-tab-label-wrap-fixed`]: fixed,
           })}
         >
-          {fixed ? (
-            <PushpinFilled
-              className={`${prefixCls}-fixed-icon`}
-              onPointerDown={stopEvent}
-              onClick={(event) => {
-                stopEvent(event)
-                router.toggleFixed(tab.key)
-              }}
-            />
-          ) : (
-            <PushpinOutlined
-              className={`${prefixCls}-fixed-icon`}
-              onPointerDown={stopEvent}
-              onClick={(event) => {
-                stopEvent(event)
-                router.toggleFixed(tab.key)
-              }}
-            />
-          )}
+          <button
+            type="button"
+            className={`${prefixCls}-fixed-icon`}
+            aria-label={pinLabel}
+            aria-pressed={fixed}
+            title={pinLabel}
+            onKeyDown={stopEvent}
+            onPointerDown={stopEvent}
+            onClick={(event) => {
+              stopEvent(event)
+              router.toggleFixed(tab.key)
+            }}
+          >
+            <PinIcon />
+          </button>
           <span className={`${prefixCls}-tab-label`}>{tab.label}</span>
         </Flex>
       )
@@ -81,7 +84,7 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    [descriptions, fixedKeys, pages, prefixCls, router, tabs],
+    [descriptions, fixedKeySet, pagePathnameMap, prefixCls, router, tabs],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
@@ -90,7 +93,7 @@ function PageTabs(props: PageTabsProps) {
   }
 
   const handlePreload = (tabKey: string) => {
-    const pathname = pages.find((page) => page.key === tabKey)?.pathname || tabKey
+    const pathname = pagePathnameMap.get(tabKey) || tabKey
     const leaf = router.registry.resolveLeafRoute(pathname, { withinAuth: true })
     preloadRoute(leaf?.route)
   }

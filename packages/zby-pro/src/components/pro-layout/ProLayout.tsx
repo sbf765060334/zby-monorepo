@@ -104,7 +104,7 @@ function ProLayout(props: ProLayoutProps) {
           />
         ) : null}
         <Layout.Content
-          className={`${prefixCls}-content`}
+          className={clsx(`${prefixCls}-content`, classNames?.content)}
           style={{
             display: 'flex',
             minWidth: 0,
@@ -114,8 +114,18 @@ function ProLayout(props: ProLayoutProps) {
             ...styles?.content,
           }}
         >
-          {showBreadcrumb ? <Breadcrumb prefixCls={prefixCls} /> : null}
-          <PageContent prefixCls={prefixCls} pageStyle={styles?.page} />
+          {showBreadcrumb ? (
+            <Breadcrumb
+              prefixCls={prefixCls}
+              className={classNames?.breadcrumb}
+              style={styles?.breadcrumb}
+            />
+          ) : null}
+          <PageContent
+            prefixCls={prefixCls}
+            pageClassName={classNames?.page}
+            pageStyle={styles?.page}
+          />
         </Layout.Content>
       </Layout>
     </Layout>

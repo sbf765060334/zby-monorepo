@@ -1,4 +1,5 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
@@ -9,12 +10,13 @@ import PageContainer from './PageContainer'
 
 export interface PageContentProps {
   prefixCls: string
+  pageClassName?: string
   pageStyle?: CSSProperties
 }
 
 /** 根据 core 保留的页面实例渲染 KeepAlive 页面，并处理当前地址的 403/404。 */
 function PageContent(props: PageContentProps) {
-  const { pageStyle, prefixCls } = props
+  const { pageClassName, pageStyle, prefixCls } = props
   const router = useRouterCore<ProLayoutRoute>()
   const pages = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pages,
@@ -53,13 +55,14 @@ function PageContent(props: PageContentProps) {
           prefixCls={prefixCls}
           page={page}
           active={isPage && page.key === activePage}
-          className={`${prefixCls}-page-body`}
+          className={clsx(`${prefixCls}-page-body`, pageClassName)}
           style={pageStyle}
         />
       ))}
       {!isPage ? (
         <ExceptionContent
           prefixCls={prefixCls}
+          className={pageClassName}
           status={pathname === '/' || fullLeaf ? '403' : '404'}
           style={pageStyle}
         />
@@ -70,6 +73,7 @@ function PageContent(props: PageContentProps) {
 
 function ExceptionContent(props: {
   prefixCls: string
+  className?: string
   status: '403' | '404'
   style?: CSSProperties
 }) {
@@ -79,7 +83,7 @@ function ExceptionContent(props: {
 
   return (
     <div
-      className={`${props.prefixCls}-page-body`}
+      className={clsx(`${props.prefixCls}-page-body`, props.className)}
       style={{ width: '100%', height: '100%', overflow: 'auto', ...props.style }}
     >
       <ExceptionPage

@@ -7,8 +7,6 @@ interface PageErrorBoundaryProps {
   children: ReactNode
   /** 只有边界已经报错时，任一 key 变化才允许重新尝试渲染业务页面。 */
   resetKeys: readonly unknown[]
-  /** 恢复页面完成挂载后调用，用于补发页面级生命周期事件。 */
-  onRecover?: (previousResetKeys: readonly unknown[]) => void
 }
 
 interface PageErrorBoundaryState {
@@ -63,10 +61,7 @@ export default class PageErrorBoundary extends Component<
     this.setState({ info })
   }
 
-  componentDidUpdate(
-    _previousProps: PageErrorBoundaryProps,
-    previousState: PageErrorBoundaryState,
-  ) {
+  componentDidUpdate() {
     if (
       this.state.error &&
       !areResetKeysEqual(this.props.resetKeys, this.state.resetKeys)
@@ -76,12 +71,7 @@ export default class PageErrorBoundary extends Component<
         info: null,
         resetKeys: this.props.resetKeys,
       })
-      return
     }
-
-    // 子页面已经在本次提交中重新挂载；此时补发事件，订阅者不会错过恢复后的活动状态。
-    if (previousState.error && !this.state.error)
-      this.props.onRecover?.(previousState.resetKeys)
   }
 
   render() {

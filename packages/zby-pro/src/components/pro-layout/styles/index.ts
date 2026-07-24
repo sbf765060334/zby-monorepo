@@ -132,6 +132,12 @@ export default function useProLayoutStyles(prefixCls: string) {
           [`&${componentCls}-tab-node-dragging`]: { opacity: 0.55 },
         },
         [`${componentCls}-fixed-icon`]: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          border: 0,
+          background: 'transparent',
           color: styleToken.colorTextTertiary,
           cursor: 'pointer',
         },

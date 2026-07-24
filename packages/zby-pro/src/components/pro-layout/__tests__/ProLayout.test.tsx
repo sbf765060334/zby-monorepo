@@ -93,6 +93,40 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelector('.zby-pro-layout-header')).toBeNull()
   })
 
+  it('透传 semantic 样式，并为页签固定和系统切换提供可访问按钮', async () => {
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          classNames={{
+            breadcrumb: 'custom-breadcrumb',
+            content: 'custom-content',
+            page: 'custom-page',
+          }}
+          styles={{ breadcrumb: { backgroundColor: 'rgb(1, 2, 3)' } }}
+          systemList={[{
+            systemName: 'main',
+            name: '主系统',
+            description: '切换系统',
+            logo: '/logo.svg',
+            url: '/dashboard',
+            active: true,
+          }]}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    expect(container.querySelector('.custom-content')).toBeTruthy()
+    expect(container.querySelector('.custom-page')).toBeTruthy()
+    expect((container.querySelector('.custom-breadcrumb') as HTMLElement).style.backgroundColor)
+      .toBe('rgb(1, 2, 3)')
+    expect(screen.getByRole('button', { name: '固定页签：工作台' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '切换系统' })).toBeTruthy()
+  })
+
   it('为应用内新窗口菜单和可点击面包屑生成 basename-aware 原生链接', async () => {
     const router = createTestRouter()
     const jumpTo = vi.spyOn(router, 'jumpTo')

@@ -45,6 +45,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
   const { classNames, hashId, logo, prefixCls, styles, systemList = [] } = props
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
+  const [messageApi, messageContextHolder] = message.useMessage()
   const selectedPath = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentSelectedPath,
   )
@@ -58,7 +59,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
 
   const handleRoute = (route: ProLayoutRoute, anchor?: string) => {
     if (route.prompt) {
-      message.info(typeof route.prompt === 'string' ? route.prompt : '功能暂未开放')
+      void messageApi.info(typeof route.prompt === 'string' ? route.prompt : '功能暂未开放')
       return
     }
 
@@ -87,6 +88,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
 
   return (
     <>
+      {messageContextHolder}
       <Layout.Sider
         width={60}
         className={clsx(`${prefixCls}-sider`, classNames?.sider)}
@@ -115,7 +117,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
               </>
             )
             return (
-              <Tooltip key={route.path} title={route.tooltipProps?.title} placement="right">
+              <Tooltip key={route.path} placement="right" {...route.tooltipProps}>
                 {route._blank && !route.prompt
                   ? (
                       <a
@@ -322,6 +324,7 @@ function MenuRoute(props: {
 
 function SystemSwitcher(props: { prefixCls: string, systemList: ProLayoutSystemItem[] }) {
   const activeSystem = props.systemList.find((item) => item.active)
+  const triggerLabel = activeSystem?.description || activeSystem?.name || '切换系统'
   const content = useMemo(() => (
     <Space direction="vertical" size={4} className={`${props.prefixCls}-system-list`}>
       {props.systemList.map((system) => (
@@ -342,7 +345,12 @@ function SystemSwitcher(props: { prefixCls: string, systemList: ProLayoutSystemI
 
   return (
     <Popover content={content} placement="rightBottom" trigger="click">
-      <button type="button" className={`${props.prefixCls}-system-trigger`}>
+      <button
+        type="button"
+        className={`${props.prefixCls}-system-trigger`}
+        aria-label={triggerLabel}
+        title={triggerLabel}
+      >
         {activeSystem?.logo ? <img src={activeSystem.logo} alt="" /> : <SwapOutlined />}
       </button>
     </Popover>

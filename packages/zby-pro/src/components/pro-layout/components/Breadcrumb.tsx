@@ -1,15 +1,18 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { Breadcrumb, Space } from 'antd'
+import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
 
 import type { BreadcrumbProps } from 'antd'
-import type { MouseEvent } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import type { RouterCoreState } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
 
 export interface LayoutBreadcrumbProps {
   prefixCls: string
+  className?: string
+  style?: CSSProperties
 }
 
 /**
@@ -20,7 +23,7 @@ export interface LayoutBreadcrumbProps {
  * jumpTo 统一处理，Ctrl/Command/中键及右键菜单交还浏览器原生链接行为。
  */
 function BreadcrumbView(props: LayoutBreadcrumbProps) {
-  const { prefixCls } = props
+  const { className, prefixCls, style } = props
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
   const currentPathname = useRouterCoreSelector(
@@ -67,7 +70,11 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
     return null
 
   return (
-    <Space size={0} className={`${prefixCls}-breadcrumb`}>
+    <Space
+      size={0}
+      className={clsx(`${prefixCls}-breadcrumb`, className)}
+      style={style}
+    >
       <span className={`${prefixCls}-breadcrumb-label`}>当前位置：</span>
       <Breadcrumb items={items} />
     </Space>

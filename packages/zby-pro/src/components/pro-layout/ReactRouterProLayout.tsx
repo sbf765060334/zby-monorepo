@@ -23,11 +23,11 @@ export function ReactRouterProLayout(props: ReactRouterProLayoutProps) {
       onTabClose={onTabClose}
     >
       <RouterCoreReactRouterAdapter>
-        <FavoriteMenusProvider router={router}>
-          <ProLayoutThemeProvider config={layoutProps.theme}>
+        <ProLayoutThemeProvider config={layoutProps.theme}>
+          <FavoriteMenusProvider router={router}>
             <ProLayout {...layoutProps} />
-          </ProLayoutThemeProvider>
-        </FavoriteMenusProvider>
+          </FavoriteMenusProvider>
+        </ProLayoutThemeProvider>
       </RouterCoreReactRouterAdapter>
     </RouterCoreProvider>
   )

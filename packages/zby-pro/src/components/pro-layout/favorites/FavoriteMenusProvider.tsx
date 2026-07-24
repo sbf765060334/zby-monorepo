@@ -1,5 +1,5 @@
 import { message } from 'antd'
-import { createContext, useContext, useEffect, useMemo } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import { useStore } from 'zustand'
 import { createStore } from 'zustand/vanilla'
 
@@ -34,9 +34,14 @@ export function FavoriteMenusProvider(props: {
   children: ReactNode
 }) {
   const { children, router } = props
+  const [messageApi, messageContextHolder] = message.useMessage()
+  const reportStorageError = useCallback((error: unknown, phase: 'load' | 'save') => {
+    console.error(`[ProLayout] Failed to ${phase} favorite menus.`, error)
+    void messageApi.error(phase === 'load' ? '菜单收藏加载失败' : '菜单收藏保存失败')
+  }, [messageApi])
   const controller = useMemo(
     () => createFavoriteMenusController(router, reportStorageError),
-    [router],
+    [reportStorageError, router],
   )
 
   useEffect(() => {
@@ -46,6 +51,7 @@ export function FavoriteMenusProvider(props: {
 
   return (
     <FavoriteMenusContext.Provider value={controller}>
+      {messageContextHolder}
       {children}
     </FavoriteMenusContext.Provider>
   )
@@ -177,9 +183,4 @@ function setFavorite(paths: readonly string[], path: string, favorite: boolean):
 
 function areStringArraysEqual(left: readonly string[], right: readonly string[]) {
   return left.length === right.length && left.every((item, index) => item === right[index])
-}
-
-function reportStorageError(error: unknown, phase: 'load' | 'save') {
-  console.error(`[ProLayout] Failed to ${phase} favorite menus.`, error)
-  void message.error(phase === 'load' ? '菜单收藏加载失败' : '菜单收藏保存失败')
 }
