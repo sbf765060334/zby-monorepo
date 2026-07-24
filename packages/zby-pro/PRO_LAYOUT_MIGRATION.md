@@ -275,7 +275,7 @@ export function App() {
 | `beforeUnload` | **【router-core 不支持】** | 保留在 ProLayout Hook，不应进入 core。 |
 | 跨窗口 `message type=navigator` | **【router-core 不支持】** | 如保留，由 ProLayout 装配层解析消息后调用 `jumpTo/closeThisTabOpenNewOne`；必须先确定可信来源。 |
 | React Router location 同步 | 已支持 | 使用 `RouterCoreReactRouterAdapter`。 |
-| React Router basename href | 部分支持 | Adapter 内部已经正确生成，但 `RouterCore` 当前没有公开读取 `createHref` 的 API；外链菜单迁移前必须解决该最小缺口，不能用 `window.location.origin + path` 绕过 basename。 |
+| React Router basename href | 已支持 | `useRouterCoreCreateHref` 在渲染期读取 React Router basename/Hash 前缀；不依赖 core 私有 Host，也不拼接 `window.location.origin`。 |
 
 ### 5.7 Layout UI、主题和样式
 
@@ -350,17 +350,13 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 
 ## 6. 当前 router-core 缺口清单
 
-下面三项不能在迁移时假装已经支持：
+下面两项不能在迁移时假装已经支持：
 
-1. **供 UI 使用的 basename-aware `createHref`**
-
-   React Router Adapter 已在 Host 内生成正确 href，但 Host 是 core 私有运行时，ProLayout 菜单拿不到。直接拼 `window.location.origin` 会重现 Shuzhi bug。
-
-2. **菜单收藏与收藏持久化**
+1. **菜单收藏与收藏持久化**
 
    这是刻意没有进入 router-core 的 UI 能力。ProLayout 需要独立维护，尤其要明确远程存储是否继续支持收藏字段。
 
-3. **跨窗口 navigator 协议**
+2. **跨窗口 navigator 协议**
 
    core 不监听 `window.message`。ProLayout 可以调用已有命令完成行为，但可信 origin/source 和 `skipBeforeClose` 权限必须先确定。
 
@@ -405,8 +401,8 @@ ZBY 版本不再从页面路由 Context 读取或生成全局面包屑。特殊�
 | --- | --- | --- |
 | 页面 Context 与 location emitter 使用 passive effect | `content/PageContainer.tsx` 和 `effects/LocationCacheEffects.tsx` 使用 `useEffect`，绘制首帧时可能仍暴露旧 pathname，页面也可能错过首次 location。 | 使用现有 `RouterPageProvider`；它以 layout effect 同步 active、pathname 和 location。 |
 | 面包屑依赖可选 ContentContainer | Shuzhi 的 `showBreadcrumb` 只提供全局开关，实际 Breadcrumb DOM 位于默认关闭 `breadcrumb` 的 ContentContainer 中；页面不使用或未开启该组件时没有面包屑。 | ZBY 改为 ProLayout 全局渲染，同时保持 Shuzhi UI。 |
-| `createHref` 忽略 basename | `router/react-router.tsx` 返回 `window.location.origin + path`，部署在 `/platform` 时会生成错误链接。 | 使用 router-core Adapter 已有的 basename 推导；迁移前补齐 UI 可读取契约。 |
-| Drawer 一级 `_blank` 也忽略 basename | `menu/DrawerMenu.tsx` 直接 `window.open(path)`。 | 内部路径必须走正确 href；真正外部 URL 保持原生行为。 |
+| `createHref` 忽略 basename | `router/react-router.tsx` 返回 `window.location.origin + path`，部署在 `/platform` 时会生成错误链接。 | 已使用 `useRouterCoreCreateHref` 基于 React Router 根 href 生成，不复制 Shuzhi 实现。 |
+| Drawer 一级 `_blank` 也忽略 basename | `menu/DrawerMenu.tsx` 直接 `window.open(path)`。 | 已改为 basename-aware 原生链接；真正外部 URL 保持原地址。 |
 | 动态共享页签 Tooltip 查错 key | `tabs/PageTabs.tsx` 用 `pathnameDescriptionMap[tabKey]`，但描述通常按真实 pathname 保存，共享 `/:id` 页签可能没有 Tooltip。 | 根据 page/Cache 的真实 pathname 查询。 |
 | 403/404 对目录判断不完整 | `content/index.tsx` 依赖权限精确 `routeMapping[pathname]`，存在但无权限的动态目录可能显示 404。 | 使用 core 的完整/权限 Registry 解析结果区分。 |
 | `setPathnameDescription` 无变化也发布状态 | 每次都展开并创建新 map，相同描述也会触发订阅者更新。 | core 已做 no-op 判断。 |
@@ -511,7 +507,7 @@ export interface ProLayoutRoute extends RouterRoute {
 - 使用 `permissionRoutes/currentSelectedPath`。
 - 支持 ignore、prompt、tag、tooltip、anchor、外链和 preload。
 - 迁移 Logo 和系统切换；不迁移 Inline 菜单、折叠状态和折叠 popup。
-- 解决 basename-aware href 后再开放内部 `_blank`。
+- 使用 basename-aware 原生 href 支持内部 `_blank`，普通菜单继续调用 `jumpTo`。
 
 验收：2/3/4 级 Drawer 菜单、动态父级选中、当前路由重复点击、锚点、外链和窄屏抽屉均正确，构建产物中不包含 Inline 菜单实现。
 
@@ -573,7 +569,7 @@ export interface ProLayoutRoute extends RouterRoute {
 
 - [ ] router 实例只创建一次，普通 React render 不重建。
 - [ ] BrowserRouter 和 MemoryRouter 均可使用。
-- [ ] basename 下导航、面包屑和 `_blank` 内部链接正确。
+- [x] basename 下导航、面包屑和 `_blank` 内部链接正确。
 - [ ] `showBreadcrumb` 独立于 ContentContainer 生效，空路由链不渲染空栏。
 - [ ] 面包屑的“当前位置：”、图标、间距、背景、高度和 hover 视觉与 Shuzhi 一致。
 - [ ] 动态 pathname 描述覆盖路由默认标题，上级项点击调用 `jumpTo`。
@@ -604,7 +600,7 @@ export interface ProLayoutRoute extends RouterRoute {
 - [ ] 权限过滤与 ignore 隐藏。
 - [ ] prompt、tag、tooltip 和 anchor。
 - [ ] hover/focus preload 的同步 throw/异步 rejection 不影响交互。
-- [ ] 外部 URL 与带 basename 的应用内 `_blank` 正确区分。
+- [x] 外部 URL 与带 basename 的应用内 `_blank` 正确区分。
 - [ ] 收藏和系统切换不误触发内部导航。
 
 ### 10.5 持久化与副作用
@@ -660,10 +656,9 @@ git status --short
 
 ## 12. 开始改代码前必须先确认的事项
 
-只有三项需要产品/架构确认，其余可以按本文顺序直接迁移：
+只有两项需要产品/架构确认，其余可以按本文顺序直接迁移：
 
-1. router-core 如何把 Adapter 中已有的 basename-aware `createHref` 最小化公开给 UI。
-2. 收藏是否只需默认 IndexedDB，还是必须继续支持远程 Adapter。
-3. 跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
+1. 收藏是否只需默认 IndexedDB，还是必须继续支持远程 Adapter。
+2. 跨窗口 navigator 消息允许哪些 origin/source，以及谁有权传 `skipBeforeClose`。
 
-在这三项没有确认前，可以先完成装配骨架、页面渲染、普通页签、图标栏与 Drawer 菜单、异常页、ContentContainer 和基础主题；不得用临时绕行方案固化错误契约。
+在这两项没有确认前，可以先完成装配骨架、页面渲染、普通页签、图标栏与 Drawer 菜单、异常页、ContentContainer 和基础主题；不得用临时绕行方案固化错误契约。

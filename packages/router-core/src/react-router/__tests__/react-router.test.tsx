@@ -12,7 +12,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createRouterCore } from '../../createRouterCore'
 import { RouterCoreProvider } from '../../react'
 import type { RouterRoute, RouterStorageAdapter } from '../../types'
-import { RouterCoreReactRouterAdapter } from '../index'
+import {
+  RouterCoreReactRouterAdapter,
+  useRouterCoreCreateHref,
+} from '../index'
 
 const routes: RouterRoute[] = [
   { path: '/home', title: '首页', element: 'home' },
@@ -151,7 +154,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     })
   })
 
-  it('derives href from basename and unbinds the host when unmounted', () => {
+  it('derives render-time href from basename and unbinds the navigation host', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const bindHost = vi.spyOn(router, 'bindHost')
 
@@ -159,19 +162,35 @@ describe('RouterCoreReactRouterAdapter', () => {
       <MemoryRouter basename="/platform" initialEntries={['/platform/home']}>
         <RouterCoreProvider router={router}>
           <RouterCoreReactRouterAdapter>
-            <span>content</span>
+            <HrefProbe />
           </RouterCoreReactRouterAdapter>
         </RouterCoreProvider>
       </MemoryRouter>,
     )
 
+    expect(screen.getByRole('link', { name: 'internal-link' }).getAttribute('href'))
+      .toBe('/platform/project/42')
+    expect(screen.getByRole('link', { name: 'external-link' }).getAttribute('href'))
+      .toBe('https://docs.example.com/guide')
     const host = bindHost.mock.calls.find(([value]) => value !== null)?.[0]
-    expect(host?.createHref?.('/project/42')).toBe('/platform/project/42')
+    expect(host).not.toHaveProperty('createHref')
 
     view.unmount()
     expect(bindHost).toHaveBeenLastCalledWith(null)
   })
 })
+
+/** 验证 href 在子组件首次渲染时已经可用，而不是等待 Host effect 后补写。 */
+function HrefProbe() {
+  const createHref = useRouterCoreCreateHref()
+
+  return (
+    <>
+      <a href={createHref('/project/42')}>internal-link</a>
+      <a href={createHref('https://docs.example.com/guide')}>external-link</a>
+    </>
+  )
+}
 
 /** 同时观察真实地址并触发 Core 与 React Router 两侧的导航动作。 */
 function NavigationProbe(props: {

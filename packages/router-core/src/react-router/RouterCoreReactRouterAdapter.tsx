@@ -38,9 +38,6 @@ export function RouterCoreReactRouterAdapter(
     navigateRef.current = reactRouterNavigate
   }, [reactRouterNavigate])
 
-  // useHref 会读取当前 React Router 的 basename；从应用根 href 推导动态路径，可以
-  // 避免调用方再次向 Adapter 重复传入 basename，也不会直接依赖 React Router 内部 Context。
-  const rootHref = useHref('/')
   const host = useMemo<RouterHost>(() => {
     const navigate: RouterNavigate = (target, options) => {
       // React Router 6/7 都接受与 RouterNavigateTarget 兼容的 string 或 pathname 对象。
@@ -48,11 +45,8 @@ export function RouterCoreReactRouterAdapter(
       void navigateRef.current(target, options)
     }
 
-    return {
-      navigate,
-      createHref: (path) => createHrefFromRoot(rootHref, path),
-    }
-  }, [rootHref])
+    return { navigate }
+  }, [])
 
   useLayoutEffect(() => {
     // Core 只保存当前 Adapter 提供的宿主引用；重新绑定不会重建 Core 或修改领域状态。
@@ -79,7 +73,23 @@ export function RouterCoreReactRouterAdapter(
 }
 
 /**
- * 将 Core 使用的应用内绝对路径拼接到 React Router 的根 href。
+ * 返回能够为任意应用内路径生成原生 href 的稳定函数。
+ *
+ * href 属于 React Router 的渲染期能力，不进入 RouterCore Host 或状态。Hook 直接读取
+ * 当前 Router 的 basename/Hash 前缀，因此首屏渲染即可用于 `<a href>`，无需等待
+ * Adapter 在 layout effect 中绑定 Host。
+ */
+export function useRouterCoreCreateHref(): (path: string) => string {
+  const rootHref = useHref('/')
+
+  return useMemo(
+    () => (path: string) => createHrefFromRoot(rootHref, path),
+    [rootHref],
+  )
+}
+
+/**
+ * 将应用内绝对路径拼接到 React Router 的根 href。
  *
  * `useHref('/')` 已经包含 BrowserRouter/MemoryRouter 的 basename，HashRouter 下也会
  * 包含 `#` 路由前缀。非 `/` 开头的地址不属于 Core 注册路径，保持原值交给上层处理。

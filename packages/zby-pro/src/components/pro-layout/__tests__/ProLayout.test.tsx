@@ -62,6 +62,9 @@ describe('ReactRouterProLayout', () => {
 
     await screen.findByTestId('dashboard-page')
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
+    const orderHelpLink = await screen.findByRole('link', { name: '订单帮助' })
+    expect(orderHelpLink.getAttribute('href')).toBe('/orders/help')
+    expect(orderHelpLink.getAttribute('target')).toBe('_blank')
     fireEvent.click(await screen.findByRole('button', { name: /订单列表/ }))
 
     expect((await screen.findByTestId('orders-page')).textContent).toContain('active')
@@ -83,6 +86,39 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelector('.zby-pro-layout-sider')).toBeNull()
     expect(container.querySelector('.zby-pro-layout-header')).toBeNull()
   })
+
+  it('为应用内新窗口菜单和可点击面包屑生成 basename-aware 原生链接', async () => {
+    const router = createTestRouter()
+    const jumpTo = vi.spyOn(router, 'jumpTo')
+
+    render(
+      <MemoryRouter
+        basename="/platform"
+        initialEntries={['/platform/reports/detail']}
+      >
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('report-detail-page')
+    const internalBlankLink = screen.getByRole('link', { name: /内部帮助/ })
+    const externalBlankLink = screen.getByRole('link', { name: /外部文档/ })
+    const breadcrumbLink = screen.getByRole('link', { name: '报表中心' })
+
+    expect(internalBlankLink.getAttribute('href')).toBe('/platform/help')
+    expect(internalBlankLink.getAttribute('target')).toBe('_blank')
+    expect(internalBlankLink.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(externalBlankLink.getAttribute('href')).toBe('https://docs.example.com/guide')
+    expect(breadcrumbLink.getAttribute('href')).toBe('/platform/reports')
+
+    // jsdom 不实现跨文档导航；测试只阻止环境默认动作，不干预 React 的修饰键分支。
+    breadcrumbLink.addEventListener('click', (event) => event.preventDefault(), { once: true })
+    fireEvent.click(breadcrumbLink, { ctrlKey: true })
+    expect(jumpTo).not.toHaveBeenCalled()
+
+    fireEvent.click(breadcrumbLink)
+    expect(jumpTo).toHaveBeenCalledWith('/reports')
+  })
 })
 
 function DashboardPage() {
@@ -93,6 +129,14 @@ function DashboardPage() {
 function OrdersPage() {
   const active = useRouterPageSelector((state) => state.active)
   return <div data-testid="orders-page">{active ? 'active' : 'inactive'}</div>
+}
+
+function ReportsPage() {
+  return <div data-testid="reports-page">reports</div>
+}
+
+function ReportDetailPage() {
+  return <div data-testid="report-detail-page">report-detail</div>
 }
 
 const routes: ProLayoutRoute[] = [
@@ -110,7 +154,35 @@ const routes: ProLayoutRoute[] = [
         title: '订单列表',
         element: OrdersPage,
       },
+      {
+        path: '/orders/help',
+        title: '订单帮助',
+        _blank: true,
+      },
     ],
+  },
+  {
+    path: '/reports',
+    title: '报表中心',
+    element: ReportsPage,
+    ignore: true,
+    routes: [
+      {
+        path: '/reports/detail',
+        title: '报表详情',
+        element: ReportDetailPage,
+      },
+    ],
+  },
+  {
+    path: '/help',
+    title: '内部帮助',
+    _blank: true,
+  },
+  {
+    path: 'https://docs.example.com/guide',
+    title: '外部文档',
+    _blank: true,
   },
 ]
 

@@ -1,5 +1,6 @@
 import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { AppstoreOutlined, SwapOutlined } from '@ant-design/icons'
 import {
   Button,
@@ -37,6 +38,7 @@ export interface IconDrawerMenuProps {
 function IconDrawerMenu(props: IconDrawerMenuProps) {
   const { classNames, hashId, logo, prefixCls, styles, systemList = [] } = props
   const router = useRouterCore<ProLayoutRoute>()
+  const createHref = useRouterCoreCreateHref()
   const selectedPath = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentSelectedPath,
   )
@@ -52,10 +54,8 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
     }
 
     if (route._blank) {
-      if (isExternalUrl(route.path))
-        window.open(route.path, route.target || '_blank', 'noopener,noreferrer')
-      else
-        message.info('应用内新窗口打开需等待 router-core 公开 createHref')
+      // 正常菜单项会渲染为原生链接；这里只兜底处理锚点等非主菜单点击入口。
+      window.open(createHref(route.path), route.target || '_blank', 'noopener,noreferrer')
       return
     }
 
@@ -96,20 +96,41 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
           {routes.map((route) => {
             const Icon = route.icon || AppstoreOutlined
             const active = selectedPath.includes(route.path)
+            const className = clsx(`${prefixCls}-sider-item`, {
+              [`${prefixCls}-sider-item-active`]: active,
+            })
+            const content = (
+              <>
+                <Icon className={`${prefixCls}-sider-item-icon`} />
+                <span className={`${prefixCls}-sider-item-title`}>{route.title}</span>
+              </>
+            )
             return (
               <Tooltip key={route.path} title={route.tooltipProps?.title} placement="right">
-                <button
-                  type="button"
-                  className={clsx(`${prefixCls}-sider-item`, {
-                    [`${prefixCls}-sider-item-active`]: active,
-                  })}
-                  onClick={() => handleRoute(route)}
-                  onFocus={() => preloadVisibleRoute(route, router)}
-                  onMouseEnter={() => preloadVisibleRoute(route, router)}
-                >
-                  <Icon className={`${prefixCls}-sider-item-icon`} />
-                  <span className={`${prefixCls}-sider-item-title`}>{route.title}</span>
-                </button>
+                {route._blank && !route.prompt
+                  ? (
+                      <a
+                        href={createHref(route.path)}
+                        target={route.target || '_blank'}
+                        rel={(route.target || '_blank') === '_blank' ? 'noopener noreferrer' : undefined}
+                        className={className}
+                        onFocus={() => preloadVisibleRoute(route, router)}
+                        onMouseEnter={() => preloadVisibleRoute(route, router)}
+                      >
+                        {content}
+                      </a>
+                    )
+                  : (
+                      <button
+                        type="button"
+                        className={className}
+                        onClick={() => handleRoute(route)}
+                        onFocus={() => preloadVisibleRoute(route, router)}
+                        onMouseEnter={() => preloadVisibleRoute(route, router)}
+                      >
+                        {content}
+                      </button>
+                    )}
               </Tooltip>
             )
           })}
@@ -139,6 +160,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
               prefixCls={prefixCls}
               route={route}
               selectedPath={selectedPath}
+              createHref={createHref}
               onSelect={handleRoute}
               onPreload={(route) => preloadVisibleRoute(route, router)}
             />
@@ -153,16 +175,18 @@ function MenuColumn(props: {
   prefixCls: string
   route: ProLayoutRoute
   selectedPath: readonly string[]
+  createHref: (path: string) => string
   onSelect: (route: ProLayoutRoute, anchor?: string) => void
   onPreload: (route: ProLayoutRoute) => void
 }) {
-  const { onPreload, onSelect, prefixCls, route, selectedPath } = props
+  const { createHref, onPreload, onSelect, prefixCls, route, selectedPath } = props
   return (
     <section className={`${prefixCls}-menu-column`}>
       <MenuRoute
         prefixCls={prefixCls}
         route={route}
         selectedPath={selectedPath}
+        createHref={createHref}
         onSelect={onSelect}
         onPreload={onPreload}
         level={0}
@@ -175,29 +199,52 @@ function MenuRoute(props: {
   prefixCls: string
   route: ProLayoutRoute
   selectedPath: readonly string[]
+  createHref: (path: string) => string
   onSelect: (route: ProLayoutRoute, anchor?: string) => void
   onPreload: (route: ProLayoutRoute) => void
   level: number
 }) {
-  const { level, onPreload, onSelect, prefixCls, route, selectedPath } = props
+  const { createHref, level, onPreload, onSelect, prefixCls, route, selectedPath } = props
   const children = route.routes?.filter((item) => isVisibleRoute(item)) || []
   const tag = typeof route.tag === 'string' ? { text: route.tag } : route.tag
+  const className = clsx(`${prefixCls}-menu-route`, {
+    [`${prefixCls}-menu-route-active`]: selectedPath.includes(route.path),
+    [`${prefixCls}-menu-route-group-title`]: children.length > 0,
+  })
+  const content = (
+    <>
+      <Typography.Text ellipsis>{route.title}</Typography.Text>
+      {tag ? <Tag color={tag.color}>{tag.text}</Tag> : null}
+    </>
+  )
   return (
     <div className={`${prefixCls}-menu-group`}>
-      <button
-        type="button"
-        className={clsx(`${prefixCls}-menu-route`, {
-          [`${prefixCls}-menu-route-active`]: selectedPath.includes(route.path),
-          [`${prefixCls}-menu-route-group-title`]: children.length > 0,
-        })}
-        style={{ paddingInlineStart: level * 12 + 8 }}
-        onClick={() => onSelect(route)}
-        onFocus={() => onPreload(route)}
-        onMouseEnter={() => onPreload(route)}
-      >
-        <Typography.Text ellipsis>{route.title}</Typography.Text>
-        {tag ? <Tag color={tag.color}>{tag.text}</Tag> : null}
-      </button>
+      {route._blank && !route.prompt
+        ? (
+            <a
+              href={createHref(route.path)}
+              target={route.target || '_blank'}
+              rel={(route.target || '_blank') === '_blank' ? 'noopener noreferrer' : undefined}
+              className={className}
+              style={{ paddingInlineStart: level * 12 + 8 }}
+              onFocus={() => onPreload(route)}
+              onMouseEnter={() => onPreload(route)}
+            >
+              {content}
+            </a>
+          )
+        : (
+            <button
+              type="button"
+              className={className}
+              style={{ paddingInlineStart: level * 12 + 8 }}
+              onClick={() => onSelect(route)}
+              onFocus={() => onPreload(route)}
+              onMouseEnter={() => onPreload(route)}
+            >
+              {content}
+            </button>
+          )}
       {route.anchorPoints?.map((anchor) => (
         <button
           key={anchor.anchor}
@@ -262,10 +309,6 @@ function isVisibleRoute(route: ProLayoutRoute): boolean {
   return !route.ignore && Boolean(
     route.element || route.prompt || route._blank || route.routes?.some((item) => isVisibleRoute(item)),
   )
-}
-
-function isExternalUrl(path: string) {
-  return /^https?:\/\//i.test(path)
 }
 
 function normalizeHash(hash: string) {

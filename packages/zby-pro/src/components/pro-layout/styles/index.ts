@@ -68,6 +68,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: 'transparent',
           color: '#868a9c',
           cursor: 'pointer',
+          textDecoration: 'none',
 
           '&:hover': { color: '#c9cad4' },
           '&::before': {
@@ -196,6 +197,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: 'transparent',
           color: styleToken.colorTextSecondary,
           textAlign: 'start',
+          textDecoration: 'none',
           cursor: 'pointer',
           '&:hover': { background: styleToken.colorFillTertiary, color: styleToken.colorText },
         },

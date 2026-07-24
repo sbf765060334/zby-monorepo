@@ -111,8 +111,6 @@ export type RouterNavigate = (
 export interface RouterHost {
   /** core 执行最终地址变更时调用的底层导航能力。 */
   navigate: RouterNavigate
-  /** 可选的 href 生成能力，供需要原生链接的上层使用。 */
-  createHref?: (path: string) => string
 }
 
 /** 页签关闭前守卫；只有所有守卫都明确返回 true 才允许关闭。 */

@@ -1,4 +1,5 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { Breadcrumb, Space } from 'antd'
 import { memo, useMemo } from 'react'
 
@@ -15,12 +16,13 @@ export interface LayoutBreadcrumbProps {
  * ProLayout 全局面包屑。
  *
  * UI 沿用 Shuzhi 的“当前位置：+ 路由图标 + antd Breadcrumb”结构，但数据只读取
- * router-core 快照。由于 core 暂未公开 createHref，上级项当前只实现普通左键 jumpTo；
- * Ctrl/Command/中键新窗口行为已记录在缺失功能文档中。
+ * router-core 快照。上级页面同时提供 React Router 生成的原生 href：普通左键仍由
+ * jumpTo 统一处理，Ctrl/Command/中键及右键菜单交还浏览器原生链接行为。
  */
 function BreadcrumbView(props: LayoutBreadcrumbProps) {
   const { prefixCls } = props
   const router = useRouterCore<ProLayoutRoute>()
+  const createHref = useRouterCoreCreateHref()
   const currentPathname = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentPathname,
   )
@@ -45,8 +47,9 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
             {title}
           </span>
         ),
+        href: clickable ? createHref(item.realPath) : undefined,
         onClick: clickable
-          ? (event: MouseEvent<HTMLSpanElement>) => {
+          ? (event: MouseEvent<HTMLElement>) => {
               if (shouldKeepNativeBehavior(event))
                 return
 
@@ -57,7 +60,7 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
         className: clickable ? `${prefixCls}-breadcrumb-item-clickable` : undefined,
       }
     }),
-    [currentPathname, currentRoutes, pathnameDescriptionMap, prefixCls, router],
+    [createHref, currentPathname, currentRoutes, pathnameDescriptionMap, prefixCls, router],
   )
 
   if (!items.length)
