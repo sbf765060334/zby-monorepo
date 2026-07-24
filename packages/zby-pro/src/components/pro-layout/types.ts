@@ -38,6 +38,11 @@ export type ProLayoutRouteComponent =
  *
  * path、title、routes、auth 和 supportMultipleTabs 由 core 消费，其余字段只由
  * ProLayout UI 解释。core 创建时会保留这些扩展元数据的快照。
+ *
+ * 作为 ProLayout 一级菜单使用时，页面与目录必须互斥：配置 element 表示点击后
+ * 直接进入页面，不得再配置 routes；配置 routes 表示点击后打开 Drawer，不得再
+ * 配置 element。该约束只属于 ProLayout 的一级菜单语义，不限制 router-core 的
+ * 通用路由模型。
  */
 export interface ProLayoutRoute extends RouterRoute {
   routes?: ProLayoutRoute[]
