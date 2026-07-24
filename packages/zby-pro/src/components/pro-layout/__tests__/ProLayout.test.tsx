@@ -123,6 +123,7 @@ describe('ReactRouterProLayout', () => {
     expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('60px')
+    expect(drawerRoot.style.overflow).toBe('hidden')
     expect(drawerRoot.style.zIndex).toBe('999')
     expect(menuContainer?.querySelector('.zby-pro-layout-menu-drawer')).toBeTruthy()
 

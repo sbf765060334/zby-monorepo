@@ -166,6 +166,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
             <MenuDrawer
               prefixCls={prefixCls}
               hashId={hashId}
+              left={SIDER_WIDTH}
               open={drawerOpen}
               onClose={() => setDrawerOpen(false)}
               displayRoutes={displayRoutes}

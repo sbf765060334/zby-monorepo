@@ -453,7 +453,7 @@ export default function useProLayoutStyles(prefixCls: string) {
       },
 
       [`.${prefixCls}-menu-drawer`]: {
-        [`.ant-drawer-content`]: {
+        [`.ant-drawer-section`]: {
           borderInlineEnd: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
           background: styleToken.colorBgElevated,
           boxShadow: surfaceShadow,

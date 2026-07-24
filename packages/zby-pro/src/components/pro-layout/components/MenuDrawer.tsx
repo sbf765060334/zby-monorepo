@@ -16,11 +16,10 @@ import type { CSSProperties, Ref } from 'react'
 import type { ProLayoutRoute } from '../types'
 import MenuFavoriteButton from './MenuFavoriteButton'
 
-const SIDER_WIDTH = 60
-
 export interface MenuDrawerProps {
   prefixCls: string
   hashId: string
+  left: number
   open: boolean
   onClose: () => void
   className?: string
@@ -40,6 +39,7 @@ function MenuDrawer(props: MenuDrawerProps) {
     className,
     displayRoutes,
     hashId,
+    left,
     onClose,
     open,
     prefixCls,
@@ -57,7 +57,7 @@ function MenuDrawer(props: MenuDrawerProps) {
   const viewport = useViewportSize()
   const columnWidth = token.controlHeightLG * 5 + token.sizeXL
   const viewportGap = token.paddingLG
-  const availableWidth = Math.max(columnWidth, viewport.width - SIDER_WIDTH - viewportGap)
+  const availableWidth = Math.max(columnWidth, viewport.width - left - viewportGap)
   const drawerBodyHeight = Math.max(0, viewport.height - viewportGap * 2)
   const maxColumns = Math.max(1, Math.floor(availableWidth / columnWidth))
   const fallbackColumnCount = Math.max(
@@ -181,8 +181,7 @@ function MenuDrawer(props: MenuDrawerProps) {
         size={drawerWidth}
         zIndex={999}
         rootClassName={drawerClassName}
-        rootStyle={{ left: SIDER_WIDTH }}
-        style={{ left: SIDER_WIDTH }}
+        rootStyle={{ left, overflow: 'hidden' }}
         styles={{
           header: { display: 'none' },
           body: {
