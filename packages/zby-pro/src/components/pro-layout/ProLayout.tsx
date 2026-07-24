@@ -1,0 +1,124 @@
+import { useRouterCoreSelector } from '@zby/router-core/react'
+import { Layout } from 'antd'
+import { clsx } from 'clsx'
+import { memo, useEffect } from 'react'
+
+import Breadcrumb from './components/Breadcrumb'
+import Header from './components/Header'
+import IconDrawerMenu from './components/IconDrawerMenu'
+import PageContent from './components/PageContent'
+import { useProLayoutTheme } from './components/ThemeProvider'
+import useProLayoutStyles from './styles'
+import type { ProLayoutProps } from './types'
+
+const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
+
+/**
+ * ProLayout 的纯 UI 外壳。
+ *
+ * 这里不创建 Store，也不接收 routes 等 core 固定配置。菜单、页签、面包屑和页面内容
+ * 会按迁移阶段接入同一个 RouterCore 实例。
+ */
+function ProLayout(props: ProLayoutProps) {
+  const {
+    beforeUnload,
+    className,
+    classNames,
+    header,
+    minimumContentWidth,
+    noBar = false,
+    prefixCls = DEFAULT_PREFIX_CLS,
+    rootClassName,
+    setPage,
+    showBreadcrumb = true,
+    style,
+    styles,
+    systemList,
+    title,
+  } = props
+  const currentRoutes = useRouterCoreSelector((state) => state.currentRoutes)
+  const { hashId } = useProLayoutStyles(prefixCls)
+  const { viewTransitionName } = useProLayoutTheme()
+  const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
+  const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
+  const currentRoute = currentRoutes[currentRoutes.length - 1]
+  const currentPageTitle = currentRoute
+    ? pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title
+    : ''
+
+  useEffect(() => {
+    if (typeof document === 'undefined')
+      return
+
+    document.title = currentPageTitle ? `${currentPageTitle} - ${title}` : title
+    setPage?.(currentPageTitle)
+  }, [currentPageTitle, setPage, title])
+
+  useEffect(() => {
+    if (!beforeUnload || typeof window === 'undefined')
+      return undefined
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const shouldBlock = typeof beforeUnload === 'function' ? beforeUnload() : beforeUnload
+      if (!shouldBlock)
+        return
+
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [beforeUnload])
+
+  return (
+    <Layout
+      className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
+      style={{
+        minWidth: minimumContentWidth,
+        minHeight: '100vh',
+        viewTransitionName,
+        ...styles?.root,
+        ...style,
+      }}
+      data-current-pathname={currentPathname}
+    >
+      {!noBar ? (
+        <IconDrawerMenu
+          prefixCls={prefixCls}
+          hashId={hashId}
+          logo={header?.logo}
+          systemList={systemList}
+          classNames={classNames}
+          styles={styles}
+        />
+      ) : null}
+      <Layout className={`${prefixCls}-main`}>
+        {!noBar ? (
+          <Header
+            prefixCls={prefixCls}
+            extra={header?.extra}
+            classNames={classNames}
+            styles={styles}
+          />
+        ) : null}
+        <Layout.Content
+          className={`${prefixCls}-content`}
+          style={{
+            display: 'flex',
+            minWidth: 0,
+            minHeight: 0,
+            flex: 1,
+            flexDirection: 'column',
+            ...styles?.content,
+          }}
+        >
+          {showBreadcrumb ? <Breadcrumb prefixCls={prefixCls} /> : null}
+          <PageContent prefixCls={prefixCls} pageStyle={styles?.page} />
+        </Layout.Content>
+      </Layout>
+    </Layout>
+  )
+}
+
+export default memo(ProLayout)

@@ -17,6 +17,16 @@
       "import": "./dist/locales/index.mjs",
       "require": "./dist/locales/index.cjs"
     },
+    "./pro-layout": {
+      "types": "./dist/pro-layout/index.d.mts",
+      "import": "./dist/pro-layout/index.mjs",
+      "require": "./dist/pro-layout/index.cjs"
+    },
+    "./pro-layout/react-router": {
+      "types": "./dist/pro-layout/react-router.d.mts",
+      "import": "./dist/pro-layout/react-router.mjs",
+      "require": "./dist/pro-layout/react-router.cjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -30,9 +40,15 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ant-design/icons": "6.3.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@zby/hooks": "workspace:*",
     "@zby/intl": "workspace:*",
+    "@zby/router-core": "workspace:*",
     "@zby/ui": "workspace:*",
+    "clsx": "2.1.1",
     "idb-keyval": "6.3.0",
     "zustand": "5.0.12"
   },
