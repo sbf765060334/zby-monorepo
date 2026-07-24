@@ -64,7 +64,6 @@ function ProLayout(props: ProLayoutProps) {
         return
 
       event.preventDefault()
-      event.returnValue = ''
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
