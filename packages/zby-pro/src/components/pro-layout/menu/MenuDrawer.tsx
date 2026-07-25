@@ -3,6 +3,7 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
+import { ScrollArea } from '@zby/ui'
 import { Drawer, message, Tag, theme as antdTheme, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -185,7 +186,7 @@ function MenuDrawer(props: MenuDrawerProps) {
           body: {
             height: viewport.height || '100vh',
             boxSizing: 'border-box',
-            overflowX: shouldScrollX ? 'auto' : 'hidden',
+            overflowX: 'hidden',
             overflowY: 'hidden',
             paddingBlock: viewportGap,
             paddingInline: 0,
@@ -194,7 +195,15 @@ function MenuDrawer(props: MenuDrawerProps) {
         }}
         onClose={onClose}
       >
-        {renderColumns()}
+        <ScrollArea
+          className={`${prefixCls}-menu-scroll`}
+          direction="horizontal"
+          scrollbar={shouldScrollX ? 'hover' : false}
+          wheelBehavior="axis-mapping"
+          style={{ height: '100%' }}
+        >
+          {renderColumns(undefined, { height: drawerBodyHeight })}
+        </ScrollArea>
       </Drawer>
     </>
   )

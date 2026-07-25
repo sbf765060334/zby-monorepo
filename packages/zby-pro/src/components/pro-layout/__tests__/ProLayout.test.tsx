@@ -120,6 +120,7 @@ describe('ReactRouterProLayout', () => {
 
     const drawer = await screen.findByRole('dialog')
     expect(drawer.querySelector('.zby-pro-layout-menu-columns')).toBeTruthy()
+    expect(drawer.querySelector('.zby-pro-layout-menu-scroll')).toBeTruthy()
     expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('60px')
