@@ -126,13 +126,26 @@ describe('ReactRouterProLayout', () => {
     expect(drawerRoot.style.overflow).toBe('hidden')
     expect(drawerRoot.style.zIndex).toBe('999')
     expect(menuContainer?.querySelector('.zby-pro-layout-menu-drawer')).toBeTruthy()
+    const drawerWrapper = drawerRoot.querySelector('.ant-drawer-content-wrapper') as HTMLElement
+    const openDrawerWidth = drawerWrapper.style.width
 
     // 再次点击当前一级目录会关闭 Drawer，不会重复创建一层菜单。
     fireEvent.click(orderMenu)
+    expect(drawerWrapper.style.width).toBe(openDrawerWidth)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
     act(() => router.jumpTo('/orders/list'))
     await screen.findByTestId('orders-page')
+
+    const reportMenu = screen.getByRole('button', { name: /报表菜单/ })
+    fireEvent.click(reportMenu)
+    expect(await screen.findByRole('button', { name: '报表总览' })).toBeTruthy()
+
+    // 关闭动画期间继续保留报表菜单，不能闪回当前页面所属的订单菜单。
+    fireEvent.click(reportMenu)
+    expect(drawerRoot.textContent).toContain('报表总览')
+    expect(drawerRoot.textContent).not.toContain('订单列表')
+
     act(() => router.jumpTo('/reports'))
     await screen.findByTestId('reports-page')
     expect(container.querySelectorAll('.zby-pro-layout-tab-split')).toHaveLength(1)
@@ -381,6 +394,17 @@ const routes: ProLayoutRoute[] = [
         path: '/reports/detail',
         title: '报表详情',
         element: ReportDetailPage,
+      },
+    ],
+  },
+  {
+    path: '/analytics',
+    title: '报表菜单',
+    routes: [
+      {
+        path: '/analytics/overview',
+        title: '报表总览',
+        element: ReportsPage,
       },
     ],
   },

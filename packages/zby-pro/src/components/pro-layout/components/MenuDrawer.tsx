@@ -72,10 +72,10 @@ function MenuDrawer(props: MenuDrawerProps) {
   const drawerClassName = clsx(`${prefixCls}-menu-drawer`, hashId, className)
 
   useLayoutEffect(() => {
-    setMeasuredColumnCount(null)
     if (!open)
       return undefined
 
+    setMeasuredColumnCount(null)
     const element = measureRef.current
     if (!element)
       return undefined
@@ -414,4 +414,12 @@ function normalizeHash(hash: string) {
   return hash.startsWith('#') ? hash : `#${hash}`
 }
 
-export default memo(MenuDrawer)
+export default memo(MenuDrawer, (prev, next) =>
+  !prev.open && !next.open
+    ? true
+    : prev.open === next.open &&
+      prev.className === next.className &&
+      prev.left === next.left &&
+      prev.displayRoutes === next.displayRoutes &&
+      prev.selectedPath === next.selectedPath &&
+      prev.style === next.style)
