@@ -4,7 +4,7 @@ import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Layout, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ReactNode } from 'react'
@@ -15,7 +15,7 @@ import type {
   ProLayoutSystemItem,
 } from '../types'
 import MenuDrawer from './MenuDrawer'
-import SystemSwitcher from './SystemSwitcher'
+import SystemSwitcher from '../components/SystemSwitcher'
 
 const SIDER_WIDTH = 60
 
@@ -51,10 +51,9 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
     )
   }, [firstDisplayPath, routes])
 
-  // Drawer 关闭后回到当前路由所属的一级菜单，避免下次打开时残留上次悬停内容。
-  useEffect(() => {
-    if (!drawerOpen) setHoverFirstPath(null)
-  }, [drawerOpen])
+  const closeDrawer = () => {
+    setDrawerOpen(false)
+  }
 
   const handleRoute = (route: ProLayoutRoute) => {
     if (route.prompt) {
@@ -63,19 +62,24 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
           ? route.prompt
           : intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放'),
       )
-      setDrawerOpen(false)
+      closeDrawer()
       return
     }
 
     if (router.registry.isPageRoute(route)) {
       router.jumpTo(route.path)
-      setDrawerOpen(false)
+      closeDrawer()
       return
     }
 
     if (hasVisibleChildren(route)) {
+      if (drawerOpen) {
+        closeDrawer()
+        return
+      }
+
       setHoverFirstPath(route.path)
-      setDrawerOpen((open) => !open)
+      setDrawerOpen(true)
     }
   }
 
@@ -168,7 +172,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
               hashId={hashId}
               left={SIDER_WIDTH}
               open={drawerOpen}
-              onClose={() => setDrawerOpen(false)}
+              onClose={closeDrawer}
               displayRoutes={displayRoutes}
               selectedPath={selectedPath}
               className={classNames?.menuDrawer}

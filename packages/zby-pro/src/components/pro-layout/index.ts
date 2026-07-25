@@ -5,7 +5,6 @@ export type {
   ProLayoutHeaderLogo,
   ProLayoutProps,
   ProLayoutRoute,
-  ProLayoutRouteAnchorPoint,
   ProLayoutRouteComponent,
   ProLayoutRouteIconProps,
   ProLayoutRouteTagConfig,

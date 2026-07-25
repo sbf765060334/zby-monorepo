@@ -14,7 +14,7 @@ import {
 } from '../favorites/FavoriteMenusProvider'
 import type { CSSProperties, Ref } from 'react'
 import type { ProLayoutRoute } from '../types'
-import MenuFavoriteButton from './MenuFavoriteButton'
+import MenuFavoriteButton from '../components/MenuFavoriteButton'
 
 export interface MenuDrawerProps {
   prefixCls: string
@@ -75,7 +75,6 @@ function MenuDrawer(props: MenuDrawerProps) {
     if (!open)
       return undefined
 
-    setMeasuredColumnCount(null)
     const element = measureRef.current
     if (!element)
       return undefined
@@ -97,7 +96,7 @@ function MenuDrawer(props: MenuDrawerProps) {
     return () => window.cancelAnimationFrame(frame)
   }, [availableWidth, columnWidth, displayRoutes, drawerBodyHeight, open])
 
-  const handleSelect = (route: ProLayoutRoute, anchor?: string) => {
+  const handleSelect = (route: ProLayoutRoute) => {
     if (route.prompt) {
       void messageApi.info(
         typeof route.prompt === 'string'
@@ -114,9 +113,7 @@ function MenuDrawer(props: MenuDrawerProps) {
       return
     }
 
-    if (anchor)
-      router.smartNavigate({ pathname: route.path, hash: normalizeHash(anchor) })
-    else if (!selectedPath.includes(route.path))
+    if (!selectedPath.includes(route.path))
       router.jumpTo(route.path)
 
     onClose()
@@ -178,6 +175,7 @@ function MenuDrawer(props: MenuDrawerProps) {
       <Drawer
         placement="left"
         open={open}
+        focusable={{ trap: false }}
         size={drawerWidth}
         zIndex={999}
         rootClassName={drawerClassName}
@@ -212,7 +210,7 @@ interface MenuRouteTreeProps {
   isFavoriteRoute: (route: ProLayoutRoute) => boolean
   onToggleFavorite: (path: string) => void
   onPreload: (route: ProLayoutRoute) => void
-  onSelect: (route: ProLayoutRoute, anchor?: string) => void
+  onSelect: (route: ProLayoutRoute) => void
 }
 
 function MenuRouteTree(props: MenuRouteTreeProps) {
@@ -233,35 +231,6 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
   const directMenu = level === 1
   const pageRoute = Boolean(route.element)
   const children = route.routes?.filter(isVisibleRoute) || []
-
-  // 与 Shuzhi 一致：配置锚点的页面在 Drawer 中直接展示锚点，不重复展示父页面。
-  if (pageRoute && route.anchorPoints?.length) {
-    return (
-      <>
-        {route.anchorPoints.map((anchor) => (
-          <div
-            key={`${route.path}-${anchor.anchor}`}
-            className={clsx(`${prefixCls}-menu`, {
-              [`${prefixCls}-menu-direct`]: directMenu,
-            })}
-            style={{ paddingInlineStart: indent }}
-          >
-            <div className={`${prefixCls}-menu-row`}>
-              <div className={`${prefixCls}-menu-main`}>
-                <MenuRouteControl
-                  prefixCls={prefixCls}
-                  route={{ ...route, title: anchor.title }}
-                  createHref={createHref}
-                  onPreload={onPreload}
-                  onSelect={() => onSelect(route, anchor.anchor)}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </>
-    )
-  }
 
   if (pageRoute || route._blank || route.prompt) {
     const favorite = favoritePaths.has(route.path)
@@ -408,10 +377,6 @@ function isVisibleRoute(route: ProLayoutRoute): boolean {
   return !route.ignore && Boolean(
     route.element || route.prompt || route._blank || route.routes?.some(isVisibleRoute),
   )
-}
-
-function normalizeHash(hash: string) {
-  return hash.startsWith('#') ? hash : `#${hash}`
 }
 
 export default memo(MenuDrawer, (prev, next) =>

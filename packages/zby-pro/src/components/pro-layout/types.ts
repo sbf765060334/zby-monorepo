@@ -20,12 +20,6 @@ export interface ProLayoutRouteTagConfig {
   color?: TagProps['color']
 }
 
-/** 从菜单直接进入页面锚点的配置。 */
-export interface ProLayoutRouteAnchorPoint {
-  anchor: string
-  title: string
-}
-
 /** 支持静态 preload 的页面组件，或者调用方已经创建好的 React Element。 */
 export type ProLayoutRouteComponent =
   | (ElementType<Record<string, never>> & {
@@ -54,7 +48,6 @@ export interface ProLayoutRoute extends RouterRoute {
   ignore?: boolean
   prompt?: true | string
   tag?: string | ProLayoutRouteTagConfig
-  anchorPoints?: ProLayoutRouteAnchorPoint[]
 }
 
 /** 图标栏底部的外部系统入口。 */

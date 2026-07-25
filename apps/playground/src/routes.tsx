@@ -1,4 +1,4 @@
-import { DashboardOutlined, LineChartOutlined, LinkOutlined, OrderedListOutlined, WindowsOutlined } from '@ant-design/icons'
+import { DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ProLayoutRoute } from '@zby/pro'
 import DemoPage from './pages/DemoPage'
 
@@ -12,13 +12,13 @@ export const appRouters: ProLayoutRoute[ ] = [
   {
     path: '/dashboard',
     title: '首页',
-    icon: DashboardOutlined,
+    icon: HomeOutlined,
     element: <DemoPage />,
   },
   {
     path: '/workbench',
     title: '工作台',
-    icon: OrderedListOutlined,
+    icon: DashboardOutlined,
     routes: [
       {
         path: '/records/:id',
@@ -212,11 +212,6 @@ export const appRouters: ProLayoutRoute[ ] = [
       {
         path: '/reports/overview',
         title: '报表总览',
-        anchorPoints: [
-          { anchor: '#summary', title: '报表总览' },
-          { anchor: '#quality', title: '质量分析' },
-          { anchor: '#delivery', title: '履约分析' },
-        ],
         element: <DemoPage />,
       },
       {

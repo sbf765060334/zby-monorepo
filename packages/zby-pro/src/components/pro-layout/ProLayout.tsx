@@ -5,9 +5,9 @@ import { memo, useEffect } from 'react'
 
 import Breadcrumb from './components/Breadcrumb'
 import Header from './components/Header'
-import IconDrawerMenu from './components/IconDrawerMenu'
 import PageContent from './components/PageContent'
 import { useProLayoutTheme } from './components/ThemeProvider'
+import IconDrawerMenu from './menu'
 import useProLayoutStyles from './styles'
 import type { ProLayoutProps } from './types'
 

@@ -78,7 +78,7 @@ export function useToggleFavoriteMenu() {
 
 /**
  * 只有普通页面菜单可以收藏。
- * prompt、隐藏路由和锚点菜单都沿用 Shuzhi 的交互语义，不显示收藏入口。
+ * prompt 和隐藏路由不显示收藏入口。
  */
 export function isFavoriteMenuRoute(
   router: RouterCore<ProLayoutRoute>,
@@ -88,7 +88,6 @@ export function isFavoriteMenuRoute(
     route &&
     !route.ignore &&
     !route.prompt &&
-    !route.anchorPoints?.length &&
     router.registry.isPageRoute(route),
   )
 }

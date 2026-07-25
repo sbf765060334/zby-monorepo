@@ -140,6 +140,7 @@ describe('ReactRouterProLayout', () => {
     const reportMenu = screen.getByRole('button', { name: /报表菜单/ })
     fireEvent.click(reportMenu)
     expect(await screen.findByRole('button', { name: '报表总览' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '收藏：报表总览' })).toBeTruthy()
 
     // 关闭动画期间继续保留报表菜单，不能闪回当前页面所属的订单菜单。
     fireEvent.click(reportMenu)

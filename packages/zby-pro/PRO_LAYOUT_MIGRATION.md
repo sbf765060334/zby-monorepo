@@ -190,7 +190,6 @@ export function App() {
 | 菜单 `ignore` | core 保留元数据，不解释 UI | UI 只隐藏菜单项，URL 访问能力仍由路由本身决定。 |
 | `_blank`、`target` | UI 职责 | UI 使用原生链接/新窗口；内部路径必须带 React Router basename。 |
 | `prompt`、`tag`、`tooltipProps` | UI 职责 | core 的泛型路由快照会保留元数据，菜单负责展示与交互。 |
-| `anchorPoints` | UI 职责 | 菜单调用 `smartNavigate({ hash })` 或等价的现有语义。 |
 | 页面内任意权限码查询 | 已支持 | core 公开创建时固定的 `router.hasAuth(code)`；`useProLayoutAuth` 等业务 Hook 由业务侧按需实现，ProLayout 不重复封装。 |
 
 ### 5.2 菜单与系统切换
@@ -451,7 +450,6 @@ export interface ProLayoutRoute extends RouterRoute {
   ignore?: boolean
   prompt?: true | string
   tag?: string | ProLayoutRouteTagConfig
-  anchorPoints?: ProLayoutRouteAnchorPoint[]
 }
 ```
 
