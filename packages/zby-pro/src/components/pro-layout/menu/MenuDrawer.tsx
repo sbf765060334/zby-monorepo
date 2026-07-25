@@ -384,6 +384,8 @@ export default memo(MenuDrawer, (prev, next) =>
     ? true
     : prev.open === next.open &&
       prev.className === next.className &&
+      prev.prefixCls === next.prefixCls &&
+      prev.hashId === next.hashId &&
       prev.left === next.left &&
       prev.displayRoutes === next.displayRoutes &&
       prev.selectedPath === next.selectedPath &&

@@ -502,7 +502,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           color: styleToken.colorTextSecondary,
           transition: `background ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
 
-          '&:hover, &:focus-within': {
+          '&:hover': {
             background: styleToken.colorFillTertiary,
             color: styleToken.colorText,
           },
@@ -522,7 +522,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: styleToken.colorPrimaryBg,
           color: styleToken.colorPrimaryText,
 
-          '&:hover, &:focus-within': {
+          '&:hover': {
             background: styleToken.colorPrimaryBg,
             color: styleToken.colorPrimaryText,
           },
@@ -595,7 +595,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             color: styleToken.colorWarningTextHover,
           },
         },
-        [`.${prefixCls}-menu:hover .${prefixCls}-menu-favorite, .${prefixCls}-menu:focus-within .${prefixCls}-menu-favorite, .${prefixCls}-menu-favorite-active`]: {
+        [`.${prefixCls}-menu:hover .${prefixCls}-menu-favorite, .${prefixCls}-menu-favorite-active`]: {
           opacity: 1,
         },
         [`.${prefixCls}-menu-favorite-active`]: {
