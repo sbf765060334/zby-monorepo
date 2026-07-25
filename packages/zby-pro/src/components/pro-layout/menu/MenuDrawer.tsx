@@ -5,7 +5,7 @@ import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Drawer, message, Tag, theme as antdTheme, Tooltip } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
   isFavoriteMenuRoute,
@@ -54,7 +54,7 @@ function MenuDrawer(props: MenuDrawerProps) {
   const favoritePaths = useFavoriteMenusSelector((state) => state.favoritePaths)
   const toggleFavorite = useToggleFavoriteMenu()
   const favoritePathSet = useMemo(() => new Set(favoritePaths), [favoritePaths])
-  const viewport = useViewportSize()
+  const viewport = useViewportSize(open)
   const columnWidth = token.controlHeightLG * 5 + token.sizeXL
   const viewportGap = token.paddingLG
   const availableWidth = Math.max(columnWidth, viewport.width - left - viewportGap)
@@ -331,15 +331,36 @@ function MenuRouteControl(props: {
     : control
 }
 
-function useViewportSize() {
+function useViewportSize(active: boolean) {
   const [size, setSize] = useState(getViewportSize)
 
-  useEffect(() => {
-    const handleResize = () => setSize(getViewportSize())
-    handleResize()
+  useLayoutEffect(() => {
+    if (!active)
+      return undefined
+
+    let frame = 0
+    const updateSize = () => {
+      const next = getViewportSize()
+      setSize((previous) =>
+        previous.width === next.width && previous.height === next.height ? previous : next)
+    }
+    const handleResize = () => {
+      if (frame)
+        return
+
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        updateSize()
+      })
+    }
+
+    updateSize()
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.cancelAnimationFrame(frame)
+    }
+  }, [active])
 
   return size
 }

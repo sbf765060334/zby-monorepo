@@ -202,6 +202,22 @@ export const appRouters: ProLayoutRoute[ ] = [
           createMenuPage('/workbench/large-menu-service/sla', 'SLA 配置'),
         ],
       },
+      {
+        path: '/workbench/large-menu-background',
+        title: '大批量菜单组 - 后台',
+        routes: [
+          createMenuPage('/workbench/large-menu-background/ticket', '工单列表'),
+          createMenuPage('/workbench/large-menu-background/knowledge', '知识库'),
+          createMenuPage('/workbench/large-menu-background/sla1', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla2', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla3', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla4', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla5', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla6', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla7', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-background/sla8', 'SLA 配置'),
+        ],
+      },
     ],
   },
   {
