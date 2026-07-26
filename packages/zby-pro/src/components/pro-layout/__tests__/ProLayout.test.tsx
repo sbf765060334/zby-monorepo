@@ -122,6 +122,14 @@ describe('ReactRouterProLayout', () => {
     expect(drawer.querySelector('.zby-pro-layout-menu-columns')).toBeTruthy()
     expect(drawer.querySelector('.zby-pro-layout-menu-scroll')).toBeTruthy()
     expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
+    const menuGroupInner = drawer.querySelector(
+      '.zby-pro-layout-menu-group-inner',
+    ) as HTMLElement
+    expect(menuGroupInner.style.maxHeight).toMatch(/^\d+(\.\d+)?px$/)
+    fireEvent.mouseEnter(menuGroupInner)
+    expect(menuGroupInner.classList.contains('zby-pro-layout-menu-group-inner-hover')).toBe(true)
+    fireEvent.mouseLeave(menuGroupInner)
+    expect(menuGroupInner.classList.contains('zby-pro-layout-menu-group-inner-hover')).toBe(false)
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('60px')
     expect(drawerRoot.style.overflow).toBe('hidden')

@@ -13,7 +13,7 @@ import {
   useFavoriteMenusSelector,
   useToggleFavoriteMenu,
 } from '../favorites/FavoriteMenusProvider'
-import type { CSSProperties, Ref } from 'react'
+import type { CSSProperties, MouseEvent as ReactMouseEvent, Ref } from 'react'
 import type { ProLayoutRoute } from '../types'
 import MenuFavoriteButton from '../components/MenuFavoriteButton'
 
@@ -71,6 +71,15 @@ function MenuDrawer(props: MenuDrawerProps) {
   const drawerWidth = Math.min(Math.max(1, Math.min(maxColumns, columnCount)) * columnWidth, availableWidth)
   const shouldScrollX = measuredColumnCount !== null && measuredColumnCount > maxColumns
   const drawerClassName = clsx(`${prefixCls}-menu-drawer`, hashId, className)
+  const menuGroupInnerHoverClassName = `${prefixCls}-menu-group-inner-hover`
+
+  const handleMenuGroupMouseEnter = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.currentTarget.classList.add(menuGroupInnerHoverClassName)
+  }
+
+  const handleMenuGroupMouseLeave = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.currentTarget.classList.remove(menuGroupInnerHoverClassName)
+  }
 
   useLayoutEffect(() => {
     if (!open)
@@ -127,12 +136,21 @@ function MenuDrawer(props: MenuDrawerProps) {
           return null
 
         const directEntry = isDirectEntryRoute(router, route)
+        const groupInnerMaxHeight = Math.max(
+          0,
+          drawerBodyHeight - (directEntry ? 0 : token.paddingSM * 2),
+        )
         return (
           <section
             key={route.path}
             className={directEntry ? `${prefixCls}-menu-entry` : `${prefixCls}-menu-group`}
           >
-            <div className={`${prefixCls}-menu-group-inner`}>
+            <div
+              className={`${prefixCls}-menu-group-inner`}
+              style={{ maxHeight: groupInnerMaxHeight }}
+              onMouseEnter={handleMenuGroupMouseEnter}
+              onMouseLeave={handleMenuGroupMouseLeave}
+            >
               <MenuRouteTree
                 prefixCls={prefixCls}
                 route={route}

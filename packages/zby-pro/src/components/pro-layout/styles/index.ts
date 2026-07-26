@@ -2,6 +2,7 @@ import { useStyleRegister } from '@ant-design/cssinjs'
 import { theme as antdTheme } from 'antd'
 
 const unit = (value: number | string) => typeof value === 'number' ? `${value}px` : value
+const menuScrollbarThumbColorVar = '--zby-pro-layout-menu-scrollbar-thumb-color'
 
 /** 注册与 Shuzhi Drawer 模式一致的 ProLayout token 驱动样式。 */
 export default function useProLayoutStyles(prefixCls: string) {
@@ -478,10 +479,37 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`.${prefixCls}-menu-group`]: { paddingBlock: styleToken.paddingSM },
         [`.${prefixCls}-menu-entry`]: { paddingBlock: 0 },
         [`.${prefixCls}-menu-group-inner`]: {
+          [menuScrollbarThumbColorVar]: 'transparent',
           maxHeight: '100%',
           overflowX: 'hidden',
           overflowY: 'auto',
-          scrollbarWidth: 'thin',
+
+          '&::-webkit-scrollbar': {
+            width: 4,
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-track, &::-webkit-scrollbar-track-piece': {
+            background: 'transparent',
+            boxShadow: 'none',
+          },
+          '&::-webkit-scrollbar-button': {
+            display: 'none',
+            width: 0,
+            height: 0,
+            background: 'transparent',
+            WebkitAppearance: 'none',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            borderRadius: 999,
+            background: `var(${menuScrollbarThumbColorVar})`,
+            transition: `background ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
+          },
+          [`&.${prefixCls}-menu-group-inner-hover`]: {
+            [menuScrollbarThumbColorVar]: styleToken.colorTextQuaternary,
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: styleToken.colorTextTertiary,
+          },
         },
         [`.${prefixCls}-menu-title`]: {
           overflow: 'hidden',
@@ -601,6 +629,13 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`.${prefixCls}-menu-favorite-active`]: {
           color: styleToken.colorWarningText,
           opacity: 1,
+        },
+      },
+
+      '@supports not selector(::-webkit-scrollbar)': {
+        [`.${prefixCls}-menu-drawer .${prefixCls}-menu-group-inner`]: {
+          scrollbarWidth: 'thin',
+          scrollbarColor: `var(${menuScrollbarThumbColorVar}) transparent`,
         },
       },
 
