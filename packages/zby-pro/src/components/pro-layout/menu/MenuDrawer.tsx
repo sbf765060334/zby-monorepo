@@ -13,7 +13,7 @@ import {
   useFavoriteMenusSelector,
   useToggleFavoriteMenu,
 } from '../favorites/FavoriteMenusProvider'
-import type { CSSProperties, MouseEvent as ReactMouseEvent, Ref } from 'react'
+import type { CSSProperties, Ref } from 'react'
 import type { ProLayoutRoute } from '../types'
 import MenuFavoriteButton from '../components/MenuFavoriteButton'
 
@@ -32,8 +32,8 @@ export interface MenuDrawerProps {
 /**
  * 多列菜单 Drawer。
  *
- * 菜单先按可用高度进行 CSS 分栏，再测量真实列数决定 Drawer 宽度；这样短菜单不会留下
- * 大片空白，长菜单也能在视口范围内横向滚动，行为与 Shuzhi 保持一致。
+ * 菜单优先按无页面的中间路由形成业务子组，子组放不下时整体换列；只有单个子组本身
+ * 超过一列时才按菜单项生成续列。最终仍由 CSS 分栏，并测量真实列数决定 Drawer 宽度。
  */
 function MenuDrawer(props: MenuDrawerProps) {
   const {
@@ -61,9 +61,29 @@ function MenuDrawer(props: MenuDrawerProps) {
   const availableWidth = Math.max(columnWidth, viewport.width - left - viewportGap)
   const drawerBodyHeight = Math.max(0, viewport.height - viewportGap * 2)
   const maxColumns = Math.max(1, Math.floor(availableWidth / columnWidth))
+  const menuRowHeight = token.controlHeight + token.paddingXXS * 2
+  const menuTitleHeight = Math.ceil(token.fontSizeSM * token.lineHeight) +
+    token.paddingXS * 2 + token.marginSM + token.lineWidth
+  const maxGroupInnerHeight = Math.max(
+    menuTitleHeight + menuRowHeight,
+    drawerBodyHeight - token.paddingSM * 2,
+  )
+  const menuSections = useMemo(
+    () => createMenuSections(
+      displayRoutes,
+      maxGroupInnerHeight,
+      { menuRowHeight, menuTitleHeight },
+      (title) => intl.getMessage(
+        'zby.pro.layout.menu.continued',
+        '{{title}} · 续',
+        { title },
+      ),
+    ),
+    [displayRoutes, intl, maxGroupInnerHeight, menuRowHeight, menuTitleHeight],
+  )
   const fallbackColumnCount = Math.max(
     1,
-    Math.min(maxColumns, displayRoutes.filter(isVisibleRoute).length),
+    Math.min(maxColumns, menuSections.length),
   )
   const measureRef = useRef<HTMLDivElement | null>(null)
   const [measuredColumnCount, setMeasuredColumnCount] = useState<number | null>(null)
@@ -71,15 +91,6 @@ function MenuDrawer(props: MenuDrawerProps) {
   const drawerWidth = Math.min(Math.max(1, Math.min(maxColumns, columnCount)) * columnWidth, availableWidth)
   const shouldScrollX = measuredColumnCount !== null && measuredColumnCount > maxColumns
   const drawerClassName = clsx(`${prefixCls}-menu-drawer`, hashId, className)
-  const menuGroupInnerHoverClassName = `${prefixCls}-menu-group-inner-hover`
-
-  const handleMenuGroupMouseEnter = (event: ReactMouseEvent<HTMLDivElement>) => {
-    event.currentTarget.classList.add(menuGroupInnerHoverClassName)
-  }
-
-  const handleMenuGroupMouseLeave = (event: ReactMouseEvent<HTMLDivElement>) => {
-    event.currentTarget.classList.remove(menuGroupInnerHoverClassName)
-  }
 
   useLayoutEffect(() => {
     if (!open)
@@ -104,7 +115,7 @@ function MenuDrawer(props: MenuDrawerProps) {
     measureColumnCount()
     const frame = window.requestAnimationFrame(measureColumnCount)
     return () => window.cancelAnimationFrame(frame)
-  }, [availableWidth, columnWidth, displayRoutes, drawerBodyHeight, open])
+  }, [availableWidth, columnWidth, drawerBodyHeight, menuSections, open])
 
   const handleSelect = (route: ProLayoutRoute) => {
     if (route.prompt) {
@@ -131,26 +142,13 @@ function MenuDrawer(props: MenuDrawerProps) {
 
   const renderColumns = (ref?: Ref<HTMLDivElement>, columnStyle?: CSSProperties) => (
     <div ref={ref} className={`${prefixCls}-menu-columns`} style={columnStyle}>
-      {displayRoutes.map((route) => {
-        if (!isVisibleRoute(route))
-          return null
-
-        const directEntry = isDirectEntryRoute(router, route)
-        const groupInnerMaxHeight = Math.max(
-          0,
-          drawerBodyHeight - (directEntry ? 0 : token.paddingSM * 2),
-        )
+      {menuSections.map(({ directEntry, key, route }) => {
         return (
           <section
-            key={route.path}
+            key={key}
             className={directEntry ? `${prefixCls}-menu-entry` : `${prefixCls}-menu-group`}
           >
-            <div
-              className={`${prefixCls}-menu-group-inner`}
-              style={{ maxHeight: groupInnerMaxHeight }}
-              onMouseEnter={handleMenuGroupMouseEnter}
-              onMouseLeave={handleMenuGroupMouseLeave}
-            >
+            <div className={`${prefixCls}-menu-group-inner`}>
               <MenuRouteTree
                 prefixCls={prefixCls}
                 route={route}
@@ -406,11 +404,132 @@ function getViewportSize() {
   return { width: 0, height: 0 }
 }
 
-function isDirectEntryRoute(
-  router: ReturnType<typeof useRouterCore<ProLayoutRoute>>,
+interface MenuLayoutMetrics {
+  menuRowHeight: number
+  menuTitleHeight: number
+}
+
+interface MenuSection {
+  key: string
+  route: ProLayoutRoute
+  directEntry: boolean
+}
+
+function createMenuSections(
+  routes: ProLayoutRoute[],
+  maxGroupInnerHeight: number,
+  metrics: MenuLayoutMetrics,
+  getContinuedTitle: (title: string) => string,
+): MenuSection[] {
+  return routes.filter(isVisibleRoute).flatMap<MenuSection>((route) => {
+    if (isMenuControlRoute(route)) {
+      return [{ key: route.path, route, directEntry: true }]
+    }
+
+    return splitMenuGroupRoute(
+      route,
+      maxGroupInnerHeight,
+      metrics,
+      getContinuedTitle,
+    ).map((fragment, index) => ({
+      key: `${route.path}:${index}`,
+      route: fragment,
+      directEntry: false,
+    }))
+  })
+}
+
+function splitMenuGroupRoute(
   route: ProLayoutRoute,
+  maxHeight: number,
+  metrics: MenuLayoutMetrics,
+  getContinuedTitle: (title: string) => string,
+): ProLayoutRoute[] {
+  const children = route.routes?.filter(isVisibleRoute) || []
+  if (!children.length)
+    return []
+
+  const contentCapacity = Math.max(
+    metrics.menuRowHeight,
+    maxHeight - metrics.menuTitleHeight,
+  )
+  let pages: ProLayoutRoute[][]
+
+  if (children.every(isMenuControlRoute)) {
+    const maxItemsPerPage = Math.max(
+      1,
+      Math.floor(contentCapacity / metrics.menuRowHeight),
+    )
+    pages = chunkRoutes(children, maxItemsPerPage)
+  } else {
+    const blocks = children.flatMap((child) => {
+      if (
+        isMenuControlRoute(child) ||
+        estimateMenuRouteHeight(child, metrics) <= contentCapacity
+      ) {
+        return [child]
+      }
+
+      return splitMenuGroupRoute(child, contentCapacity, metrics, getContinuedTitle)
+    })
+    pages = packMenuBlocks(blocks, contentCapacity, metrics)
+  }
+
+  return pages.map((pageRoutes, index) => ({
+    ...route,
+    title: index === 0 ? route.title : getContinuedTitle(route.title),
+    routes: pageRoutes,
+  }))
+}
+
+function chunkRoutes(routes: ProLayoutRoute[], chunkSize: number) {
+  const chunks: ProLayoutRoute[][] = []
+  for (let index = 0; index < routes.length; index += chunkSize)
+    chunks.push(routes.slice(index, index + chunkSize))
+
+  return chunks
+}
+
+function packMenuBlocks(
+  blocks: ProLayoutRoute[],
+  capacity: number,
+  metrics: MenuLayoutMetrics,
 ) {
-  return router.registry.isPageRoute(route) || Boolean(route._blank || route.prompt)
+  const pages: ProLayoutRoute[][] = []
+  let currentPage: ProLayoutRoute[] = []
+  let currentHeight = 0
+
+  blocks.forEach((block) => {
+    const blockHeight = estimateMenuRouteHeight(block, metrics)
+    if (currentPage.length && currentHeight + blockHeight > capacity) {
+      pages.push(currentPage)
+      currentPage = []
+      currentHeight = 0
+    }
+
+    currentPage.push(block)
+    currentHeight += blockHeight
+  })
+
+  if (currentPage.length)
+    pages.push(currentPage)
+
+  return pages
+}
+
+function estimateMenuRouteHeight(route: ProLayoutRoute, metrics: MenuLayoutMetrics): number {
+  if (isMenuControlRoute(route))
+    return metrics.menuRowHeight
+
+  return metrics.menuTitleHeight +
+    (route.routes?.filter(isVisibleRoute) || []).reduce(
+      (height, child) => height + estimateMenuRouteHeight(child, metrics),
+      0,
+    )
+}
+
+function isMenuControlRoute(route: ProLayoutRoute) {
+  return Boolean(route.element || route._blank || route.prompt)
 }
 
 function preloadVisibleRoute(

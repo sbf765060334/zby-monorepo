@@ -125,11 +125,10 @@ describe('ReactRouterProLayout', () => {
     const menuGroupInner = drawer.querySelector(
       '.zby-pro-layout-menu-group-inner',
     ) as HTMLElement
-    expect(menuGroupInner.style.maxHeight).toMatch(/^\d+(\.\d+)?px$/)
-    fireEvent.mouseEnter(menuGroupInner)
-    expect(menuGroupInner.classList.contains('zby-pro-layout-menu-group-inner-hover')).toBe(true)
-    fireEvent.mouseLeave(menuGroupInner)
-    expect(menuGroupInner.classList.contains('zby-pro-layout-menu-group-inner-hover')).toBe(false)
+    expect(menuGroupInner.style.maxHeight).toBe('')
+    const menuScrollViewports = drawer.querySelectorAll('[data-zby-scroll-area-viewport]')
+    expect(menuScrollViewports).toHaveLength(1)
+    expect(menuScrollViewports[0]?.closest('.zby-pro-layout-menu-scroll')).toBeTruthy()
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('60px')
     expect(drawerRoot.style.overflow).toBe('hidden')
@@ -159,6 +158,31 @@ describe('ReactRouterProLayout', () => {
     act(() => router.jumpTo('/reports'))
     await screen.findByTestId('reports-page')
     expect(container.querySelectorAll('.zby-pro-layout-tab-split')).toHaveLength(1)
+  })
+
+  it('优先填满当前列，并保持后续业务子组完整', async () => {
+    const router = createMegaMenuTestRouter()
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    fireEvent.click(screen.getByRole('button', { name: /超级菜单/ }))
+
+    const drawer = await screen.findByRole('dialog')
+    const menuGroups = drawer.querySelectorAll('.zby-pro-layout-menu-group')
+    expect(menuGroups).toHaveLength(2)
+    expect(menuGroups[0]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(15)
+    expect(menuGroups[1]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(7)
+    expect(within(drawer).getByText('业务中心')).toBeTruthy()
+    expect(within(drawer).getByText('业务中心 · 续')).toBeTruthy()
+    expect(within(drawer).getByText('订单处理')).toBeTruthy()
+    expect(within(drawer).getByText('订单处理 · 续')).toBeTruthy()
+    expect(within(drawer).getAllByText('履约管理')).toHaveLength(1)
+    expect(within(drawer).getAllByRole('button', { name: '订单项 1' })).toHaveLength(1)
+    expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(1)
   })
 
   it('noBar 模式不渲染图标栏和全局页签', async () => {
@@ -438,6 +462,62 @@ function createTestRouter(storageKey = `pro-layout-test-${routerSequence += 1}`)
     defaultRedirectPath: '/dashboard',
     storageAdapter: false,
     storageKey,
+    keepAlive: true,
+  })
+}
+
+function createMegaMenuTestRouter() {
+  const orderRoutes = Array.from({ length: 20 }, (_, index): ProLayoutRoute => ({
+    path: `/mega/business/orders/${index + 1}`,
+    title: `订单项 ${index + 1}`,
+    element: ReportsPage,
+  }))
+  const megaMenuRoutes: ProLayoutRoute[] = [
+    {
+      path: '/dashboard',
+      title: '工作台',
+      element: DashboardPage,
+    },
+    {
+      path: '/mega',
+      title: '超级菜单',
+      routes: [
+        {
+          path: '/mega/business',
+          title: '业务中心',
+          routes: [
+            {
+              path: '/mega/business/orders',
+              title: '订单处理',
+              routes: orderRoutes,
+            },
+            {
+              path: '/mega/business/delivery',
+              title: '履约管理',
+              routes: [
+                {
+                  path: '/mega/business/delivery/pending',
+                  title: '待发货订单',
+                  element: ReportsPage,
+                },
+                {
+                  path: '/mega/business/delivery/history',
+                  title: '发货记录',
+                  element: ReportsPage,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]
+
+  return createRouterCore({
+    routes: megaMenuRoutes,
+    defaultRedirectPath: '/dashboard',
+    storageAdapter: false,
+    storageKey: `pro-layout-mega-menu-${routerSequence += 1}`,
     keepAlive: true,
   })
 }

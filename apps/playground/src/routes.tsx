@@ -185,24 +185,6 @@ export const appRouters: ProLayoutRoute[ ] = [
         ],
       },
       {
-        path: '/workbench/large-menu-ops',
-        title: '大批量菜单组 - 运营',
-        routes: [
-          createMenuPage('/workbench/large-menu-ops/calendar', '运营日历'),
-          createMenuPage('/workbench/large-menu-ops/event', '事件中心'),
-          createMenuPage('/workbench/large-menu-ops/review', '复盘记录'),
-        ],
-      },
-      {
-        path: '/workbench/large-menu-service',
-        title: '大批量菜单组 - 服务',
-        routes: [
-          createMenuPage('/workbench/large-menu-service/ticket', '工单列表'),
-          createMenuPage('/workbench/large-menu-service/knowledge', '知识库'),
-          createMenuPage('/workbench/large-menu-service/sla', 'SLA 配置'),
-        ],
-      },
-      {
         path: '/workbench/large-menu-background',
         title: '大批量菜单组 - 后台',
         routes: [
@@ -221,9 +203,27 @@ export const appRouters: ProLayoutRoute[ ] = [
           createMenuPage('/workbench/large-menu-background/sla11', 'SLA 配置'),
           createMenuPage('/workbench/large-menu-background/sla12', 'SLA 配置'),
           createMenuPage('/workbench/large-menu-background/sla13', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla14', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla15', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla16', 'SLA 配置'),
+          // createMenuPage('/workbench/large-menu-background/sla14', 'SLA 配置'),
+          // createMenuPage('/workbench/large-menu-background/sla15', 'SLA 配置'),
+          // createMenuPage('/workbench/large-menu-background/sla16', 'SLA 配置'),
+        ],
+      },
+      {
+        path: '/workbench/large-menu-ops',
+        title: '大批量菜单组 - 运营',
+        routes: [
+          createMenuPage('/workbench/large-menu-ops/calendar', '运营日历'),
+          createMenuPage('/workbench/large-menu-ops/event', '事件中心'),
+          createMenuPage('/workbench/large-menu-ops/review', '复盘记录'),
+        ],
+      },
+      {
+        path: '/workbench/large-menu-service',
+        title: '大批量菜单组 - 服务',
+        routes: [
+          createMenuPage('/workbench/large-menu-service/ticket', '工单列表'),
+          createMenuPage('/workbench/large-menu-service/knowledge', '知识库'),
+          createMenuPage('/workbench/large-menu-service/sla', 'SLA 配置'),
         ],
       },
     ],
