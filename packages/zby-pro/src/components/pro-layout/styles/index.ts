@@ -25,10 +25,9 @@ export default function useProLayoutStyles(prefixCls: string) {
     token.borderRadiusLG + token.marginXXS,
   )
   const tabCurveSize = unit(tabCurveValue)
-  const tabSplitWidth = Math.max(
-    token.marginXXS * 2 + token.lineWidthBold,
-    tabCurveValue,
-  )
+  const tabSplitWidth = styleToken.marginXXS
+  const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
+  const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
   const tabCurveOffset = `calc(${tabCurveSize} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
@@ -389,11 +388,11 @@ export default function useProLayoutStyles(prefixCls: string) {
           },
           '&::before': {
             insetInlineStart: tabCurveOffset,
-            background: `radial-gradient(circle at 0 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+            background: `radial-gradient(circle at ${tabAdjacentCurveStartCenter} 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
           },
           '&::after': {
             insetInlineEnd: tabCurveOffset,
-            background: `radial-gradient(circle at 100% 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+            background: `radial-gradient(circle at ${tabAdjacentCurveEndCenter} 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
           },
         },
         [`${componentCls}-tab-node-dropping`]: { opacity: 0.72 },
