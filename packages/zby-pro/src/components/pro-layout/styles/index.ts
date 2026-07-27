@@ -86,6 +86,16 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-sider-menu-scroll`]: {
           width: '100%',
           height: '100%',
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          scrollbarWidth: 'none',
+          ['-ms-overflow-style' as const]: 'none',
+
+          '&::-webkit-scrollbar': {
+            display: 'none',
+            width: 0,
+            height: 0,
+          },
         },
 
         [`${componentCls}-sider-menu`]: {

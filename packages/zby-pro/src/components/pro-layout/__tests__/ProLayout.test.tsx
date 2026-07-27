@@ -118,14 +118,9 @@ describe('ReactRouterProLayout', () => {
     const siderMenuScroll = menuContainer?.querySelector(
       '.zby-pro-layout-sider-menu-scroll',
     ) as HTMLElement
-    const siderMenuViewport = siderMenuScroll.querySelector(
-      '[data-zby-scroll-area-viewport]',
-    )
-    expect(siderMenuViewport?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
-    expect(
-      Array.from(siderMenuScroll.classList).some((className) =>
-        className.endsWith('-scrollbar-none')),
-    ).toBe(true)
+    expect(siderMenuScroll.tagName).toBe('DIV')
+    expect(siderMenuScroll.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    expect(siderMenuScroll.querySelector('[data-zby-scroll-area-viewport]')).toBeNull()
     const orderMenu = screen.getByRole('button', { name: /订单管理/ })
     fireEvent.click(orderMenu)
 

@@ -2,7 +2,6 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
-import { ScrollArea } from '@zby/ui'
 import { Layout, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
@@ -105,12 +104,8 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
             className={clsx(`${prefixCls}-sider-menu-container`, classNames?.siderMenu)}
             style={styles?.siderMenu}
           >
-            <ScrollArea
-              className={`${prefixCls}-sider-menu-scroll`}
-              direction="vertical"
-              scrollbar={false}
-              wheelBehavior="native"
-            >
+            {/* 一级菜单使用独立原生滚动容器；外层 container 继续负责裁切和挂载 Drawer。 */}
+            <div className={`${prefixCls}-sider-menu-scroll`}>
               <nav className={`${prefixCls}-sider-menu`}>
                 {routes.map((route) => {
                   const Icon = route.icon
@@ -174,7 +169,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
                   )
                 })}
               </nav>
-            </ScrollArea>
+            </div>
             <MenuDrawer
               prefixCls={prefixCls}
               hashId={hashId}

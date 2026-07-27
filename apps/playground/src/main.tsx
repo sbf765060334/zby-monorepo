@@ -75,6 +75,15 @@ function PlaygroundApp() {
             onStorageError={(error, info) => {
               console.error(`[Playground] Router storage ${info.phase} failed.`, error)
             }}
+            systemList={
+              [{
+                systemName: '百度',
+                name: '百度',
+                url: 'https://www.baidu.com',
+                description: '百度',
+                logo: 'https://www.baidu.com/favicon.ico',
+              }]
+            }
           />
         </ZbyIntlProvider>
       </AntdApp>

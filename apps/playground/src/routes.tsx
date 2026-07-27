@@ -1,4 +1,4 @@
-import { DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
+import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ProLayoutRoute } from '@zby/pro'
 import DemoPage from './pages/DemoPage'
 
@@ -243,6 +243,40 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '实时监控',
         tag: { text: 'Beta', color: 'processing' },
         tooltipProps: { title: '该页不会进入 keepAlive 缓存' },
+        element: <DemoPage />,
+      },
+    ],
+  },
+  {
+    path: '/sample',
+    title: '打样',
+    icon: ClearOutlined,
+    routes: [
+      {
+        path: '/sample/overview',
+        title: '打样总览',
+        element: <DemoPage />,
+      },
+      {
+        path: '/sample/live',
+        title: '实时监控',
+        element: <DemoPage />,
+      },
+    ],
+  },
+  {
+    path: '/bug',
+    title: '缺陷',
+    icon: BugOutlined,
+    routes: [
+      {
+        path: '/bug/overview',
+        title: '打样总览',
+        element: <DemoPage />,
+      },
+      {
+        path: '/bug/live',
+        title: '实时监控',
         element: <DemoPage />,
       },
     ],
