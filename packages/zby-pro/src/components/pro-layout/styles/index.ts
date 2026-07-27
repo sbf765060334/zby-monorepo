@@ -8,12 +8,22 @@ export default function useProLayoutStyles(prefixCls: string) {
   const { cssVar, hashId, theme, token } = antdTheme.useToken()
   const styleToken = cssVar ?? token
   const componentCls = `.${prefixCls}`
-  const headerHeight = '38px'
-  const headerTabHeight = `max(${unit(styleToken.controlHeightSM)}, calc(${headerHeight} - ${unit(styleToken.marginXXS)} * 2))`
+  const headerHeight = Math.max(
+    token.controlHeightSM + token.marginXXS,
+    token.controlHeightLG - token.marginXXS / 2,
+  )
+  const headerTabHeight = Math.max(token.controlHeightSM, headerHeight - token.marginXXS)
+  const headerIdleTabHeight = Math.max(
+    token.controlHeightSM,
+    headerHeight - token.marginXXS * 2,
+  )
   const fixedIconWidth = unit(styleToken.fontSizeLG)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
   const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) / -2)`
-  const tabSplitHeight = `max(${unit(styleToken.lineWidth)}, calc(${headerTabHeight} - ${unit(styleToken.paddingSM)}))`
+  const tabSplitWidth = token.marginXXS * 2 + token.lineWidthBold
+  const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
+  const tabCurveSize = unit(styleToken.borderRadiusLG)
+  const tabCurveOffset = `calc(${tabCurveSize} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
 
@@ -221,8 +231,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           boxSizing: 'border-box',
           alignItems: 'center',
           paddingInline: styleToken.paddingSM,
-          borderBlockEnd: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
-          background: styleToken.colorFillTertiary,
+          background: styleToken.colorBgContainer,
           transition: `padding-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
         },
 
@@ -235,7 +244,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           alignItems: 'center',
           overflow: 'hidden',
           paddingInlineStart: styleToken.paddingSM,
-          background: styleToken.colorFillTertiary,
+          background: styleToken.colorBgContainer,
 
           [`.ant-tabs`]: {
             maxWidth: '100%',
@@ -246,12 +255,13 @@ export default function useProLayoutStyles(prefixCls: string) {
             height: '100%',
             maxHeight: headerHeight,
             margin: 0,
+            alignItems: 'flex-end',
             '&::before': { borderBlockEnd: 0 },
           },
           [`.ant-tabs-nav-wrap, .ant-tabs-nav-list, .ant-tabs-nav-operations`]: {
             height: '100%',
             maxHeight: headerHeight,
-            alignItems: 'center',
+            alignItems: 'flex-end',
           },
           [`.ant-tabs-extra-content`]: {
             display: 'inline-flex',
@@ -260,18 +270,20 @@ export default function useProLayoutStyles(prefixCls: string) {
           },
           [`.ant-tabs-tab`]: {
             display: 'inline-flex',
-            height: headerTabHeight,
-            minHeight: headerTabHeight,
+            height: headerIdleTabHeight,
+            minHeight: headerIdleTabHeight,
             boxSizing: 'border-box',
-            margin: 0,
+            marginBlock: styleToken.marginXXS,
+            marginInline: 0,
             paddingBlock: 0,
             paddingInline: styleToken.paddingSM,
             alignItems: 'center',
             border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
-            borderRadius: `${unit(styleToken.borderRadiusSM)} !important`,
-            background: styleToken.colorFillTertiary,
+            borderRadius: `${unit(styleToken.borderRadiusLG)} !important`,
+            background: styleToken.colorBgContainer,
             color: styleToken.colorTextTertiary,
-            lineHeight: headerTabHeight,
+            fontSize: styleToken.fontSize,
+            lineHeight: styleToken.lineHeight,
             transition: `background ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, border-color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
 
             '&:hover, &:active, &:focus, &:focus-visible': {
@@ -286,16 +298,22 @@ export default function useProLayoutStyles(prefixCls: string) {
             height: '100%',
             alignItems: 'center',
             color: 'inherit',
-            lineHeight: headerTabHeight,
+            lineHeight: styleToken.lineHeight,
           },
           [`.ant-tabs-tab-active`]: {
+            zIndex: 1,
+            height: headerIdleTabHeight,
+            minHeight: headerIdleTabHeight,
+            margin: 0,
             borderColor: 'transparent',
-            background: styleToken.colorBgContainer,
+            borderBlockEndColor: `${styleToken.colorBgLayout} !important`,
+            borderRadius: `${tabCurveSize} ${tabCurveSize} 0 0 !important`,
+            background: styleToken.colorBgLayout,
             color: styleToken.colorTextSecondary,
 
             '&:hover, &:active, &:focus, &:focus-visible': {
               borderColor: 'transparent',
-              background: styleToken.colorBgContainer,
+              background: styleToken.colorBgLayout,
               color: styleToken.colorTextSecondary,
             },
           },
@@ -330,7 +348,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           position: 'relative',
           display: 'flex',
           height: '100%',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           overflow: 'hidden',
           transition: `opacity ${styleToken.motionDurationFast} ${styleToken.motionEaseOut}`,
         },
@@ -342,25 +360,56 @@ export default function useProLayoutStyles(prefixCls: string) {
             boxShadow: surfaceShadow,
           },
         },
+        [`${componentCls}-tab-node-active`]: {
+          zIndex: 1,
+          height: headerTabHeight,
+          alignSelf: 'flex-end',
+          alignItems: 'flex-start',
+          overflow: 'visible',
+          borderRadius: `${tabCurveSize} ${tabCurveSize} 0 0`,
+          background: styleToken.colorBgLayout,
+
+          '&::before, &::after': {
+            position: 'absolute',
+            insetBlockEnd: 0,
+            width: tabCurveSize,
+            height: tabCurveSize,
+            content: '""',
+            pointerEvents: 'none',
+          },
+          '&::before': {
+            insetInlineStart: tabCurveOffset,
+            background: `radial-gradient(circle at 0 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+          },
+          '&::after': {
+            insetInlineEnd: tabCurveOffset,
+            background: `radial-gradient(circle at 100% 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+          },
+        },
         [`${componentCls}-tab-node-dropping`]: { opacity: 0.72 },
         [`${componentCls}-tab-split`]: {
           position: 'relative',
-          width: styleToken.lineWidth,
-          height: headerTabHeight,
+          width: tabSplitWidth,
+          height: headerIdleTabHeight,
+          marginBlock: styleToken.marginXXS,
           flexShrink: 0,
-          alignSelf: 'center',
+          alignSelf: 'flex-end',
           transition: `opacity ${styleToken.motionDurationFast} ${styleToken.motionEaseOut}`,
 
           '&::before': {
             position: 'absolute',
             insetBlockStart: '50%',
-            insetInlineEnd: 0,
-            width: styleToken.lineWidth,
+            insetInline: 0,
+            width: styleToken.lineWidthBold,
             height: tabSplitHeight,
+            marginInline: 'auto',
             background: styleToken.colorBorder,
             content: '""',
             transform: 'translateY(-50%)',
           },
+        },
+        [`${componentCls}-tab-split-hidden, ${componentCls}-tab-node:hover + ${componentCls}-tab-split, ${componentCls}-tab-split:has(+ ${componentCls}-tab-node:hover)`]: {
+          opacity: 0,
         },
         [`${componentCls}-tab-label-wrap`]: {
           maxWidth: '100%',
@@ -780,5 +829,5 @@ export default function useProLayoutStyles(prefixCls: string) {
     }),
   )
 
-  return { hashId }
+  return { hashId, headerHeight }
 }

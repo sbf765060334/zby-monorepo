@@ -86,6 +86,12 @@ export const appRouters: ProLayoutRoute[ ] = [
             path: '/workbench/material/assets',
             title: '素材资产',
             routes: [
+              {
+                path: '/workbench/material/assets/voices',
+                title: '语音素材',
+                tag: { text: 'New', color: 'success' },
+                element: <DemoPage />,
+              },
               createMenuPage('/workbench/material/assets/images', '图片素材'),
               createMenuPage('/workbench/material/assets/videos', '视频素材'),
               createMenuPage('/workbench/material/assets/copywriting', '文案素材'),

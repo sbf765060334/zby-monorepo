@@ -5,6 +5,7 @@ import 'fake-indexeddb/auto'
 import { ZbyIntlProvider } from '@zby/intl'
 import { createRouterCore } from '@zby/router-core'
 import { useRouterPageSelector } from '@zby/router-core/react'
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import {
   act,
   cleanup,
@@ -113,6 +114,7 @@ describe('ReactRouterProLayout', () => {
     const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
     const menuContainer = container.querySelector('.zby-pro-layout-sider-menu-container')
     expect(main.style.paddingBlockStart).toBe('38px')
+    expect(header.style.height).toBe('38px')
     expect(header.style.paddingInlineStart).toBe('60px')
     expect(menuContainer?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
     const siderMenuScroll = menuContainer?.querySelector(
@@ -163,7 +165,30 @@ describe('ReactRouterProLayout', () => {
 
     act(() => router.jumpTo('/reports'))
     await screen.findByTestId('reports-page')
-    expect(container.querySelectorAll('.zby-pro-layout-tab-split')).toHaveLength(1)
+    const tabNodes = container.querySelectorAll('.zby-pro-layout-tab-node')
+    const tabSplits = container.querySelectorAll('.zby-pro-layout-tab-split')
+    expect(tabSplits).toHaveLength(tabNodes.length - 1)
+    expect(container.querySelectorAll('.zby-pro-layout-tab-split-hidden')).toHaveLength(1)
+    expect(container.querySelectorAll(
+      '.zby-pro-layout-tab-split:not(.zby-pro-layout-tab-split-hidden)',
+    )).toHaveLength(1)
+  })
+
+  it('根据紧凑主题同步收缩 Header 和内容顶部占位', async () => {
+    const router = createTestRouter()
+    const { container } = render(
+      <ConfigProvider theme={{ algorithm: antdTheme.compactAlgorithm }}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ReactRouterProLayout router={router} title="数字化平台" />
+        </MemoryRouter>
+      </ConfigProvider>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+    expect(main.style.paddingBlockStart).toBe('33px')
+    expect(header.style.height).toBe('33px')
   })
 
   it('保持超高业务组完整，并由整个 Drawer 纵向滚动', async () => {

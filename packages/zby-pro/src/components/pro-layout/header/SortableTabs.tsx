@@ -46,6 +46,7 @@ export default function SortableTabs(props: SortableTabsProps) {
     [fixedKeys, items],
   )
   const keys = useMemo(() => orderedItems.map((item) => String(item.key)), [orderedItems])
+  const lastKey = keys[keys.length - 1] || null
   const { nextKey, previousKey } = useMemo(() => {
     const activeIndex = keys.indexOf(String(activeKey))
     return {
@@ -92,6 +93,7 @@ export default function SortableTabs(props: SortableTabsProps) {
               active={String(activeKey) === String(node.key)}
               activePrevious={previousKey === String(node.key)}
               activeNext={nextKey === String(node.key)}
+              showSplit={lastKey !== String(node.key)}
               onPreload={onPreload}
             >
               {node}
@@ -118,6 +120,7 @@ function SortableTabNode(props: {
   active: boolean
   activePrevious: boolean
   activeNext: boolean
+  showSplit: boolean
   onPreload?: (key: string) => void
   children: ReactNode
 }) {
@@ -129,6 +132,7 @@ function SortableTabNode(props: {
     id,
     onPreload,
     prefixCls,
+    showSplit,
   } = props
   const {
     attributes,
@@ -164,7 +168,13 @@ function SortableTabNode(props: {
       >
         {children}
       </div>
-      {!active && !activePrevious ? <div className={`${prefixCls}-tab-split`} /> : null}
+      {showSplit ? (
+        <div
+          className={clsx(`${prefixCls}-tab-split`, {
+            [`${prefixCls}-tab-split-hidden`]: active || activePrevious,
+          })}
+        />
+      ) : null}
     </>
   )
 }

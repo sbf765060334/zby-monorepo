@@ -9,6 +9,7 @@ import { ThemeSwitch, useProLayoutTheme } from '../theme'
 export interface HeaderProps {
   prefixCls: string
   hashId: string
+  height: number
   paddingLeft: number
   extra?: ReactNode
   classNames?: ProLayoutClassNames
@@ -17,15 +18,14 @@ export interface HeaderProps {
 
 /** 顶部全局页签栏及业务扩展区域。 */
 function Header(props: HeaderProps) {
-  const { classNames, extra, hashId, paddingLeft, prefixCls, styles } = props
+  const { classNames, extra, hashId, height, paddingLeft, prefixCls, styles } = props
   const { enabled: themeEnabled } = useProLayoutTheme()
 
   return (
     <header
       className={clsx(`${prefixCls}-header`, classNames?.header)}
       style={{
-        height: 38,
-        lineHeight: '38px',
+        height,
         paddingInlineStart: paddingLeft,
         ...styles?.header,
       }}
