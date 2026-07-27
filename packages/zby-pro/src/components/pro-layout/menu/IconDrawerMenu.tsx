@@ -4,7 +4,7 @@ import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Layout, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ReactNode } from 'react'
@@ -18,6 +18,7 @@ import MenuDrawer from './MenuDrawer'
 import SystemSwitcher from '../components/SystemSwitcher'
 
 const SIDER_WIDTH = 60
+const MENU_HOVER_DELAY = 200
 
 export interface IconDrawerMenuProps {
   prefixCls: string
@@ -41,6 +42,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
   const routes = useMemo(() => router.registry.permissionRoutes.filter(isVisibleRoute), [router])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [hoverFirstPath, setHoverFirstPath] = useState<string | null>(null)
+  const hoverTimerRef = useRef<number | null>(null)
   const selectedFirstPath = selectedPath[0] || null
   const firstDisplayPath = hoverFirstPath || selectedFirstPath
   const displayRoutes = useMemo(() => {
@@ -51,11 +53,28 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
     )
   }, [firstDisplayPath, routes])
 
+  const cancelHoverIntent = () => {
+    if (hoverTimerRef.current === null)
+      return
+
+    window.clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = null
+  }
+
+  useEffect(() => () => {
+    if (hoverTimerRef.current !== null)
+      window.clearTimeout(hoverTimerRef.current)
+  }, [])
+
   const closeDrawer = () => {
+    cancelHoverIntent()
     setDrawerOpen(false)
   }
 
   const handleRoute = (route: ProLayoutRoute) => {
+    // 点击和键盘操作代表明确意图，应取消 hover 延迟并立即响应。
+    cancelHoverIntent()
+
     if (route.prompt) {
       void messageApi.info(
         typeof route.prompt === 'string'
@@ -125,7 +144,16 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
                   )
                   const handlePreloadAndHover = () => {
                     preloadVisibleRoute(route, router)
-                    if (hasVisibleChildren(route)) setHoverFirstPath(route.path)
+                    cancelHoverIntent()
+
+                    if (!hasVisibleChildren(route) || route.path === firstDisplayPath)
+                      return
+
+                    // 只有指针在同一一级菜单上持续停留，才认为用户确实想切换 Drawer。
+                    hoverTimerRef.current = window.setTimeout(() => {
+                      hoverTimerRef.current = null
+                      setHoverFirstPath(route.path)
+                    }, MENU_HOVER_DELAY)
                   }
 
                   return (
@@ -143,6 +171,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
                           title={route.title}
                           onFocus={() => preloadVisibleRoute(route, router)}
                           onMouseEnter={handlePreloadAndHover}
+                          onMouseLeave={cancelHoverIntent}
                         >
                           {content}
                         </a>
@@ -155,6 +184,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
                           onClick={() => handleRoute(route)}
                           onFocus={() => preloadVisibleRoute(route, router)}
                           onMouseEnter={handlePreloadAndHover}
+                          onMouseLeave={cancelHoverIntent}
                           onKeyDown={(event) => {
                             if (event.key !== 'Enter' && event.key !== ' ') return
 

@@ -194,6 +194,40 @@ describe('ReactRouterProLayout', () => {
     expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(0)
   })
 
+  it('短暂划过一级菜单时不切换 Drawer，持续停留后才切换', async () => {
+    const router = createTestRouter()
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
+    const drawer = await screen.findByRole('dialog')
+    const reportMenu = screen.getByRole('button', { name: /报表菜单/ })
+    expect(within(drawer).getByText('订单列表')).toBeTruthy()
+
+    vi.useFakeTimers()
+    try {
+      fireEvent.mouseEnter(reportMenu)
+      act(() => vi.advanceTimersByTime(199))
+      expect(within(drawer).getByText('订单列表')).toBeTruthy()
+      expect(within(drawer).queryByText('报表总览')).toBeNull()
+
+      fireEvent.mouseLeave(reportMenu)
+      act(() => vi.advanceTimersByTime(1))
+      expect(within(drawer).getByText('订单列表')).toBeTruthy()
+
+      fireEvent.mouseEnter(reportMenu)
+      act(() => vi.advanceTimersByTime(200))
+      expect(within(drawer).getByText('报表总览')).toBeTruthy()
+      expect(within(drawer).queryByText('订单列表')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('noBar 模式不渲染图标栏和全局页签', async () => {
     const router = createTestRouter()
     const { container } = render(
