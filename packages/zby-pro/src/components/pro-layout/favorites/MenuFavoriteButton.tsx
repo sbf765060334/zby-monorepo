@@ -10,7 +10,7 @@ export interface MenuFavoriteButtonProps {
   onToggle: () => void
 }
 
-/** Drawer 菜单项中的收藏按钮；独立阻止事件，避免收藏操作同时触发页面导航。 */
+/** 收藏域提供给 Drawer 菜单项的按钮；独立阻止事件，避免收藏操作同时触发页面导航。 */
 function MenuFavoriteButton(props: MenuFavoriteButtonProps) {
   const { favorite, onToggle, prefixCls, title } = props
   const intl = useIntl()

@@ -3,8 +3,8 @@ import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { memo } from 'react'
 
 import ProLayout from './ProLayout'
-import { ProLayoutThemeProvider } from './components/ThemeProvider'
-import { FavoriteMenusProvider } from './favorites/FavoriteMenusProvider'
+import { FavoriteMenusProvider } from './favorites'
+import { ProLayoutThemeProvider } from './theme'
 import type { ReactRouterProLayoutProps } from './types'
 
 /**

@@ -9,12 +9,12 @@ import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import {
   isFavoriteMenuRoute,
+  MenuFavoriteButton,
   useFavoriteMenusSelector,
   useToggleFavoriteMenu,
-} from '../favorites/FavoriteMenusProvider'
+} from '../favorites'
 import type { CSSProperties } from 'react'
 import type { ProLayoutRoute } from '../types'
-import MenuFavoriteButton from '../components/MenuFavoriteButton'
 import { createMenuDrawerLayout } from './menuLayout'
 import type { NativeScrollbarSize } from './menuLayout'
 

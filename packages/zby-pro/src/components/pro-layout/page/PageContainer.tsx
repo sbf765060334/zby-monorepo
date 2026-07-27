@@ -12,6 +12,7 @@ import type { CSSProperties, ElementType } from 'react'
 import type { ProLayoutRoute, ProLayoutRouteComponent } from '../types'
 import PageErrorBoundary from './PageErrorBoundary'
 
+/** 单个 KeepAlive 页面容器的组合属性。 */
 export interface PageContainerProps {
   prefixCls: string
   page: RouterPage<ProLayoutRoute>

@@ -100,7 +100,7 @@ ProLayout 应通过 selector 读取 `currentPathname`、`currentRoutes`、`curre
 ```tsx
 import { createRouterCore } from '@zby/router-core'
 import { BrowserRouter } from 'react-router-dom'
-import { ReactRouterProLayout } from '@zby/pro/pro-layout/react-router'
+import { ReactRouterProLayout } from '@zby/pro/pro-layout'
 
 const router = createRouterCore({
   routes,
@@ -547,7 +547,7 @@ export interface ProLayoutRoute extends RouterRoute {
 - `context/emitter.ts`
 - 旧 `PageContainer` 页面 emitter 逻辑
 
-随后补齐 `@zby/pro` 的主入口或明确的 `./pro-layout`、`./pro-layout/react-router`、`./pro-layout/container` 子路径导出。
+随后补齐 `@zby/pro` 的主入口或明确的 `./pro-layout`、`./pro-layout/container` 子路径导出。
 
 验收：ZBY ProLayout 源码中不存在第二套路由 Store、Registry、Cache 或 Storage Adapter。
 

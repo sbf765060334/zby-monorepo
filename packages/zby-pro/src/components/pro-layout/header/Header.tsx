@@ -4,8 +4,7 @@ import { memo } from 'react'
 import type { ReactNode } from 'react'
 import type { ProLayoutClassNames, ProLayoutStyles } from '../types'
 import PageTabs from './PageTabs'
-import ThemeSwitch from './ThemeSwitch'
-import { useProLayoutTheme } from '../components/ThemeProvider'
+import { ThemeSwitch, useProLayoutTheme } from '../theme'
 
 export interface HeaderProps {
   prefixCls: string

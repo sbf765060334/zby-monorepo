@@ -9,6 +9,7 @@ import type { ProLayoutRoute } from '../types'
 import ExceptionPage from './ExceptionPage'
 import PageContainer from './PageContainer'
 
+/** 页面渲染域对 ProLayout 暴露的组合属性。 */
 export interface PageContentProps {
   prefixCls: string
   pageClassName?: string

@@ -16,7 +16,7 @@ interface PageErrorBoundaryState {
 }
 
 /**
- * 支持按页面身份恢复的 React 错误边界。
+ * 页面渲染域中支持按页面身份恢复的 React 错误边界。
  *
  * 健康状态下 resetKeys 变化只更新边界快照，不会通过 React key 重建业务组件；只有
  * 已捕获错误且 pathname/element 变化时才清空旧错误。这样共享动态页签的正常参数

@@ -15,7 +15,7 @@ import type {
   ProLayoutSystemItem,
 } from '../types'
 import MenuDrawer from './MenuDrawer'
-import SystemSwitcher from '../components/SystemSwitcher'
+import SystemSwitcher from './SystemSwitcher'
 
 /** 左侧品牌图标栏的固定宽度，同时也是 Drawer 相对视口的左侧偏移量。 */
 const SIDER_WIDTH = 60

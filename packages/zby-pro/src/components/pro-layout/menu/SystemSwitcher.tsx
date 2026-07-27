@@ -12,7 +12,7 @@ export interface SystemSwitcherProps {
   systemList: ProLayoutSystemItem[]
 }
 
-/** 图标栏底部的系统切换入口，交互与 Shuzhi Drawer 模式保持一致。 */
+/** IconDrawerMenu 图标栏底部的系统切换入口，交互与 Shuzhi Drawer 模式保持一致。 */
 function SystemSwitcher(props: SystemSwitcherProps) {
   const { hashId, prefixCls, systemList } = props
   const intl = useIntl()

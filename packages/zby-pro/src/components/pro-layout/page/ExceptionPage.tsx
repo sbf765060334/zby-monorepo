@@ -6,7 +6,7 @@ export interface ExceptionPageProps {
   description: string
 }
 
-/** ProLayout 内部使用的无权限和未找到页面。 */
+/** 页面渲染域内部使用的无权限和未找到状态页。 */
 export default function ExceptionPage(props: ExceptionPageProps) {
   const { prefixCls, status, description } = props
 

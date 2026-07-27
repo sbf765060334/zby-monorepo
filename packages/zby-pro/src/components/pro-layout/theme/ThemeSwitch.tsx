@@ -2,7 +2,7 @@ import { MoonOutlined, SunOutlined, SyncOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { Button, Dropdown, Tooltip } from 'antd'
 
-import { useProLayoutTheme } from '../components/ThemeProvider'
+import { useProLayoutTheme } from './ThemeProvider'
 import type { MenuProps } from 'antd'
 import type { ProLayoutThemeMode } from '../types'
 

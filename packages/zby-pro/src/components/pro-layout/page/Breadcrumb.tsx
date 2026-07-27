@@ -17,7 +17,7 @@ export interface LayoutBreadcrumbProps {
 }
 
 /**
- * ProLayout 全局面包屑。
+ * ProLayout 页面壳中的全局面包屑。
  *
  * UI 沿用 Shuzhi 的“当前位置：+ 路由图标 + antd Breadcrumb”结构，但数据只读取
  * router-core 快照。上级页面同时提供 React Router 生成的原生 href：普通左键仍由

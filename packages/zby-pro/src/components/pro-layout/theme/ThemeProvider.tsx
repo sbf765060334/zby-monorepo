@@ -34,6 +34,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setMode: () => undefined,
 })
 
+/** 为整个 ProLayout 提供主题模式、切换坐标和 Ant Design 算法上下文。 */
 export function ProLayoutThemeProvider(props: {
   config?: ProLayoutThemeConfig
   children: ReactNode

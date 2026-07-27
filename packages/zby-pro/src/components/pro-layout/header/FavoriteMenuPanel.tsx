@@ -9,7 +9,7 @@ import {
   isFavoriteMenuRoute,
   useFavoriteMenusSelector,
   useToggleFavoriteMenu,
-} from '../favorites/FavoriteMenusProvider'
+} from '../favorites'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'

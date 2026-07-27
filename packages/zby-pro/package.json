@@ -22,11 +22,6 @@
       "import": "./dist/pro-layout/index.mjs",
       "require": "./dist/pro-layout/index.cjs"
     },
-    "./pro-layout/react-router": {
-      "types": "./dist/pro-layout/react-router.d.mts",
-      "import": "./dist/pro-layout/react-router.mjs",
-      "require": "./dist/pro-layout/react-router.cjs"
-    },
     "./package.json": "./package.json"
   },
   "files": [
