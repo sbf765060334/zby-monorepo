@@ -51,12 +51,14 @@ function PlaygroundApp() {
             title="ZBY"
             header={{
               logo: (
-                <span
-                  style={{ color: '#fff', fontSize: 18, fontWeight: 700, letterSpacing: 1 }}
-                  title="ZBY"
-                >
-                  ZBY
-                </span>
+                <>
+                  <img
+                    aria-hidden
+                    alt=""
+                    src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
+                  />
+                  shuzhi
+                </>
               ),
               extra: <PlaygroundHeaderActions />,
             }}
