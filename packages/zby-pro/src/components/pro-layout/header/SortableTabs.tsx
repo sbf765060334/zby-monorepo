@@ -21,6 +21,7 @@ import type { DragEndEvent } from '@dnd-kit/core'
 import type { TabsProps } from 'antd'
 import type { ReactNode } from 'react'
 
+/** Header 页签拖拽层对 antd Tabs 的扩展属性。 */
 export interface SortableTabsProps extends Omit<TabsProps, 'items' | 'renderTabBar'> {
   prefixCls: string
   items: NonNullable<TabsProps['items']>

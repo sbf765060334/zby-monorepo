@@ -12,6 +12,7 @@ import type { ProLayoutRoute } from '../types'
 import FavoriteMenuPanel from './FavoriteMenuPanel'
 import SortableTabs from './SortableTabs'
 
+/** Header 专属的 RouterCore 全局页签属性。 */
 export interface PageTabsProps {
   prefixCls: string
   hashId: string

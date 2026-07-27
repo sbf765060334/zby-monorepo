@@ -19,7 +19,7 @@ export interface FavoriteMenuPanelProps {
   hashId: string
 }
 
-/** Header 页签右侧的收藏菜单面板，视觉结构与 Shuzhi 保持一致。 */
+/** Header 专属的收藏菜单面板，显示在全局页签右侧，视觉结构与 Shuzhi 保持一致。 */
 function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
   const { hashId, prefixCls } = props
   const intl = useIntl()
