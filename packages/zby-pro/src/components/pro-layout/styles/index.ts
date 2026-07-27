@@ -20,9 +20,16 @@ export default function useProLayoutStyles(prefixCls: string) {
   const fixedIconWidth = unit(styleToken.fontSizeLG)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
   const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) / -2)`
-  const tabSplitWidth = token.marginXXS * 2 + token.lineWidthBold
+  const tabCurveValue = Math.min(
+    headerIdleTabHeight / 2,
+    token.borderRadiusLG + token.marginXXS,
+  )
+  const tabCurveSize = unit(tabCurveValue)
+  const tabSplitWidth = Math.max(
+    token.marginXXS * 2 + token.lineWidthBold,
+    tabCurveValue,
+  )
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
-  const tabCurveSize = unit(styleToken.borderRadiusLG)
   const tabCurveOffset = `calc(${tabCurveSize} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
@@ -262,6 +269,9 @@ export default function useProLayoutStyles(prefixCls: string) {
             height: '100%',
             maxHeight: headerHeight,
             alignItems: 'flex-end',
+          },
+          [`.ant-tabs-nav-list`]: {
+            paddingInline: tabCurveSize,
           },
           [`.ant-tabs-extra-content`]: {
             display: 'inline-flex',
