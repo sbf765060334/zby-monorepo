@@ -29,7 +29,6 @@ const enUS = {
           saveError: 'Failed to save favorite menus',
         },
         menu: {
-          continued: '{{title}} · continued',
           unavailable: 'This feature is not available yet',
           switchSystem: 'Switch system',
         },

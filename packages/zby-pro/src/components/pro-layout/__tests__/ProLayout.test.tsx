@@ -115,20 +115,31 @@ describe('ReactRouterProLayout', () => {
     expect(main.style.paddingBlockStart).toBe('38px')
     expect(header.style.paddingInlineStart).toBe('60px')
     expect(menuContainer?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    const siderMenuScroll = menuContainer?.querySelector(
+      '.zby-pro-layout-sider-menu-scroll',
+    ) as HTMLElement
+    const siderMenuViewport = siderMenuScroll.querySelector(
+      '[data-zby-scroll-area-viewport]',
+    )
+    expect(siderMenuViewport?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    expect(
+      Array.from(siderMenuScroll.classList).some((className) =>
+        className.endsWith('-scrollbar-none')),
+    ).toBe(true)
     const orderMenu = screen.getByRole('button', { name: /订单管理/ })
     fireEvent.click(orderMenu)
 
     const drawer = await screen.findByRole('dialog')
     expect(drawer.querySelector('.zby-pro-layout-menu-columns')).toBeTruthy()
-    expect(drawer.querySelector('.zby-pro-layout-menu-scroll')).toBeTruthy()
+    expect(drawer.querySelector('.zby-pro-layout-menu-scroll')).toBeNull()
     expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
+    const drawerBody = drawer.querySelector('.ant-drawer-body') as HTMLElement
+    expect(drawerBody.style.overflowX).toBe('hidden')
     const menuGroupInner = drawer.querySelector(
       '.zby-pro-layout-menu-group-inner',
     ) as HTMLElement
     expect(menuGroupInner.style.maxHeight).toBe('')
-    const menuScrollViewports = drawer.querySelectorAll('[data-zby-scroll-area-viewport]')
-    expect(menuScrollViewports).toHaveLength(1)
-    expect(menuScrollViewports[0]?.closest('.zby-pro-layout-menu-scroll')).toBeTruthy()
+    expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(0)
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('60px')
     expect(drawerRoot.style.overflow).toBe('hidden')
@@ -160,7 +171,7 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelectorAll('.zby-pro-layout-tab-split')).toHaveLength(1)
   })
 
-  it('优先填满当前列，并保持后续业务子组完整', async () => {
+  it('保持超高业务组完整，并由整个 Drawer 纵向滚动', async () => {
     const router = createMegaMenuTestRouter()
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -173,16 +184,19 @@ describe('ReactRouterProLayout', () => {
 
     const drawer = await screen.findByRole('dialog')
     const menuGroups = drawer.querySelectorAll('.zby-pro-layout-menu-group')
-    expect(menuGroups).toHaveLength(2)
-    expect(menuGroups[0]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(15)
-    expect(menuGroups[1]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(7)
+    expect(menuGroups).toHaveLength(1)
+    expect(menuGroups[0]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(22)
     expect(within(drawer).getByText('业务中心')).toBeTruthy()
-    expect(within(drawer).getByText('业务中心 · 续')).toBeTruthy()
     expect(within(drawer).getByText('订单处理')).toBeTruthy()
-    expect(within(drawer).getByText('订单处理 · 续')).toBeTruthy()
+    expect(within(drawer).queryByText('业务中心 · 续')).toBeNull()
+    expect(within(drawer).queryByText('订单处理 · 续')).toBeNull()
+    expect(within(drawer).queryByText('空分组')).toBeNull()
     expect(within(drawer).getAllByText('履约管理')).toHaveLength(1)
     expect(within(drawer).getAllByRole('button', { name: '订单项 1' })).toHaveLength(1)
-    expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(1)
+    const drawerBody = drawer.querySelector('.ant-drawer-body') as HTMLElement
+    expect(drawerBody.style.overflowY).toBe('auto')
+    expect(drawerBody.style.overflowX).toBe('hidden')
+    expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(0)
   })
 
   it('noBar 模式不渲染图标栏和全局页签', async () => {
@@ -508,6 +522,11 @@ function createMegaMenuTestRouter() {
               ],
             },
           ],
+        },
+        {
+          path: '/mega/empty',
+          title: '空分组',
+          routes: [],
         },
       ],
     },

@@ -83,14 +83,16 @@ export default function useProLayoutStyles(prefixCls: string) {
           overflow: 'hidden',
         },
 
-        [`${componentCls}-sider-menu`]: {
+        [`${componentCls}-sider-menu-scroll`]: {
           width: '100%',
           height: '100%',
+        },
+
+        [`${componentCls}-sider-menu`]: {
+          width: '100%',
+          minHeight: '100%',
           boxSizing: 'border-box',
-          overflowX: 'hidden',
-          overflowY: 'auto',
           paddingBlock: styleToken.paddingXS,
-          scrollbarWidth: 'thin',
         },
 
         [`${componentCls}-sider-item`]: {
@@ -468,7 +470,6 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`.${prefixCls}-menu-group, .${prefixCls}-menu-entry`]: {
           width: drawerColumnWidth,
-          maxHeight: '100%',
           boxSizing: 'border-box',
           breakInside: 'avoid',
           WebkitColumnBreakInside: 'avoid',

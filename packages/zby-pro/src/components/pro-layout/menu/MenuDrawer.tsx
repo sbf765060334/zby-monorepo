@@ -3,7 +3,6 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
-import { ScrollArea } from '@zby/ui'
 import { Drawer, message, Tag, theme as antdTheme, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -13,9 +12,11 @@ import {
   useFavoriteMenusSelector,
   useToggleFavoriteMenu,
 } from '../favorites/FavoriteMenusProvider'
-import type { CSSProperties, Ref } from 'react'
+import type { CSSProperties } from 'react'
 import type { ProLayoutRoute } from '../types'
 import MenuFavoriteButton from '../components/MenuFavoriteButton'
+import { createMenuDrawerLayout } from './menuLayout'
+import type { NativeScrollbarSize } from './menuLayout'
 
 export interface MenuDrawerProps {
   prefixCls: string
@@ -32,8 +33,8 @@ export interface MenuDrawerProps {
 /**
  * 多列菜单 Drawer。
  *
- * 菜单优先按无页面的中间路由形成业务子组，子组放不下时整体换列；只有单个子组本身
- * 超过一列时才按菜单项生成续列。最终仍由 CSS 分栏，并测量真实列数决定 Drawer 宽度。
+ * 每个顶层业务组保持完整；先测量菜单组的自然高度，再以最高菜单组确定统一列高。
+ * 超过视口高度时由整个 Drawer 纵向滚动，菜单组按真实高度依次装列。
  */
 function MenuDrawer(props: MenuDrawerProps) {
   const {
@@ -58,38 +59,57 @@ function MenuDrawer(props: MenuDrawerProps) {
   const viewport = useViewportSize(open)
   const columnWidth = token.controlHeightLG * 5 + token.sizeXL
   const viewportGap = token.paddingLG
-  const availableWidth = Math.max(columnWidth, viewport.width - left - viewportGap)
+  const frameInlineSize = token.lineWidth
+  const availableWidth = Math.max(
+    columnWidth + frameInlineSize,
+    viewport.width - left - viewportGap,
+  )
   const drawerBodyHeight = Math.max(0, viewport.height - viewportGap * 2)
-  const maxColumns = Math.max(1, Math.floor(availableWidth / columnWidth))
   const menuRowHeight = token.controlHeight + token.paddingXXS * 2
   const menuTitleHeight = Math.ceil(token.fontSizeSM * token.lineHeight) +
     token.paddingXS * 2 + token.marginSM + token.lineWidth
-  const maxGroupInnerHeight = Math.max(
-    menuTitleHeight + menuRowHeight,
-    drawerBodyHeight - token.paddingSM * 2,
-  )
   const menuSections = useMemo(
-    () => createMenuSections(
-      displayRoutes,
-      maxGroupInnerHeight,
-      { menuRowHeight, menuTitleHeight },
-      (title) => intl.getMessage(
-        'zby.pro.layout.menu.continued',
-        '{{title}} · 续',
-        { title },
-      ),
-    ),
-    [displayRoutes, intl, maxGroupInnerHeight, menuRowHeight, menuTitleHeight],
+    () => createMenuSections(displayRoutes),
+    [displayRoutes],
   )
-  const fallbackColumnCount = Math.max(
-    1,
-    Math.min(maxColumns, menuSections.length),
+  const fallbackSectionHeights = useMemo(
+    () => menuSections.map((section) => {
+      if (section.directEntry)
+        return menuRowHeight
+
+      return estimateMenuRouteHeight(
+        section.route,
+        { menuRowHeight, menuTitleHeight },
+      ) + token.paddingSM * 2
+    }),
+    [menuRowHeight, menuSections, menuTitleHeight, token.paddingSM],
   )
+  const measurementKey = menuSections.map((section) => section.key).join('\u0000')
   const measureRef = useRef<HTMLDivElement | null>(null)
-  const [measuredColumnCount, setMeasuredColumnCount] = useState<number | null>(null)
-  const columnCount = measuredColumnCount ?? fallbackColumnCount
-  const drawerWidth = Math.min(Math.max(1, Math.min(maxColumns, columnCount)) * columnWidth, availableWidth)
-  const shouldScrollX = measuredColumnCount !== null && measuredColumnCount > maxColumns
+  const [measurements, setMeasurements] = useState<MenuSectionMeasurements | null>(null)
+  const scrollbarSize = useNativeScrollbarSize()
+  const sectionHeights = useMemo(() => {
+    if (measurements?.key !== measurementKey)
+      return fallbackSectionHeights
+
+    return measurements.heights.map((height, index) =>
+      height > 0 ? height : (fallbackSectionHeights[index] ?? 0))
+  }, [fallbackSectionHeights, measurementKey, measurements])
+  const menuLayout = useMemo(
+    () => createMenuDrawerLayout({
+      itemHeights: sectionHeights,
+      drawerBodyHeight,
+      availableWidth,
+      columnWidth,
+      frameInlineSize,
+      scrollbarSize,
+    }),
+    [availableWidth, columnWidth, drawerBodyHeight, frameInlineSize, scrollbarSize, sectionHeights],
+  )
+  const columnStartIndexSet = useMemo(
+    () => new Set(menuLayout.columnStartIndexes),
+    [menuLayout.columnStartIndexes],
+  )
   const drawerClassName = clsx(`${prefixCls}-menu-drawer`, hashId, className)
 
   useLayoutEffect(() => {
@@ -100,22 +120,38 @@ function MenuDrawer(props: MenuDrawerProps) {
     if (!element)
       return undefined
 
-    const measureColumnCount = () => {
-      const groups = Array.from(element.children).filter(
-        (group): group is HTMLElement => group instanceof HTMLElement,
-      )
-      const maxColumnIndex = groups.reduce((max, group) => {
-        const columnIndex = Math.max(0, Math.round(group.offsetLeft / columnWidth))
-        return Math.max(max, columnIndex)
-      }, 0)
-      const nextCount = groups.length > 0 ? maxColumnIndex + 1 : 1
-      setMeasuredColumnCount((previous) => previous === nextCount ? previous : nextCount)
+    let frame = 0
+    const measureSections = () => {
+      frame = 0
+      const heights = Array.from(element.children).map((child, index) => {
+        if (!(child instanceof HTMLElement))
+          return fallbackSectionHeights[index] ?? 0
+
+        return child.getBoundingClientRect().height || fallbackSectionHeights[index] || 0
+      })
+      setMeasurements((previous) =>
+        previous?.key === measurementKey && areNumberArraysEqual(previous.heights, heights)
+          ? previous
+          : { key: measurementKey, heights })
+    }
+    const scheduleMeasurement = () => {
+      if (frame)
+        return
+
+      frame = window.requestAnimationFrame(measureSections)
     }
 
-    measureColumnCount()
-    const frame = window.requestAnimationFrame(measureColumnCount)
-    return () => window.cancelAnimationFrame(frame)
-  }, [availableWidth, columnWidth, drawerBodyHeight, menuSections, open])
+    measureSections()
+    scheduleMeasurement()
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(scheduleMeasurement)
+    Array.from(element.children).forEach((child) => observer?.observe(child))
+    return () => {
+      observer?.disconnect()
+      window.cancelAnimationFrame(frame)
+    }
+  }, [columnWidth, fallbackSectionHeights, measurementKey, open])
 
   const handleSelect = (route: ProLayoutRoute) => {
     if (route.prompt) {
@@ -140,31 +176,39 @@ function MenuDrawer(props: MenuDrawerProps) {
     onClose()
   }
 
-  const renderColumns = (ref?: Ref<HTMLDivElement>, columnStyle?: CSSProperties) => (
-    <div ref={ref} className={`${prefixCls}-menu-columns`} style={columnStyle}>
-      {menuSections.map(({ directEntry, key, route }) => {
-        return (
-          <section
-            key={key}
-            className={directEntry ? `${prefixCls}-menu-entry` : `${prefixCls}-menu-group`}
-          >
-            <div className={`${prefixCls}-menu-group-inner`}>
-              <MenuRouteTree
-                prefixCls={prefixCls}
-                route={route}
-                level={1}
-                selectedPath={selectedPath}
-                createHref={createHref}
-                favoritePaths={favoritePathSet}
-                isFavoriteRoute={(item) => isFavoriteMenuRoute(router, item)}
-                onToggleFavorite={toggleFavorite}
-                onPreload={(item) => preloadVisibleRoute(router, item)}
-                onSelect={handleSelect}
-              />
-            </div>
-          </section>
-        )
-      })}
+  const renderSection = (section: MenuSection, index: number, measuring = false) => (
+    <section
+      key={section.key}
+      className={section.directEntry ? `${prefixCls}-menu-entry` : `${prefixCls}-menu-group`}
+      style={!measuring && index > 0 && columnStartIndexSet.has(index)
+        ? { breakBefore: 'column' }
+        : undefined}
+    >
+      <div className={`${prefixCls}-menu-group-inner`}>
+        <MenuRouteTree
+          prefixCls={prefixCls}
+          route={section.route}
+          level={1}
+          selectedPath={selectedPath}
+          createHref={createHref}
+          favoritePaths={favoritePathSet}
+          isFavoriteRoute={(item) => isFavoriteMenuRoute(router, item)}
+          onToggleFavorite={toggleFavorite}
+          onPreload={(item) => preloadVisibleRoute(router, item)}
+          onSelect={handleSelect}
+        />
+      </div>
+    </section>
+  )
+  const renderColumns = () => (
+    <div
+      className={`${prefixCls}-menu-columns`}
+      style={{
+        width: menuLayout.columnCount * columnWidth,
+        height: menuLayout.columnHeight,
+      }}
+    >
+      {menuSections.map((section, index) => renderSection(section, index))}
     </div>
   )
 
@@ -178,32 +222,53 @@ function MenuDrawer(props: MenuDrawerProps) {
           style={{
             position: 'fixed',
             insetBlockStart: 0,
-            insetInlineStart: -availableWidth,
-            width: availableWidth,
-            height: drawerBodyHeight,
+            insetInlineStart: -columnWidth,
+            width: columnWidth,
+            height: 0,
             overflow: 'hidden',
             visibility: 'hidden',
             pointerEvents: 'none',
+            fontFamily: token.fontFamily,
+            fontSize: token.fontSize,
+            lineHeight: token.lineHeight,
           }}
         >
-          {renderColumns(measureRef, { width: availableWidth, height: '100%' })}
+          <div
+            ref={measureRef}
+            className={`${prefixCls}-menu-columns ${prefixCls}-menu-measure`}
+            style={{
+              display: 'block',
+              width: columnWidth,
+              height: 'auto',
+              columnWidth: 'auto',
+              columnCount: 1,
+            }}
+          >
+            {menuSections.map((section, index) => renderSection(section, index, true))}
+          </div>
         </div>
       ) : null}
       <Drawer
         placement="left"
         open={open}
         focusable={{ trap: false }}
-        size={drawerWidth}
+        size={menuLayout.drawerWidth}
         zIndex={999}
         rootClassName={drawerClassName}
-        rootStyle={{ left, overflow: 'hidden' }}
+        rootStyle={{
+          left,
+          overflow: 'hidden',
+          fontFamily: token.fontFamily,
+          fontSize: token.fontSize,
+          lineHeight: token.lineHeight,
+        }}
         styles={{
           header: { display: 'none' },
           body: {
             height: viewport.height || '100vh',
             boxSizing: 'border-box',
-            overflowX: 'hidden',
-            overflowY: 'hidden',
+            overflowX: menuLayout.shouldScrollX ? 'auto' : 'hidden',
+            overflowY: menuLayout.shouldScrollY ? 'auto' : 'hidden',
             paddingBlock: viewportGap,
             paddingInline: 0,
             ...style,
@@ -211,15 +276,7 @@ function MenuDrawer(props: MenuDrawerProps) {
         }}
         onClose={onClose}
       >
-        <ScrollArea
-          className={`${prefixCls}-menu-scroll`}
-          direction="horizontal"
-          scrollbar={shouldScrollX ? 'hover' : false}
-          wheelBehavior="axis-mapping"
-          style={{ height: '100%' }}
-        >
-          {renderColumns(undefined, { height: drawerBodyHeight })}
-        </ScrollArea>
+        {renderColumns()}
       </Drawer>
     </>
   )
@@ -404,6 +461,44 @@ function getViewportSize() {
   return { width: 0, height: 0 }
 }
 
+function useNativeScrollbarSize() {
+  const [size, setSize] = useState<NativeScrollbarSize>({ width: 0, height: 0 })
+
+  useLayoutEffect(() => {
+    if (typeof document === 'undefined' || !document.body)
+      return undefined
+
+    const element = document.createElement('div')
+    element.style.position = 'fixed'
+    element.style.insetInlineStart = '-9999px'
+    element.style.width = '100px'
+    element.style.height = '100px'
+    element.style.overflow = 'scroll'
+    element.style.visibility = 'hidden'
+    document.body.appendChild(element)
+    const nextSize = {
+      width: element.offsetWidth - element.clientWidth,
+      height: element.offsetHeight - element.clientHeight,
+    }
+    element.remove()
+    let active = true
+    queueMicrotask(() => {
+      if (!active)
+        return
+
+      setSize((previous) =>
+        previous.width === nextSize.width && previous.height === nextSize.height
+          ? previous
+          : nextSize)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return size
+}
+
 interface MenuLayoutMetrics {
   menuRowHeight: number
   menuTitleHeight: number
@@ -415,106 +510,19 @@ interface MenuSection {
   directEntry: boolean
 }
 
-function createMenuSections(
-  routes: ProLayoutRoute[],
-  maxGroupInnerHeight: number,
-  metrics: MenuLayoutMetrics,
-  getContinuedTitle: (title: string) => string,
-): MenuSection[] {
+interface MenuSectionMeasurements {
+  key: string
+  heights: number[]
+}
+
+function createMenuSections(routes: ProLayoutRoute[]): MenuSection[] {
   return routes.filter(isVisibleRoute).flatMap<MenuSection>((route) => {
-    if (isMenuControlRoute(route)) {
-      return [{ key: route.path, route, directEntry: true }]
-    }
+    const directEntry = isMenuControlRoute(route)
+    if (!directEntry && !route.routes?.some(isVisibleRoute))
+      return []
 
-    return splitMenuGroupRoute(
-      route,
-      maxGroupInnerHeight,
-      metrics,
-      getContinuedTitle,
-    ).map((fragment, index) => ({
-      key: `${route.path}:${index}`,
-      route: fragment,
-      directEntry: false,
-    }))
+    return [{ key: route.path, route, directEntry }]
   })
-}
-
-function splitMenuGroupRoute(
-  route: ProLayoutRoute,
-  maxHeight: number,
-  metrics: MenuLayoutMetrics,
-  getContinuedTitle: (title: string) => string,
-): ProLayoutRoute[] {
-  const children = route.routes?.filter(isVisibleRoute) || []
-  if (!children.length)
-    return []
-
-  const contentCapacity = Math.max(
-    metrics.menuRowHeight,
-    maxHeight - metrics.menuTitleHeight,
-  )
-  let pages: ProLayoutRoute[][]
-
-  if (children.every(isMenuControlRoute)) {
-    const maxItemsPerPage = Math.max(
-      1,
-      Math.floor(contentCapacity / metrics.menuRowHeight),
-    )
-    pages = chunkRoutes(children, maxItemsPerPage)
-  } else {
-    const blocks = children.flatMap((child) => {
-      if (
-        isMenuControlRoute(child) ||
-        estimateMenuRouteHeight(child, metrics) <= contentCapacity
-      ) {
-        return [child]
-      }
-
-      return splitMenuGroupRoute(child, contentCapacity, metrics, getContinuedTitle)
-    })
-    pages = packMenuBlocks(blocks, contentCapacity, metrics)
-  }
-
-  return pages.map((pageRoutes, index) => ({
-    ...route,
-    title: index === 0 ? route.title : getContinuedTitle(route.title),
-    routes: pageRoutes,
-  }))
-}
-
-function chunkRoutes(routes: ProLayoutRoute[], chunkSize: number) {
-  const chunks: ProLayoutRoute[][] = []
-  for (let index = 0; index < routes.length; index += chunkSize)
-    chunks.push(routes.slice(index, index + chunkSize))
-
-  return chunks
-}
-
-function packMenuBlocks(
-  blocks: ProLayoutRoute[],
-  capacity: number,
-  metrics: MenuLayoutMetrics,
-) {
-  const pages: ProLayoutRoute[][] = []
-  let currentPage: ProLayoutRoute[] = []
-  let currentHeight = 0
-
-  blocks.forEach((block) => {
-    const blockHeight = estimateMenuRouteHeight(block, metrics)
-    if (currentPage.length && currentHeight + blockHeight > capacity) {
-      pages.push(currentPage)
-      currentPage = []
-      currentHeight = 0
-    }
-
-    currentPage.push(block)
-    currentHeight += blockHeight
-  })
-
-  if (currentPage.length)
-    pages.push(currentPage)
-
-  return pages
 }
 
 function estimateMenuRouteHeight(route: ProLayoutRoute, metrics: MenuLayoutMetrics): number {
@@ -530,6 +538,11 @@ function estimateMenuRouteHeight(route: ProLayoutRoute, metrics: MenuLayoutMetri
 
 function isMenuControlRoute(route: ProLayoutRoute) {
   return Boolean(route.element || route._blank || route.prompt)
+}
+
+function areNumberArraysEqual(left: readonly number[], right: readonly number[]) {
+  return left.length === right.length &&
+    left.every((value, index) => Math.abs(value - (right[index] ?? 0)) <= 0.5)
 }
 
 function preloadVisibleRoute(

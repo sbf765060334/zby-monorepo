@@ -29,7 +29,6 @@ const zhCN = {
           saveError: '菜单收藏保存失败',
         },
         menu: {
-          continued: '{{title}} · 续',
           unavailable: '功能暂未开放',
           switchSystem: '切换系统',
         },

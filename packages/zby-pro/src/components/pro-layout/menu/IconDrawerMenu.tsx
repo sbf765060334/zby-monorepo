@@ -2,6 +2,7 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
+import { ScrollArea } from '@zby/ui'
 import { Layout, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
@@ -104,69 +105,76 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
             className={clsx(`${prefixCls}-sider-menu-container`, classNames?.siderMenu)}
             style={styles?.siderMenu}
           >
-            <nav className={`${prefixCls}-sider-menu`}>
-              {routes.map((route) => {
-                const Icon = route.icon
-                const active = selectedPath.includes(route.path)
-                const hovered = drawerOpen && firstDisplayPath === route.path
-                const className = clsx(`${prefixCls}-sider-item`, {
-                  [`${prefixCls}-sider-item-active`]: active,
-                  [`${prefixCls}-sider-item-hover`]: hovered,
-                })
-                const content = (
-                  <dl>
-                    <dt>{Icon ? <Icon /> : null}</dt>
-                    <dd>
-                      <span className={`${prefixCls}-sider-item-title`}>{route.title}</span>
-                    </dd>
-                  </dl>
-                )
-                const handlePreloadAndHover = () => {
-                  preloadVisibleRoute(route, router)
-                  if (hasVisibleChildren(route)) setHoverFirstPath(route.path)
-                }
+            <ScrollArea
+              className={`${prefixCls}-sider-menu-scroll`}
+              direction="vertical"
+              scrollbar={false}
+              wheelBehavior="native"
+            >
+              <nav className={`${prefixCls}-sider-menu`}>
+                {routes.map((route) => {
+                  const Icon = route.icon
+                  const active = selectedPath.includes(route.path)
+                  const hovered = drawerOpen && firstDisplayPath === route.path
+                  const className = clsx(`${prefixCls}-sider-item`, {
+                    [`${prefixCls}-sider-item-active`]: active,
+                    [`${prefixCls}-sider-item-hover`]: hovered,
+                  })
+                  const content = (
+                    <dl>
+                      <dt>{Icon ? <Icon /> : null}</dt>
+                      <dd>
+                        <span className={`${prefixCls}-sider-item-title`}>{route.title}</span>
+                      </dd>
+                    </dl>
+                  )
+                  const handlePreloadAndHover = () => {
+                    preloadVisibleRoute(route, router)
+                    if (hasVisibleChildren(route)) setHoverFirstPath(route.path)
+                  }
 
-                return (
-                  <Tooltip key={route.path} placement="right" {...route.tooltipProps}>
-                    {route._blank && !route.prompt ? (
-                      <a
-                        href={createHref(route.path)}
-                        target={route.target || '_blank'}
-                        rel={
-                          (route.target || '_blank') === '_blank'
-                            ? 'noopener noreferrer'
-                            : undefined
-                        }
-                        className={className}
-                        title={route.title}
-                        onFocus={() => preloadVisibleRoute(route, router)}
-                        onMouseEnter={handlePreloadAndHover}
-                      >
-                        {content}
-                      </a>
-                    ) : (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className={className}
-                        title={route.title}
-                        onClick={() => handleRoute(route)}
-                        onFocus={() => preloadVisibleRoute(route, router)}
-                        onMouseEnter={handlePreloadAndHover}
-                        onKeyDown={(event) => {
-                          if (event.key !== 'Enter' && event.key !== ' ') return
+                  return (
+                    <Tooltip key={route.path} placement="right" {...route.tooltipProps}>
+                      {route._blank && !route.prompt ? (
+                        <a
+                          href={createHref(route.path)}
+                          target={route.target || '_blank'}
+                          rel={
+                            (route.target || '_blank') === '_blank'
+                              ? 'noopener noreferrer'
+                              : undefined
+                          }
+                          className={className}
+                          title={route.title}
+                          onFocus={() => preloadVisibleRoute(route, router)}
+                          onMouseEnter={handlePreloadAndHover}
+                        >
+                          {content}
+                        </a>
+                      ) : (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className={className}
+                          title={route.title}
+                          onClick={() => handleRoute(route)}
+                          onFocus={() => preloadVisibleRoute(route, router)}
+                          onMouseEnter={handlePreloadAndHover}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter' && event.key !== ' ') return
 
-                          event.preventDefault()
-                          handleRoute(route)
-                        }}
-                      >
-                        {content}
-                      </div>
-                    )}
-                  </Tooltip>
-                )
-              })}
-            </nav>
+                            event.preventDefault()
+                            handleRoute(route)
+                          }}
+                        >
+                          {content}
+                        </div>
+                      )}
+                    </Tooltip>
+                  )
+                })}
+              </nav>
+            </ScrollArea>
             <MenuDrawer
               prefixCls={prefixCls}
               hashId={hashId}
