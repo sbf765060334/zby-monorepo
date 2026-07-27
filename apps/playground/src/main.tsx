@@ -57,7 +57,7 @@ function PlaygroundApp() {
                     alt=""
                     src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
                   />
-                  shuzhi
+                  <div style={{ color: '#fff' }}>Zibuyu</div>
                 </>
               ),
               extra: <PlaygroundHeaderActions />,
