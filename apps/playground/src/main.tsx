@@ -1,9 +1,15 @@
 import 'antd/dist/reset.css'
-import { App as AntdApp, ConfigProvider } from 'antd'
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
 import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
-import { type ProLayoutRoute, ReactRouterProLayout, zbyProLocales } from '@zby/pro'
+import {
+  ProThemeSwitch,
+  type ProLayoutRoute,
+  ReactRouterProLayout,
+  useThemePreference,
+  zbyProLocales,
+} from '@zby/pro'
 import { zbyUiLocales } from '@zby/ui'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
@@ -32,10 +38,25 @@ const antdLocales = {
 function PlaygroundApp() {
   const [locale, setLocale] = React.useState<PlaygroundLocale>('zh-CN')
 
+  const themePreference = useThemePreference({
+    defaultValue: { mode: 'auto', density: 'default' },
+    storageKey: 'zby-playground:theme-preference',
+  })
+
+  const algorithm = React.useMemo(() => {
+    const appearanceAlgorithm = themePreference.appearance === 'dark'
+      ? antdTheme.darkAlgorithm
+      : antdTheme.defaultAlgorithm
+
+    return themePreference.value.density === 'compact'
+      ? [appearanceAlgorithm, antdTheme.compactAlgorithm]
+      : appearanceAlgorithm
+  }, [themePreference.appearance, themePreference.value.density])
+
   return (
     <ConfigProvider
       locale={antdLocales[locale]}
-      theme={{ cssVar: { prefix: 'zby-playground' } }}
+      theme={{ algorithm, cssVar: { prefix: 'zby-playground' } }}
     >
       <AntdApp>
         <ZbyIntlProvider
@@ -61,12 +82,16 @@ function PlaygroundApp() {
                   <div style={{ color: '#fff' }}>Zibuyu</div>
                 </>
               ),
-              extra: <PlaygroundHeaderActions />,
-            }}
-            theme={{
-              enabled: true,
-              defaultMode: 'auto',
-              storageKey: 'zby-playground:pro-layout-theme',
+              extra: (
+                <>
+                  <ProThemeSwitch
+                    value={themePreference.value}
+                    appearance={themePreference.appearance}
+                    onChange={themePreference.setValue}
+                  />
+                  <PlaygroundHeaderActions />
+                </>
+              ),
             }}
             minimumContentWidth={900}
             styles={{

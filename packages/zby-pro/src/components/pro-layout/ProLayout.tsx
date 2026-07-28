@@ -7,7 +7,7 @@ import Header from './header'
 import IconDrawerMenu from './menu'
 import { Breadcrumb, PageContent } from './page'
 import useProLayoutStyles from './styles'
-import { useProLayoutTheme } from './theme'
+import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
 import type { ProLayoutProps } from './types'
 
 const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
@@ -37,7 +37,6 @@ function ProLayout(props: ProLayoutProps) {
   } = props
   const currentRoutes = useRouterCoreSelector((state) => state.currentRoutes)
   const { hashId, headerHeight } = useProLayoutStyles(prefixCls)
-  const { viewTransitionName } = useProLayoutTheme()
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
@@ -74,7 +73,7 @@ function ProLayout(props: ProLayoutProps) {
       className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
       style={{
         minHeight: '100vh',
-        viewTransitionName,
+        viewTransitionName: PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME,
         ...styles?.root,
         ...style,
       }}

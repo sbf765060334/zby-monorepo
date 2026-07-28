@@ -507,8 +507,18 @@ export default function useProLayoutStyles(prefixCls: string) {
           color: styleToken.colorTextTertiary,
         },
         [`${componentCls}-theme-trigger`]: {
-          color: styleToken.colorTextTertiary,
-          '&:hover': { color: styleToken.colorTextSecondary },
+          width: 32,
+          minWidth: 32,
+          height: 32,
+          padding: 0,
+          borderRadius: styleToken.borderRadiusSM,
+          background: 'transparent',
+          color: styleToken.colorText,
+          fontSize: styleToken.fontSizeLG,
+          '&:hover': {
+            background: styleToken.colorFillSecondary,
+            color: styleToken.colorText,
+          },
         },
 
         [`${componentCls}-content, ${componentCls}-pages, ${componentCls}-page-body`]: {

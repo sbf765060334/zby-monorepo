@@ -1,2 +1,14 @@
-export { default as ThemeSwitch } from './ThemeSwitch'
-export { ProLayoutThemeProvider, useProLayoutTheme } from './ThemeProvider'
+// 公开运行时 API：受控选择器和可选的偏好状态 hook。
+export { default as ProThemeSwitch } from './ThemeSwitch'
+export { useThemePreference } from './useThemePreference'
+
+// 公开类型统一从 theme 入口转发，业务无需依赖内部文件路径。
+export type { ProThemeSwitchProps } from './ThemeSwitch'
+export type {
+  ProThemeAppearance,
+  ProThemeDensity,
+  ProThemeMode,
+  ProThemePreference,
+  UseThemePreferenceOptions,
+  UseThemePreferenceReturn,
+} from './types'

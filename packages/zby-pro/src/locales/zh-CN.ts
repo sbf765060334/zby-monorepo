@@ -10,9 +10,12 @@ const zhCN = {
           currentLocation: '当前位置：',
         },
         theme: {
+          trigger: '主题设置',
           auto: '跟随系统',
           light: '亮色主题',
           dark: '暗黑主题',
+          defaultDensity: '默认布局',
+          compactDensity: '紧凑布局',
         },
         tabs: {
           pin: '固定页签：{{title}}',

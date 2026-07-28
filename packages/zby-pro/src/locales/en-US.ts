@@ -10,9 +10,12 @@ const enUS = {
           currentLocation: 'Current location:',
         },
         theme: {
+          trigger: 'Theme settings',
           auto: 'Follow system',
           light: 'Light theme',
           dark: 'Dark theme',
+          defaultDensity: 'Default layout',
+          compactDensity: 'Compact layout',
         },
         tabs: {
           pin: 'Pin tab: {{title}}',

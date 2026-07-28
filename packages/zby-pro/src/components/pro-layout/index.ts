@@ -1,4 +1,14 @@
 export { default, ReactRouterProLayout } from './ReactRouterProLayout'
+export { ProThemeSwitch, useThemePreference } from './theme'
+export type {
+  ProThemeAppearance,
+  ProThemeDensity,
+  ProThemeMode,
+  ProThemePreference,
+  ProThemeSwitchProps,
+  UseThemePreferenceOptions,
+  UseThemePreferenceReturn,
+} from './theme'
 export type {
   ProLayoutClassNames,
   ProLayoutHeaderConfig,
@@ -11,8 +21,5 @@ export type {
   ProLayoutSemanticName,
   ProLayoutStyles,
   ProLayoutSystemItem,
-  ProLayoutThemeAppearance,
-  ProLayoutThemeConfig,
-  ProLayoutThemeMode,
   ReactRouterProLayoutProps,
 } from './types'

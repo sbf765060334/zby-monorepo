@@ -6,15 +6,20 @@ export type {
   ZbyThemeMode,
   ZbyThemeTransitionOrigin,
 } from '@zby/hooks'
-export { ReactRouterProLayout } from './components/pro-layout'
+export { ProThemeSwitch, ReactRouterProLayout, useThemePreference } from './components/pro-layout'
 export type {
+  ProThemeAppearance,
+  ProThemeDensity,
+  ProThemeMode,
+  ProThemePreference,
+  ProThemeSwitchProps,
   ProLayoutClassNames,
   ProLayoutHeaderConfig,
   ProLayoutProps,
   ProLayoutRoute,
   ProLayoutStyles,
   ProLayoutSystemItem,
-  ProLayoutThemeConfig,
-  ProLayoutThemeMode,
   ReactRouterProLayoutProps,
+  UseThemePreferenceOptions,
+  UseThemePreferenceReturn,
 } from './components/pro-layout'

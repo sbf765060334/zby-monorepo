@@ -337,12 +337,11 @@ describe('ReactRouterProLayout', () => {
 
   it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {
     const router = createTestRouter()
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <ReactRouterProLayout
           router={router}
           title="Digital Platform"
-          theme={{ enabled: true }}
         />
       </MemoryRouter>,
       'en-US',
@@ -351,14 +350,6 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('dashboard-page')
     expect(screen.getByText('Current location:')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Pin tab: 工作台' })).toBeTruthy()
-
-    const themeTrigger = container.querySelector('.zby-pro-layout-theme-trigger')
-    expect(themeTrigger).toBeTruthy()
-    fireEvent.click(themeTrigger as HTMLElement)
-    expect(await screen.findByText('Follow system')).toBeTruthy()
-    expect(screen.getByText('Light theme')).toBeTruthy()
-    expect(screen.getByText('Dark theme')).toBeTruthy()
-    fireEvent.click(screen.getByText('Follow system'))
 
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'Add to favorites: 订单列表' }))

@@ -4,7 +4,6 @@ import { memo } from 'react'
 import type { ReactNode } from 'react'
 import type { ProLayoutClassNames, ProLayoutStyles } from '../types'
 import PageTabs from './PageTabs'
-import { ThemeSwitch, useProLayoutTheme } from '../theme'
 
 export interface HeaderProps {
   prefixCls: string
@@ -19,7 +18,6 @@ export interface HeaderProps {
 /** 顶部全局页签栏及业务扩展区域。 */
 function Header(props: HeaderProps) {
   const { classNames, extra, hashId, height, paddingLeft, prefixCls, styles } = props
-  const { enabled: themeEnabled } = useProLayoutTheme()
 
   return (
     <header
@@ -36,12 +34,11 @@ function Header(props: HeaderProps) {
       >
         <PageTabs prefixCls={prefixCls} hashId={hashId} />
       </div>
-      {themeEnabled || (extra !== undefined && extra !== null && extra !== false) ? (
+      {extra !== undefined && extra !== null && extra !== false ? (
         <div
           className={clsx(`${prefixCls}-header-extra`, classNames?.headerExtra)}
           style={{ display: 'flex', alignItems: 'center', ...styles?.headerExtra }}
         >
-          <ThemeSwitch prefixCls={prefixCls} />
           {extra}
         </div>
       ) : null}

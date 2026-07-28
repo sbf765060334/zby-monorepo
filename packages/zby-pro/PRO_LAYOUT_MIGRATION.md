@@ -98,9 +98,14 @@ ProLayout 应通过 selector 读取 `currentPathname`、`currentRoutes`、`curre
 推荐最终只把创建好的 router 实例传给 React Router 版 ProLayout，不能再次传固定配置：
 
 ```tsx
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import { createRouterCore } from '@zby/router-core'
 import { BrowserRouter } from 'react-router-dom'
-import { ReactRouterProLayout } from '@zby/pro/pro-layout'
+import {
+  ProThemeSwitch,
+  ReactRouterProLayout,
+  useThemePreference,
+} from '@zby/pro/pro-layout'
 
 const router = createRouterCore({
   routes,
@@ -111,18 +116,43 @@ const router = createRouterCore({
 })
 
 export function App() {
+  const preference = useThemePreference({
+    defaultValue: { mode: 'light', density: 'default' },
+    storageKey: 'digital-platform:theme-preference',
+  })
+  const appearanceAlgorithm = preference.appearance === 'dark'
+    ? antdTheme.darkAlgorithm
+    : antdTheme.defaultAlgorithm
+  const algorithm = preference.value.density === 'compact'
+    ? [appearanceAlgorithm, antdTheme.compactAlgorithm]
+    : appearanceAlgorithm
+
   return (
-    <BrowserRouter basename="/platform">
-      <ReactRouterProLayout
-        router={router}
-        title="数字化平台"
-        header={{ extra: <UserActions /> }}
-        theme={{ enabled: true, defaultMode: 'auto' }}
-      />
-    </BrowserRouter>
+    <ConfigProvider theme={{ algorithm }}>
+      <BrowserRouter basename="/platform">
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          header={{
+            extra: (
+              <>
+                <ProThemeSwitch
+                  value={preference.value}
+                  appearance={preference.appearance}
+                  onChange={preference.setValue}
+                />
+                <UserActions />
+              </>
+            ),
+          }}
+        />
+      </BrowserRouter>
+    </ConfigProvider>
   )
 }
 ```
+
+ProLayout 不创建 `ConfigProvider`，也不根据 Header 中是否存在主题按钮推断主题。未配置业务主题时，Ant Design 自然使用浅色主题和默认布局；业务主题由最外层 `ConfigProvider` 统一应用。
 
 `ReactRouterProLayout` 内部只做以下装配：
 

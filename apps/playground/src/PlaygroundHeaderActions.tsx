@@ -4,7 +4,7 @@ import { Button, Space, Tag } from 'antd'
 
 /**
  * ProLayout Header 的业务扩展区。
- * 主题切换由 ProLayout 自带入口演示，这里只保留应用级语言切换，避免重复控制主题。
+ * 主题切换由业务入口组合，这里保留其余应用级操作。
  */
 export default function PlaygroundHeaderActions() {
   const intl = useIntl()

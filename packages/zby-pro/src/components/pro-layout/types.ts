@@ -68,18 +68,6 @@ export interface ProLayoutHeaderConfig {
   extra?: ReactNode
 }
 
-export type ProLayoutThemeMode = 'light' | 'dark' | 'auto'
-export type ProLayoutThemeAppearance = Exclude<ProLayoutThemeMode, 'auto'>
-
-/** 仅保留跟随系统、亮色和暗色三种主题模式。 */
-export interface ProLayoutThemeConfig {
-  enabled?: boolean
-  defaultMode?: ProLayoutThemeMode
-  mode?: ProLayoutThemeMode
-  onModeChange?: (mode: ProLayoutThemeMode) => void
-  storageKey?: string
-}
-
 export type ProLayoutSemanticName =
   | 'root'
   | 'sider'
@@ -102,8 +90,6 @@ export interface ProLayoutProps {
   title: string
   /** 顶部 Logo 与页签栏右侧扩展内容。 */
   header?: ProLayoutHeaderConfig
-  /** 跟随系统、亮色和暗色主题的开关、受控状态与本地持久化配置。 */
-  theme?: ProLayoutThemeConfig
   /** 是否在页签栏下方显示全局路由面包屑；默认为 true。 */
   showBreadcrumb?: boolean
   /** 当前页面标题变化后的通知回调；无匹配页面时传入空字符串。 */
