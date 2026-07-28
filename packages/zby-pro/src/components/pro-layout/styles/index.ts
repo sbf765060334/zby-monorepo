@@ -17,7 +17,7 @@ export default function useProLayoutStyles(prefixCls: string) {
     token.controlHeightSM,
     headerHeight - token.marginXXS * 2,
   )
-  const fixedIconWidth = unit(styleToken.fontSizeLG)
+  const fixedIconWidth = unit(styleToken.fontSize)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
   const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) / -2)`
   const tabCurveValue = Math.min(
@@ -27,7 +27,6 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabCurveSize = unit(tabCurveValue)
   const tabSplitWidth = styleToken.marginXXS
   const tabTrailingPadding = unit(Math.max(0, tabCurveValue - token.marginXXS))
-  const tabControlGap = `calc(${unit(styleToken.marginXXS)} / 2)`
   const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
   const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
@@ -343,7 +342,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             height: styleToken.fontSize,
             alignItems: 'center',
             justifyContent: 'center',
-            marginInlineStart: tabControlGap,
+            marginInlineStart: styleToken.marginXXS,
             borderRadius: styleToken.borderRadiusXS,
             color: styleToken.colorTextTertiary,
             lineHeight: unit(styleToken.fontSize),
@@ -448,7 +447,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           display: 'inline-flex',
           width: fixedIconWidth,
           minWidth: fixedIconWidth,
-          height: styleToken.fontSizeLG,
+          height: styleToken.fontSize,
           marginInlineEnd: fixedIconTextMargin,
           flexShrink: 0,
           alignItems: 'center',
@@ -457,7 +456,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           padding: 0,
           border: 0,
           background: 'transparent',
-          color: styleToken.colorTextTertiary,
+          color: styleToken.colorTextQuaternary,
           fontSize: fixedIconWidth,
           cursor: 'pointer',
           opacity: 0,
@@ -470,7 +469,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           opacity: 1,
         },
         [`${componentCls}-fixed-icon-active`]: {
-          color: styleToken.colorTextSecondary,
+          color: styleToken.colorTextTertiary,
           opacity: 1,
           transform: 'rotate(-45deg)',
         },
