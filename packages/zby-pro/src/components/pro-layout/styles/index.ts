@@ -26,6 +26,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   )
   const tabCurveSize = unit(tabCurveValue)
   const tabSplitWidth = styleToken.marginXXS
+  const tabControlGap = `calc(${unit(styleToken.marginXXS)} / 2)`
   const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
   const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
@@ -249,7 +250,6 @@ export default function useProLayoutStyles(prefixCls: string) {
           flex: 1,
           alignItems: 'center',
           overflow: 'hidden',
-          paddingInlineStart: styleToken.paddingSM,
           background: styleToken.colorBgContainer,
 
           [`.ant-tabs`]: {
@@ -298,7 +298,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             '&:hover, &:focus-visible': {
               borderColor: 'transparent',
               background: styleToken.colorFillTertiary,
-              color: styleToken.colorText,
+              color: styleToken.colorTextSecondary,
             },
           },
           [`.ant-tabs-tab-btn`]: {
@@ -323,16 +323,16 @@ export default function useProLayoutStyles(prefixCls: string) {
             borderBlockEndColor: `${styleToken.colorBgLayout} !important`,
             borderRadius: `${tabCurveSize} ${tabCurveSize} 0 0 !important`,
             background: styleToken.colorBgLayout,
-            color: styleToken.colorTextSecondary,
+            color: styleToken.colorText,
 
             '&:hover, &:focus-visible': {
               borderColor: 'transparent',
               background: styleToken.colorBgLayout,
-              color: styleToken.colorTextSecondary,
+              color: styleToken.colorText,
             },
           },
           [`.ant-tabs-tab-active .ant-tabs-tab-btn`]: {
-            color: styleToken.colorTextSecondary,
+            color: styleToken.colorText,
             textShadow: 'none',
           },
           [`.ant-tabs-tab-remove`]: {
@@ -341,6 +341,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             height: styleToken.fontSize,
             alignItems: 'center',
             justifyContent: 'center',
+            marginInlineStart: tabControlGap,
             borderRadius: styleToken.borderRadiusXS,
             color: styleToken.colorTextTertiary,
             lineHeight: unit(styleToken.fontSize),
@@ -414,10 +415,10 @@ export default function useProLayoutStyles(prefixCls: string) {
             position: 'absolute',
             insetBlockStart: '50%',
             insetInline: 0,
-            width: styleToken.lineWidthBold,
+            width: styleToken.lineWidth,
             height: tabSplitHeight,
             marginInline: 'auto',
-            background: styleToken.colorBorder,
+            background: styleToken.colorBorderSecondary,
             content: '""',
             transform: 'translateY(-50%)',
           },
@@ -471,7 +472,14 @@ export default function useProLayoutStyles(prefixCls: string) {
           opacity: 1,
           transform: 'rotate(-45deg)',
         },
-        [`${componentCls}-collection-trigger`]: { marginInlineStart: styleToken.marginXXS },
+        [`${componentCls}-collection-trigger`]: {
+          marginInlineStart: 0,
+          color: styleToken.colorTextTertiary,
+
+          '&:hover, &:focus-visible, &.ant-dropdown-open': {
+            color: styleToken.colorTextSecondary,
+          },
+        },
         [`${componentCls}-header-extra`]: {
           display: 'flex',
           marginInlineStart: styleToken.marginLG,
@@ -486,7 +494,7 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
 
         [`${componentCls}-content, ${componentCls}-pages, ${componentCls}-page-body`]: {
-          background: styleToken.colorFillContent,
+          background: styleToken.colorBgLayout,
         },
         [`${componentCls}-breadcrumb`]: {
           display: 'flex',
