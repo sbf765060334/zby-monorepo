@@ -291,7 +291,11 @@ describe('ReactRouterProLayout', () => {
     const getDrawerRoot = () => document.querySelector(
       '.zby-pro-layout-menu-drawer.ant-drawer',
     ) as HTMLElement
+    const getMenuMeasure = () => document.querySelector(
+      '.zby-pro-layout-menu-measure',
+    ) as HTMLElement
     expect(getDrawerRoot().style.left).toBe('68px')
+    expect(getMenuMeasure().style.width).toBe('232px')
     fireEvent.click(orderMenu)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
@@ -302,6 +306,7 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
     await screen.findByRole('dialog')
     expect(getDrawerRoot().style.left).toBe('60px')
+    expect(getMenuMeasure().style.width).toBe('204px')
     defaultLayout.unmount()
 
     const compactLayout = renderLayout(true)

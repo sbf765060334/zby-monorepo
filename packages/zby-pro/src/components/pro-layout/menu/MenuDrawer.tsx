@@ -18,6 +18,8 @@ import type { ProLayoutRoute } from '../types'
 import { createMenuDrawerLayout } from './menuLayout'
 import type { NativeScrollbarSize } from './menuLayout'
 
+const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
+
 export interface MenuDrawerProps {
   prefixCls: string
   hashId: string
@@ -60,7 +62,14 @@ function MenuDrawer(props: MenuDrawerProps) {
   // 布局尺寸统一拆成“Drawer 外框”和“Drawer body 内容区”两种口径。
   // availableWidth 包含右侧边框；drawerBodyHeight 已扣除 body 上下 padding，供分列算法直接使用。
   const viewport = useViewportSize(open)
-  const columnWidth = token.controlHeightLG * 5 + token.sizeXL
+  // 密度相关的控件 token 参与列宽计算；对齐网格后默认/紧凑分别为 232px/204px。
+  const columnWidth = alignToGrid(
+    token.controlHeight * 6 + token.controlHeightLG,
+  )
+  // Drawer 通过 Portal 渲染，因此在测量层和 Drawer 根节点上同时提供组件变量。
+  const columnWidthVariable = {
+    [`--${prefixCls}-menu-column-width`]: `${columnWidth}px`,
+  } as CSSProperties
   const viewportGap = token.paddingLG
   const frameInlineSize = token.lineWidth
   const availableWidth = Math.max(
@@ -250,6 +259,7 @@ function MenuDrawer(props: MenuDrawerProps) {
           aria-hidden
           className={drawerClassName}
           style={{
+            ...columnWidthVariable,
             position: 'fixed',
             insetBlockStart: 0,
             insetInlineStart: -columnWidth,
@@ -287,6 +297,7 @@ function MenuDrawer(props: MenuDrawerProps) {
         zIndex={999}
         rootClassName={drawerClassName}
         rootStyle={{
+          ...columnWidthVariable,
           left,
           overflow: 'hidden',
           transition: `left ${token.motionDurationMid} ${token.motionEaseInOut}`,

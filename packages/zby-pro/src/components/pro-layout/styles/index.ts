@@ -72,7 +72,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   const siderItemPaddingBlockStyle = `var(${siderItemPaddingBlockVar})`
   const siderIconSizeStyle = `var(${siderIconSizeVar})`
   const tabCurveOffset = `calc(${tabCurveSizeStyle} * -1)`
-  const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
+  const drawerColumnWidth = `var(--${prefixCls}-menu-column-width)`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
 
   // 派生尺寸由根节点 CSS 变量承载，主题切换时无需重新注册整份样式。
