@@ -2,7 +2,7 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Flex, Tooltip } from 'antd'
+import { Flex, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
 
@@ -22,6 +22,7 @@ export interface PageTabsProps {
 function PageTabs(props: PageTabsProps) {
   const { hashId, prefixCls } = props
   const intl = useIntl()
+  const [messageApi, messageContextHolder] = message.useMessage()
   const router = useRouterCore<ProLayoutRoute>()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.tabs,
@@ -77,7 +78,19 @@ function PageTabs(props: PageTabsProps) {
             onPointerDown={stopEvent}
             onClick={(event) => {
               stopEvent(event)
-              router.toggleFixed(tab.key)
+              if (router.toggleFixed(tab.key)) {
+                void messageApi.success(
+                  fixed
+                    ? intl.getMessage(
+                        'zby.pro.layout.tabs.unfixedSuccess',
+                        '已取消页签固定',
+                      )
+                    : intl.getMessage(
+                        'zby.pro.layout.tabs.fixedSuccess',
+                        '页签固定成功',
+                      ),
+                )
+              }
             }}
           >
             <PinIcon />
@@ -103,7 +116,7 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    [descriptions, fixedKeySet, intl, pagePathnameMap, prefixCls, router, tabs],
+    [descriptions, fixedKeySet, intl, messageApi, pagePathnameMap, prefixCls, router, tabs],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
@@ -120,23 +133,39 @@ function PageTabs(props: PageTabsProps) {
   const tabType = items.length <= 1 ? 'card' : 'editable-card'
 
   return (
-    <SortableTabs
-      key={tabType}
-      prefixCls={prefixCls}
-      items={items}
-      fixedKeys={fixedKeys}
-      activeKey={activeKey || undefined}
-      type={tabType}
-      size="small"
-      hideAdd
-      removeIcon={<CloseOutlined onPointerDown={stopEvent} />}
-      onChange={(key) => router.jumpTo(key)}
-      onEdit={handleEdit}
-      onPreload={handlePreload}
-      onReorder={(keys) => router.reorderTabs(keys)}
-      tabBarExtraContent={<FavoriteMenuPanel prefixCls={prefixCls} hashId={hashId} />}
-      style={{ maxWidth: '100%' }}
-    />
+    <>
+      {messageContextHolder}
+      <SortableTabs
+        key={tabType}
+        prefixCls={prefixCls}
+        items={items}
+        fixedKeys={fixedKeys}
+        activeKey={activeKey || undefined}
+        type={tabType}
+        size="small"
+        hideAdd
+        removeIcon={<CloseOutlined onPointerDown={stopEvent} />}
+        onChange={(key) => router.jumpTo(key)}
+        onEdit={handleEdit}
+        onPreload={handlePreload}
+        onReorder={(keys) => router.reorderTabs(keys)}
+        onReorderRejected={(reason) => {
+          void messageApi.info(
+            reason === 'unfixedBeforeFixed'
+              ? intl.getMessage(
+                  'zby.pro.layout.tabs.unfixedBeforeFixed',
+                  '非固定标签不能拖动到固定标签之前',
+                )
+              : intl.getMessage(
+                  'zby.pro.layout.tabs.fixedAfterUnfixed',
+                  '固定标签不能拖动到非固定标签之后',
+                ),
+          )
+        }}
+        tabBarExtraContent={<FavoriteMenuPanel prefixCls={prefixCls} hashId={hashId} />}
+        style={{ maxWidth: '100%' }}
+      />
+    </>
   )
 }
 

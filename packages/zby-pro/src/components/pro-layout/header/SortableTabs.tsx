@@ -21,12 +21,15 @@ import type { DragEndEvent } from '@dnd-kit/core'
 import type { TabsProps } from 'antd'
 import type { ReactNode } from 'react'
 
+export type TabReorderRejection = 'unfixedBeforeFixed' | 'fixedAfterUnfixed'
+
 /** Header 页签拖拽层对 antd Tabs 的扩展属性。 */
 export interface SortableTabsProps extends Omit<TabsProps, 'items' | 'renderTabBar'> {
   prefixCls: string
   items: NonNullable<TabsProps['items']>
   fixedKeys: readonly string[]
   onReorder: (keys: string[]) => boolean
+  onReorderRejected?: (reason: TabReorderRejection) => void
   onPreload?: (key: string) => void
 }
 
@@ -38,6 +41,7 @@ export default function SortableTabs(props: SortableTabsProps) {
     items,
     onPreload,
     onReorder,
+    onReorderRejected,
     prefixCls,
     ...tabsProps
   } = props
@@ -64,6 +68,12 @@ export default function SortableTabs(props: SortableTabsProps) {
 
     const activeKey = String(active.id)
     const overKey = String(over.id)
+    const rejection = getTabReorderRejection(activeKey, overKey, fixedKeys)
+    if (rejection) {
+      onReorderRejected?.(rejection)
+      return
+    }
+
     const from = keys.indexOf(activeKey)
     const to = keys.indexOf(overKey)
     if (from < 0 || to < 0)
@@ -171,6 +181,20 @@ function SortableTabNode(props: {
       />
     </>
   )
+}
+
+export function getTabReorderRejection(
+  activeKey: string,
+  overKey: string,
+  fixedKeys: readonly string[],
+): TabReorderRejection | null {
+  const activeFixed = fixedKeys.includes(activeKey)
+  const overFixed = fixedKeys.includes(overKey)
+  if (!activeFixed && overFixed)
+    return 'unfixedBeforeFixed'
+  if (activeFixed && !overFixed)
+    return 'fixedAfterUnfixed'
+  return null
 }
 
 function sortByFixedGroup(items: NonNullable<TabsProps['items']>, fixedKeys: readonly string[]) {

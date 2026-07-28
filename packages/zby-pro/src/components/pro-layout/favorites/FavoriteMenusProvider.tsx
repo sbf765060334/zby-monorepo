@@ -45,9 +45,16 @@ export function FavoriteMenusProvider(props: {
         : intl.getMessage('zby.pro.layout.favorites.saveError', '菜单收藏保存失败'),
     )
   }, [intl, messageApi])
+  const reportFavoriteChange = useCallback((favorite: boolean) => {
+    void messageApi.success(
+      favorite
+        ? intl.getMessage('zby.pro.layout.favorites.collectSuccess', '收藏成功')
+        : intl.getMessage('zby.pro.layout.favorites.uncollectSuccess', '取消收藏成功'),
+    )
+  }, [intl, messageApi])
   const controller = useMemo(
-    () => createFavoriteMenusController(router, reportStorageError),
-    [reportStorageError, router],
+    () => createFavoriteMenusController(router, reportStorageError, reportFavoriteChange),
+    [reportFavoriteChange, reportStorageError, router],
   )
 
   useEffect(() => {
@@ -102,6 +109,7 @@ function useFavoriteMenusController() {
 function createFavoriteMenusController(
   router: RouterCore<ProLayoutRoute>,
   onStorageError: (error: unknown, phase: 'load' | 'save') => void,
+  onFavoriteChange: (favorite: boolean) => void,
 ): FavoriteMenusController {
   const storageKey = router.getState().storageKey
   const store = createStore<FavoriteMenusState>(() => ({
@@ -135,6 +143,7 @@ function createFavoriteMenusController(
 
     const nextPaths = setFavorite(currentPaths, path, favorite)
     store.setState({ favoritePaths: nextPaths })
+    onFavoriteChange(favorite)
 
     // 加载期间的操作会在 hydrate 中重放到持久化快照上，不能提前用空内存覆盖已有收藏。
     if (hydrated)

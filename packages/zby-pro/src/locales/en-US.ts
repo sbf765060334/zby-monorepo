@@ -17,12 +17,18 @@ const enUS = {
         tabs: {
           pin: 'Pin tab: {{title}}',
           unpin: 'Unpin tab: {{title}}',
+          fixedSuccess: 'Tab pinned',
+          unfixedSuccess: 'Tab unpinned',
+          unfixedBeforeFixed: 'Unpinned tabs cannot be moved before pinned tabs',
+          fixedAfterUnfixed: 'Pinned tabs cannot be moved after unpinned tabs',
         },
         favorites: {
           title: 'Favorite menus ({{count}})',
           empty: 'No favorite menus',
           add: 'Add to favorites: {{title}}',
           remove: 'Remove from favorites: {{title}}',
+          collectSuccess: 'Added to favorites',
+          uncollectSuccess: 'Removed from favorites',
           trigger: 'Favorite menus',
           hint: 'Click the star in a menu to add it to favorites',
           loadError: 'Failed to load favorite menus',

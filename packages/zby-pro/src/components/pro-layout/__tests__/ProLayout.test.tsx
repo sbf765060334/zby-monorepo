@@ -309,6 +309,10 @@ describe('ReactRouterProLayout', () => {
       expect(screen.getByRole('button', { name: '取消固定页签：工作台' })
         .classList.contains('zby-pro-layout-fixed-icon-active')).toBe(true)
     })
+    expect(await screen.findByText('页签固定成功')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '取消固定页签：工作台' }))
+    expect(await screen.findByText('已取消页签固定')).toBeTruthy()
   })
 
   it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {
@@ -339,6 +343,7 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'Add to favorites: 订单列表' }))
     expect(screen.getByRole('button', { name: 'Remove from favorites: 订单列表' })).toBeTruthy()
+    expect(await screen.findByText('Added to favorites')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Favorite menus' }))
     expect(await screen.findByText('Favorite menus (1)')).toBeTruthy()
   })
@@ -392,6 +397,7 @@ describe('ReactRouterProLayout', () => {
 
     expect(jumpTo).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: '取消收藏：订单列表' })).toBeTruthy()
+    expect(await screen.findByText('收藏成功')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '收藏菜单' }))
     const collectionHeader = await screen.findByText('收藏的菜单（1）')
     const collectionPanel = collectionHeader.closest('.zby-pro-layout-collection-panel')
@@ -414,6 +420,7 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: '收藏菜单' }))
     expect(await screen.findByText('收藏的菜单（1）')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '取消收藏：订单列表' }))
+    expect(await screen.findByText('取消收藏成功')).toBeTruthy()
 
     await waitFor(async () => {
       expect(await favoriteStorage.loadFavoriteMenuPaths(storageKey)).toEqual([])

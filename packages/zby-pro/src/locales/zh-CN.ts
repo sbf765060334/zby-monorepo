@@ -17,12 +17,18 @@ const zhCN = {
         tabs: {
           pin: '固定页签：{{title}}',
           unpin: '取消固定页签：{{title}}',
+          fixedSuccess: '页签固定成功',
+          unfixedSuccess: '已取消页签固定',
+          unfixedBeforeFixed: '非固定标签不能拖动到固定标签之前',
+          fixedAfterUnfixed: '固定标签不能拖动到非固定标签之后',
         },
         favorites: {
           title: '收藏的菜单（{{count}}）',
           empty: '暂未收藏菜单',
           add: '收藏：{{title}}',
           remove: '取消收藏：{{title}}',
+          collectSuccess: '收藏成功',
+          uncollectSuccess: '取消收藏成功',
           trigger: '收藏菜单',
           hint: '点击菜单中的星标即可完成收藏',
           loadError: '菜单收藏加载失败',
