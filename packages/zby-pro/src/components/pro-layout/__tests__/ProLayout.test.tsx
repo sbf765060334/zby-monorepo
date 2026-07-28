@@ -167,8 +167,11 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('reports-page')
     const tabNodes = container.querySelectorAll('.zby-pro-layout-tab-node')
     const tabSplits = container.querySelectorAll('.zby-pro-layout-tab-split')
-    expect(tabSplits).toHaveLength(tabNodes.length - 1)
-    expect(container.querySelectorAll('.zby-pro-layout-tab-split-hidden')).toHaveLength(1)
+    expect(tabSplits).toHaveLength(tabNodes.length)
+    expect(tabSplits[tabSplits.length - 1]?.classList.contains(
+      'zby-pro-layout-tab-split-hidden',
+    )).toBe(true)
+    expect(container.querySelectorAll('.zby-pro-layout-tab-split-hidden')).toHaveLength(2)
     expect(container.querySelectorAll(
       '.zby-pro-layout-tab-split:not(.zby-pro-layout-tab-split-hidden)',
     )).toHaveLength(1)

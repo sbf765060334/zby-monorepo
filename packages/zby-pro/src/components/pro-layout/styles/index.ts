@@ -26,6 +26,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   )
   const tabCurveSize = unit(tabCurveValue)
   const tabSplitWidth = styleToken.marginXXS
+  const tabTrailingPadding = unit(Math.max(0, tabCurveValue - token.marginXXS))
   const tabControlGap = `calc(${unit(styleToken.marginXXS)} / 2)`
   const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
   const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
@@ -270,7 +271,8 @@ export default function useProLayoutStyles(prefixCls: string) {
             alignItems: 'flex-end',
           },
           [`.ant-tabs-nav-list`]: {
-            paddingInline: tabCurveSize,
+            paddingInlineStart: tabCurveSize,
+            paddingInlineEnd: tabTrailingPadding,
           },
           [`.ant-tabs-extra-content`]: {
             display: 'inline-flex',
