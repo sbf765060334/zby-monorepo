@@ -273,6 +273,22 @@ export default function useProLayoutStyles(prefixCls: string) {
             paddingInlineStart: tabCurveSize,
             paddingInlineEnd: tabTrailingPadding,
           },
+          [`.ant-tabs-nav-more`]: {
+            display: 'inline-flex',
+            width: token.controlHeightSM,
+            minWidth: token.controlHeightSM,
+            height: token.controlHeightSM,
+            alignSelf: 'center',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            borderRadius: styleToken.borderRadiusSM,
+            color: styleToken.colorTextTertiary,
+
+            '&:hover, &:focus-visible, &[aria-expanded="true"]': {
+              color: styleToken.colorTextSecondary,
+            },
+          },
           [`.ant-tabs-extra-content`]: {
             display: 'inline-flex',
             height: '100%',
@@ -373,7 +389,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           overflow: 'visible',
           [`.ant-tabs-tab`]: {
             borderColor: styleToken.colorBorder,
-            boxShadow: surfaceShadow,
+            boxShadow: 'none',
           },
         },
         [`${componentCls}-tab-node-active`]: {
@@ -533,6 +549,71 @@ export default function useProLayoutStyles(prefixCls: string) {
           alignItems: 'center',
           justifyContent: 'center',
           padding: styleToken.paddingSM,
+        },
+      },
+
+      [`.${prefixCls}-tabs-dropdown`]: {
+        [`.ant-tabs-dropdown-menu-item > span`]: {
+          minWidth: 0,
+          overflow: 'hidden',
+        },
+        [`${componentCls}-tab-label-wrap`]: {
+          width: '100%',
+          minWidth: 0,
+        },
+        [`${componentCls}-tab-label`]: {
+          position: 'static',
+          display: 'block',
+          minWidth: 0,
+          flex: 1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        },
+        [`${componentCls}-fixed-icon`]: {
+          display: 'inline-flex',
+          width: fixedIconWidth,
+          minWidth: fixedIconWidth,
+          height: styleToken.fontSize,
+          marginInlineEnd: fixedIconTextMargin,
+          flexShrink: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          border: 0,
+          background: 'transparent',
+          color: styleToken.colorTextQuaternary,
+          fontSize: fixedIconWidth,
+          cursor: 'pointer',
+          opacity: 0,
+          transform: 'rotate(0deg)',
+          transition: `opacity ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}, color ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}, transform ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
+
+          '&:hover, &:focus-visible': { color: styleToken.colorTextSecondary },
+        },
+        [`.ant-tabs-dropdown-menu-item:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
+          opacity: 1,
+        },
+        [`${componentCls}-fixed-icon-active`]: {
+          color: styleToken.colorTextTertiary,
+          opacity: 1,
+          transform: 'rotate(-45deg)',
+        },
+        [`.ant-tabs-dropdown-menu-item-remove`]: {
+          display: 'inline-flex',
+          width: styleToken.fontSize,
+          height: styleToken.fontSize,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginInlineStart: styleToken.marginXXS,
+          padding: 0,
+          borderRadius: styleToken.borderRadiusXS,
+          color: styleToken.colorTextTertiary,
+          lineHeight: unit(styleToken.fontSize),
+
+          '&:hover, &:focus-visible': {
+            color: styleToken.colorTextSecondary,
+          },
         },
       },
 

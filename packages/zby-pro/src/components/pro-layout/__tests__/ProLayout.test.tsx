@@ -315,6 +315,26 @@ describe('ReactRouterProLayout', () => {
     expect(await screen.findByText('已取消页签固定')).toBeTruthy()
   })
 
+  it('固定页签达到上限时显示提示且保持原固定状态', async () => {
+    const router = createTestRouter(undefined, 1)
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    fireEvent.click(screen.getByRole('button', { name: '固定页签：订单列表' }))
+    expect(await screen.findByText('页签固定成功')).toBeTruthy()
+
+    act(() => router.jumpTo('/dashboard'))
+    fireEvent.click(screen.getByRole('button', { name: '固定页签：工作台' }))
+    expect(await screen.findByText('最多钉住1个标签，请先取消一个钉住标签')).toBeTruthy()
+    expect(router.getState().fixedSet).toEqual(['/orders/list'])
+  })
+
   it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {
     const router = createTestRouter()
     const { container } = render(
@@ -534,13 +554,17 @@ const routes: ProLayoutRoute[] = [
 
 let routerSequence = 0
 
-function createTestRouter(storageKey = `pro-layout-test-${routerSequence += 1}`) {
+function createTestRouter(
+  storageKey = `pro-layout-test-${routerSequence += 1}`,
+  maxFixedTabCount?: number,
+) {
   return createRouterCore({
     routes,
     defaultRedirectPath: '/dashboard',
     storageAdapter: false,
     storageKey,
     keepAlive: true,
+    maxFixedTabCount,
   })
 }
 

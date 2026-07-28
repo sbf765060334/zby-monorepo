@@ -36,6 +36,9 @@ function PageTabs(props: PageTabsProps) {
   const fixedKeys = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.fixedSet,
   )
+  const maxFixedTabCount = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.maxFixedTabCount,
+  )
   const descriptions = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pathnameDescriptionMap,
   )
@@ -78,6 +81,16 @@ function PageTabs(props: PageTabsProps) {
             onPointerDown={stopEvent}
             onClick={(event) => {
               stopEvent(event)
+              if (!fixed && fixedKeys.length >= maxFixedTabCount) {
+                void messageApi.info(
+                  intl.getMessage(
+                    'zby.pro.layout.tabs.maxFixedTabs',
+                    '最多钉住{{count}}个标签，请先取消一个钉住标签',
+                    { count: maxFixedTabCount },
+                  ),
+                )
+                return
+              }
               if (router.toggleFixed(tab.key)) {
                 void messageApi.success(
                   fixed
@@ -116,7 +129,7 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    [descriptions, fixedKeySet, intl, messageApi, pagePathnameMap, prefixCls, router, tabs],
+    [descriptions, fixedKeySet, fixedKeys.length, intl, maxFixedTabCount, messageApi, pagePathnameMap, prefixCls, router, tabs],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
@@ -144,6 +157,11 @@ function PageTabs(props: PageTabsProps) {
         type={tabType}
         size="small"
         hideAdd
+        classNames={{
+          popup: {
+            root: clsx(`${prefixCls}-tabs-dropdown`, hashId),
+          },
+        }}
         removeIcon={<CloseOutlined onPointerDown={stopEvent} />}
         onChange={(key) => router.jumpTo(key)}
         onEdit={handleEdit}
