@@ -155,7 +155,7 @@ function PageTabs(props: PageTabsProps) {
         fixedKeys={fixedKeys}
         activeKey={activeKey || undefined}
         type={tabType}
-        size="small"
+        size="middle"
         hideAdd
         classNames={{
           popup: {

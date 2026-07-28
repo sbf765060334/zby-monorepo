@@ -732,7 +732,7 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`.${prefixCls}-menu-main`]: { minWidth: 0, flex: 1 },
         [`.${prefixCls}-menu-direct .${prefixCls}-menu-row`]: {
-          paddingInlineStart: styleToken.sizeMD,
+          paddingInlineStart: `var(--${prefixCls}-menu-indent)`,
         },
         [`.${prefixCls}-menu-active`]: {
           position: 'relative',

@@ -296,6 +296,9 @@ describe('ReactRouterProLayout', () => {
     ) as HTMLElement
     expect(getDrawerRoot().style.left).toBe('68px')
     expect(getMenuMeasure().style.width).toBe('232px')
+    expect(getDrawerRoot().style.getPropertyValue(
+      '--zby-pro-layout-menu-indent',
+    )).toBe('12px')
     fireEvent.click(orderMenu)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
@@ -307,6 +310,9 @@ describe('ReactRouterProLayout', () => {
     await screen.findByRole('dialog')
     expect(getDrawerRoot().style.left).toBe('60px')
     expect(getMenuMeasure().style.width).toBe('204px')
+    expect(getDrawerRoot().style.getPropertyValue(
+      '--zby-pro-layout-menu-indent',
+    )).toBe('8px')
     defaultLayout.unmount()
 
     const compactLayout = renderLayout(true)
@@ -341,6 +347,12 @@ describe('ReactRouterProLayout', () => {
     expect(within(drawer).queryByText('空分组')).toBeNull()
     expect(within(drawer).getAllByText('履约管理')).toHaveLength(1)
     expect(within(drawer).getAllByRole('button', { name: '订单项 1' })).toHaveLength(1)
+    const nestedMenu = within(drawer)
+      .getByRole('button', { name: '订单项 1' })
+      .closest('.zby-pro-layout-menu') as HTMLElement
+    expect(nestedMenu.style.paddingInlineStart).toBe(
+      'calc(var(--zby-pro-layout-menu-indent) * 2)',
+    )
     const drawerBody = drawer.querySelector('.ant-drawer-body') as HTMLElement
     expect(drawerBody.style.overflowY).toBe('auto')
     expect(drawerBody.style.overflowX).toBe('hidden')

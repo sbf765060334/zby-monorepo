@@ -67,8 +67,9 @@ function MenuDrawer(props: MenuDrawerProps) {
     token.controlHeight * 6 + token.controlHeightLG,
   )
   // Drawer 通过 Portal 渲染，因此在测量层和 Drawer 根节点上同时提供组件变量。
-  const columnWidthVariable = {
+  const menuLayoutVariables = {
     [`--${prefixCls}-menu-column-width`]: `${columnWidth}px`,
+    [`--${prefixCls}-menu-indent`]: `${token.paddingSM}px`,
   } as CSSProperties
   const viewportGap = token.paddingLG
   const frameInlineSize = token.lineWidth
@@ -259,7 +260,7 @@ function MenuDrawer(props: MenuDrawerProps) {
           aria-hidden
           className={drawerClassName}
           style={{
-            ...columnWidthVariable,
+            ...menuLayoutVariables,
             position: 'fixed',
             insetBlockStart: 0,
             insetInlineStart: -columnWidth,
@@ -297,7 +298,7 @@ function MenuDrawer(props: MenuDrawerProps) {
         zIndex={999}
         rootClassName={drawerClassName}
         rootStyle={{
-          ...columnWidthVariable,
+          ...menuLayoutVariables,
           left,
           overflow: 'hidden',
           transition: `left ${token.motionDurationMid} ${token.motionEaseInOut}`,
@@ -354,8 +355,9 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
     route,
     selectedPath,
   } = props
-  const { token } = antdTheme.useToken()
-  const indent = level <= 1 ? 0 : token.sizeMD * (level - 1)
+  const indent = level <= 1
+    ? undefined
+    : `calc(var(--${prefixCls}-menu-indent) * ${level - 1})`
   const directMenu = level === 1
   const pageRoute = Boolean(route.element)
   const children = route.routes?.filter(isVisibleRoute) || []
