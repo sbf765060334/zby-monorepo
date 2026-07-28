@@ -177,21 +177,66 @@ describe('ReactRouterProLayout', () => {
     )).toHaveLength(1)
   })
 
-  it('根据紧凑主题同步收缩 Header 和内容顶部占位', async () => {
-    const router = createTestRouter()
-    const { container } = render(
-      <ConfigProvider theme={{ algorithm: antdTheme.compactAlgorithm }}>
-        <MemoryRouter initialEntries={['/dashboard']}>
-          <ReactRouterProLayout router={router} title="数字化平台" />
-        </MemoryRouter>
-      </ConfigProvider>,
-    )
+  it('在默认和紧凑主题间同步 Header、页签和内容顶部占位', async () => {
+    const renderLayout = (compact: boolean) => {
+      const router = createTestRouter()
+      const renderNode = (nextCompact: boolean) => (
+        <ConfigProvider
+          theme={{
+            algorithm: nextCompact
+              ? antdTheme.compactAlgorithm
+              : antdTheme.defaultAlgorithm,
+            cssVar: { prefix: 'zby-pro-layout-test' },
+          }}
+        >
+          <MemoryRouter initialEntries={['/dashboard']}>
+            <ReactRouterProLayout router={router} title="数字化平台" />
+          </MemoryRouter>
+        </ConfigProvider>
+      )
+      const view = render(renderNode(compact))
 
+      return {
+        ...view,
+        rerenderDensity: (nextCompact: boolean) => view.rerender(renderNode(nextCompact)),
+      }
+    }
+    const expectLayoutSize = (
+      container: HTMLElement,
+      headerHeight: string,
+      activeNodeHeight: string,
+    ) => {
+      const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+      const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+      const tabs = container.querySelector('.zby-pro-layout-tabs') as HTMLElement
+      const activeNode = container.querySelector(
+        '.zby-pro-layout-tab-node-active',
+      ) as HTMLElement
+      const siderLabel = container.querySelector(
+        '.zby-pro-layout-sider-item dd',
+      ) as HTMLElement
+
+      expect(main.style.paddingBlockStart).toBe(headerHeight)
+      expect(header.style.height).toBe(headerHeight)
+      expect(getComputedStyle(tabs).maxHeight).toBe(headerHeight)
+      expect(getComputedStyle(activeNode).height).toBe(activeNodeHeight)
+      expect(getComputedStyle(siderLabel).fontSize).toBe(getComputedStyle(main).fontSize)
+    }
+
+    const defaultLayout = renderLayout(false)
     await screen.findByTestId('dashboard-page')
-    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
-    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
-    expect(main.style.paddingBlockStart).toBe('33px')
-    expect(header.style.height).toBe('33px')
+    expectLayoutSize(defaultLayout.container, '38px', '34px')
+
+    defaultLayout.rerenderDensity(true)
+    await waitFor(() => expectLayoutSize(defaultLayout.container, '33px', '29px'))
+    defaultLayout.unmount()
+
+    const compactLayout = renderLayout(true)
+    await screen.findByTestId('dashboard-page')
+    expectLayoutSize(compactLayout.container, '33px', '29px')
+
+    compactLayout.rerenderDensity(false)
+    await waitFor(() => expectLayoutSize(compactLayout.container, '38px', '34px'))
   })
 
   it('保持超高业务组完整，并由整个 Drawer 纵向滚动', async () => {

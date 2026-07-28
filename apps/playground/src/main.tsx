@@ -18,7 +18,6 @@ import { playgroundLocales } from './playgroundIntl'
 import type { PlaygroundLocale } from './playgroundIntl'
 import { createRouterCore } from '@zby/router-core'
 import { appRouters } from './routes'
-import PlaygroundHeaderActions from './PlaygroundHeaderActions'
 
 const routers = createRouterCore<ProLayoutRoute>({
   routes: appRouters,
@@ -89,7 +88,6 @@ function PlaygroundApp() {
                     appearance={themePreference.appearance}
                     onChange={themePreference.setValue}
                   />
-                  <PlaygroundHeaderActions />
                 </>
               ),
             }}

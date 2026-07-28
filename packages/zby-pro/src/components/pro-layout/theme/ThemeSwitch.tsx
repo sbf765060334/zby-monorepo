@@ -32,7 +32,6 @@ function ThemeIcon() {
         focusable="false"
         data-icon="theme"
       >
-        <title>Theme Icon</title>
         <g fillRule="evenodd">
           <g fillRule="nonzero">
             <path d={THEME_ICON_PATH} />
@@ -177,38 +176,37 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
 
   // PointerDown 比 click 更早，确保明暗动画能记录到用户实际点击位置。
   return (
-    <Tooltip title={title}>
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        destroyOnHidden
-        menu={{
-          items,
-          onClick: ({ key }) => {
-            if (key === 'mode:auto' || key === 'mode:light' || key === 'mode:dark') {
-              selectMode(key.slice('mode:'.length) as ProThemeMode)
-              return
-            }
+    <Dropdown
+      trigger={['click']}
+      placement="bottomRight"
+      destroyOnHidden
+      menu={{
+        items,
+        onClick: ({ key }) => {
+          if (key === 'mode:auto' || key === 'mode:light' || key === 'mode:dark') {
+            selectMode(key.slice('mode:'.length) as ProThemeMode)
+            return
+          }
 
-            if (key === 'density:default' || key === 'density:compact') {
-              // 密度切换会改变大量几何尺寸，直接更新以避免圆形快照动画产生跳动。
-              onChange({
-                ...value,
-                density: key === 'density:compact' ? 'compact' : 'default',
-              })
-            }
-          },
-        }}
-      >
-        <Button
-          type="text"
-          size="small"
-          className={clsx(`${prefixCls}-theme-trigger`, className)}
-          icon={<ThemeIcon />}
-          aria-label={title}
-          onPointerDown={recordThemeSwitchPoint}
-        />
-      </Dropdown>
-    </Tooltip>
+          if (key === 'density:default' || key === 'density:compact') {
+            // 密度切换会改变大量几何尺寸，直接更新以避免圆形快照动画产生跳动。
+            onChange({
+              ...value,
+              density: key === 'density:compact' ? 'compact' : 'default',
+            })
+          }
+        },
+      }}
+    >
+      <Button
+        type="text"
+        size="small"
+        className={clsx(`${prefixCls}-theme-trigger`, className)}
+        icon={<ThemeIcon />}
+        aria-label={title}
+        title={title}
+        onPointerDown={recordThemeSwitchPoint}
+      />
+    </Dropdown>
   )
 }

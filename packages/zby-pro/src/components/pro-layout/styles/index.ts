@@ -33,11 +33,27 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabCurveOffset = `calc(${tabCurveSize} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
+  const geometryTokenKey = [
+    token.controlHeightSM,
+    token.controlHeightLG,
+    token.marginXXS,
+    token.borderRadiusLG,
+    token.lineWidthBold,
+    token.fontSize,
+  ].join('-')
+  const geometryClassName = `${prefixCls}-geometry-${geometryTokenKey.replace(/\./g, '_')}`
+  const layoutRootCls = `${componentCls}.${geometryClassName}`
 
+  // cssVar 模式的缓存标识不随算法变化，缓存路径和根类名共同隔离派生出的数值尺寸。
   useStyleRegister(
-    { theme, token: styleToken, hashId, path: ['zby-pro', 'pro-layout', prefixCls] },
+    {
+      theme,
+      token,
+      hashId,
+      path: ['zby-pro', 'pro-layout', prefixCls, geometryTokenKey],
+    },
     () => ({
-      [componentCls]: {
+      [layoutRootCls]: {
         display: 'flex',
         width: '100%',
         height: '100vh',
@@ -180,7 +196,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             minWidth: 0,
             margin: 0,
             marginBlockStart: 2,
-            fontSize: styleToken.fontSizeSM,
+            fontSize: styleToken.fontSize,
             lineHeight: styleToken.lineHeight,
           },
 
@@ -944,5 +960,5 @@ export default function useProLayoutStyles(prefixCls: string) {
     }),
   )
 
-  return { hashId, headerHeight }
+  return { geometryClassName, hashId, headerHeight }
 }
