@@ -293,9 +293,9 @@ export default function useProLayoutStyles(prefixCls: string) {
             color: styleToken.colorTextTertiary,
             fontSize: styleToken.fontSize,
             lineHeight: styleToken.lineHeight,
-            transition: `background ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, border-color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
+            transition: 'none',
 
-            '&:hover, &:active, &:focus, &:focus-visible': {
+            '&:hover, &:focus-visible': {
               borderColor: 'transparent',
               background: styleToken.colorFillTertiary,
               color: styleToken.colorText,
@@ -320,7 +320,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             background: styleToken.colorBgLayout,
             color: styleToken.colorTextSecondary,
 
-            '&:hover, &:active, &:focus, &:focus-visible': {
+            '&:hover, &:focus-visible': {
               borderColor: 'transparent',
               background: styleToken.colorBgLayout,
               color: styleToken.colorTextSecondary,
@@ -432,7 +432,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          transition: `left ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}, color ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}`,
+          transition: `left ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
         [`.ant-tabs-tab:hover ${componentCls}-tab-label`]: { left: 0 },
         [`${componentCls}-tab-label-fixed`]: { left: 0 },
