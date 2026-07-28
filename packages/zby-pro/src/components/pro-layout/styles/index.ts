@@ -247,6 +247,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           minWidth: 0,
           height: '100%',
           maxHeight: headerHeight,
+          marginInlineStart: styleToken.marginXS,
           flex: 1,
           alignItems: 'center',
           overflow: 'hidden',
