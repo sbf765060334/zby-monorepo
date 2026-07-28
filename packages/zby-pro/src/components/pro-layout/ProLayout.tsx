@@ -36,7 +36,7 @@ function ProLayout(props: ProLayoutProps) {
     title,
   } = props
   const currentRoutes = useRouterCoreSelector((state) => state.currentRoutes)
-  const { geometryClassName, hashId, headerHeight } = useProLayoutStyles(prefixCls)
+  const { hashId, headerHeight, layoutCSSVariables } = useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
@@ -70,19 +70,13 @@ function ProLayout(props: ProLayoutProps) {
 
   return (
     <Layout
-      className={clsx(
-        prefixCls,
-        geometryClassName,
-        hashId,
-        classNames?.root,
-        rootClassName,
-        className,
-      )}
+      className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
       style={{
         minHeight: '100vh',
         viewTransitionName: PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME,
         ...styles?.root,
         ...style,
+        ...layoutCSSVariables,
       }}
       data-current-pathname={currentPathname}
     >

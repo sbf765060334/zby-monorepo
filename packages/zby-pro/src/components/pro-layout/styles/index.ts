@@ -30,30 +30,40 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
   const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
-  const tabCurveOffset = `calc(${tabCurveSize} * -1)`
+  const headerHeightVar = `--${prefixCls}-header-height`
+  const headerTabHeightVar = `--${prefixCls}-header-tab-height`
+  const headerIdleTabHeightVar = `--${prefixCls}-header-idle-tab-height`
+  const tabCurveSizeVar = `--${prefixCls}-tab-curve-size`
+  const tabTrailingPaddingVar = `--${prefixCls}-tab-trailing-padding`
+  const tabSplitHeightVar = `--${prefixCls}-tab-split-height`
+  const layoutCSSVariables = {
+    [headerHeightVar]: unit(headerHeight),
+    [headerTabHeightVar]: unit(headerTabHeight),
+    [headerIdleTabHeightVar]: unit(headerIdleTabHeight),
+    [tabCurveSizeVar]: tabCurveSize,
+    [tabTrailingPaddingVar]: tabTrailingPadding,
+    [tabSplitHeightVar]: unit(tabSplitHeight),
+  }
+  const headerHeightStyle = `var(${headerHeightVar})`
+  const headerTabHeightStyle = `var(${headerTabHeightVar})`
+  const headerIdleTabHeightStyle = `var(${headerIdleTabHeightVar})`
+  const tabCurveSizeStyle = `var(${tabCurveSizeVar})`
+  const tabTrailingPaddingStyle = `var(${tabTrailingPaddingVar})`
+  const tabSplitHeightStyle = `var(${tabSplitHeightVar})`
+  const tabCurveOffset = `calc(${tabCurveSizeStyle} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
-  const geometryTokenKey = [
-    token.controlHeightSM,
-    token.controlHeightLG,
-    token.marginXXS,
-    token.borderRadiusLG,
-    token.lineWidthBold,
-    token.fontSize,
-  ].join('-')
-  const geometryClassName = `${prefixCls}-geometry-${geometryTokenKey.replace(/\./g, '_')}`
-  const layoutRootCls = `${componentCls}.${geometryClassName}`
 
-  // cssVar 模式的缓存标识不随算法变化，缓存路径和根类名共同隔离派生出的数值尺寸。
+  // 派生尺寸由根节点 CSS 变量承载，主题切换时无需重新注册整份样式。
   useStyleRegister(
     {
       theme,
-      token,
+      token: styleToken,
       hashId,
-      path: ['zby-pro', 'pro-layout', prefixCls, geometryTokenKey],
+      path: ['zby-pro', 'pro-layout', prefixCls],
     },
     () => ({
-      [layoutRootCls]: {
+      [componentCls]: {
         display: 'flex',
         width: '100%',
         height: '100vh',
@@ -250,7 +260,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           zIndex: 1,
           display: 'flex',
           width: '100%',
-          height: headerHeight,
+          height: headerHeightStyle,
           boxSizing: 'border-box',
           alignItems: 'center',
           paddingInline: styleToken.paddingSM,
@@ -262,7 +272,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           display: 'flex',
           minWidth: 0,
           height: '100%',
-          maxHeight: headerHeight,
+          maxHeight: headerHeightStyle,
           marginInlineStart: styleToken.marginXS,
           flex: 1,
           alignItems: 'center',
@@ -272,29 +282,29 @@ export default function useProLayoutStyles(prefixCls: string) {
           [`.ant-tabs`]: {
             maxWidth: '100%',
             height: '100%',
-            maxHeight: headerHeight,
+            maxHeight: headerHeightStyle,
           },
           [`.ant-tabs-nav`]: {
             height: '100%',
-            maxHeight: headerHeight,
+            maxHeight: headerHeightStyle,
             margin: 0,
             alignItems: 'flex-end',
             '&::before': { borderBlockEnd: 0 },
           },
           [`.ant-tabs-nav-wrap, .ant-tabs-nav-list, .ant-tabs-nav-operations`]: {
             height: '100%',
-            maxHeight: headerHeight,
+            maxHeight: headerHeightStyle,
             alignItems: 'flex-end',
           },
           [`.ant-tabs-nav-list`]: {
-            paddingInlineStart: tabCurveSize,
-            paddingInlineEnd: tabTrailingPadding,
+            paddingInlineStart: tabCurveSizeStyle,
+            paddingInlineEnd: tabTrailingPaddingStyle,
           },
           [`.ant-tabs-nav-more`]: {
             display: 'inline-flex',
-            width: token.controlHeightSM,
-            minWidth: token.controlHeightSM,
-            height: token.controlHeightSM,
+            width: styleToken.controlHeightSM,
+            minWidth: styleToken.controlHeightSM,
+            height: styleToken.controlHeightSM,
             alignSelf: 'center',
             alignItems: 'center',
             justifyContent: 'center',
@@ -313,8 +323,8 @@ export default function useProLayoutStyles(prefixCls: string) {
           },
           [`.ant-tabs-tab`]: {
             display: 'inline-flex',
-            height: headerIdleTabHeight,
-            minHeight: headerIdleTabHeight,
+            height: headerIdleTabHeightStyle,
+            minHeight: headerIdleTabHeightStyle,
             boxSizing: 'border-box',
             marginBlock: styleToken.marginXXS,
             marginInline: 0,
@@ -350,12 +360,12 @@ export default function useProLayoutStyles(prefixCls: string) {
           },
           [`.ant-tabs-tab-active`]: {
             zIndex: 1,
-            height: headerIdleTabHeight,
-            minHeight: headerIdleTabHeight,
+            height: headerIdleTabHeightStyle,
+            minHeight: headerIdleTabHeightStyle,
             margin: 0,
             borderColor: 'transparent',
             borderBlockEndColor: `${styleToken.colorBgLayout} !important`,
-            borderRadius: `${tabCurveSize} ${tabCurveSize} 0 0 !important`,
+            borderRadius: `${tabCurveSizeStyle} ${tabCurveSizeStyle} 0 0 !important`,
             background: styleToken.colorBgLayout,
             color: styleToken.colorText,
 
@@ -411,35 +421,35 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-tab-node-active`]: {
           zIndex: 1,
-          height: headerTabHeight,
+          height: headerTabHeightStyle,
           alignSelf: 'flex-end',
           alignItems: 'flex-start',
           overflow: 'visible',
-          borderRadius: `${tabCurveSize} ${tabCurveSize} 0 0`,
+          borderRadius: `${tabCurveSizeStyle} ${tabCurveSizeStyle} 0 0`,
           background: styleToken.colorBgLayout,
 
           '&::before, &::after': {
             position: 'absolute',
             insetBlockEnd: 0,
-            width: tabCurveSize,
-            height: tabCurveSize,
+            width: tabCurveSizeStyle,
+            height: tabCurveSizeStyle,
             content: '""',
             pointerEvents: 'none',
           },
           '&::before': {
             insetInlineStart: tabCurveOffset,
-            background: `radial-gradient(circle at ${tabAdjacentCurveStartCenter} 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+            background: `radial-gradient(circle at ${tabAdjacentCurveStartCenter} 0, transparent ${tabCurveSizeStyle}, ${styleToken.colorBgLayout} ${tabCurveSizeStyle})`,
           },
           '&::after': {
             insetInlineEnd: tabCurveOffset,
-            background: `radial-gradient(circle at ${tabAdjacentCurveEndCenter} 0, transparent ${tabCurveSize}, ${styleToken.colorBgLayout} ${tabCurveSize})`,
+            background: `radial-gradient(circle at ${tabAdjacentCurveEndCenter} 0, transparent ${tabCurveSizeStyle}, ${styleToken.colorBgLayout} ${tabCurveSizeStyle})`,
           },
         },
         [`${componentCls}-tab-node-dropping`]: { opacity: 0.72 },
         [`${componentCls}-tab-split`]: {
           position: 'relative',
           width: tabSplitWidth,
-          height: headerIdleTabHeight,
+          height: headerIdleTabHeightStyle,
           marginBlock: styleToken.marginXXS,
           flexShrink: 0,
           alignSelf: 'flex-end',
@@ -450,7 +460,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             insetBlockStart: '50%',
             insetInline: 0,
             width: styleToken.lineWidth,
-            height: tabSplitHeight,
+            height: tabSplitHeightStyle,
             marginInline: 'auto',
             background: styleToken.colorBorderSecondary,
             content: '""',
@@ -960,5 +970,5 @@ export default function useProLayoutStyles(prefixCls: string) {
     }),
   )
 
-  return { geometryClassName, hashId, headerHeight }
+  return { hashId, headerHeight, layoutCSSVariables }
 }

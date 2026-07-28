@@ -207,6 +207,7 @@ describe('ReactRouterProLayout', () => {
       activeNodeHeight: string,
     ) => {
       const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+      const root = container.querySelector('.zby-pro-layout') as HTMLElement
       const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
       const tabs = container.querySelector('.zby-pro-layout-tabs') as HTMLElement
       const activeNode = container.querySelector(
@@ -218,8 +219,18 @@ describe('ReactRouterProLayout', () => {
 
       expect(main.style.paddingBlockStart).toBe(headerHeight)
       expect(header.style.height).toBe(headerHeight)
-      expect(getComputedStyle(tabs).maxHeight).toBe(headerHeight)
-      expect(getComputedStyle(activeNode).height).toBe(activeNodeHeight)
+      expect(root.style.getPropertyValue('--zby-pro-layout-header-height')).toBe(
+        headerHeight,
+      )
+      expect(root.style.getPropertyValue('--zby-pro-layout-header-tab-height')).toBe(
+        activeNodeHeight,
+      )
+      expect(getComputedStyle(tabs).maxHeight).toBe(
+        'var(--zby-pro-layout-header-height)',
+      )
+      expect(getComputedStyle(activeNode).height).toBe(
+        'var(--zby-pro-layout-header-tab-height)',
+      )
       expect(getComputedStyle(siderLabel).fontSize).toBe(getComputedStyle(main).fontSize)
     }
 
