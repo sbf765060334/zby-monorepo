@@ -137,7 +137,7 @@ describe('ReactRouterProLayout', () => {
     const menuContainer = container.querySelector('.zby-pro-layout-sider-menu-container')
     expect(main.style.paddingBlockStart).toBe('38px')
     expect(header.style.height).toBe('38px')
-    expect(header.style.paddingInlineStart).toBe('60px')
+    expect(header.style.paddingInlineStart).toBe('68px')
     expect(menuContainer?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
     const siderMenuScroll = menuContainer?.querySelector(
       '.zby-pro-layout-sider-menu-scroll',
@@ -160,7 +160,7 @@ describe('ReactRouterProLayout', () => {
     expect(menuGroupInner.style.maxHeight).toBe('')
     expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(0)
     const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
-    expect(drawerRoot.style.left).toBe('60px')
+    expect(drawerRoot.style.left).toBe('68px')
     expect(drawerRoot.style.overflow).toBe('hidden')
     expect(drawerRoot.style.zIndex).toBe('999')
     expect(menuContainer?.querySelector('.zby-pro-layout-menu-drawer')).toBeTruthy()
@@ -227,10 +227,16 @@ describe('ReactRouterProLayout', () => {
       container: HTMLElement,
       headerHeight: string,
       activeNodeHeight: string,
+      siderWidth: string,
+      siderItemHeight: string,
+      siderIconSize: string,
     ) => {
       const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
       const root = container.querySelector('.zby-pro-layout') as HTMLElement
       const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+      const sider = container.querySelector('.zby-pro-layout-sider') as HTMLElement
+      const siderItem = container.querySelector('.zby-pro-layout-sider-item') as HTMLElement
+      const siderIcon = container.querySelector('.zby-pro-layout-sider-item dt') as HTMLElement
       const tabs = container.querySelector('.zby-pro-layout-tabs') as HTMLElement
       const activeNode = container.querySelector(
         '.zby-pro-layout-tab-node-active',
@@ -240,12 +246,22 @@ describe('ReactRouterProLayout', () => {
       ) as HTMLElement
 
       expect(main.style.paddingBlockStart).toBe(headerHeight)
+      expect(main.style.paddingInlineStart).toBe(siderWidth)
       expect(header.style.height).toBe(headerHeight)
+      expect(header.style.paddingInlineStart).toBe(siderWidth)
+      expect(sider.style.width).toBe(siderWidth)
       expect(root.style.getPropertyValue('--zby-pro-layout-header-height')).toBe(
         headerHeight,
       )
       expect(root.style.getPropertyValue('--zby-pro-layout-header-tab-height')).toBe(
         activeNodeHeight,
+      )
+      expect(root.style.getPropertyValue('--zby-pro-layout-sider-width')).toBe(siderWidth)
+      expect(root.style.getPropertyValue('--zby-pro-layout-sider-item-height')).toBe(
+        siderItemHeight,
+      )
+      expect(root.style.getPropertyValue('--zby-pro-layout-sider-icon-size')).toBe(
+        siderIconSize,
       )
       expect(getComputedStyle(tabs).maxHeight).toBe(
         'var(--zby-pro-layout-header-height)',
@@ -253,23 +269,49 @@ describe('ReactRouterProLayout', () => {
       expect(getComputedStyle(activeNode).height).toBe(
         'var(--zby-pro-layout-header-tab-height)',
       )
+      expect(getComputedStyle(siderItem).width).toBe(
+        'var(--zby-pro-layout-sider-width)',
+      )
+      expect(getComputedStyle(siderItem).height).toBe(
+        'var(--zby-pro-layout-sider-item-height)',
+      )
+      expect(getComputedStyle(siderIcon).fontSize).toBe(
+        'var(--zby-pro-layout-sider-icon-size)',
+      )
       expect(getComputedStyle(siderLabel).fontSize).toBe(getComputedStyle(main).fontSize)
     }
 
     const defaultLayout = renderLayout(false)
     await screen.findByTestId('dashboard-page')
-    expectLayoutSize(defaultLayout.container, '38px', '34px')
+    expectLayoutSize(defaultLayout.container, '38px', '34px', '68px', '60px', '24px')
+
+    const orderMenu = screen.getByRole('button', { name: /订单管理/ })
+    fireEvent.click(orderMenu)
+    await screen.findByRole('dialog')
+    const getDrawerRoot = () => document.querySelector(
+      '.zby-pro-layout-menu-drawer.ant-drawer',
+    ) as HTMLElement
+    expect(getDrawerRoot().style.left).toBe('68px')
+    fireEvent.click(orderMenu)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
     defaultLayout.rerenderDensity(true)
-    await waitFor(() => expectLayoutSize(defaultLayout.container, '33px', '29px'))
+    await waitFor(() => {
+      expectLayoutSize(defaultLayout.container, '33px', '29px', '60px', '52px', '20px')
+    })
+    fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
+    await screen.findByRole('dialog')
+    expect(getDrawerRoot().style.left).toBe('60px')
     defaultLayout.unmount()
 
     const compactLayout = renderLayout(true)
     await screen.findByTestId('dashboard-page')
-    expectLayoutSize(compactLayout.container, '33px', '29px')
+    expectLayoutSize(compactLayout.container, '33px', '29px', '60px', '52px', '20px')
 
     compactLayout.rerenderDensity(false)
-    await waitFor(() => expectLayoutSize(compactLayout.container, '38px', '34px'))
+    await waitFor(() => {
+      expectLayoutSize(compactLayout.container, '38px', '34px', '68px', '60px', '24px')
+    })
   })
 
   it('保持超高业务组完整，并由整个 Drawer 纵向滚动', async () => {

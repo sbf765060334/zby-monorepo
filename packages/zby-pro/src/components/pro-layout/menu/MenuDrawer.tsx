@@ -289,6 +289,7 @@ function MenuDrawer(props: MenuDrawerProps) {
         rootStyle={{
           left,
           overflow: 'hidden',
+          transition: `left ${token.motionDurationMid} ${token.motionEaseInOut}`,
           // Drawer 通过 Portal 挂到 document.body，必须显式复制测量层的排版上下文，
           // 否则应用容器与 body 的字体或行高不同会导致“测得高度”和“显示高度”不一致。
           fontFamily: token.fontFamily,

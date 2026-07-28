@@ -2,6 +2,7 @@ import { useStyleRegister } from '@ant-design/cssinjs'
 import { theme as antdTheme } from 'antd'
 
 const unit = (value: number | string) => typeof value === 'number' ? `${value}px` : value
+const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
 
 /** 注册与 Shuzhi Drawer 模式一致的 ProLayout token 驱动样式。 */
 export default function useProLayoutStyles(prefixCls: string) {
@@ -17,6 +18,14 @@ export default function useProLayoutStyles(prefixCls: string) {
     token.controlHeightSM,
     headerHeight - token.marginXXS * 2,
   )
+  // 侧栏尺寸沿用 Ant Design 当前算法的尺寸 token，并统一对齐到 4px 网格。
+  // 默认算法得到 68/60/24，紧凑算法得到 60/52/20。
+  const siderWidth = alignToGrid(
+    token.controlHeightLG + token.paddingMD + token.paddingXXS * 2,
+  )
+  const siderItemHeight = alignToGrid(token.controlHeightLG + token.paddingMD)
+  const siderItemPaddingBlock = (siderItemHeight - token.controlHeightLG) / 2
+  const siderIconSize = token.fontSizeHeading3
   const fixedIconWidth = unit(styleToken.fontSize)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
   const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) / -2)`
@@ -36,6 +45,10 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabCurveSizeVar = `--${prefixCls}-tab-curve-size`
   const tabTrailingPaddingVar = `--${prefixCls}-tab-trailing-padding`
   const tabSplitHeightVar = `--${prefixCls}-tab-split-height`
+  const siderWidthVar = `--${prefixCls}-sider-width`
+  const siderItemHeightVar = `--${prefixCls}-sider-item-height`
+  const siderItemPaddingBlockVar = `--${prefixCls}-sider-item-padding-block`
+  const siderIconSizeVar = `--${prefixCls}-sider-icon-size`
   const layoutCSSVariables = {
     [headerHeightVar]: unit(headerHeight),
     [headerTabHeightVar]: unit(headerTabHeight),
@@ -43,6 +56,10 @@ export default function useProLayoutStyles(prefixCls: string) {
     [tabCurveSizeVar]: tabCurveSize,
     [tabTrailingPaddingVar]: tabTrailingPadding,
     [tabSplitHeightVar]: unit(tabSplitHeight),
+    [siderWidthVar]: unit(siderWidth),
+    [siderItemHeightVar]: unit(siderItemHeight),
+    [siderItemPaddingBlockVar]: unit(siderItemPaddingBlock),
+    [siderIconSizeVar]: unit(siderIconSize),
   }
   const headerHeightStyle = `var(${headerHeightVar})`
   const headerTabHeightStyle = `var(${headerTabHeightVar})`
@@ -50,6 +67,10 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabCurveSizeStyle = `var(${tabCurveSizeVar})`
   const tabTrailingPaddingStyle = `var(${tabTrailingPaddingVar})`
   const tabSplitHeightStyle = `var(${tabSplitHeightVar})`
+  const siderWidthStyle = `var(${siderWidthVar})`
+  const siderItemHeightStyle = `var(${siderItemHeightVar})`
+  const siderItemPaddingBlockStyle = `var(${siderItemPaddingBlockVar})`
+  const siderIconSizeStyle = `var(${siderIconSizeVar})`
   const tabCurveOffset = `calc(${tabCurveSizeStyle} * -1)`
   const drawerColumnWidth = `calc(${unit(styleToken.controlHeightLG)} * 5 + ${unit(styleToken.sizeXL)})`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
@@ -151,9 +172,10 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-sider-item`]: {
           position: 'relative',
           display: 'block',
-          width: 60,
+          width: siderWidthStyle,
+          height: siderItemHeightStyle,
           boxSizing: 'border-box',
-          paddingBlock: 10,
+          paddingBlock: siderItemPaddingBlockStyle,
           paddingInline: 0,
           border: 0,
           background: 'transparent',
@@ -197,8 +219,8 @@ export default function useProLayoutStyles(prefixCls: string) {
             margin: 0,
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 24,
-            lineHeight: '24px',
+            fontSize: siderIconSizeStyle,
+            lineHeight: siderIconSizeStyle,
           },
 
           dd: {
@@ -238,7 +260,7 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-system-trigger`]: {
           display: 'flex',
           width: '100%',
-          height: 60,
+          height: siderItemHeightStyle,
           flex: '0 0 auto',
           alignItems: 'center',
           justifyContent: 'center',
@@ -246,7 +268,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           borderBlockStart: '1px solid #30354f',
           background: 'transparent',
           color: '#868a9c',
-          fontSize: 24,
+          fontSize: siderIconSizeStyle,
           cursor: 'pointer',
           transition: `color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
 
@@ -970,5 +992,5 @@ export default function useProLayoutStyles(prefixCls: string) {
     }),
   )
 
-  return { hashId, headerHeight, layoutCSSVariables }
+  return { hashId, headerHeight, siderWidth, layoutCSSVariables }
 }

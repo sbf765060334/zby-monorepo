@@ -17,8 +17,6 @@ import type {
 import MenuDrawer from './MenuDrawer'
 import SystemSwitcher from './SystemSwitcher'
 
-/** 左侧品牌图标栏的固定宽度，同时也是 Drawer 相对视口的左侧偏移量。 */
-const SIDER_WIDTH = 60
 /** 一级菜单 hover intent 的停留阈值；短暂掠过不会切换已打开的 Drawer。 */
 const MENU_HOVER_DELAY = 200
 
@@ -31,6 +29,8 @@ export interface IconDrawerMenuProps {
   logo?: ReactNode | (() => ReactNode)
   /** 图标栏底部的外部系统切换入口；空数组时不渲染入口。 */
   systemList?: ProLayoutSystemItem[]
+  /** 当前主题算法派生的侧栏宽度，同时作为 Drawer 的左侧偏移量。 */
+  siderWidth: number
   /** ProLayout 各语义区域的自定义类名。 */
   classNames?: ProLayoutClassNames
   /** ProLayout 各语义区域的自定义内联样式。 */
@@ -49,7 +49,15 @@ export interface IconDrawerMenuProps {
  * 最后一次显示的菜单内容，避免 Drawer 闪回当前页面所属目录。
  */
 function IconDrawerMenu(props: IconDrawerMenuProps) {
-  const { classNames, hashId, logo, prefixCls, styles, systemList = [] } = props
+  const {
+    classNames,
+    hashId,
+    logo,
+    prefixCls,
+    siderWidth,
+    styles,
+    systemList = [],
+  } = props
   const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
@@ -152,10 +160,10 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
       {/* message.useMessage 的 holder 必须留在当前主题上下文中，提示层才能继承正确 token。 */}
       {messageContextHolder}
       <Layout.Sider
-        width={SIDER_WIDTH}
+        width={siderWidth}
         // 图标栏始终使用 Ant Design 的折叠 Sider 形态，展开内容统一交给 MenuDrawer。
         collapsed
-        collapsedWidth={SIDER_WIDTH}
+        collapsedWidth={siderWidth}
         className={clsx(`${prefixCls}-sider`, classNames?.sider)}
         style={styles?.sider}
       >
@@ -273,7 +281,7 @@ function IconDrawerMenu(props: IconDrawerMenuProps) {
             <MenuDrawer
               prefixCls={prefixCls}
               hashId={hashId}
-              left={SIDER_WIDTH}
+              left={siderWidth}
               open={drawerOpen}
               onClose={closeDrawer}
               displayRoutes={displayRoutes}

@@ -36,7 +36,7 @@ function ProLayout(props: ProLayoutProps) {
     title,
   } = props
   const currentRoutes = useRouterCoreSelector((state) => state.currentRoutes)
-  const { hashId, headerHeight, layoutCSSVariables } = useProLayoutStyles(prefixCls)
+  const { hashId, headerHeight, siderWidth, layoutCSSVariables } = useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
@@ -86,6 +86,7 @@ function ProLayout(props: ProLayoutProps) {
           hashId={hashId}
           logo={header?.logo}
           systemList={systemList}
+          siderWidth={siderWidth}
           classNames={classNames}
           styles={styles}
         />
@@ -95,7 +96,7 @@ function ProLayout(props: ProLayoutProps) {
         style={{
           width: '100%',
           minWidth: minimumContentWidth,
-          paddingInlineStart: noBar ? 0 : 60,
+          paddingInlineStart: noBar ? 0 : siderWidth,
           paddingBlockStart: noBar ? 0 : headerHeight,
         }}
       >
@@ -105,7 +106,7 @@ function ProLayout(props: ProLayoutProps) {
             hashId={hashId}
             height={headerHeight}
             extra={header?.extra}
-            paddingLeft={60}
+            paddingLeft={siderWidth}
             classNames={classNames}
             styles={styles}
           />
