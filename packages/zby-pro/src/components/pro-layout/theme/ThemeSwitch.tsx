@@ -177,7 +177,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
   // PointerDown 比 click 更早，确保明暗动画能记录到用户实际点击位置。
   return (
     <Dropdown
-      trigger={['click']}
+      trigger={['hover']}
       placement="bottomRight"
       destroyOnHidden
       menu={{

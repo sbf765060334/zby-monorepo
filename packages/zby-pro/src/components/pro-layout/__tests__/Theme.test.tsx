@@ -76,6 +76,8 @@ describe('ProThemeSwitch', () => {
     const themeTrigger = screen.getByRole('button', { name: '主题设置' })
     expect(themeTrigger.querySelector('svg[data-icon="theme"]')).toBeTruthy()
     fireEvent.click(themeTrigger)
+    expect(screen.queryByText('跟随系统')).toBeNull()
+    fireEvent.mouseEnter(themeTrigger)
     expect(await screen.findByText('跟随系统')).toBeTruthy()
     expect(screen.getByText('亮色主题')).toBeTruthy()
     expect(screen.getByText('暗黑主题')).toBeTruthy()
@@ -163,7 +165,7 @@ function renderThemeFixture(storageKey: string, defaultValue?: ProThemePreferenc
 }
 
 async function openThemeMenu() {
-  fireEvent.click(screen.getByRole('button', { name: '主题设置' }))
+  fireEvent.mouseEnter(screen.getByRole('button', { name: '主题设置' }))
   await waitFor(() => {
     const menu = screen.getByRole('menu')
     expect(menu.parentElement?.style.pointerEvents).not.toBe('none')
