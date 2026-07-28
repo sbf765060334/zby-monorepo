@@ -178,6 +178,7 @@ The most commonly rendered fields in `RouterCoreState` are:
 
 | Field | Meaning |
 | --- | --- |
+| `navigationStatus` | Location settlement phase: `bootstrapping`, `redirecting`, or `settled`; only settled locations should resolve to 403/404 |
 | `currentPathname` | Latest pathname confirmed by the host |
 | `currentRoutes` | Current root-to-leaf route chain |
 | `currentSelectedPath` | Concrete route paths used for menu selection |
@@ -265,7 +266,8 @@ function Pages() {
 
 1. Binds React Router's `navigate` as the core host.
 2. Sends every confirmed pathname, search, and hash to `syncLocation`.
-3. Unbinds the host when the adapter unmounts.
+3. Performs root and directory redirects in an effect, after React Router installs its history listener.
+4. Unbinds the host on unmount; an uncommitted redirect is retried when a new host binds.
 
 `useRouterCoreCreateHref` returns a render-time function for native links. It preserves BrowserRouter basenames and HashRouter prefixes:
 

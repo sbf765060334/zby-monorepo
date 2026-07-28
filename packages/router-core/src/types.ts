@@ -97,6 +97,12 @@ export interface RouterLocation {
   hash: string
 }
 
+/** 当前宿主地址是否已经完成 Core 落点确认。 */
+export type RouterNavigationStatus =
+  | 'bootstrapping'
+  | 'redirecting'
+  | 'settled'
+
 /** 宿主路由可以接受的最小导航目标。 */
 export type RouterNavigateTarget =
   | string
@@ -111,6 +117,12 @@ export type RouterNavigate = (
 export interface RouterHost {
   /** core 执行最终地址变更时调用的底层导航能力。 */
   navigate: RouterNavigate
+  /**
+   * 根路径或目录落点使用的重定向能力。
+   *
+   * React Adapter 会把它转换为 effect 中的导航；其它宿主可以省略并复用 navigate。
+   */
+  redirect?: RouterNavigate
 }
 
 /** 页签关闭前守卫；只有所有守卫都明确返回 true 才允许关闭。 */
@@ -238,6 +250,8 @@ export interface RouterRuntimeOptions {
  * @typeParam Route currentRoutes 与 pages 中保留的调用方路由节点类型。
  */
 export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
+  /** 初始化、重定向或最终落定状态；403/404 只能在 settled 后判断。 */
+  readonly navigationStatus: RouterNavigationStatus
   /** 最近一次由宿主同步的 pathname。 */
   readonly currentPathname: string
   /** 当前 pathname 从根到叶子的路由层级。 */

@@ -29,6 +29,9 @@ function PageContent(props: PageContentProps) {
   const pathname = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentPathname,
   )
+  const navigationStatus = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.navigationStatus,
+  )
   const authorizedLeaf = useMemo(
     () => router.registry.resolveLeafRoute(pathname, { withinAuth: true }),
     [pathname, router],
@@ -61,7 +64,7 @@ function PageContent(props: PageContentProps) {
           style={pageStyle}
         />
       ))}
-      {!isPage ? (
+      {navigationStatus === 'settled' && !isPage ? (
         <ExceptionContent
           prefixCls={prefixCls}
           className={pageClassName}

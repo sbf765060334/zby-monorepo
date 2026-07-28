@@ -507,9 +507,10 @@ describe('createRouterCore', () => {
     router.syncLocation({ pathname: '/settings', search: '', hash: '' })
 
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    expect(navigate).toHaveBeenCalledWith('/settings/profile', { replace: true })
     // 目录只发起宿主导航；最终叶子地址回传前不清空当前可见页面。
     expect(router.getState().activePage).toBe('/dashboard')
+    expect(router.getState().navigationStatus).toBe('redirecting')
 
     // StrictMode 重放或 Adapter 重复通知同一目录时不得重复导航。
     router.syncLocation({ pathname: '/settings', search: '?source=menu', hash: '' })
@@ -518,18 +519,47 @@ describe('createRouterCore', () => {
     router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
     expect(router.getState().activeTabKey).toBe('/settings/profile')
     expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().navigationStatus).toBe('settled')
   })
 
-  it('bootstraps the root location once through syncLocation', () => {
+  it('requests an effect redirect for the root location and settles on confirmation', () => {
     const navigate = vi.fn()
+    const redirect = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
-    router.bindHost({ navigate })
+    router.bindHost({ navigate, redirect })
+
+    expect(router.getState().navigationStatus).toBe('bootstrapping')
 
     router.syncLocation({ pathname: '/', search: '', hash: '' })
     router.syncLocation({ pathname: '/', search: '?replayed=1', hash: '' })
 
-    expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/dashboard')
+    expect(redirect).toHaveBeenCalledOnce()
+    expect(redirect).toHaveBeenCalledWith('/dashboard', { replace: true })
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState().navigationStatus).toBe('redirecting')
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(router.getState().activePage).toBe('/dashboard')
+  })
+
+  it('retries an uncommitted redirect after the host is rebound', () => {
+    const firstRedirect = vi.fn()
+    const secondRedirect = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+
+    router.bindHost({ navigate: vi.fn(), redirect: firstRedirect })
+    router.syncLocation({ pathname: '/', search: '', hash: '' })
+    expect(firstRedirect).toHaveBeenCalledOnce()
+    expect(router.getState().navigationStatus).toBe('redirecting')
+
+    router.bindHost(null)
+    expect(router.getState().navigationStatus).toBe('bootstrapping')
+
+    router.bindHost({ navigate: vi.fn(), redirect: secondRedirect })
+    router.syncLocation({ pathname: '/', search: '', hash: '' })
+    expect(secondRedirect).toHaveBeenCalledWith('/dashboard', { replace: true })
+    expect(router.getState().navigationStatus).toBe('redirecting')
   })
 
   it('retries a deferred directory bootstrap after the host is bound', () => {
@@ -544,7 +574,7 @@ describe('createRouterCore', () => {
     router.syncLocation({ pathname: '/settings', search: '', hash: '' })
 
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    expect(navigate).toHaveBeenCalledWith('/settings/profile', { replace: true })
   })
 
   it('clears an older bootstrap marker when a later pathname is deferred', () => {

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useHref, useLocation, useNavigate } from 'react-router-dom'
 
 import type { ReactNode } from 'react'
@@ -31,6 +31,13 @@ export function RouterCoreReactRouterAdapter(
   const location = useLocation()
   const reactRouterNavigate = useNavigate()
   const navigateRef = useRef(reactRouterNavigate)
+  const redirectRequestKeyRef = useRef(0)
+  const handledRedirectRequestKeyRef = useRef(0)
+  const [redirectRequest, setRedirectRequest] = useState<{
+    key: number
+    target: Parameters<RouterNavigate>[0]
+    options: Parameters<RouterNavigate>[1]
+  } | null>(null)
 
   useLayoutEffect(() => {
     // BrowserRouter/MemoryRouter 的 useNavigate 引用可能随 pathname 变化。Host 代表的
@@ -45,7 +52,18 @@ export function RouterCoreReactRouterAdapter(
       void navigateRef.current(target, options)
     }
 
-    return { navigate }
+    const redirect: RouterNavigate = (target, options) => {
+      // navigate 不能在 BrowserRouter 子组件的首次 layout effect 中执行：此时父级的
+      // history listener 尚未挂载。这里只记录明确的重定向请求，由下面的 effect 执行。
+      redirectRequestKeyRef.current += 1
+      setRedirectRequest({
+        key: redirectRequestKeyRef.current,
+        target,
+        options,
+      })
+    }
+
+    return { navigate, redirect }
   }, [])
 
   useLayoutEffect(() => {
@@ -68,6 +86,20 @@ export function RouterCoreReactRouterAdapter(
       hash: location.hash,
     })
   }, [location.hash, location.pathname, location.search, router])
+
+  useEffect(() => {
+    if (
+      !redirectRequest ||
+      handledRedirectRequestKeyRef.current === redirectRequest.key
+    ) {
+      return
+    }
+
+    // React Router 自身的 <Navigate> 同样在 effect 中执行导航。请求 key 保证
+    // StrictMode 重放同一个 effect 时不会重复提交重定向。
+    handledRedirectRequestKeyRef.current = redirectRequest.key
+    void navigateRef.current(redirectRequest.target, redirectRequest.options)
+  }, [redirectRequest])
 
   return <>{children}</>
 }

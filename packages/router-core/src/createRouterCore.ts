@@ -14,6 +14,7 @@ import type {
   RouterKeepAliveConfig,
   RouterLocation,
   RouterLocationEventPayload,
+  RouterNavigate,
   RouterPage,
   RouterReadableStore,
   RouterRoute,
@@ -57,6 +58,12 @@ interface RouterNavigationPlan {
   hash?: string | null
   tabKey: string
   authorized: boolean
+}
+
+/** 导航计划执行时允许替换的宿主能力；普通命令继续使用当前 Host.navigate。 */
+interface ExecuteNavigationPlanOptions {
+  navigate?: RouterNavigate
+  replace?: boolean
 }
 
 /**
@@ -239,6 +246,7 @@ export function createRouterCore<Route extends RouterRoute>(
   // Core 创建阶段不猜测宿主地址或预加载外部数据；页面只由 syncLocation 建立，
   // 固定页签只由 hydrateStorage 恢复，使两类状态各自只有一个权威入口。
   const store = createStore<RouterCoreState<Route>>(() => ({
+    navigationStatus: 'bootstrapping',
     currentPathname: '',
     currentRoutes: [],
     currentSelectedPath: [],
@@ -282,6 +290,48 @@ export function createRouterCore<Route extends RouterRoute>(
   /** 由宿主 Adapter 在挂载/卸载时绑定或清除底层导航能力。 */
   function bindHost(host: RouterHost | null) {
     runtime.host = host
+    if (!host && getState().navigationStatus !== 'settled') {
+      // redirect effect 提交前卸载时，请求只存在于旧 Adapter。清除去重标记，使新 Host
+      // 对同一入口 pathname 的首次同步可以重新产生重定向请求。
+      runtime.lastBootstrappedPathname = null
+      setNavigationStatus('bootstrapping')
+    }
+  }
+
+  /** 仅在状态真正变化时发布导航阶段，避免重复 location 通知触发无意义渲染。 */
+  function setNavigationStatus(
+    navigationStatus: RouterCoreState<Route>['navigationStatus'],
+  ) {
+    setState((state) => state.navigationStatus === navigationStatus
+      ? state
+      : { ...state, navigationStatus })
+  }
+
+  /**
+   * 请求宿主执行根路径或目录重定向。
+   *
+   * React Host 使用专用 redirect 把真实导航延后到 effect；其它 Host 继续兼容原有
+   * navigate 契约。replace 避免默认落点在浏览器历史中留下无法停留的中间记录。
+   */
+  function requestRedirect(pathname: string) {
+    const host = runtime.host
+    if (!host)
+      return false
+
+    const plan = resolveNavigationPlan(pathname)
+    if (!plan)
+      return false
+
+    // 必须先进入 redirecting：同步 Host 可能在 navigate 内立即回传最终 location，
+    // 此时嵌套 syncLocation 应以 settled 作为最终状态，不能被外层再次覆盖。
+    setNavigationStatus('redirecting')
+    const executed = executeNavigationPlan(plan, {
+      navigate: host.redirect || host.navigate,
+      replace: true,
+    })
+    if (!executed)
+      setNavigationStatus('bootstrapping')
+    return executed
   }
 
   /**
@@ -311,8 +361,7 @@ export function createRouterCore<Route extends RouterRoute>(
         if (!runtime.host)
           return 'deferred'
 
-        jumpTo(registry.defaultRoute)
-        return 'redirected'
+        return requestRedirect(registry.defaultRoute) ? 'redirected' : 'continue'
       }
 
       setInactiveState(null)
@@ -331,8 +380,7 @@ export function createRouterCore<Route extends RouterRoute>(
       if (!runtime.host)
         return 'deferred'
 
-      jumpTo(child)
-      return 'redirected'
+      return requestRedirect(child) ? 'redirected' : 'continue'
     }
 
     // 无权限页面、未知地址和空目录仍要进入 syncByPathname，统一保留合法的旧页签选中
@@ -364,6 +412,7 @@ export function createRouterCore<Route extends RouterRoute>(
       const currentRoutes = registry.getCurrentRoutes(pathname)
       setState((state) => ({
         ...state,
+        navigationStatus: 'bootstrapping',
         currentPathname: pathname,
         currentRoutes,
         currentSelectedPath: currentRoutes.map((item) => item.realPath),
@@ -397,6 +446,9 @@ export function createRouterCore<Route extends RouterRoute>(
 
       if (bootstrapResult === 'continue' || bootstrapResult === 'deferred')
         syncByPathname(pathname)
+
+      if (bootstrapResult === 'continue' || bootstrapResult === 'settled')
+        setNavigationStatus('settled')
     }
 
     // 页面事件和 pathname bootstrap 具有不同的去重语义：即使 pathname 没变，新的
@@ -551,10 +603,20 @@ export function createRouterCore<Route extends RouterRoute>(
   }
 
   /** 执行已经验证的导航计划；返回 false 表示宿主已解绑或页面状态无法建立。 */
-  function executeNavigationPlan(plan: RouterNavigationPlan) {
+  function executeNavigationPlan(
+    plan: RouterNavigationPlan,
+    options: ExecuteNavigationPlanOptions = {},
+  ) {
     const host = runtime.host
     if (!host)
       return false
+    const navigate = options.navigate || host.navigate
+    const navigateOptions = options.replace === undefined
+      ? undefined
+      : { replace: options.replace }
+    const commitNavigate: RouterNavigate = navigateOptions
+      ? (target) => navigate(target, navigateOptions)
+      : (target) => navigate(target)
 
     if (!plan.authorized) {
       // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。导航计划已经把动态
@@ -564,7 +626,7 @@ export function createRouterCore<Route extends RouterRoute>(
         ? plan.tabKey
         : null
       setInactiveState(activeTabKey)
-      host.navigate(
+      commitNavigate(
         buildUrl({
           pathname: plan.pathname,
           searchParams: resolveSearch(
@@ -583,7 +645,7 @@ export function createRouterCore<Route extends RouterRoute>(
       return false
 
     // 共享动态页签恢复最后真实 pathname；未指定 search/hash 时恢复对应缓存。
-    host.navigate(
+    commitNavigate(
       buildUrl({
         pathname: cache.getParamsPath(plan.tabKey) || plan.pathname,
         searchParams: resolveSearch(

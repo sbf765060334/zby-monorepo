@@ -178,6 +178,7 @@ export function App() {
 
 | 字段 | 含义 |
 | --- | --- |
+| `navigationStatus` | 地址落点阶段：`bootstrapping`、`redirecting` 或 `settled`；只有落定后才应判断 403/404 |
 | `currentPathname` | 宿主最后确认的 pathname |
 | `currentRoutes` | 当前从根到叶子的路由链 |
 | `currentSelectedPath` | 菜单选中使用的真实层级路径 |
@@ -265,7 +266,8 @@ function Pages() {
 
 1. 把 React Router 的 `navigate` 绑定为 core 宿主。
 2. 将最终确认的 pathname、search 和 hash 交给 `syncLocation`。
-3. Adapter 卸载时解绑宿主。
+3. 在 effect 中执行根路径和目录重定向，避免早于 React Router 的 history 监听。
+4. Adapter 卸载时解绑宿主；未提交的重定向会在新宿主挂载后重试。
 
 `useRouterCoreCreateHref` 返回用于原生链接的渲染期函数，并保留 BrowserRouter basename 和 HashRouter 前缀：
 

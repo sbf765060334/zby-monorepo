@@ -7,6 +7,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom'
+import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRouterCore } from '../../createRouterCore'
@@ -28,6 +29,46 @@ afterEach(() => {
 })
 
 describe('RouterCoreReactRouterAdapter', () => {
+  it('settles an initial root redirect after BrowserRouter starts listening', async () => {
+    window.history.replaceState(null, '', '/')
+    const router = createRouterCore({
+      routes,
+      defaultRedirectPath: '/home',
+      storageAdapter: false,
+    })
+    const states: Array<ReturnType<typeof router.getState>> = []
+    const unsubscribe = router.subscribe((state) => states.push(state))
+
+    render(
+      <StrictMode>
+        <BrowserRouter>
+          <RouterCoreProvider router={router}>
+            <RouterCoreReactRouterAdapter>
+              <NavigationProbe router={router} />
+            </RouterCoreReactRouterAdapter>
+          </RouterCoreProvider>
+        </BrowserRouter>
+      </StrictMode>,
+    )
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/home')
+      expect(screen.getByTestId('location').textContent).toBe('/home')
+      expect(router.getState().currentPathname).toBe('/home')
+      expect(router.getState().activePage).toBe('/home')
+      expect(router.getState().navigationStatus).toBe('settled')
+    })
+    expect(states.some((state) =>
+      state.currentPathname === '/' &&
+      state.navigationStatus === 'redirecting',
+    )).toBe(true)
+    expect(states.some((state) =>
+      state.currentPathname === '/' &&
+      state.navigationStatus === 'settled',
+    )).toBe(false)
+    unsubscribe()
+  })
+
   it('hydrates before persisting the first dynamic location', async () => {
     const loadedStorageKeys: string[] = []
     const savedStorageKeys: string[] = []

@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto'
 
 import { ZbyIntlProvider } from '@zby/intl'
 import { createRouterCore } from '@zby/router-core'
-import { useRouterPageSelector } from '@zby/router-core/react'
+import { RouterCoreProvider, useRouterPageSelector } from '@zby/router-core/react'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import {
   act,
@@ -21,6 +21,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { zbyProLocales } from '../../../locales'
 import * as favoriteStorage from '../favorites/storage'
 import ReactRouterProLayout from '../ReactRouterProLayout'
+import PageContent from '../page/PageContent'
 import type { ReactNode } from 'react'
 import type { ProLayoutRoute } from '../types'
 
@@ -63,6 +64,27 @@ function render(node: ReactNode, locale = 'zh-CN') {
 }
 
 describe('ReactRouterProLayout', () => {
+  it('只在宿主地址落定后渲染 403/404', () => {
+    const router = createTestRouter()
+
+    render(
+      <RouterCoreProvider router={router}>
+        <PageContent prefixCls="zby-pro-layout" />
+      </RouterCoreProvider>,
+    )
+
+    expect(router.getState().navigationStatus).toBe('bootstrapping')
+    expect(screen.queryByText('403')).toBeNull()
+    expect(screen.queryByText('404')).toBeNull()
+
+    act(() => {
+      router.syncLocation({ pathname: '/missing', search: '', hash: '' })
+    })
+
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(screen.getByText('404')).toBeTruthy()
+  })
+
   it('装配 router-core 并渲染全局页签、面包屑和页面 Context', async () => {
     const router = createTestRouter()
 
