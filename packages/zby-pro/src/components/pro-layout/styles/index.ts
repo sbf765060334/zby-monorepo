@@ -308,6 +308,11 @@ export default function useProLayoutStyles(prefixCls: string) {
             alignItems: 'center',
             color: 'inherit',
             lineHeight: styleToken.lineHeight,
+            transition: 'none',
+
+            '&:active, &:focus:not(:focus-visible)': {
+              color: 'inherit',
+            },
           },
           [`.ant-tabs-tab-active`]: {
             zIndex: 1,
