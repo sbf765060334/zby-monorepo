@@ -1,4 +1,5 @@
 import { useIntl } from '@zby/intl'
+import { ProLayoutContentContainer } from '@zby/pro'
 import { InputNumberRange } from '@zby/ui'
 import {
   Button,
@@ -69,154 +70,158 @@ export default function InputNumberRangePlayground() {
   )
 
   return (
-    <Space orientation="vertical" size={24} style={{ width: '100%' }}>
-      <header>
-        <Title level={3} style={{ margin: 0 }}>
-          InputNumberRange
-        </Title>
-        <Text type="secondary">@zby/ui component playground</Text>
-      </header>
+    <ProLayoutContentContainer mode="stack">
+      <ProLayoutContentContainer.Item>
+        <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+          <header>
+            <Title level={3} style={{ margin: 0 }}>
+              InputNumberRange
+            </Title>
+            <Text type="secondary">@zby/ui component playground</Text>
+          </header>
 
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          核心预览
-        </Title>
-        <div style={gridStyle}>
-          <div style={{ display: 'grid', gap: 12, minWidth: 0 }}>
-            <ControlField label="Form.Item status">
-              <Segmented
-                value={formStatus}
-                options={[
-                  { label: 'Default', value: 'default' },
-                  { label: 'Warning', value: 'warning' },
-                  { label: 'Error', value: 'error' },
-                ]}
-                onChange={(value) => setFormStatus(value as RangeStatus)}
-              />
-            </ControlField>
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              核心预览
+            </Title>
+            <div style={gridStyle}>
+              <div style={{ display: 'grid', gap: 12, minWidth: 0 }}>
+                <ControlField label="Form.Item status">
+                  <Segmented
+                    value={formStatus}
+                    options={[
+                      { label: 'Default', value: 'default' },
+                      { label: 'Warning', value: 'warning' },
+                      { label: 'Error', value: 'error' },
+                    ]}
+                    onChange={(value) => setFormStatus(value as RangeStatus)}
+                  />
+                </ControlField>
 
-            <Space wrap>
-              <Switch checked={allowClear} onChange={setAllowClear} checkedChildren="清除" />
-              <Switch checked={allowEmpty} onChange={setAllowEmpty} checkedChildren="空值" />
-              <Switch checked={order} onChange={setOrder} checkedChildren="排序" />
-            </Space>
+                <Space wrap>
+                  <Switch checked={allowClear} onChange={setAllowClear} checkedChildren="清除" />
+                  <Switch checked={allowEmpty} onChange={setAllowEmpty} checkedChildren="空值" />
+                  <Switch checked={order} onChange={setOrder} checkedChildren="排序" />
+                </Space>
 
-            <Form layout="vertical" style={{ margin: 0 }}>
-              <Form.Item
-                label="受控范围"
-                validateStatus={status}
-                hasFeedback={!!status}
-                help={status ? `Form status: ${status}` : undefined}
-                style={{ margin: 0 }}
-              >
+                <Form layout="vertical" style={{ margin: 0 }}>
+                  <Form.Item
+                    label="受控范围"
+                    validateStatus={status}
+                    hasFeedback={!!status}
+                    help={status ? `Form status: ${status}` : undefined}
+                    style={{ margin: 0 }}
+                  >
+                    <InputNumberRange
+                      value={rangeValue}
+                      onChange={(nextValue) => setRangeValue(nextValue)}
+                      min={0}
+                      max={1000}
+                      step={5}
+                      precision={0}
+                      allowClear={allowClear}
+                      allowEmpty={allowEmpty}
+                      order={order}
+                      suffix="RMB"
+                      style={{ width: '100%', maxWidth: 360 }}
+                    />
+                  </Form.Item>
+                </Form>
+
+                <Space wrap>
+                  <Button size="small" onClick={() => setRangeValue([10, 30])}>
+                    10 / 30
+                  </Button>
+                  <Button size="small" onClick={() => setRangeValue([60, 20])}>
+                    60 / 20
+                  </Button>
+                  <Button size="small" onClick={() => setRangeValue([null, null])}>
+                    置空
+                  </Button>
+                </Space>
+              </div>
+
+              <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}>
+                <Text type="secondary">placeholder</Text>
+                <Text code>
+                  {startPlaceholder} / {endPlaceholder}
+                </Text>
+                <Divider style={{ margin: 0 }} />
+                <Text type="secondary">controlled value</Text>
+                <Text code>{JSON.stringify(rangeValue)}</Text>
+                <Divider style={{ margin: 0 }} />
+                <Text type="secondary">zby-pro intl smoke</Text>
+                <Text>{intl.getMessage('zby.pro.layout.title', '控制台')}</Text>
+              </div>
+            </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              状态矩阵
+            </Title>
+            <div style={gridStyle}>
+              {renderCase(
+                '默认上下文',
                 <InputNumberRange
-                  value={rangeValue}
-                  onChange={(nextValue) => setRangeValue(nextValue)}
-                  min={0}
-                  max={1000}
-                  step={5}
-                  precision={0}
-                  allowClear={allowClear}
-                  allowEmpty={allowEmpty}
-                  order={order}
-                  suffix="RMB"
-                  style={{ width: '100%', maxWidth: 360 }}
-                />
-              </Form.Item>
-            </Form>
-
-            <Space wrap>
-              <Button size="small" onClick={() => setRangeValue([10, 30])}>
-                10 / 30
-              </Button>
-              <Button size="small" onClick={() => setRangeValue([60, 20])}>
-                60 / 20
-              </Button>
-              <Button size="small" onClick={() => setRangeValue([null, null])}>
-                置空
-              </Button>
-            </Space>
-          </div>
-
-          <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}>
-            <Text type="secondary">placeholder</Text>
-            <Text code>
-              {startPlaceholder} / {endPlaceholder}
-            </Text>
-            <Divider style={{ margin: 0 }} />
-            <Text type="secondary">controlled value</Text>
-            <Text code>{JSON.stringify(rangeValue)}</Text>
-            <Divider style={{ margin: 0 }} />
-            <Text type="secondary">zby-pro intl smoke</Text>
-            <Text>{intl.getMessage('zby.pro.layout.title', '控制台')}</Text>
-          </div>
-        </div>
-      </section>
-
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          状态矩阵
-        </Title>
-        <div style={gridStyle}>
-          {renderCase(
-            '默认上下文',
-            <InputNumberRange
-              defaultValue={[1, 9]}
-              allowClear
-              suffix="kg"
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase(
-            'value={undefined} 非受控',
-            <InputNumberRange
-              value={undefined}
-              defaultValue={[5, 15]}
-              allowClear
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase(
-            '整体禁用',
-            <InputNumberRange
-              defaultValue={[100, 200]}
-              disabled
-              allowClear
-              suffix="pcs"
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase(
-            '显式 error 状态',
-            <InputNumberRange
-              defaultValue={[3, 7]}
-              status="error"
-              allowClear
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase(
-            '大尺寸 + filled',
-            <InputNumberRange
-              defaultValue={[8, 18]}
-              size="large"
-              variant="filled"
-              allowClear
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase(
-            '自定义分隔符',
-            <InputNumberRange
-              defaultValue={[2, 8]}
-              separator="to"
-              allowClear
-              style={{ width: '100%' }}
-            />,
-          )}
-          {renderCase('inputNumber', <InputNumber style={{ width: '100%' }} />)}
-        </div>
-      </section>
-    </Space>
+                  defaultValue={[1, 9]}
+                  allowClear
+                  suffix="kg"
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase(
+                'value={undefined} 非受控',
+                <InputNumberRange
+                  value={undefined}
+                  defaultValue={[5, 15]}
+                  allowClear
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase(
+                '整体禁用',
+                <InputNumberRange
+                  defaultValue={[100, 200]}
+                  disabled
+                  allowClear
+                  suffix="pcs"
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase(
+                '显式 error 状态',
+                <InputNumberRange
+                  defaultValue={[3, 7]}
+                  status="error"
+                  allowClear
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase(
+                '大尺寸 + filled',
+                <InputNumberRange
+                  defaultValue={[8, 18]}
+                  size="large"
+                  variant="filled"
+                  allowClear
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase(
+                '自定义分隔符',
+                <InputNumberRange
+                  defaultValue={[2, 8]}
+                  separator="to"
+                  allowClear
+                  style={{ width: '100%' }}
+                />,
+              )}
+              {renderCase('inputNumber', <InputNumber style={{ width: '100%' }} />)}
+            </div>
+          </section>
+        </Space>
+      </ProLayoutContentContainer.Item>
+    </ProLayoutContentContainer>
   )
 }
