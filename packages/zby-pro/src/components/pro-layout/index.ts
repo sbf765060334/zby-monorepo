@@ -1,4 +1,12 @@
 export { default, ReactRouterProLayout } from './ReactRouterProLayout'
+export { default as ProLayoutContentContainer } from './content-container'
+export type {
+  ProLayoutContentContainerItemBodyPadding,
+  ProLayoutContentContainerItemConfig,
+  ProLayoutContentContainerItemProps,
+  ProLayoutContentContainerMode,
+  ProLayoutContentContainerProps,
+} from './content-container'
 export { ProLocaleSwitch, useLocalePreference } from './locale'
 export {
   useProLayoutBreadcrumbHeight,

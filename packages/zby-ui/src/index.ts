@@ -1,11 +1,3 @@
-export { default as ContentContainer } from './components/content-container'
-export type {
-  ContentContainerClassNames,
-  ContentContainerMode,
-  ContentContainerProps,
-  ContentContainerSemanticName,
-  ContentContainerStyles,
-} from './components/content-container'
 export { InputNumberRange } from './components/input-number-range'
 export type {
   InputNumberRangeFieldProps,

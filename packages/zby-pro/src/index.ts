@@ -8,6 +8,7 @@ export type {
 } from '@zby/hooks'
 export {
   ProLocaleSwitch,
+  ProLayoutContentContainer,
   ProThemeSwitch,
   ReactRouterProLayout,
   useLocalePreference,
@@ -27,6 +28,11 @@ export type {
   ProThemePreference,
   ProThemeSwitchProps,
   ProLayoutClassNames,
+  ProLayoutContentContainerItemBodyPadding,
+  ProLayoutContentContainerItemConfig,
+  ProLayoutContentContainerItemProps,
+  ProLayoutContentContainerMode,
+  ProLayoutContentContainerProps,
   ProLayoutContextValue,
   ProLayoutHeaderConfig,
   ProLayoutMetrics,

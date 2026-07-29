@@ -101,12 +101,6 @@ function PlaygroundApp() {
               ),
             }}
             minimumContentWidth={900}
-            styles={{
-              page: {
-                boxSizing: 'border-box',
-                padding: 24,
-              },
-            }}
             onStorageError={(error, info) => {
               console.error(`[Playground] Router storage ${info.phase} failed.`, error)
             }}
