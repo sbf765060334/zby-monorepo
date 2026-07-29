@@ -163,7 +163,7 @@ describe('ProLayoutContentContainer', () => {
     expect(getByText('Save')).not.toBeNull()
   })
 
-  it('registers the full-height chain, sticky footer and responsive aside styles', () => {
+  it('registers the full-height chain, sticky footer and desktop-only aside styles', () => {
     const cache = createCache()
 
     render(
@@ -180,7 +180,7 @@ describe('ProLayoutContentContainer', () => {
     expect(styleText).toContain('height:100%')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
-    expect(styleText).toMatch(/@media\s*\(max-width:\s*960px\)/)
+    expect(styleText).not.toMatch(/@media\s*\(max-width:\s*960px\)/)
   })
 
   it('keeps breadcrumb, Card title and Card body scrolling out of the public API', () => {
@@ -193,9 +193,13 @@ describe('ProLayoutContentContainer', () => {
     const supportsBodyScrollable: 'bodyScrollable' extends keyof ProLayoutContentContainerItemProps
       ? true
       : false = false
+    const supportsTabProps: 'tabProps' extends keyof ProLayoutContentContainerItemProps
+      ? true
+      : false = false
 
     expect(supportsBreadcrumb).toBe(false)
     expect(supportsTitle).toBe(false)
     expect(supportsBodyScrollable).toBe(false)
+    expect(supportsTabProps).toBe(false)
   })
 })

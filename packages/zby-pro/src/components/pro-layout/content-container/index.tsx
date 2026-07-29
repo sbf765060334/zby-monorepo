@@ -21,6 +21,7 @@ type CardHeaderProp =
   | 'onTabChange'
   | 'tabBarExtraContent'
   | 'tabList'
+  | 'tabProps'
   | 'title'
 
 export interface ProLayoutContentContainerItemProps extends Omit<

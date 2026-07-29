@@ -136,17 +136,6 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             boxShadow: surfaceShadow,
           },
 
-          '@media (max-width: 960px)': {
-            [`${contentContainerCls}-content`]: {
-              flexDirection: 'column',
-            },
-
-            [`${contentContainerCls}-aside`]: {
-              width: '100%',
-              maxHeight: `min(40vh, ${unit(token.controlHeightLG * 8)})`,
-              flex: '0 0 auto',
-            },
-          },
         },
 
         [contentContainerItemCls]: {
