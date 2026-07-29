@@ -10,7 +10,7 @@ import {
   theme,
 } from 'antd'
 import { useIntl } from '@zby/intl'
-import { InputNumberRange } from '@zby/ui'
+import { ContentContainer, InputNumberRange } from '@zby/ui'
 import React from 'react'
 
 const { Text, Title } = Typography
