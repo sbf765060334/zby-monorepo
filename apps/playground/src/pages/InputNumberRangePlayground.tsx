@@ -1,3 +1,5 @@
+import { useIntl } from '@zby/intl'
+import { InputNumberRange } from '@zby/ui'
 import {
   Button,
   Divider,
@@ -9,8 +11,6 @@ import {
   Typography,
   theme,
 } from 'antd'
-import { useIntl } from '@zby/intl'
-import { ContentContainer, InputNumberRange } from '@zby/ui'
 import React from 'react'
 
 const { Text, Title } = Typography
