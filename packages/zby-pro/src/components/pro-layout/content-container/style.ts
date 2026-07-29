@@ -32,7 +32,7 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
           boxSizing: 'border-box',
           flexDirection: 'column',
           overflow: 'hidden',
-          background: styleToken.colorFillContent,
+          background: styleToken.colorBgLayout,
 
           [`${contentContainerCls}-header`]: {
             minWidth: 0,

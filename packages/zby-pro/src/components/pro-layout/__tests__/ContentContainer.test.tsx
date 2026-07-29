@@ -2,6 +2,7 @@
 
 import { createCache, extractStyle, StyleProvider } from '@ant-design/cssinjs'
 import { cleanup, render } from '@testing-library/react'
+import { ConfigProvider } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -195,9 +196,18 @@ describe('ProLayoutContentContainer', () => {
 
     render(
       <StyleProvider cache={cache}>
-        <ProLayoutContentContainer aside="Aside" footer="Footer">
-          Content
-        </ProLayoutContentContainer>
+        <ConfigProvider
+          theme={{
+            cssVar: {
+              key: 'content-container-test',
+              prefix: 'zby-content-container-test',
+            },
+          }}
+        >
+          <ProLayoutContentContainer aside="Aside" footer="Footer">
+            Content
+          </ProLayoutContentContainer>
+        </ConfigProvider>
       </StyleProvider>,
     )
 
@@ -207,6 +217,9 @@ describe('ProLayoutContentContainer', () => {
     expect(styleText).toContain('height:100%')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
+    expect(styleText).toMatch(
+      /zby-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,
+    )
     expect(styleText).not.toMatch(/@media\s*\(max-width:\s*960px\)/)
   })
 

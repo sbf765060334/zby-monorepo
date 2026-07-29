@@ -551,7 +551,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           marginInlineStart: styleToken.marginLG,
           flex: '0 0 auto',
           alignItems: 'center',
-          gap: styleToken.marginXS,
+          gap: styleToken.marginXXS,
           color: styleToken.colorTextTertiary,
         },
         [`${componentCls}-theme-trigger, ${componentCls}-locale-trigger`]: {
