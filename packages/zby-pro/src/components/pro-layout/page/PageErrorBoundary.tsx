@@ -46,9 +46,10 @@ export default class PageErrorBoundary extends Component<
     if (areResetKeysEqual(props.resetKeys, state.resetKeys))
       return null
 
-    // 已报错时先保留旧错误完成本轮提交，让 PageContainer 的 layout effect 有机会把
-    // Page Context 同步到新 pathname；componentDidUpdate 随后再清错重试。若在这里立即
-    // 清错，业务组件会在 Context 仍是旧值时再次抛错，并失去下一次自动恢复机会。
+    // 已报错时先保留旧错误完成本轮提交，让 KeepAlivePage 内 RouterPageProvider 的
+    // layout effect 有机会把 Page Context 同步到新 pathname；componentDidUpdate 随后再
+    // 清错重试。若在这里立即清错，业务组件会在 Context 仍是旧值时再次抛错，并失去
+    // 下一次自动恢复机会。
     if (state.error)
       return null
 

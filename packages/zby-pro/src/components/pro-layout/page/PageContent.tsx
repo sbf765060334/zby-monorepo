@@ -7,7 +7,7 @@ import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
 import type { ProLayoutRoute } from '../types'
 import ExceptionPage from './ExceptionPage'
-import PageContainer from './PageContainer'
+import KeepAlivePage from './KeepAlivePage'
 
 /** 页面渲染域对 ProLayout 暴露的组合属性。 */
 export interface PageContentProps {
@@ -55,7 +55,7 @@ function PageContent(props: PageContentProps) {
       }}
     >
       {pages.map((page) => (
-        <PageContainer
+        <KeepAlivePage
           key={page.key}
           prefixCls={prefixCls}
           page={page}

@@ -13,7 +13,7 @@ import type { ProLayoutRoute, ProLayoutRouteComponent } from '../types'
 import PageErrorBoundary from './PageErrorBoundary'
 
 /** 单个 KeepAlive 页面容器的组合属性。 */
-export interface PageContainerProps {
+export interface KeepAlivePageProps {
   prefixCls: string
   page: RouterPage<ProLayoutRoute>
   active: boolean
@@ -44,7 +44,7 @@ const StableRouteElement = memo(
  * 页面是否保留完全取决于 core 的 pages；非活动页面只隐藏，pages 删除后才真正卸载。
  * RouterPageProvider 负责在绘制前同步真实 pathname、active 和完整 location。
  */
-function PageContainer(props: PageContainerProps) {
+function KeepAlivePage(props: KeepAlivePageProps) {
   const { active, className, page, prefixCls, style } = props
   const resetKeys = useMemo(() => [page.pathname, page.route.element] as const, [page])
 
@@ -89,4 +89,4 @@ function PageLoading(props: { prefixCls: string }) {
   )
 }
 
-export default memo(PageContainer)
+export default memo(KeepAlivePage)
