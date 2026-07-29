@@ -49,7 +49,7 @@ describe('ProLayoutContentContainer', () => {
     expect(getByText('Table')).not.toBeNull()
   })
 
-  it('uses a body ScrollArea in explicit stack mode without wrapping children in a Card', () => {
+  it('uses native body scrolling in explicit stack mode without wrapping children in a Card', () => {
     const { container } = render(
       <ProLayoutContentContainer mode="stack">
         <section>First</section>
@@ -60,13 +60,9 @@ describe('ProLayoutContentContainer', () => {
     const body = root.querySelector('.zby-pro-layout-content-container-body')!
 
     expect(root.classList.contains('zby-pro-layout-content-container-stack')).toBe(true)
-    expect(body.classList.contains('ant-scroll-area')).toBe(true)
-    expect(root.querySelector('.zby-pro-layout-content-container-body-scroll-viewport'))
-      .not
-      .toBeNull()
-    expect(root.querySelector('.zby-pro-layout-content-container-body-scroll-content'))
-      .not
-      .toBeNull()
+    expect(body.classList.contains('ant-scroll-area')).toBe(false)
+    expect(body.children).toHaveLength(2)
+    expect(root.querySelector('[class*="body-scroll-"]')).toBeNull()
     expect(root.querySelector('.ant-card')).toBeNull()
   })
 
@@ -83,9 +79,7 @@ describe('ProLayoutContentContainer', () => {
 
     expect(root.classList.contains('zby-pro-layout-content-container-stack')).toBe(true)
     expect(root.querySelectorAll('.zby-pro-layout-content-container-item')).toHaveLength(2)
-    expect(root.querySelector('.zby-pro-layout-content-container-body.ant-scroll-area'))
-      .not
-      .toBeNull()
+    expect(root.querySelector('.zby-pro-layout-content-container-body.ant-scroll-area')).toBeNull()
     expect(getByText('First item')).not.toBeNull()
     expect(getByText('Second item')).not.toBeNull()
   })
@@ -138,7 +132,7 @@ describe('ProLayoutContentContainer', () => {
     expect(cardBody.style.backgroundColor).toBe('rgb(1, 2, 3)')
   })
 
-  it('renders an end aside with its own ScrollArea and width contract', () => {
+  it('renders an end aside with its own native scroll container and width contract', () => {
     const { container } = render(
       <ProLayoutContentContainer
         mode="stack"
@@ -160,12 +154,58 @@ describe('ProLayoutContentContainer', () => {
     expect(aside.classList.contains('custom-aside')).toBe(true)
     expect(aside.style.width).toBe('280px')
     expect(aside.style.flexBasis).toBe('280px')
-    expect(aside.querySelector('.zby-pro-layout-content-container-aside-scroll.ant-scroll-area'))
-      .not
-      .toBeNull()
-    expect(aside.querySelector('.zby-pro-layout-content-container-aside-scroll-viewport'))
-      .not
-      .toBeNull()
+    const asideScroll = aside.querySelector('.zby-pro-layout-content-container-aside-scroll')!
+
+    expect(asideScroll.tagName).toBe('DIV')
+    expect(asideScroll.classList.contains('ant-scroll-area')).toBe(false)
+    expect(aside.querySelector('[class*="aside-scroll-viewport"]')).toBeNull()
+  })
+
+  it('moves stack padding to native scroll panes without changing fill padding', () => {
+    const stackView = render(
+      <ProLayoutContentContainer
+        mode="stack"
+        padding={24}
+        gap={8}
+        aside="Filters"
+        asidePosition="end"
+      >
+        Results
+      </ProLayoutContentContainer>,
+    )
+    const stackContent = stackView.container.querySelector<HTMLElement>(
+      '.zby-pro-layout-content-container-content',
+    )!
+    const stackBody = stackView.container.querySelector<HTMLElement>(
+      '.zby-pro-layout-content-container-body',
+    )!
+    const stackAside = stackView.container.querySelector<HTMLElement>(
+      '.zby-pro-layout-content-container-aside',
+    )!
+
+    expect(stackContent.style.padding).toBe('0px')
+    expect(stackContent.style.gap).toBe('8px')
+    expect(stackBody.style.padding).toBe('24px')
+    expect(stackBody.style.paddingInlineEnd).toBe('0px')
+    expect(stackAside.style.padding).toBe('24px')
+    expect(stackAside.style.paddingInlineStart).toBe('0px')
+
+    stackView.unmount()
+
+    const fillView = render(
+      <ProLayoutContentContainer mode="fill" padding={24}>
+        Content
+      </ProLayoutContentContainer>,
+    )
+    const fillContent = fillView.container.querySelector<HTMLElement>(
+      '.zby-pro-layout-content-container-content',
+    )!
+    const fillBody = fillView.container.querySelector<HTMLElement>(
+      '.zby-pro-layout-content-container-body',
+    )!
+
+    expect(fillContent.style.padding).toBe('24px')
+    expect(fillBody.style.padding).toBe('')
   })
 
   it('renders header and footer semantic overrides without breadcrumb markup', () => {
@@ -217,6 +257,8 @@ describe('ProLayoutContentContainer', () => {
     expect(styleText).toContain('height:100%')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
+    expect(styleText).toContain('overflow-y:auto')
+    expect(styleText).toContain('scrollbar-gutter:stable')
     expect(styleText).toMatch(
       /zby-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,
     )

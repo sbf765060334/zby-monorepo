@@ -69,25 +69,25 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             overflow: 'hidden',
           },
 
+          [`&${contentContainerCls}-stack ${contentContainerCls}-content`]: {
+            padding: 0,
+          },
+
           [`&${contentContainerCls}-stack ${contentContainerCls}-body`]: {
-            overflow: 'hidden',
-          },
-
-          [`${contentContainerCls}-body-scroll-viewport`]: {
-            height: '100%',
-            gap: 'inherit',
-          },
-
-          [`${contentContainerCls}-body-scroll-content`]: {
-            display: 'flex',
-            minWidth: 0,
-            minHeight: '100%',
-            flexDirection: 'column',
-            gap: 'inherit',
+            padding: styleToken.paddingSM,
+            overflow: 'auto',
           },
 
           [`&${contentContainerCls}-stack ${contentContainerItemCls}`]: {
             flex: '0 0 auto',
+          },
+
+          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside:not(${contentContainerCls}-aside-end) ${contentContainerCls}-body`]: {
+            paddingInlineStart: 0,
+          },
+
+          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside${contentContainerCls}-aside-end ${contentContainerCls}-body`]: {
+            paddingInlineEnd: 0,
           },
 
           [`${contentContainerCls}-aside`]: {
@@ -107,15 +107,21 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             minWidth: 0,
             minHeight: 0,
             flex: 1,
+            overflow: 'auto',
+            scrollbarGutter: 'stable',
           },
 
-          [`${contentContainerCls}-aside-scroll-viewport`]: {
-            height: '100%',
+          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside ${contentContainerCls}-aside`]: {
+            boxSizing: 'content-box',
+            padding: styleToken.paddingSM,
           },
 
-          [`${contentContainerCls}-aside-scroll-content`]: {
-            minWidth: 0,
-            minHeight: '100%',
+          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside:not(${contentContainerCls}-aside-end) ${contentContainerCls}-aside`]: {
+            paddingInlineEnd: 0,
+          },
+
+          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside${contentContainerCls}-aside-end ${contentContainerCls}-aside`]: {
+            paddingInlineStart: 0,
           },
 
           [`${contentContainerCls}-footer`]: {

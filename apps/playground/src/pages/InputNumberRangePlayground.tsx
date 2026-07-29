@@ -70,7 +70,9 @@ export default function InputNumberRangePlayground() {
   )
 
   return (
-    <ProLayoutContentContainer mode="stack">
+    <ProLayoutContentContainer
+      mode="stack"
+    >
       <ProLayoutContentContainer.Item>
         <Space orientation="vertical" size={24} style={{ width: '100%' }}>
           <header>

@@ -1,5 +1,4 @@
 import { Card, ConfigProvider } from 'antd'
-import { ScrollArea } from '@zby/ui'
 import { clsx } from 'clsx'
 import * as React from 'react'
 
@@ -187,20 +186,49 @@ const ProLayoutContentContainerInner = React.forwardRef<
   const [prefixCls, hashId] = useContentContainerStyle(customizePrefixCls)
   const hasItems = Array.isArray(items)
   const mergedMode = resolveMode(mode, hasItems)
+  const mergedPadding = padding === false ? 0 : padding
   const contentInlineStyle = React.useMemo<React.CSSProperties>(
     () => ({
-      ...(padding !== undefined ? { padding: padding === false ? 0 : padding } : null),
+      ...(mergedMode === 'stack'
+        ? { padding: 0 }
+        : padding !== undefined
+          ? { padding: mergedPadding }
+          : null),
       ...(gap !== undefined ? { gap } : null),
       ...contentStyle,
     }),
-    [contentStyle, gap, padding],
+    [contentStyle, gap, mergedMode, mergedPadding, padding],
+  )
+  const bodyInlineStyle = React.useMemo<React.CSSProperties>(
+    () => ({
+      ...(mergedMode === 'stack' && padding !== undefined
+        ? { padding: mergedPadding }
+        : null),
+      ...(mergedMode === 'stack' && aside && asidePosition === 'start'
+        ? { paddingInlineStart: 0 }
+        : null),
+      ...(mergedMode === 'stack' && aside && asidePosition === 'end'
+        ? { paddingInlineEnd: 0 }
+        : null),
+      ...bodyStyle,
+    }),
+    [aside, asidePosition, bodyStyle, mergedMode, mergedPadding, padding],
   )
   const asideInlineStyle = React.useMemo<React.CSSProperties>(
     () => ({
       ...(asideWidth !== undefined ? { flexBasis: asideWidth, width: asideWidth } : null),
+      ...(mergedMode === 'stack' && padding !== undefined
+        ? { padding: mergedPadding }
+        : null),
+      ...(mergedMode === 'stack' && asidePosition === 'start'
+        ? { paddingInlineEnd: 0 }
+        : null),
+      ...(mergedMode === 'stack' && asidePosition === 'end'
+        ? { paddingInlineStart: 0 }
+        : null),
       ...asideStyle,
     }),
-    [asideStyle, asideWidth],
+    [asidePosition, asideStyle, asideWidth, mergedMode, mergedPadding, padding],
   )
   const bodyNode = hasItems
     ? items.map((item) => (
@@ -241,7 +269,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
         {aside && asidePosition === 'start'
           ? renderAside(aside, prefixCls, asideClassName, asideInlineStyle)
           : null}
-        {renderBody(bodyNode, mergedMode, prefixCls, bodyClassName, bodyStyle)}
+        {renderBody(bodyNode, prefixCls, bodyClassName, bodyInlineStyle)}
         {aside && asidePosition === 'end'
           ? renderAside(aside, prefixCls, asideClassName, asideInlineStyle)
           : null}
@@ -292,27 +320,11 @@ function renderChildren(
 
 function renderBody(
   bodyNode: React.ReactNode,
-  mode: ProLayoutContentContainerMode,
   prefixCls: string,
   bodyClassName: string | undefined,
   bodyStyle: React.CSSProperties | undefined,
 ) {
   const className = clsx(`${prefixCls}-content-container-body`, bodyClassName)
-  if (mode === 'stack') {
-    return (
-      <ScrollArea
-        className={className}
-        style={bodyStyle}
-        classNames={{
-          viewport: `${prefixCls}-content-container-body-scroll-viewport`,
-          content: `${prefixCls}-content-container-body-scroll-content`,
-        }}
-      >
-        {bodyNode}
-      </ScrollArea>
-    )
-  }
-
   return (
     <div className={className} style={bodyStyle}>
       {bodyNode}
@@ -331,15 +343,9 @@ function renderAside(
       className={clsx(`${prefixCls}-content-container-aside`, asideClassName)}
       style={asideStyle}
     >
-      <ScrollArea
-        className={`${prefixCls}-content-container-aside-scroll`}
-        classNames={{
-          viewport: `${prefixCls}-content-container-aside-scroll-viewport`,
-          content: `${prefixCls}-content-container-aside-scroll-content`,
-        }}
-      >
+      <div className={`${prefixCls}-content-container-aside-scroll`}>
         {aside}
-      </ScrollArea>
+      </div>
     </aside>
   )
 }
