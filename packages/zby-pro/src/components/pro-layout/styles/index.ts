@@ -1000,5 +1000,11 @@ export default function useProLayoutStyles(prefixCls: string) {
     }),
   )
 
-  return { hashId, headerHeight, siderWidth, layoutCSSVariables }
+  return {
+    breadcrumbHeight: token.controlHeight,
+    hashId,
+    headerHeight,
+    siderWidth,
+    layoutCSSVariables,
+  }
 }

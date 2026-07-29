@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { memo } from 'react'
+import { forwardRef, memo } from 'react'
 
 import type { ReactNode } from 'react'
 import type { ProLayoutClassNames, ProLayoutStyles } from '../types'
@@ -16,11 +16,12 @@ export interface HeaderProps {
 }
 
 /** 顶部全局页签栏及业务扩展区域。 */
-function Header(props: HeaderProps) {
+const Header = forwardRef<HTMLElement, HeaderProps>((props, ref) => {
   const { classNames, extra, hashId, height, paddingLeft, prefixCls, styles } = props
 
   return (
     <header
+      ref={ref}
       className={clsx(`${prefixCls}-header`, classNames?.header)}
       style={{
         height,
@@ -44,6 +45,8 @@ function Header(props: HeaderProps) {
       ) : null}
     </header>
   )
-}
+})
+
+Header.displayName = 'Header'
 
 export default memo(Header)

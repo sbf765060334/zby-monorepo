@@ -6,6 +6,8 @@ import { memo, useEffect } from 'react'
 import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
 import IconDrawerMenu from './menu'
+import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
+import useProLayoutMeasurements from './metrics/useProLayoutMeasurements'
 import { Breadcrumb, PageContent } from './page'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
@@ -39,7 +41,13 @@ function ProLayout(props: ProLayoutProps) {
   const currentRoutes = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentRoutes,
   )
-  const { hashId, headerHeight, siderWidth, layoutCSSVariables } = useProLayoutStyles(prefixCls)
+  const {
+    breadcrumbHeight,
+    hashId,
+    headerHeight,
+    siderWidth,
+    layoutCSSVariables,
+  } = useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
@@ -51,6 +59,12 @@ function ProLayout(props: ProLayoutProps) {
     currentRoute &&
     currentRoute.route.showBreadcrumb !== false,
   )
+  const { breadcrumbRef, headerRef, metrics, siderRef } = useProLayoutMeasurements({
+    currentPathname,
+    layoutRevision: [headerHeight, breadcrumbHeight, siderWidth].join('|'),
+    noBar,
+    showBreadcrumb: shouldShowBreadcrumb,
+  })
 
   useEffect(() => {
     if (typeof document === 'undefined')
@@ -77,74 +91,79 @@ function ProLayout(props: ProLayoutProps) {
   }, [beforeUnload])
 
   return (
-    <Layout
-      className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
-      style={{
-        minHeight: '100vh',
-        viewTransitionName: PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME,
-        ...styles?.root,
-        ...style,
-        ...layoutCSSVariables,
-      }}
-      data-current-pathname={currentPathname}
-    >
-      {!noBar ? (
-        <IconDrawerMenu
-          prefixCls={prefixCls}
-          hashId={hashId}
-          logo={header?.logo}
-          systemList={systemList}
-          siderWidth={siderWidth}
-          classNames={classNames}
-          styles={styles}
-        />
-      ) : null}
+    <ProLayoutProvider value={metrics}>
       <Layout
-        className={`${prefixCls}-main`}
+        className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
         style={{
-          width: '100%',
-          minWidth: minimumContentWidth,
-          paddingInlineStart: noBar ? 0 : siderWidth,
-          paddingBlockStart: noBar ? 0 : headerHeight,
+          minHeight: '100vh',
+          viewTransitionName: PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME,
+          ...styles?.root,
+          ...style,
+          ...layoutCSSVariables,
         }}
+        data-current-pathname={currentPathname}
       >
         {!noBar ? (
-          <Header
+          <IconDrawerMenu
+            ref={siderRef}
             prefixCls={prefixCls}
             hashId={hashId}
-            height={headerHeight}
-            extra={header?.extra}
-            paddingLeft={siderWidth}
+            logo={header?.logo}
+            systemList={systemList}
+            siderWidth={siderWidth}
             classNames={classNames}
             styles={styles}
           />
         ) : null}
-        <Layout.Content
-          className={clsx(`${prefixCls}-content`, classNames?.content)}
+        <Layout
+          className={`${prefixCls}-main`}
           style={{
-            display: 'flex',
-            minWidth: 0,
-            minHeight: 0,
-            flex: 1,
-            flexDirection: 'column',
-            ...styles?.content,
+            width: '100%',
+            minWidth: minimumContentWidth,
+            paddingInlineStart: noBar ? 0 : siderWidth,
+            paddingBlockStart: noBar ? 0 : headerHeight,
           }}
         >
-          {shouldShowBreadcrumb ? (
-            <Breadcrumb
+          {!noBar ? (
+            <Header
+              ref={headerRef}
               prefixCls={prefixCls}
-              className={classNames?.breadcrumb}
-              style={styles?.breadcrumb}
+              hashId={hashId}
+              height={headerHeight}
+              extra={header?.extra}
+              paddingLeft={siderWidth}
+              classNames={classNames}
+              styles={styles}
             />
           ) : null}
-          <PageContent
-            prefixCls={prefixCls}
-            pageClassName={classNames?.page}
-            pageStyle={styles?.page}
-          />
-        </Layout.Content>
+          <Layout.Content
+            className={clsx(`${prefixCls}-content`, classNames?.content)}
+            style={{
+              display: 'flex',
+              minWidth: 0,
+              minHeight: 0,
+              flex: 1,
+              flexDirection: 'column',
+              ...styles?.content,
+            }}
+          >
+            {shouldShowBreadcrumb ? (
+              <Breadcrumb
+                ref={breadcrumbRef}
+                prefixCls={prefixCls}
+                className={classNames?.breadcrumb}
+                style={styles?.breadcrumb}
+              />
+            ) : null}
+            <PageContent
+              prefixCls={prefixCls}
+              pageClassName={classNames?.page}
+              pageStyle={styles?.page}
+            />
+          </Layout.Content>
+        </Layout>
       </Layout>
-    </Layout>
+    </ProLayoutProvider>
   )
 }
 

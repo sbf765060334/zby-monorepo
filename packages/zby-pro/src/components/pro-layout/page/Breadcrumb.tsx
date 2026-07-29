@@ -3,7 +3,7 @@ import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Breadcrumb, Space } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useMemo } from 'react'
+import { forwardRef, memo, useMemo } from 'react'
 
 import type { BreadcrumbProps } from 'antd'
 import type { CSSProperties, MouseEvent } from 'react'
@@ -23,7 +23,7 @@ export interface LayoutBreadcrumbProps {
  * router-core 快照。上级页面同时提供 React Router 生成的原生 href：普通左键仍由
  * jumpTo 统一处理，Ctrl/Command/中键及右键菜单交还浏览器原生链接行为。
  */
-function BreadcrumbView(props: LayoutBreadcrumbProps) {
+const BreadcrumbView = forwardRef<HTMLDivElement, LayoutBreadcrumbProps>((props, ref) => {
   const { className, prefixCls, style } = props
   const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
@@ -73,6 +73,7 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
 
   return (
     <Space
+      ref={ref}
       size={0}
       className={clsx(`${prefixCls}-breadcrumb`, className)}
       style={style}
@@ -83,7 +84,9 @@ function BreadcrumbView(props: LayoutBreadcrumbProps) {
       <Breadcrumb items={items} />
     </Space>
   )
-}
+})
+
+BreadcrumbView.displayName = 'Breadcrumb'
 
 function shouldKeepNativeBehavior(event: MouseEvent<HTMLElement>) {
   return event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
