@@ -100,12 +100,11 @@ describe('ReactRouterProLayout', () => {
     await waitFor(() => expect(document.title).toBe('工作台 - 数字化平台'))
   })
 
-  it('只使用当前叶子路由的 showBreadcrumb 控制面包屑', async () => {
+  it('切换路由时始终由 ProLayout 总开关控制面包屑', async () => {
     const breadcrumbRoutes: ProLayoutRoute[] = [
       {
         path: '/breadcrumb',
         title: '面包屑父级',
-        showBreadcrumb: false,
         routes: [
           {
             path: '/breadcrumb/default',
@@ -113,10 +112,9 @@ describe('ReactRouterProLayout', () => {
             element: ReportsPage,
           },
           {
-            path: '/breadcrumb/hidden',
-            title: '隐藏面包屑页',
+            path: '/breadcrumb/another',
+            title: '另一个页面',
             element: ReportDetailPage,
-            showBreadcrumb: false,
           },
         ],
       },
@@ -136,18 +134,17 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('reports-page')
     expect(screen.getByText('当前位置：')).toBeTruthy()
 
-    act(() => router.jumpTo('/breadcrumb/hidden'))
+    act(() => router.jumpTo('/breadcrumb/another'))
     await screen.findByTestId('report-detail-page')
-    expect(screen.queryByText('当前位置：')).toBeNull()
+    expect(screen.getByText('当前位置：')).toBeTruthy()
   })
 
-  it('showBreadcrumb 总开关关闭时忽略叶子路由配置', async () => {
+  it('showBreadcrumb 总开关关闭时隐藏全局面包屑', async () => {
     const breadcrumbRoutes: ProLayoutRoute[] = [
       {
         path: '/breadcrumb/visible',
         title: '显示面包屑页',
         element: ReportsPage,
-        showBreadcrumb: true,
       },
     ]
     const router = createRouterCore({

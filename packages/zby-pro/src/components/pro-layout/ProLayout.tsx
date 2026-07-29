@@ -48,20 +48,16 @@ function ProLayout(props: ProLayoutProps) {
   const currentPageTitle = currentRoute
     ? pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title
     : ''
-  const shouldShowBreadcrumb = Boolean(
-    showBreadcrumb &&
-    currentRoute &&
-    currentRoute.route.showBreadcrumb !== false,
-  )
+  const shouldShowBreadcrumb = Boolean(showBreadcrumb && currentRoute)
   const layoutContextValue = useMemo(
     () => ({
       breadcrumbHeight,
       headerHeight,
       noBar,
-      showBreadcrumb: shouldShowBreadcrumb,
+      showBreadcrumb,
       siderWidth,
     }),
-    [breadcrumbHeight, headerHeight, noBar, shouldShowBreadcrumb, siderWidth],
+    [breadcrumbHeight, headerHeight, noBar, showBreadcrumb, siderWidth],
   )
 
   useEffect(() => {

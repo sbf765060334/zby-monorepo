@@ -66,9 +66,8 @@ function createMetricsRouter() {
   const routes: ProLayoutRoute[] = [
     { path: '/visible', title: 'Visible', element: Page },
     {
-      path: '/hidden',
-      title: 'Hidden',
-      showBreadcrumb: false,
+      path: '/other',
+      title: 'Other',
       element: Page,
     },
   ]
@@ -146,14 +145,14 @@ describe('ProLayout context metrics', () => {
     })
   })
 
-  it('keeps token dimensions and exposes layout visibility separately', async () => {
+  it('keeps token dimensions and the global breadcrumb switch across navigation', async () => {
     const router = createMetricsRouter()
     renderLayout(router)
 
-    act(() => router.jumpTo('/hidden'))
+    act(() => router.jumpTo('/other'))
 
     await waitFor(() => {
-      expectMetricText('38,32,68|38,32,68|false,false')
+      expectMetricText('38,32,68|38,32,68|false,true')
     })
 
     cleanup()
