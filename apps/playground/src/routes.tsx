@@ -1,6 +1,7 @@
 import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ProLayoutRoute } from '@zby/pro'
 import DemoPage from './pages/DemoPage'
+import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -259,9 +260,9 @@ export const appRouters: ProLayoutRoute[ ] = [
     icon: ClearOutlined,
     routes: [
       {
-        path: '/sample/overview',
-        title: '打样总览',
-        element: <DemoPage />,
+        path: '/sample/input-range-input',
+        title: '数字范围',
+        element: <InputNumberRangePlayground />,
       },
       {
         path: '/sample/live',

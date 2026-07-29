@@ -574,17 +574,26 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-breadcrumb`]: {
           display: 'flex',
-          minHeight: `calc(${unit(styleToken.controlHeight)} + ${unit(styleToken.paddingSM)})`,
+          minHeight: styleToken.controlHeight,
           flex: '0 0 auto',
           boxSizing: 'border-box',
           alignItems: 'center',
-          paddingBlock: styleToken.paddingXS,
-          paddingInline: styleToken.paddingSM,
-          background: styleToken.colorBgContainer,
+          paddingBlock: styleToken.paddingXXS,
+          paddingInline: styleToken.paddingLG,
+          background: styleToken.colorBgLayout,
+          fontSize: styleToken.fontSizeSM,
+
+          [`.ant-breadcrumb`]: {
+            fontSize: styleToken.fontSizeSM,
+          },
+          [`.ant-breadcrumb-separator`]: {
+            marginInline: styleToken.marginXXS,
+          },
         },
         [`${componentCls}-breadcrumb-label`]: {
-          color: styleToken.colorTextQuaternary,
-          fontSize: styleToken.fontSize,
+          color: styleToken.colorTextTertiary,
+          fontSize: styleToken.fontSizeSM,
+          whiteSpace: 'nowrap',
         },
         [`${componentCls}-breadcrumb-item-title`]: {
           display: 'inline-flex',

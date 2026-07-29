@@ -308,6 +308,12 @@ describe('ReactRouterProLayout', () => {
       const siderItem = container.querySelector('.zby-pro-layout-sider-item') as HTMLElement
       const siderIcon = container.querySelector('.zby-pro-layout-sider-item dt') as HTMLElement
       const tabs = container.querySelector('.zby-pro-layout-tabs') as HTMLElement
+      const breadcrumb = container.querySelector('.zby-pro-layout-breadcrumb') as HTMLElement
+      const breadcrumbContent = breadcrumb.querySelector('.ant-breadcrumb') as HTMLElement
+      const breadcrumbLabel = breadcrumb.querySelector(
+        '.zby-pro-layout-breadcrumb-label',
+      ) as HTMLElement
+      const pageBody = container.querySelector('.zby-pro-layout-page-body') as HTMLElement
       const activeNode = container.querySelector(
         '.zby-pro-layout-tab-node-active',
       ) as HTMLElement
@@ -349,6 +355,18 @@ describe('ReactRouterProLayout', () => {
         'var(--zby-pro-layout-sider-icon-size)',
       )
       expect(getComputedStyle(siderLabel).fontSize).toBe(getComputedStyle(main).fontSize)
+      expect(getComputedStyle(breadcrumb).backgroundColor).toBe(
+        getComputedStyle(pageBody).backgroundColor,
+      )
+      expect(getComputedStyle(breadcrumb).minHeight).toBe(
+        'var(--zby-pro-layout-test-control-height)',
+      )
+      expect(getComputedStyle(breadcrumbContent).fontSize).toBe(
+        'var(--zby-pro-layout-test-font-size-sm)',
+      )
+      expect(getComputedStyle(breadcrumbLabel).fontSize).toBe(
+        'var(--zby-pro-layout-test-font-size-sm)',
+      )
     }
 
     const defaultLayout = renderLayout(false)
