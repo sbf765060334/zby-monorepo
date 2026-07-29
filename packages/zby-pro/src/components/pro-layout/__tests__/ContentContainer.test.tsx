@@ -257,8 +257,8 @@ describe('ProLayoutContentContainer', () => {
     expect(styleText).toContain('height:100%')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
-    expect(styleText).toContain('overflow-y:auto')
-    expect(styleText).toContain('scrollbar-gutter:stable')
+    expect(styleText).toContain('overflow:auto')
+    expect(styleText).not.toContain('scrollbar-gutter')
     expect(styleText).toMatch(
       /zby-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,
     )

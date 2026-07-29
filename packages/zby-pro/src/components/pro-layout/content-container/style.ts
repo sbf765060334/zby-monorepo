@@ -108,7 +108,6 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             minHeight: 0,
             flex: 1,
             overflow: 'auto',
-            scrollbarGutter: 'stable',
           },
 
           [`&${contentContainerCls}-stack${contentContainerCls}-with-aside ${contentContainerCls}-aside`]: {
