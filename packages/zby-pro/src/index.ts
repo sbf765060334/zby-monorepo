@@ -10,6 +10,7 @@ export {
   ProLocaleSwitch,
   ProThemeSwitch,
   ReactRouterProLayout,
+  useLocalePreference,
   useThemePreference,
 } from './components/pro-layout'
 export type {
@@ -27,6 +28,8 @@ export type {
   ProLayoutStyles,
   ProLayoutSystemItem,
   ReactRouterProLayoutProps,
+  UseLocalePreferenceOptions,
+  UseLocalePreferenceReturn,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
 } from './components/pro-layout'

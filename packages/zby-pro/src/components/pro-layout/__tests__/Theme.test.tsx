@@ -74,7 +74,9 @@ describe('ProThemeSwitch', () => {
     })
 
     const themeTrigger = screen.getByRole('button', { name: '主题设置' })
-    expect(themeTrigger.querySelector('svg[data-icon="theme"]')).toBeTruthy()
+    const themeIcon = themeTrigger.querySelector('svg[data-icon="theme"]')
+    expect(themeIcon).toBeTruthy()
+    expect(themeIcon?.getAttribute('viewBox')).toBe('0 0 21 21')
     fireEvent.click(themeTrigger)
     expect(screen.queryByText('跟随系统')).toBeNull()
     fireEvent.mouseEnter(themeTrigger)

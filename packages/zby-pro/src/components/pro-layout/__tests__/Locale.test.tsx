@@ -2,14 +2,13 @@
 
 import { ZbyIntlProvider } from '@zby/intl'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { zbyProLocales } from '../../../locales'
-import { ProLocaleSwitch } from '../locale'
-import type { ProLocale } from '../locale'
+import { ProLocaleSwitch, useLocalePreference } from '../locale'
 
 beforeEach(() => {
+  window.localStorage.clear()
   class ResizeObserverMock {
     observe() {}
     unobserve() {}
@@ -29,7 +28,8 @@ afterEach(cleanup)
 
 describe('ProLocaleSwitch', () => {
   it('通过悬浮菜单在简体中文和 English 之间切换', async () => {
-    render(<LocaleFixture />)
+    const storageKey = 'pro-locale-switch-test'
+    const firstRender = render(<LocaleFixture storageKey={storageKey} />)
 
     const trigger = screen.getByRole('button', { name: '语言设置' })
     expect(trigger.querySelector('.anticon-global')).toBeTruthy()
@@ -46,19 +46,27 @@ describe('ProLocaleSwitch', () => {
     await waitFor(() => {
       expect(screen.getByTestId('locale').textContent).toBe('en-US')
       expect(screen.getByRole('button', { name: 'Language' })).toBeTruthy()
+      expect(window.localStorage.getItem(storageKey)).toBe('en-US')
     })
+
+    firstRender.unmount()
+    render(<LocaleFixture storageKey={storageKey} />)
+    expect(screen.getByTestId('locale').textContent).toBe('en-US')
+    expect(screen.getByRole('button', { name: 'Language' })).toBeTruthy()
 
     await openLocaleMenu(screen.getByRole('button', { name: 'Language' }))
     fireEvent.click(screen.getByText('简体中文'))
     await waitFor(() => {
       expect(screen.getByTestId('locale').textContent).toBe('zh-CN')
       expect(screen.getByRole('button', { name: '语言设置' })).toBeTruthy()
+      expect(window.localStorage.getItem(storageKey)).toBe('zh-CN')
     })
   })
 })
 
-function LocaleFixture() {
-  const [locale, setLocale] = useState<ProLocale>('zh-CN')
+function LocaleFixture(props: { storageKey: string }) {
+  const preference = useLocalePreference({ storageKey: props.storageKey })
+  const locale = preference.value
 
   return (
     <ZbyIntlProvider
@@ -66,7 +74,7 @@ function LocaleFixture() {
       fallbackLocale="zh-CN"
       resources={zbyProLocales}
     >
-      <ProLocaleSwitch value={locale} onChange={setLocale} />
+      <ProLocaleSwitch value={locale} onChange={preference.setValue} />
       <output data-testid="locale">{locale}</output>
     </ZbyIntlProvider>
   )

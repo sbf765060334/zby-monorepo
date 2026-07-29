@@ -8,6 +8,7 @@ import {
   ProThemeSwitch,
   type ProLayoutRoute,
   ReactRouterProLayout,
+  useLocalePreference,
   useThemePreference,
   zbyProLocales,
 } from '@zby/pro'
@@ -16,7 +17,6 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { playgroundLocales } from './playgroundIntl'
-import type { PlaygroundLocale } from './playgroundIntl'
 import { createRouterCore } from '@zby/router-core'
 import { appRouters } from './routes'
 
@@ -36,7 +36,11 @@ const antdLocales = {
 }
 
 function PlaygroundApp() {
-  const [locale, setLocale] = React.useState<PlaygroundLocale>('zh-CN')
+  const localePreference = useLocalePreference({
+    defaultValue: 'zh-CN',
+    storageKey: 'zby-playground:locale-preference',
+  })
+  const locale = localePreference.value
 
   const themePreference = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
@@ -64,7 +68,7 @@ function PlaygroundApp() {
           fallbackLocale="zh-CN"
           resources={resources}
           onLocaleChange={(nextLocale) => {
-            setLocale(nextLocale === 'en-US' ? 'en-US' : 'zh-CN')
+            localePreference.setValue(nextLocale === 'en-US' ? 'en-US' : 'zh-CN')
           }}
         >
           <ReactRouterProLayout
@@ -84,7 +88,10 @@ function PlaygroundApp() {
               ),
               extra: (
                 <>
-                  <ProLocaleSwitch value={locale} onChange={setLocale} />
+                  <ProLocaleSwitch
+                    value={locale}
+                    onChange={localePreference.setValue}
+                  />
                   <ProThemeSwitch
                     value={themePreference.value}
                     appearance={themePreference.appearance}
