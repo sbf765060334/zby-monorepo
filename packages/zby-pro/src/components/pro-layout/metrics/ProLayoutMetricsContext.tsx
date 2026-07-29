@@ -1,75 +1,164 @@
-import { createContext, useContext } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createStore } from 'zustand/vanilla'
 
 import type { ReactNode } from 'react'
+import type { StoreApi } from 'zustand/vanilla'
 
+/** Layout dimensions calculated from ProLayout tokens rather than DOM measurements. */
 export interface ProLayoutMetrics {
-  header: ProLayoutElementSize
-  sider: ProLayoutElementSize
-  breadcrumb: ProLayoutElementSize
+  headerHeight: number
+  breadcrumbHeight: number
+  siderWidth: number
 }
 
-export interface ProLayoutElementSize {
-  width: number
-  height: number
+/** Public layout context fields used by business pages and content containers. */
+export interface ProLayoutContextValue extends ProLayoutMetrics {
+  noBar: boolean
+  showBreadcrumb: boolean
 }
 
-const ProLayoutContext = createContext<ProLayoutMetrics | null>(null)
+export type ProLayoutSelectorEqualityFn<Selected> = (left: Selected, right: Selected) => boolean
 
-/** Provides the measured dimensions of ProLayout chrome to descendant business pages. */
+const EMPTY_CONTEXT: ProLayoutContextValue = {
+  headerHeight: 0,
+  breadcrumbHeight: 0,
+  siderWidth: 0,
+  noBar: false,
+  showBreadcrumb: true,
+}
+
+const EMPTY_STORE = createStore<ProLayoutContextValue>(() => EMPTY_CONTEXT)
+const ProLayoutStoreContext = createContext<StoreApi<ProLayoutContextValue> | null>(null)
+const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+
+/** Keeps one layout store per ProLayout instance, matching Shuzhi's provider lifecycle. */
 export function ProLayoutProvider(props: {
   children?: ReactNode
-  value: ProLayoutMetrics
+  value: ProLayoutContextValue
 }) {
+  const [store] = useState(() => createStore<ProLayoutContextValue>(() => props.value))
+
+  useBrowserLayoutEffect(() => {
+    const previous = store.getState()
+    if (areContextValuesEqual(previous, props.value))
+      return
+
+    store.setState(props.value)
+  }, [props.value, store])
+
   return (
-    <ProLayoutContext.Provider value={props.value}>
+    <ProLayoutStoreContext.Provider value={store}>
       {props.children}
-    </ProLayoutContext.Provider>
+    </ProLayoutStoreContext.Provider>
   )
 }
 
-/** Returns the actual dimensions of the header, sider, and current breadcrumb. */
-export function useProLayoutMetrics() {
-  const metrics = useContext(ProLayoutContext)
+/** Selects a stable slice of ProLayout state, like Shuzhi's context hook. */
+export function useProLayoutContext(): ProLayoutContextValue
+export function useProLayoutContext<Selected>(
+  selector: (state: ProLayoutContextValue) => Selected,
+  equalityFn?: ProLayoutSelectorEqualityFn<Selected>,
+): Selected
+export function useProLayoutContext<Selected>(
+  selector?: (state: ProLayoutContextValue) => Selected,
+  equalityFn: ProLayoutSelectorEqualityFn<Selected> = Object.is,
+) {
+  const store = useContext(ProLayoutStoreContext) || EMPTY_STORE
+  const finalSelector = selector || (identity as (state: ProLayoutContextValue) => Selected)
 
-  if (!metrics) {
-    throw new Error('[ProLayout] Metric hooks must be used inside ProLayout.')
-  }
-
-  return metrics
+  return useStoreSelector(store, finalSelector, equalityFn)
 }
 
-export function useProLayoutHeaderSize() {
-  return useProLayoutMetrics().header
-}
-
-export function useProLayoutSiderSize() {
-  return useProLayoutMetrics().sider
-}
-
-export function useProLayoutBreadcrumbSize() {
-  return useProLayoutMetrics().breadcrumb
+/** Returns the token-derived metrics for compatibility with the previous metrics hook. */
+export function useProLayoutMetrics(): ProLayoutMetrics {
+  return useProLayoutContext(selectMetrics, areMetricsEqual)
 }
 
 export function useProLayoutHeaderHeight() {
-  return useProLayoutHeaderSize().height
-}
-
-export function useProLayoutHeaderWidth() {
-  return useProLayoutHeaderSize().width
-}
-
-export function useProLayoutSiderWidth() {
-  return useProLayoutSiderSize().width
-}
-
-export function useProLayoutSiderHeight() {
-  return useProLayoutSiderSize().height
-}
-
-export function useProLayoutBreadcrumbWidth() {
-  return useProLayoutBreadcrumbSize().width
+  return useProLayoutContext((state) => state.headerHeight)
 }
 
 export function useProLayoutBreadcrumbHeight() {
-  return useProLayoutBreadcrumbSize().height
+  return useProLayoutContext((state) => state.breadcrumbHeight)
+}
+
+export function useProLayoutSiderWidth() {
+  return useProLayoutContext((state) => state.siderWidth)
+}
+
+function identity(state: ProLayoutContextValue) {
+  return state
+}
+
+function selectMetrics(state: ProLayoutContextValue): ProLayoutMetrics {
+  return {
+    breadcrumbHeight: state.breadcrumbHeight,
+    headerHeight: state.headerHeight,
+    siderWidth: state.siderWidth,
+  }
+}
+
+function areMetricsEqual(left: ProLayoutMetrics, right: ProLayoutMetrics) {
+  return (
+    left.headerHeight === right.headerHeight &&
+    left.breadcrumbHeight === right.breadcrumbHeight &&
+    left.siderWidth === right.siderWidth
+  )
+}
+
+function areContextValuesEqual(left: ProLayoutContextValue, right: ProLayoutContextValue) {
+  return (
+    left.headerHeight === right.headerHeight &&
+    left.breadcrumbHeight === right.breadcrumbHeight &&
+    left.siderWidth === right.siderWidth &&
+    left.noBar === right.noBar &&
+    left.showBreadcrumb === right.showBreadcrumb
+  )
+}
+
+function useStoreSelector<State, Selected>(
+  store: StoreApi<State>,
+  selector: (state: State) => Selected,
+  equalityFn: ProLayoutSelectorEqualityFn<Selected>,
+) {
+  const selectedRef = useRef<{
+    store: StoreApi<State>
+    state: State
+    selector: (state: State) => Selected
+    selected: Selected
+  }>()
+
+  const readSelectedState = useCallback(
+    (state: State) => {
+      const previous = selectedRef.current
+      if (
+        previous?.store === store &&
+        previous.state === state &&
+        previous.selector === selector
+      ) {
+        return previous.selected
+      }
+
+      const selected = selector(state)
+      if (previous && equalityFn(previous.selected, selected)) {
+        selectedRef.current = { store, state, selector, selected: previous.selected }
+        return previous.selected
+      }
+
+      selectedRef.current = { store, state, selector, selected }
+      return selected
+    },
+    [equalityFn, selector, store],
+  )
+
+  const getSnapshot = useCallback(
+    () => readSelectedState(store.getState()),
+    [readSelectedState, store],
+  )
+  const getServerSnapshot = useCallback(
+    () => readSelectedState(store.getInitialState()),
+    [readSelectedState, store],
+  )
+
+  return useSyncExternalStore(store.subscribe, getSnapshot, getServerSnapshot)
 }

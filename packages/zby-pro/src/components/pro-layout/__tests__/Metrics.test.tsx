@@ -5,125 +5,51 @@ import 'fake-indexeddb/auto'
 import { ZbyIntlProvider } from '@zby/intl'
 import { createRouterCore } from '@zby/router-core'
 import { ConfigProvider, theme as antdTheme } from 'antd'
-import { cleanup, render as testingLibraryRender, screen, waitFor, act } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   ReactRouterProLayout,
+  useProLayoutBreadcrumbHeight,
+  useProLayoutContext,
+  useProLayoutHeaderHeight,
   useProLayoutMetrics,
+  useProLayoutSiderWidth,
 } from '../index'
 import { zbyProLocales } from '../../../locales'
+import type { ReactElement } from 'react'
+import { ProLayoutProvider } from '../metrics/ProLayoutMetricsContext'
+import type { ProLayoutContextValue } from '../metrics'
 import type { ProLayoutRoute } from '../types'
 
-type LayoutBox = {
-  header: { width: number; height: number }
-  sider: { width: number; height: number }
-  breadcrumb: { width: number; height: number }
-}
-
-let layoutBox: LayoutBox
-const resizeObservers = new Set<ResizeObserverMock>()
-const OriginalResizeObserver = globalThis.ResizeObserver
-const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
-
 class ResizeObserverMock {
-  private readonly elements = new Set<Element>()
-
-  constructor(private readonly callback: ResizeObserverCallback) {
-    resizeObservers.add(this)
-  }
-
-  observe(element: Element) {
-    this.elements.add(element)
-  }
-
-  unobserve(element: Element) {
-    this.elements.delete(element)
-  }
-
-  disconnect() {
-    resizeObservers.delete(this)
-    this.elements.clear()
-  }
-
-  trigger() {
-    this.callback([], this as unknown as ResizeObserver)
-  }
-
-  observesProLayoutChrome() {
-    return Array.from(this.elements).some((element) => {
-      if (!(element instanceof HTMLElement)) return false
-
-      return (
-        element.classList.contains('zby-pro-layout-header') ||
-        element.classList.contains('zby-pro-layout-sider') ||
-        element.classList.contains('zby-pro-layout-breadcrumb')
-      )
-    })
-  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 }
 
 beforeAll(() => {
+  // Ant Design Tabs uses ResizeObserver internally; ProLayout metrics do not.
   vi.stubGlobal('ResizeObserver', ResizeObserverMock)
 })
 
-beforeEach(() => {
-  layoutBox = {
-    header: { width: 1200, height: 38 },
-    sider: { width: 68, height: 800 },
-    breadcrumb: { width: 1132, height: 32 },
-  }
-
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-    if (this.classList.contains('zby-pro-layout-header'))
-      return createRect(layoutBox.header)
-    if (this.classList.contains('zby-pro-layout-sider'))
-      return createRect(layoutBox.sider)
-    if (this.classList.contains('zby-pro-layout-breadcrumb'))
-      return createRect(layoutBox.breadcrumb)
-
-    return originalGetBoundingClientRect.call(this)
-  })
-})
-
-afterEach(() => {
-  cleanup()
-  resizeObservers.clear()
-  vi.restoreAllMocks()
-})
+afterEach(cleanup)
 
 afterAll(() => {
-  vi.stubGlobal('ResizeObserver', OriginalResizeObserver)
+  vi.unstubAllGlobals()
 })
-
-function createRect(size: { width: number; height: number }): DOMRect {
-  return {
-    bottom: size.height,
-    height: size.height,
-    left: 0,
-    right: size.width,
-    top: 0,
-    width: size.width,
-    x: 0,
-    y: 0,
-    toJSON: () => ({}),
-  } as DOMRect
-}
-
-function triggerResize() {
-  resizeObservers.forEach((observer) => {
-    if (observer.observesProLayoutChrome())
-      observer.trigger()
-  })
-}
 
 function MetricsProbe() {
   const metrics = useProLayoutMetrics()
+  const headerHeight = useProLayoutHeaderHeight()
+  const breadcrumbHeight = useProLayoutBreadcrumbHeight()
+  const siderWidth = useProLayoutSiderWidth()
+  const visibility = useProLayoutContext((state) => `${state.noBar},${state.showBreadcrumb}`)
 
   return (
     <output data-testid="layout-metrics">
-      {`${metrics.header.width},${metrics.header.height}|${metrics.sider.width},${metrics.sider.height}|${metrics.breadcrumb.width},${metrics.breadcrumb.height}`}
+      {`${metrics.headerHeight},${metrics.breadcrumbHeight},${metrics.siderWidth}|${headerHeight},${breadcrumbHeight},${siderWidth}|${visibility}`}
     </output>
   )
 }
@@ -167,11 +93,11 @@ function createNoBarRouter() {
 }
 
 function renderLayout(router: ReturnType<typeof createMetricsRouter>, compact = false) {
-  return testingLibraryRender(
+  const renderNode = (nextCompact: boolean) => (
     <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
       <ConfigProvider
         theme={{
-          algorithm: compact ? antdTheme.compactAlgorithm : antdTheme.defaultAlgorithm,
+          algorithm: nextCompact ? antdTheme.compactAlgorithm : antdTheme.defaultAlgorithm,
         }}
       >
         <MemoryRouter initialEntries={['/visible']}>
@@ -182,12 +108,18 @@ function renderLayout(router: ReturnType<typeof createMetricsRouter>, compact = 
           />
         </MemoryRouter>
       </ConfigProvider>
-    </ZbyIntlProvider>,
+    </ZbyIntlProvider>
   )
+  const view = render(renderNode(compact))
+
+  return {
+    ...view,
+    rerenderDensity: (nextCompact: boolean) => view.rerender(renderNode(nextCompact)),
+  }
 }
 
 function renderNoBarLayout(router: ReturnType<typeof createNoBarRouter>) {
-  return testingLibraryRender(
+  return render(
     <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
       <MemoryRouter initialEntries={['/visible']}>
         <ReactRouterProLayout router={router} title="Metrics" noBar />
@@ -200,62 +132,78 @@ function expectMetricText(value: string) {
   expect(screen.getByTestId('layout-metrics').textContent).toBe(value)
 }
 
-describe('ProLayout metrics hooks', () => {
-  it('exposes measured header, sider and breadcrumb dimensions', async () => {
-    const router = createMetricsRouter()
-    renderLayout(router)
-
-    await screen.findByTestId('layout-metrics')
-    expectMetricText('1200,38|68,800|1132,32')
-
-    layoutBox.header.width = 1024
-    layoutBox.sider.width = 60
-    layoutBox.breadcrumb.height = 28
-    act(triggerResize)
-
-    await waitFor(() => {
-      expectMetricText('1024,38|60,800|1132,28')
-    })
-  })
-
-  it('re-measures density changes and removes the hidden leaf breadcrumb', async () => {
+describe('ProLayout context metrics', () => {
+  it('exposes default and compact token dimensions', async () => {
     const router = createMetricsRouter()
     const view = renderLayout(router)
 
-    await screen.findByTestId('layout-metrics')
-    layoutBox.header.width = 1024
-    layoutBox.header.height = 33
-    layoutBox.sider.width = 60
-    layoutBox.breadcrumb.height = 28
-    view.rerender(
-      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
-        <ConfigProvider theme={{ algorithm: antdTheme.compactAlgorithm }}>
-          <MemoryRouter initialEntries={['/visible']}>
-            <ReactRouterProLayout
-              router={router}
-              title="Metrics"
-              header={{ extra: <MetricsProbe /> }}
-            />
-          </MemoryRouter>
-        </ConfigProvider>
-      </ZbyIntlProvider>,
-    )
+    expectMetricText('38,32,68|38,32,68|false,true')
+
+    view.rerenderDensity(true)
 
     await waitFor(() => {
-      expectMetricText('1024,33|60,800|1132,28')
+      expectMetricText('33,28,60|33,28,60|false,true')
     })
+  })
+
+  it('keeps token dimensions and exposes layout visibility separately', async () => {
+    const router = createMetricsRouter()
+    renderLayout(router)
 
     act(() => router.jumpTo('/hidden'))
+
     await waitFor(() => {
-      expectMetricText('1024,33|60,800|0,0')
+      expectMetricText('38,32,68|38,32,68|false,false')
+    })
+
+    cleanup()
+    renderNoBarLayout(createNoBarRouter())
+    expectMetricText('38,32,68|38,32,68|true,true')
+  })
+
+  it('does not notify a selector when another context field changes', async () => {
+    let renderCount = 0
+    const probe = <SiderWidthProbe onRender={() => renderCount += 1} />
+    const initialValue: ProLayoutContextValue = {
+      breadcrumbHeight: 32,
+      headerHeight: 38,
+      noBar: false,
+      showBreadcrumb: true,
+      siderWidth: 68,
+    }
+    const view = renderProvider(initialValue, probe)
+
+    expect(screen.getByTestId('sider-width').textContent).toBe('68')
+    expect(renderCount).toBe(1)
+
+    view.rerenderProvider({ ...initialValue, siderWidth: 60 })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('sider-width').textContent).toBe('60')
+      expect(renderCount).toBe(2)
+    })
+
+    view.rerenderProvider({ ...initialValue, showBreadcrumb: false, siderWidth: 60 })
+
+    await waitFor(() => {
+      expect(renderCount).toBe(2)
     })
   })
-
-  it('reports zero header and sider dimensions when noBar is enabled', async () => {
-    const router = createNoBarRouter()
-    renderNoBarLayout(router)
-
-    await screen.findByTestId('layout-metrics')
-    expectMetricText('0,0|0,0|1132,32')
-  })
 })
+
+function SiderWidthProbe(props: { onRender: () => void }) {
+  props.onRender()
+  const siderWidth = useProLayoutContext((state) => state.siderWidth)
+
+  return <output data-testid="sider-width">{siderWidth}</output>
+}
+
+function renderProvider(value: ProLayoutContextValue, children: ReactElement) {
+  const view = render(<ProLayoutProvider value={value}>{children}</ProLayoutProvider>)
+
+  return {
+    ...view,
+    rerenderProvider: (nextValue: ProLayoutContextValue) =>
+      view.rerender(<ProLayoutProvider value={nextValue}>{children}</ProLayoutProvider>),
+  }
+}

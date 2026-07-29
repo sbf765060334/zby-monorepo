@@ -1,13 +1,12 @@
 export {
   useProLayoutBreadcrumbHeight,
-  useProLayoutBreadcrumbSize,
-  useProLayoutBreadcrumbWidth,
+  useProLayoutContext,
   useProLayoutHeaderHeight,
-  useProLayoutHeaderSize,
-  useProLayoutHeaderWidth,
   useProLayoutMetrics,
-  useProLayoutSiderHeight,
-  useProLayoutSiderSize,
   useProLayoutSiderWidth,
 } from './ProLayoutMetricsContext'
-export type { ProLayoutElementSize, ProLayoutMetrics } from './ProLayoutMetricsContext'
+export type {
+  ProLayoutContextValue,
+  ProLayoutMetrics,
+  ProLayoutSelectorEqualityFn,
+} from './ProLayoutMetricsContext'

@@ -1,13 +1,12 @@
 import { useRouterCoreSelector } from '@zby/router-core/react'
 import { Layout } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
-import useProLayoutMeasurements from './metrics/useProLayoutMeasurements'
 import { Breadcrumb, PageContent } from './page'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
@@ -41,13 +40,8 @@ function ProLayout(props: ProLayoutProps) {
   const currentRoutes = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentRoutes,
   )
-  const {
-    breadcrumbHeight,
-    hashId,
-    headerHeight,
-    siderWidth,
-    layoutCSSVariables,
-  } = useProLayoutStyles(prefixCls)
+  const { breadcrumbHeight, hashId, headerHeight, siderWidth, layoutCSSVariables } =
+    useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
@@ -59,12 +53,16 @@ function ProLayout(props: ProLayoutProps) {
     currentRoute &&
     currentRoute.route.showBreadcrumb !== false,
   )
-  const { breadcrumbRef, headerRef, metrics, siderRef } = useProLayoutMeasurements({
-    currentPathname,
-    layoutRevision: [headerHeight, breadcrumbHeight, siderWidth].join('|'),
-    noBar,
-    showBreadcrumb: shouldShowBreadcrumb,
-  })
+  const layoutContextValue = useMemo(
+    () => ({
+      breadcrumbHeight,
+      headerHeight,
+      noBar,
+      showBreadcrumb: shouldShowBreadcrumb,
+      siderWidth,
+    }),
+    [breadcrumbHeight, headerHeight, noBar, shouldShowBreadcrumb, siderWidth],
+  )
 
   useEffect(() => {
     if (typeof document === 'undefined')
@@ -91,7 +89,7 @@ function ProLayout(props: ProLayoutProps) {
   }, [beforeUnload])
 
   return (
-    <ProLayoutProvider value={metrics}>
+    <ProLayoutProvider value={layoutContextValue}>
       <Layout
         className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
         style={{
@@ -105,7 +103,6 @@ function ProLayout(props: ProLayoutProps) {
       >
         {!noBar ? (
           <IconDrawerMenu
-            ref={siderRef}
             prefixCls={prefixCls}
             hashId={hashId}
             logo={header?.logo}
@@ -126,7 +123,6 @@ function ProLayout(props: ProLayoutProps) {
         >
           {!noBar ? (
             <Header
-              ref={headerRef}
               prefixCls={prefixCls}
               hashId={hashId}
               height={headerHeight}
@@ -149,7 +145,6 @@ function ProLayout(props: ProLayoutProps) {
           >
             {shouldShowBreadcrumb ? (
               <Breadcrumb
-                ref={breadcrumbRef}
                 prefixCls={prefixCls}
                 className={classNames?.breadcrumb}
                 style={styles?.breadcrumb}

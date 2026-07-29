@@ -4,7 +4,7 @@ import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Layout, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
-import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ReactNode } from 'react'
@@ -48,7 +48,7 @@ export interface IconDrawerMenuProps {
  * 将三个状态分开可以保证悬停查看其他菜单时不改变真实路由，同时关闭动画期间仍保留
  * 最后一次显示的菜单内容，避免 Drawer 闪回当前页面所属目录。
  */
-const IconDrawerMenu = forwardRef<HTMLDivElement, IconDrawerMenuProps>((props, ref) => {
+const IconDrawerMenu = (props: IconDrawerMenuProps) => {
   const {
     classNames,
     hashId,
@@ -160,7 +160,6 @@ const IconDrawerMenu = forwardRef<HTMLDivElement, IconDrawerMenuProps>((props, r
       {/* message.useMessage 的 holder 必须留在当前主题上下文中，提示层才能继承正确 token。 */}
       {messageContextHolder}
       <Layout.Sider
-        ref={ref}
         width={siderWidth}
         // 图标栏始终使用 Ant Design 的折叠 Sider 形态，展开内容统一交给 MenuDrawer。
         collapsed
@@ -299,7 +298,7 @@ const IconDrawerMenu = forwardRef<HTMLDivElement, IconDrawerMenuProps>((props, r
       </Layout.Sider>
     </>
   )
-})
+}
 
 IconDrawerMenu.displayName = 'IconDrawerMenu'
 
