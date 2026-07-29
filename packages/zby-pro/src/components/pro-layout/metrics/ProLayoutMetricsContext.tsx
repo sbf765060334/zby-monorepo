@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createStore } from 'zustand/vanilla'
 
 import type { ReactNode } from 'react'
@@ -31,6 +31,26 @@ const EMPTY_STORE = createStore<ProLayoutContextValue>(() => EMPTY_CONTEXT)
 const ProLayoutStoreContext = createContext<StoreApi<ProLayoutContextValue> | null>(null)
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
+/** Synchronizes token and visibility inputs before the layout UI runs its layout effects. */
+const SyncProLayoutContextEffects = memo((props: {
+  store: StoreApi<ProLayoutContextValue>
+  value: ProLayoutContextValue
+}) => {
+  const { store, value } = props
+
+  useBrowserLayoutEffect(() => {
+    const previous = store.getState()
+    if (areContextValuesEqual(previous, value))
+      return
+
+    store.setState(value)
+  }, [store, value])
+
+  return null
+})
+
+SyncProLayoutContextEffects.displayName = 'SyncProLayoutContextEffects'
+
 /** Keeps one layout store per ProLayout instance, matching Shuzhi's provider lifecycle. */
 export function ProLayoutProvider(props: {
   children?: ReactNode
@@ -38,16 +58,9 @@ export function ProLayoutProvider(props: {
 }) {
   const [store] = useState(() => createStore<ProLayoutContextValue>(() => props.value))
 
-  useBrowserLayoutEffect(() => {
-    const previous = store.getState()
-    if (areContextValuesEqual(previous, props.value))
-      return
-
-    store.setState(props.value)
-  }, [props.value, store])
-
   return (
     <ProLayoutStoreContext.Provider value={store}>
+      <SyncProLayoutContextEffects store={store} value={props.value} />
       {props.children}
     </ProLayoutStoreContext.Provider>
   )
