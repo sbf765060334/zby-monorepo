@@ -554,7 +554,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           gap: styleToken.marginXS,
           color: styleToken.colorTextTertiary,
         },
-        [`${componentCls}-theme-trigger`]: {
+        [`${componentCls}-theme-trigger, ${componentCls}-locale-trigger`]: {
           width: 32,
           minWidth: 32,
           height: 32,

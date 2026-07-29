@@ -17,6 +17,9 @@ const enUS = {
           defaultDensity: 'Default layout',
           compactDensity: 'Compact layout',
         },
+        locale: {
+          trigger: 'Language',
+        },
         tabs: {
           pin: 'Pin tab: {{title}}',
           unpin: 'Unpin tab: {{title}}',

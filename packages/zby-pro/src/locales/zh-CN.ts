@@ -17,6 +17,9 @@ const zhCN = {
           defaultDensity: '默认布局',
           compactDensity: '紧凑布局',
         },
+        locale: {
+          trigger: '语言设置',
+        },
         tabs: {
           pin: '固定页签：{{title}}',
           unpin: '取消固定页签：{{title}}',

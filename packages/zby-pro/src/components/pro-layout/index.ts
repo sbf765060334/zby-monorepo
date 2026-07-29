@@ -1,4 +1,6 @@
 export { default, ReactRouterProLayout } from './ReactRouterProLayout'
+export { ProLocaleSwitch } from './locale'
+export type { ProLocale, ProLocaleSwitchProps } from './locale'
 export { ProThemeSwitch, useThemePreference } from './theme'
 export type {
   ProThemeAppearance,

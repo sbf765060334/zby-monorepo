@@ -4,6 +4,7 @@ import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
 import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
 import {
+  ProLocaleSwitch,
   ProThemeSwitch,
   type ProLayoutRoute,
   ReactRouterProLayout,
@@ -83,6 +84,7 @@ function PlaygroundApp() {
               ),
               extra: (
                 <>
+                  <ProLocaleSwitch value={locale} onChange={setLocale} />
                   <ProThemeSwitch
                     value={themePreference.value}
                     appearance={themePreference.appearance}
