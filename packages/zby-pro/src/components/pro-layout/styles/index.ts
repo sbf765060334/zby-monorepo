@@ -608,7 +608,6 @@ export default function useProLayoutStyles(prefixCls: string) {
           position: 'relative',
           boxSizing: 'border-box',
           overflow: 'auto',
-          scrollbarWidth: 'thin',
         },
         [`${componentCls}-exception-page`]: {
           display: 'flex',
