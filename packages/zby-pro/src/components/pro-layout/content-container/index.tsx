@@ -121,6 +121,39 @@ const ProLayoutContentContainerItem = React.memo(
   }),
 )
 
+interface ConfiguredContentContainerItemProps {
+  item: ProLayoutContentContainerItemConfig
+  itemProps?: ProLayoutContentContainerItemProps
+  prefixCls: string
+  itemBodyPadding?: ProLayoutContentContainerItemBodyPadding
+}
+
+const ConfiguredContentContainerItem = React.memo(
+  (props: ConfiguredContentContainerItemProps) => {
+    const { item, itemProps, prefixCls, itemBodyPadding } = props
+    const { key: _key, children, cardProps, className, style, ...restItemProps } = item
+    const mergedItemProps: ProLayoutContentContainerItemProps = {
+      bodyPadding: itemBodyPadding,
+      ...itemProps,
+      ...cardProps,
+      ...restItemProps,
+      prefixCls,
+      className: clsx(itemProps?.className, cardProps?.className, className),
+      style: {
+        ...itemProps?.style,
+        ...cardProps?.style,
+        ...style,
+      },
+    }
+
+    return (
+      <ProLayoutContentContainerItem {...mergedItemProps}>
+        {children}
+      </ProLayoutContentContainerItem>
+    )
+  },
+)
+
 const ProLayoutContentContainerInner = React.forwardRef<
   HTMLDivElement,
   ProLayoutContentContainerProps
@@ -170,7 +203,15 @@ const ProLayoutContentContainerInner = React.forwardRef<
     [asideStyle, asideWidth],
   )
   const bodyNode = hasItems
-    ? items.map((item) => renderItemConfig(item, itemProps, prefixCls, itemBodyPadding))
+    ? items.map((item) => (
+        <ConfiguredContentContainerItem
+          key={item.key}
+          item={item}
+          itemProps={itemProps}
+          prefixCls={prefixCls}
+          itemBodyPadding={itemBodyPadding}
+        />
+      ))
     : renderChildren(children, mergedMode, itemProps, prefixCls, itemBodyPadding)
 
   return (
@@ -244,34 +285,6 @@ function renderChildren(
       prefixCls={prefixCls}
       fill
     >
-      {children}
-    </ProLayoutContentContainerItem>
-  )
-}
-
-function renderItemConfig(
-  item: ProLayoutContentContainerItemConfig,
-  itemProps: ProLayoutContentContainerItemProps | undefined,
-  prefixCls: string,
-  itemBodyPadding: ProLayoutContentContainerItemBodyPadding | undefined,
-) {
-  const { key, children, cardProps, className, style, ...restItemProps } = item
-  const mergedItemProps: ProLayoutContentContainerItemProps = {
-    bodyPadding: itemBodyPadding,
-    ...itemProps,
-    ...cardProps,
-    ...restItemProps,
-    prefixCls,
-    className: clsx(itemProps?.className, cardProps?.className, className),
-    style: {
-      ...itemProps?.style,
-      ...cardProps?.style,
-      ...style,
-    },
-  }
-
-  return (
-    <ProLayoutContentContainerItem key={key} {...mergedItemProps}>
       {children}
     </ProLayoutContentContainerItem>
   )

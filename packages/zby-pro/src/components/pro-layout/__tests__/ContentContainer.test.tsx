@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import ProLayoutContentContainer from '../content-container'
 import type {
+  ProLayoutContentContainerItemConfig,
   ProLayoutContentContainerItemProps,
   ProLayoutContentContainerProps,
 } from '../content-container'
@@ -86,6 +87,32 @@ describe('ProLayoutContentContainer', () => {
       .toBeNull()
     expect(getByText('First item')).not.toBeNull()
     expect(getByText('Second item')).not.toBeNull()
+  })
+
+  it('skips Card work when stable item inputs survive a container rerender', () => {
+    const resolveClassNames = vi.fn(() => ({ root: 'stable-item' }))
+    const items: ProLayoutContentContainerItemConfig[] = [
+      {
+        key: 'stable',
+        children: 'Stable item',
+        classNames: resolveClassNames,
+      },
+    ]
+    const view = render(<ProLayoutContentContainer data-version="first" items={items} />)
+    const initialResolutionCount = resolveClassNames.mock.calls.length
+
+    view.rerender(<ProLayoutContentContainer data-version="second" items={items} />)
+
+    expect(initialResolutionCount).toBeGreaterThan(0)
+    expect(resolveClassNames).toHaveBeenCalledTimes(initialResolutionCount)
+
+    const updatedItems: ProLayoutContentContainerItemConfig[] = [
+      { ...items[0], children: 'Updated item' },
+    ]
+    view.rerender(<ProLayoutContentContainer data-version="third" items={updatedItems} />)
+
+    expect(view.getByText('Updated item')).not.toBeNull()
+    expect(resolveClassNames.mock.calls.length).toBeGreaterThan(initialResolutionCount)
   })
 
   it('lets explicit Card body styles override the shared body padding', () => {
