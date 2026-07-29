@@ -74,7 +74,7 @@ function PlaygroundApp() {
           <ReactRouterProLayout
             router={routers}
             title="ZBY"
-            showBreadcrumb={false}
+            showBreadcrumb={true}
             header={{
               logo: (
                 <>

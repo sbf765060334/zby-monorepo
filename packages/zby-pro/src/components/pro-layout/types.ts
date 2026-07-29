@@ -48,6 +48,7 @@ export interface ProLayoutRoute extends RouterRoute {
   ignore?: boolean
   prompt?: true | string
   tag?: string | ProLayoutRouteTagConfig
+  showBreadcrumb?: boolean
 }
 
 /** 图标栏底部的外部系统入口。 */

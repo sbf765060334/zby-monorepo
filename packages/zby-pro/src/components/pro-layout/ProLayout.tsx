@@ -3,12 +3,13 @@ import { Layout } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useEffect } from 'react'
 
+import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
 import IconDrawerMenu from './menu'
 import { Breadcrumb, PageContent } from './page'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
-import type { ProLayoutProps } from './types'
+import type { ProLayoutProps, ProLayoutRoute } from './types'
 
 const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 
@@ -35,7 +36,9 @@ function ProLayout(props: ProLayoutProps) {
     systemList,
     title,
   } = props
-  const currentRoutes = useRouterCoreSelector((state) => state.currentRoutes)
+  const currentRoutes = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.currentRoutes,
+  )
   const { hashId, headerHeight, siderWidth, layoutCSSVariables } = useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
@@ -43,6 +46,11 @@ function ProLayout(props: ProLayoutProps) {
   const currentPageTitle = currentRoute
     ? pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title
     : ''
+  const shouldShowBreadcrumb = Boolean(
+    showBreadcrumb &&
+    currentRoute &&
+    currentRoute.route.showBreadcrumb !== false,
+  )
 
   useEffect(() => {
     if (typeof document === 'undefined')
@@ -122,7 +130,7 @@ function ProLayout(props: ProLayoutProps) {
             ...styles?.content,
           }}
         >
-          {showBreadcrumb ? (
+          {shouldShowBreadcrumb ? (
             <Breadcrumb
               prefixCls={prefixCls}
               className={classNames?.breadcrumb}

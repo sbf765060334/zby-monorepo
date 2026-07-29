@@ -100,6 +100,76 @@ describe('ReactRouterProLayout', () => {
     await waitFor(() => expect(document.title).toBe('工作台 - 数字化平台'))
   })
 
+  it('只使用当前叶子路由的 showBreadcrumb 控制面包屑', async () => {
+    const breadcrumbRoutes: ProLayoutRoute[] = [
+      {
+        path: '/breadcrumb',
+        title: '面包屑父级',
+        showBreadcrumb: false,
+        routes: [
+          {
+            path: '/breadcrumb/default',
+            title: '默认显示页',
+            element: ReportsPage,
+          },
+          {
+            path: '/breadcrumb/hidden',
+            title: '隐藏面包屑页',
+            element: ReportDetailPage,
+            showBreadcrumb: false,
+          },
+        ],
+      },
+    ]
+    const router = createRouterCore({
+      routes: breadcrumbRoutes,
+      defaultRedirectPath: '/breadcrumb/default',
+      storageAdapter: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/breadcrumb/default']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('reports-page')
+    expect(screen.getByText('当前位置：')).toBeTruthy()
+
+    act(() => router.jumpTo('/breadcrumb/hidden'))
+    await screen.findByTestId('report-detail-page')
+    expect(screen.queryByText('当前位置：')).toBeNull()
+  })
+
+  it('showBreadcrumb 总开关关闭时忽略叶子路由配置', async () => {
+    const breadcrumbRoutes: ProLayoutRoute[] = [
+      {
+        path: '/breadcrumb/visible',
+        title: '显示面包屑页',
+        element: ReportsPage,
+        showBreadcrumb: true,
+      },
+    ]
+    const router = createRouterCore({
+      routes: breadcrumbRoutes,
+      defaultRedirectPath: '/breadcrumb/visible',
+      storageAdapter: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/breadcrumb/visible']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          showBreadcrumb={false}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('reports-page')
+    expect(screen.queryByText('当前位置：')).toBeNull()
+  })
+
   it('通过图标栏和 Drawer 导航，并复用 KeepAlive 页面实例', async () => {
     const router = createTestRouter()
 
