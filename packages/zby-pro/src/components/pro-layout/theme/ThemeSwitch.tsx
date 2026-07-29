@@ -26,7 +26,7 @@ function ThemeIcon() {
       <svg
         width="1em"
         height="1em"
-        viewBox="0 0 24 24"
+        viewBox="0 0 21 21"
         fill="currentColor"
         aria-hidden="true"
         focusable="false"
