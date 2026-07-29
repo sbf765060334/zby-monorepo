@@ -579,12 +579,12 @@ export default function useProLayoutStyles(prefixCls: string) {
           boxSizing: 'border-box',
           alignItems: 'center',
           paddingBlock: styleToken.paddingXXS,
-          paddingInline: styleToken.paddingXXS,
+          paddingInline: styleToken.paddingXS,
           background: styleToken.colorBgLayout,
-          fontSize: styleToken.fontSizeSM,
+          fontSize: styleToken.fontSize,
 
           [`.ant-breadcrumb`]: {
-            fontSize: styleToken.fontSizeSM,
+            fontSize: styleToken.fontSize,
           },
           [`.ant-breadcrumb-separator`]: {
             marginInline: styleToken.marginXXS,
@@ -592,7 +592,7 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-breadcrumb-label`]: {
           color: styleToken.colorTextTertiary,
-          fontSize: styleToken.fontSizeSM,
+          fontSize: styleToken.fontSize,
           whiteSpace: 'nowrap',
         },
         [`${componentCls}-breadcrumb-item-title`]: {
