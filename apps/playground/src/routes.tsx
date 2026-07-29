@@ -2,6 +2,7 @@ import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartO
 import type { ProLayoutRoute } from '@zby/pro'
 import DemoPage from './pages/DemoPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
+import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -265,9 +266,9 @@ export const appRouters: ProLayoutRoute[ ] = [
         element: <InputNumberRangePlayground />,
       },
       {
-        path: '/sample/live',
-        title: '实时监控',
-        element: <DemoPage />,
+        path: '/sample/scroll-area',
+        title: '滚动组件',
+        element: <ScrollAreaPlayground />,
       },
     ],
   },

@@ -13,6 +13,7 @@ import {
 import { ScrollArea } from '@zby/ui'
 import type { ScrollAreaDirection, ScrollAreaScrollbar, ScrollAreaWheelBehavior } from '@zby/ui'
 import React from 'react'
+import { ProLayoutContentContainer } from '@zby/pro'
 
 const { Text, Title } = Typography
 
@@ -218,292 +219,296 @@ export default function ScrollAreaPlayground() {
   }
 
   return (
-    <Space orientation="vertical" size={24} style={{ width: '100%' }}>
-      <header>
-        <Title level={3} style={{ margin: 0 }}>
-          ScrollArea
-        </Title>
-        <Text type="secondary">@zby/ui component playground</Text>
-      </header>
+    <ProLayoutContentContainer mode="stack">
+      <ProLayoutContentContainer.Item>
+        <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+          <header>
+            <Title level={3} style={{ margin: 0 }}>
+              ScrollArea
+            </Title>
+            <Text type="secondary">@zby/ui component playground</Text>
+          </header>
 
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          交互实验台
-        </Title>
-        <div style={controlGridStyle}>
-          <ControlField label="direction">
-            <Segmented
-              block
-              value={direction}
-              options={['vertical', 'horizontal', 'both']}
-              onChange={(value) => setDirection(value as ScrollAreaDirection)}
-            />
-          </ControlField>
-          <ControlField label="scrollbar">
-            <Segmented
-              block
-              value={scrollbarMode}
-              options={['hover', 'scrolling', 'always', 'off']}
-              onChange={(value) => setScrollbarMode(value as ScrollbarMode)}
-            />
-          </ControlField>
-          <ControlField label="wheelBehavior">
-            <Segmented
-              block
-              value={wheelBehavior}
-              options={['axis-mapping', 'native']}
-              onChange={(value) => setWheelBehavior(value as ScrollAreaWheelBehavior)}
-            />
-          </ControlField>
-          <ControlField label="nativeScrollbar">
-            <Switch
-              checked={nativeScrollbar}
-              checkedChildren="Native"
-              unCheckedChildren="Custom"
-              onChange={setNativeScrollbar}
-            />
-          </ControlField>
-        </div>
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              交互实验台
+            </Title>
+            <div style={controlGridStyle}>
+              <ControlField label="direction">
+                <Segmented
+                  block
+                  value={direction}
+                  options={['vertical', 'horizontal', 'both']}
+                  onChange={(value) => setDirection(value as ScrollAreaDirection)}
+                />
+              </ControlField>
+              <ControlField label="scrollbar">
+                <Segmented
+                  block
+                  value={scrollbarMode}
+                  options={['hover', 'scrolling', 'always', 'off']}
+                  onChange={(value) => setScrollbarMode(value as ScrollbarMode)}
+                />
+              </ControlField>
+              <ControlField label="wheelBehavior">
+                <Segmented
+                  block
+                  value={wheelBehavior}
+                  options={['axis-mapping', 'native']}
+                  onChange={(value) => setWheelBehavior(value as ScrollAreaWheelBehavior)}
+                />
+              </ControlField>
+              <ControlField label="nativeScrollbar">
+                <Switch
+                  checked={nativeScrollbar}
+                  checkedChildren="Native"
+                  unCheckedChildren="Custom"
+                  onChange={setNativeScrollbar}
+                />
+              </ControlField>
+            </div>
 
-        <DemoCase title="实时预览">
-          <ScrollArea
-            direction={direction}
-            scrollbar={scrollbar}
-            wheelBehavior={wheelBehavior}
-            nativeScrollbar={nativeScrollbar}
-            style={{ ...scrollFrameStyle, height: 260 }}
-            viewportProps={{
-              'aria-label': 'ScrollArea interactive viewport',
-              onScroll: (event) =>
-                setScrollPosition({
-                  left: event.currentTarget.scrollLeft,
-                  top: event.currentTarget.scrollTop,
-                }),
-            }}
-          >
-            {getContent(direction)}
-          </ScrollArea>
-          <Text code>
-            scrollLeft: {Math.round(scrollPosition.left)} / scrollTop:{' '}
-            {Math.round(scrollPosition.top)}
-          </Text>
-        </DemoCase>
-      </section>
-
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          方向与展示策略
-        </Title>
-        <div style={gridStyle}>
-          <DemoCase title="vertical / hover">
-            <ScrollArea direction="vertical" scrollbar="hover" style={scrollFrameStyle}>
-              <VerticalContent />
-            </ScrollArea>
-          </DemoCase>
-          <DemoCase title="horizontal / scrolling">
-            <ScrollArea
-              direction="horizontal"
-              scrollbar="scrolling"
-              wheelBehavior="axis-mapping"
-              style={scrollFrameStyle}
-            >
-              <HorizontalContent />
-            </ScrollArea>
-          </DemoCase>
-          <DemoCase title="both / always">
-            <ScrollArea direction="both" scrollbar="always" style={scrollFrameStyle}>
-              <BothContent />
-            </ScrollArea>
-          </DemoCase>
-          <DemoCase title="scrollbar={false}">
-            <ScrollArea direction="vertical" scrollbar={false} style={scrollFrameStyle}>
-              <VerticalContent />
-            </ScrollArea>
-          </DemoCase>
-          <DemoCase title="nativeScrollbar">
-            <ScrollArea direction="both" nativeScrollbar style={scrollFrameStyle}>
-              <BothContent />
-            </ScrollArea>
-          </DemoCase>
-          <DemoCase title="horizontal / native wheel">
-            <ScrollArea
-              direction="horizontal"
-              scrollbar="always"
-              wheelBehavior="native"
-              style={scrollFrameStyle}
-            >
-              <HorizontalContent />
-            </ScrollArea>
-          </DemoCase>
-        </div>
-      </section>
-
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          Ref、Semantic 与前缀
-        </Title>
-        <div style={gridStyle}>
-          <DemoCase title="viewportRef / viewportProps">
-            <Space wrap>
-              <Button onClick={() => viewportRef.current?.scrollTo({ top: 0 })}>顶部</Button>
-              <Button
-                onClick={() =>
-                  viewportRef.current?.scrollTo({
-                    top: viewportRef.current.scrollHeight,
-                    behavior: 'smooth',
-                  })
-                }
-              >
-                底部
-              </Button>
-            </Space>
-            <ScrollArea
-              direction="vertical"
-              scrollbar="always"
-              viewportRef={viewportRef}
-              viewportProps={{ tabIndex: 0, 'aria-label': 'Imperative scroll viewport' }}
-              style={scrollFrameStyle}
-            >
-              <VerticalContent />
-            </ScrollArea>
-          </DemoCase>
-
-          <DemoCase title="classNames / styles">
-            <ScrollArea
-              direction="vertical"
-              scrollbar="always"
-              classNames={{
-                root: 'scroll-area-semantic-root',
-                viewport: 'scroll-area-semantic-viewport',
-                verticalTrack: 'scroll-area-semantic-track',
-                verticalThumb: 'scroll-area-semantic-thumb',
-              }}
-              styles={{
-                root: { ...scrollFrameStyle, borderColor: token.colorPrimary },
-                viewport: { background: token.colorFillQuaternary },
-                verticalTrack: { insetInlineEnd: 6, width: 8 },
-                verticalThumb: { background: token.colorSuccess },
-              }}
-              viewportProps={{ tabIndex: 0, 'aria-label': 'Semantic styles viewport' }}
-            >
-              <VerticalContent />
-            </ScrollArea>
-          </DemoCase>
-
-          <DemoCase title="custom prefixCls">
-            <ScrollArea
-              prefixCls="zby-demo-scroll-area"
-              direction="horizontal"
-              scrollbar="always"
-              style={scrollFrameStyle}
-            >
-              <HorizontalContent />
-            </ScrollArea>
-            <Text code>zby-demo-scroll-area</Text>
-          </DemoCase>
-        </div>
-      </section>
-
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          Component Token
-        </Title>
-        <div style={controlGridStyle}>
-          <ControlField label={`trackSize: ${trackSize}px`}>
-            <Slider min={4} max={16} value={trackSize} onChange={setTrackSize} />
-          </ControlField>
-          <ControlField label="thumbBg">
-            <ColorPicker showText value={thumbBg} onChange={(_, css) => setThumbBg(css)} />
-          </ControlField>
-          <ControlField label="thumbHoverBg">
-            <ColorPicker
-              showText
-              value={thumbHoverBg}
-              onChange={(_, css) => setThumbHoverBg(css)}
-            />
-          </ControlField>
-          <ControlField label="zIndex">
-            <InputNumber
-              min={0}
-              max={999}
-              value={zIndex}
-              onChange={(value) => setZIndex(value ?? 0)}
-            />
-          </ControlField>
-        </div>
-        <ConfigProvider
-          theme={{
-            components: {
-              ScrollArea: {
-                trackSize,
-                thumbBg,
-                thumbHoverBg,
-                zIndex,
-              },
-            },
-          }}
-        >
-          <ScrollArea
-            direction="vertical"
-            scrollbar="always"
-            style={{ ...scrollFrameStyle, height: 220 }}
-          >
-            <VerticalContent />
-          </ScrollArea>
-        </ConfigProvider>
-      </section>
-
-      <section style={sectionStyle}>
-        <Title level={5} style={{ margin: 0 }}>
-          嵌套与 RTL
-        </Title>
-        <div style={gridStyle}>
-          <DemoCase title="horizontal + nested vertical">
-            <ScrollArea
-              direction="horizontal"
-              scrollbar="always"
-              wheelBehavior="axis-mapping"
-              style={scrollFrameStyle}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 24,
-                  width: 840,
-                  minHeight: '100%',
-                  padding: 16,
+            <DemoCase title="实时预览">
+              <ScrollArea
+                direction={direction}
+                scrollbar={scrollbar}
+                wheelBehavior={wheelBehavior}
+                nativeScrollbar={nativeScrollbar}
+                style={{ ...scrollFrameStyle, height: 260 }}
+                viewportProps={{
+                  'aria-label': 'ScrollArea interactive viewport',
+                  onScroll: (event) =>
+                    setScrollPosition({
+                      left: event.currentTarget.scrollLeft,
+                      top: event.currentTarget.scrollTop,
+                    }),
                 }}
               >
-                <Title level={4} style={{ width: 220, margin: 0 }}>
-                  外层横向区域
-                </Title>
+                {getContent(direction)}
+              </ScrollArea>
+              <Text code>
+                scrollLeft: {Math.round(scrollPosition.left)} / scrollTop:{' '}
+                {Math.round(scrollPosition.top)}
+              </Text>
+            </DemoCase>
+          </section>
+
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              方向与展示策略
+            </Title>
+            <div style={gridStyle}>
+              <DemoCase title="vertical / hover">
+                <ScrollArea direction="vertical" scrollbar="hover" style={scrollFrameStyle}>
+                  <VerticalContent />
+                </ScrollArea>
+              </DemoCase>
+              <DemoCase title="horizontal / scrolling">
+                <ScrollArea
+                  direction="horizontal"
+                  scrollbar="scrolling"
+                  wheelBehavior="axis-mapping"
+                  style={scrollFrameStyle}
+                >
+                  <HorizontalContent />
+                </ScrollArea>
+              </DemoCase>
+              <DemoCase title="both / always">
+                <ScrollArea direction="both" scrollbar="always" style={scrollFrameStyle}>
+                  <BothContent />
+                </ScrollArea>
+              </DemoCase>
+              <DemoCase title="scrollbar={false}">
+                <ScrollArea direction="vertical" scrollbar={false} style={scrollFrameStyle}>
+                  <VerticalContent />
+                </ScrollArea>
+              </DemoCase>
+              <DemoCase title="nativeScrollbar">
+                <ScrollArea direction="both" nativeScrollbar style={scrollFrameStyle}>
+                  <BothContent />
+                </ScrollArea>
+              </DemoCase>
+              <DemoCase title="horizontal / native wheel">
+                <ScrollArea
+                  direction="horizontal"
+                  scrollbar="always"
+                  wheelBehavior="native"
+                  style={scrollFrameStyle}
+                >
+                  <HorizontalContent />
+                </ScrollArea>
+              </DemoCase>
+            </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              Ref、Semantic 与前缀
+            </Title>
+            <div style={gridStyle}>
+              <DemoCase title="viewportRef / viewportProps">
+                <Space wrap>
+                  <Button onClick={() => viewportRef.current?.scrollTo({ top: 0 })}>顶部</Button>
+                  <Button
+                    onClick={() =>
+                      viewportRef.current?.scrollTo({
+                        top: viewportRef.current.scrollHeight,
+                        behavior: 'smooth',
+                      })
+                    }
+                  >
+                    底部
+                  </Button>
+                </Space>
                 <ScrollArea
                   direction="vertical"
                   scrollbar="always"
-                  style={{ ...scrollFrameStyle, width: 360, height: 170 }}
+                  viewportRef={viewportRef}
+                  viewportProps={{ tabIndex: 0, 'aria-label': 'Imperative scroll viewport' }}
+                  style={scrollFrameStyle}
                 >
                   <VerticalContent />
                 </ScrollArea>
-                <Text style={{ width: 180 }}>尾部区域</Text>
-              </div>
-            </ScrollArea>
-          </DemoCase>
+              </DemoCase>
 
-          <DemoCase title="RTL horizontal">
-            <ConfigProvider direction="rtl">
+              <DemoCase title="classNames / styles">
+                <ScrollArea
+                  direction="vertical"
+                  scrollbar="always"
+                  classNames={{
+                    root: 'scroll-area-semantic-root',
+                    viewport: 'scroll-area-semantic-viewport',
+                    verticalTrack: 'scroll-area-semantic-track',
+                    verticalThumb: 'scroll-area-semantic-thumb',
+                  }}
+                  styles={{
+                    root: { ...scrollFrameStyle, borderColor: token.colorPrimary },
+                    viewport: { background: token.colorFillQuaternary },
+                    verticalTrack: { insetInlineEnd: 6, width: 8 },
+                    verticalThumb: { background: token.colorSuccess },
+                  }}
+                  viewportProps={{ tabIndex: 0, 'aria-label': 'Semantic styles viewport' }}
+                >
+                  <VerticalContent />
+                </ScrollArea>
+              </DemoCase>
+
+              <DemoCase title="custom prefixCls">
+                <ScrollArea
+                  prefixCls="zby-demo-scroll-area"
+                  direction="horizontal"
+                  scrollbar="always"
+                  style={scrollFrameStyle}
+                >
+                  <HorizontalContent />
+                </ScrollArea>
+                <Text code>zby-demo-scroll-area</Text>
+              </DemoCase>
+            </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              Component Token
+            </Title>
+            <div style={controlGridStyle}>
+              <ControlField label={`trackSize: ${trackSize}px`}>
+                <Slider min={4} max={16} value={trackSize} onChange={setTrackSize} />
+              </ControlField>
+              <ControlField label="thumbBg">
+                <ColorPicker showText value={thumbBg} onChange={(_, css) => setThumbBg(css)} />
+              </ControlField>
+              <ControlField label="thumbHoverBg">
+                <ColorPicker
+                  showText
+                  value={thumbHoverBg}
+                  onChange={(_, css) => setThumbHoverBg(css)}
+                />
+              </ControlField>
+              <ControlField label="zIndex">
+                <InputNumber
+                  min={0}
+                  max={999}
+                  value={zIndex}
+                  onChange={(value) => setZIndex(value ?? 0)}
+                />
+              </ControlField>
+            </div>
+            <ConfigProvider
+              theme={{
+                components: {
+                  ScrollArea: {
+                    trackSize,
+                    thumbBg,
+                    thumbHoverBg,
+                    zIndex,
+                  },
+                },
+              }}
+            >
               <ScrollArea
-                direction="horizontal"
+                direction="vertical"
                 scrollbar="always"
-                wheelBehavior="axis-mapping"
-                style={scrollFrameStyle}
+                style={{ ...scrollFrameStyle, height: 220 }}
               >
-                <HorizontalContent />
+                <VerticalContent />
               </ScrollArea>
             </ConfigProvider>
-          </DemoCase>
-        </div>
-      </section>
-    </Space>
+          </section>
+
+          <section style={sectionStyle}>
+            <Title level={5} style={{ margin: 0 }}>
+              嵌套与 RTL
+            </Title>
+            <div style={gridStyle}>
+              <DemoCase title="horizontal + nested vertical">
+                <ScrollArea
+                  direction="horizontal"
+                  scrollbar="always"
+                  wheelBehavior="axis-mapping"
+                  style={scrollFrameStyle}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 24,
+                      width: 840,
+                      minHeight: '100%',
+                      padding: 16,
+                    }}
+                  >
+                    <Title level={4} style={{ width: 220, margin: 0 }}>
+                      外层横向区域
+                    </Title>
+                    <ScrollArea
+                      direction="vertical"
+                      scrollbar="always"
+                      style={{ ...scrollFrameStyle, width: 360, height: 170 }}
+                    >
+                      <VerticalContent />
+                    </ScrollArea>
+                    <Text style={{ width: 180 }}>尾部区域</Text>
+                  </div>
+                </ScrollArea>
+              </DemoCase>
+
+              <DemoCase title="RTL horizontal">
+                <ConfigProvider direction="rtl">
+                  <ScrollArea
+                    direction="horizontal"
+                    scrollbar="always"
+                    wheelBehavior="axis-mapping"
+                    style={scrollFrameStyle}
+                  >
+                    <HorizontalContent />
+                  </ScrollArea>
+                </ConfigProvider>
+              </DemoCase>
+            </div>
+          </section>
+        </Space>
+      </ProLayoutContentContainer.Item>
+    </ProLayoutContentContainer>
   )
 }
