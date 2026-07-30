@@ -74,6 +74,7 @@ function RouteSearch(props: ProRouteSearchProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
+  const resultItemRefs = useRef<Array<HTMLDivElement | null>>([])
   // undefined 使 SSR 与客户端首次渲染保持一致；挂载后再读取真实视口高度。
   const [bodyMaxHeight, setBodyMaxHeight] = useState<number>()
 
@@ -280,6 +281,15 @@ function RouteSearch(props: ProRouteSearchProps) {
     }
   }
 
+  useEffect(() => {
+    if (!open || activeIndex < 0)
+      return
+
+    resultItemRefs.current[activeIndex]?.scrollIntoView({
+      block: 'nearest',
+    })
+  }, [activeIndex, open, visibleRoutes])
+
   return (
     <>
       {/* 业务将该触发器与语言、主题组件并列放入 header.extra。 */}
@@ -368,6 +378,9 @@ function RouteSearch(props: ProRouteSearchProps) {
             {visibleRoutes.map((item, index) => (
               <div
                 key={item.path}
+                ref={(node) => {
+                  resultItemRefs.current[index] = node
+                }}
                 className={clsx(`${prefixCls}-search-result`, {
                   // active 同时服务鼠标悬浮反馈和键盘方向键选择。
                   [`${prefixCls}-search-result-active`]: index === activeIndex,
