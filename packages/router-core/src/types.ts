@@ -148,12 +148,14 @@ export interface RouterLocationEventPayload {
   hash: string
 }
 
-/** router-core 自己负责持久化的数据；不包含 ProLayout 的菜单收藏。 */
+/** router-core 自己负责持久化的路由状态。 */
 export interface RouterStorageState {
   /** 固定页签 key，数组顺序同时代表固定页签的显示顺序。 */
   fixedTabs: string[]
   /** 共享动态页签 key 到最后真实 pathname 的映射。 */
   fixedParamsPathMap: Record<string, string>
+  /** 已收藏的注册页面路由 path，数组顺序同时代表收藏顺序。 */
+  favoriteRoutePaths: string[]
 }
 
 /** 持久化失败时所处的精确读写阶段。 */
@@ -161,6 +163,7 @@ export type RouterStorageErrorPhase =
   | 'load'
   | 'saveFixedTabs'
   | 'saveFixedParamsPathMap'
+  | 'saveFavoriteRoutePaths'
 
 export interface RouterStorageErrorInfo {
   /** 本次读写对应的持久化命名空间。 */
@@ -172,17 +175,22 @@ export interface RouterStorageErrorInfo {
 /**
  * router-core 持久化适配器。
  *
- * 两个 save 方法只负责各自字段，具体实现必须避免并发字段写入互相覆盖。
+ * 各 save 方法只负责各自字段，具体实现必须避免并发字段写入互相覆盖。
  */
 export interface RouterStorageAdapter {
-  /** 加载指定命名空间的完整持久化状态。 */
-  load: (storageKey: string) => Promise<RouterStorageState>
+  /** 加载指定命名空间的持久化状态；缺失字段由 core 按空状态补齐。 */
+  load: (storageKey: string) => Promise<Partial<RouterStorageState>>
   /** 保存固定页签集合。 */
   saveFixedTabs: (storageKey: string, fixedTabs: string[]) => Promise<void>
   /** 保存共享动态页签的真实 pathname 映射。 */
   saveFixedParamsPathMap: (
     storageKey: string,
     fixedParamsPathMap: Record<string, string>,
+  ) => Promise<void>
+  /** 保存收藏路由集合。 */
+  saveFavoriteRoutePaths: (
+    storageKey: string,
+    favoriteRoutePaths: string[],
   ) => Promise<void>
 }
 
@@ -268,6 +276,8 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   readonly pages: readonly RouterPage<Route>[]
   /** 当前固定页签 key，顺序与固定页签显示顺序一致。 */
   readonly fixedSet: readonly string[]
+  /** 当前收藏的注册页面路由 path，顺序与收藏菜单显示顺序一致。 */
+  readonly favoriteRoutePaths: readonly string[]
   /** 真实 pathname 到业务描述文本的增量映射。 */
   readonly pathnameDescriptionMap: Readonly<Record<string, string>>
   /** 实例创建时固定的持久化命名空间。 */
@@ -318,7 +328,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   bindHost: (host: RouterHost | null) => void
   /** 同步允许随宿主生命周期变化的回调引用。 */
   configureRuntime: (options: RouterRuntimeOptions) => void
-  /** 从固定 Adapter/storageKey 加载固定页签和动态 pathname。 */
+  /** 从固定 Adapter/storageKey 加载固定页签、动态 pathname 和收藏路由。 */
   hydrateStorage: () => Promise<void>
   /**
    * 接收宿主最新地址，并统一处理根路径/目录落点、路由层级、URL Cache、页签和页面实例。
@@ -355,6 +365,8 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   setPathnameDescription: (map: Record<string, string>) => void
   /** 固定或取消固定页签；页签未打开或超过数量限制时返回 false。 */
   toggleFixed: (tabKey: string) => boolean
+  /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */
+  toggleFavoriteRoute: (path: string) => boolean
   /** 运行关闭守卫并清理页签、页面、Cache 和相关资源。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
   /** 将“关闭旧页签 + 打开新地址”作为只产生一次最终导航的组合命令。 */

@@ -110,6 +110,8 @@ interface RouterRuntime {
   storageHydrationPromise: Promise<void> | null
   /** 加载期间固定页签集合的本地修改版本，防止旧加载结果覆盖用户操作。 */
   fixedTabsMutationVersion: number
+  /** 加载期间收藏路由集合的本地修改版本，防止旧加载结果覆盖用户操作。 */
+  favoriteRoutesMutationVersion: number
   /**
    * 首次 hydration 完成前发生的动态 pathname 增量；null 表示删除。
    *
@@ -240,6 +242,7 @@ export function createRouterCore<Route extends RouterRoute>(
     closingTabKeys: new Set(),
     storageHydrationPromise: null,
     fixedTabsMutationVersion: 0,
+    favoriteRoutesMutationVersion: 0,
     pendingParamsPathMutations: new Map(),
   }
 
@@ -255,6 +258,7 @@ export function createRouterCore<Route extends RouterRoute>(
     tabs: [],
     pages: [],
     fixedSet: [],
+    favoriteRoutePaths: [],
     pathnameDescriptionMap: {},
     // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
     storageKey: options.storageKey ?? 'default',
@@ -801,6 +805,21 @@ export function createRouterCore<Route extends RouterRoute>(
     return true
   }
 
+  /** 收藏或取消收藏注册页面路由。 */
+  function toggleFavoriteRoute(path: string) {
+    const state = getState()
+    const routeKey = sanitizeFavoriteRoutePaths([path], registry)[0]
+    if (!routeKey)
+      return false
+
+    const favoriteRoutePaths = state.favoriteRoutePaths.includes(routeKey)
+      ? state.favoriteRoutePaths.filter((item) => item !== routeKey)
+      : state.favoriteRoutePaths.concat(routeKey)
+    persistFavoriteRoutePaths(favoriteRoutePaths)
+    setState({ favoriteRoutePaths })
+    return true
+  }
+
   /** 把通知回调错误暴露到开发控制台，但不改变已经提交的关闭结果。 */
   function reportTabCloseError(error: unknown) {
     console.error('[RouterCore] onTabClose callback failed.', error)
@@ -1076,6 +1095,13 @@ export function createRouterCore<Route extends RouterRoute>(
     )
   }
 
+  /** 将收藏路由保存委托给统一字段持久化流程。 */
+  function persistFavoriteRoutePaths(value: readonly string[]) {
+    runtime.favoriteRoutesMutationVersion += 1
+    persist('saveFavoriteRoutePaths', (adapter, storageKey) =>
+      adapter.saveFavoriteRoutePaths(storageKey, [...value]))
+  }
+
   /** 报告错误通知回调自身的异常，但不能再次进入 onStorageError 形成递归通知。 */
   function reportStorageErrorCallbackError(error: unknown) {
     console.error('[RouterCore] onStorageError callback failed.', error)
@@ -1145,6 +1171,7 @@ export function createRouterCore<Route extends RouterRoute>(
     // 固定页签仍以字段版本判断加载期间是否被用户修改；动态 pathname 则保留每个
     // tabKey 的增量，避免一个局部变化覆盖尚未加载的其它映射。
     const fixedTabsMutationVersion = runtime.fixedTabsMutationVersion
+    const favoriteRoutesMutationVersion = runtime.favoriteRoutesMutationVersion
     setState({ storageLoading: true, storageLoadError: undefined })
 
     try {
@@ -1154,6 +1181,8 @@ export function createRouterCore<Route extends RouterRoute>(
       const state = getState()
       const fixedUnchanged =
         fixedTabsMutationVersion === runtime.fixedTabsMutationVersion
+      const favoritesUnchanged =
+        favoriteRoutesMutationVersion === runtime.favoriteRoutesMutationVersion
 
       // 增量 Map 包含 load 前和 load 期间的全部本地变化。字符串覆盖存储旧值，null
       // 显式删除旧映射；未触达的 key 原样保留，避免首个动态页覆盖其它页签历史。
@@ -1173,6 +1202,9 @@ export function createRouterCore<Route extends RouterRoute>(
             registry,
           ).slice(0, state.maxFixedTabCount)
         : state.fixedSet
+      const nextFavoriteRoutePaths = favoritesUnchanged
+        ? sanitizeFavoriteRoutePaths(loaded.favoriteRoutePaths, registry)
+        : state.favoriteRoutePaths
 
       // 使用 hydrate 方法替换完整 Cache 不会产生保存回调；清空增量后再把 Store 标记为
       // hydrated，后续 pathname 更新即可按普通完整快照直接持久化。
@@ -1180,6 +1212,7 @@ export function createRouterCore<Route extends RouterRoute>(
       runtime.pendingParamsPathMutations.clear()
       setState({
         fixedSet: nextFixedSet,
+        favoriteRoutePaths: nextFavoriteRoutePaths,
         tabs: fixedUnchanged
           ? mergeTabsWithFixedSet(state.tabs, nextFixedSet, registry)
           : state.tabs,
@@ -1192,6 +1225,12 @@ export function createRouterCore<Route extends RouterRoute>(
       if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap)) {
         // 本次会话的动态地址在完整加载结果上合并后只回写一次，不会覆盖未触达 key。
         persistParamsPathMap(mergedParamsPathMap)
+      }
+      if (
+        favoritesUnchanged &&
+        !areStringArraysEqual(nextFavoriteRoutePaths, loaded.favoriteRoutePaths)
+      ) {
+        persistFavoriteRoutePaths(nextFavoriteRoutePaths)
       }
     } catch (error) {
       setState({ storageLoading: false, storageLoadError: error })
@@ -1236,6 +1275,7 @@ export function createRouterCore<Route extends RouterRoute>(
         }
       }),
     toggleFixed,
+    toggleFavoriteRoute,
     closeTab,
     closeThisTabOpenNewOne,
     addBeforeCloseHook,
@@ -1299,6 +1339,27 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
 
     seen.add(tabKey)
     sanitized.push(tabKey)
+  })
+
+  return sanitized
+}
+
+/** 清理重复或已经不存在的收藏路由，同时保持首次出现顺序。 */
+function sanitizeFavoriteRoutePaths<Route extends RouterRoute>(
+  favoriteRoutePaths: readonly string[],
+  registry: RouteRegistry<Route>,
+) {
+  const seen = new Set<string>()
+  const sanitized: string[] = []
+
+  favoriteRoutePaths.forEach((path) => {
+    const resolved = registry.resolveLeafRoute(path)
+    const routeKey = resolved?.routeKey
+    if (!routeKey || seen.has(routeKey) || !registry.isPageRoute(resolved?.route))
+      return
+
+    seen.add(routeKey)
+    sanitized.push(routeKey)
   })
 
   return sanitized

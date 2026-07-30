@@ -35,6 +35,7 @@ export function normalizeRouterStorageState(
   return {
     fixedTabs: normalizeStringArray(state?.fixedTabs),
     fixedParamsPathMap: normalizeStringMap(state?.fixedParamsPathMap),
+    favoriteRoutePaths: normalizeStringArray(state?.favoriteRoutePaths),
   }
 }
 
@@ -58,6 +59,11 @@ export function createIndexedDBRouterStorageAdapter(): RouterStorageAdapter {
     saveFixedParamsPathMap(storageKey, fixedParamsPathMap) {
       return updateIndexedDBState(storageKey, {
         fixedParamsPathMap: normalizeStringMap(fixedParamsPathMap),
+      })
+    },
+    saveFavoriteRoutePaths(storageKey, favoriteRoutePaths) {
+      return updateIndexedDBState(storageKey, {
+        favoriteRoutePaths: normalizeStringArray(favoriteRoutePaths),
       })
     },
   }
@@ -87,6 +93,13 @@ export function createRemoteRouterStorageAdapter(
       return enqueueWrite(
         storageKey,
         () => config.saveFixedParamsPathMap(storageKey, normalized),
+      )
+    },
+    saveFavoriteRoutePaths(storageKey, favoriteRoutePaths) {
+      const normalized = normalizeStringArray(favoriteRoutePaths)
+      return enqueueWrite(
+        storageKey,
+        () => config.saveFavoriteRoutePaths(storageKey, normalized),
       )
     },
   }
@@ -147,7 +160,7 @@ function createStorageWriteQueue(): StorageWriteQueue {
 }
 
 function normalizeStringArray(value: unknown): string[] {
-  // 非数组视为空状态；数组中只保留可以作为页签 key 的字符串。
+  // 非数组视为空状态；数组中只保留可以作为持久化路径的字符串。
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : []

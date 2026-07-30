@@ -91,6 +91,9 @@ describe('RouterCoreReactRouterAdapter', () => {
         operations.push('saveFixedParamsPathMap')
         savedParamsPathMaps.push({ ...fixedParamsPathMap })
       },
+      async saveFavoriteRoutePaths(storageKey) {
+        savedStorageKeys.push(storageKey)
+      },
     }
     const router = createRouterCore({
       routes,

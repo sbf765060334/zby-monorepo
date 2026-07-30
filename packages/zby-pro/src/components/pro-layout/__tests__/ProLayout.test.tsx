@@ -3,7 +3,7 @@
 import 'fake-indexeddb/auto'
 
 import { ZbyIntlProvider } from '@zby/intl'
-import { createRouterCore } from '@zby/router-core'
+import { createIndexedDBRouterStorageAdapter, createRouterCore } from '@zby/router-core'
 import { RouterCoreProvider, useRouterPageSelector } from '@zby/router-core/react'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import {
@@ -19,11 +19,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { zbyProLocales } from '../../../locales'
-import * as favoriteStorage from '../favorites/storage'
 import ReactRouterProLayout from '../ReactRouterProLayout'
 import PageContent from '../page/PageContent'
 import { ProRouteSearch } from '../search'
 import type { ReactNode } from 'react'
+import type { RouterStorageAdapter, RouterStorageState } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
 
 beforeAll(() => {
@@ -801,7 +801,7 @@ describe('ReactRouterProLayout', () => {
 
   it('收藏 Drawer 菜单且不触发导航，并在重新挂载后恢复和取消收藏', async () => {
     const storageKey = 'pro-layout-favorite-persistence'
-    const firstRouter = createTestRouter(storageKey)
+    const firstRouter = createPersistentTestRouter(storageKey)
     const jumpTo = vi.spyOn(firstRouter, 'jumpTo')
     const firstRender = render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -823,11 +823,13 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(within(collectionPanel as HTMLElement).getByRole('button', { name: '订单列表' }))
     expect(jumpTo).toHaveBeenCalledWith('/orders/list')
     await waitFor(async () => {
-      expect(await favoriteStorage.loadFavoriteMenuPaths(storageKey)).toEqual(['/orders/list'])
+      expect(
+        (await createIndexedDBRouterStorageAdapter().load(storageKey)).favoriteRoutePaths,
+      ).toEqual(['/orders/list'])
     })
 
     firstRender.unmount()
-    const secondRouter = createTestRouter(storageKey)
+    const secondRouter = createPersistentTestRouter(storageKey)
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <ReactRouterProLayout router={secondRouter} title="数字化平台" />
@@ -841,17 +843,28 @@ describe('ReactRouterProLayout', () => {
     expect(await screen.findByText('取消收藏成功')).toBeTruthy()
 
     await waitFor(async () => {
-      expect(await favoriteStorage.loadFavoriteMenuPaths(storageKey)).toEqual([])
+      expect(
+        (await createIndexedDBRouterStorageAdapter().load(storageKey)).favoriteRoutePaths,
+      ).toEqual([])
     })
   })
 
-  it('hydration 期间按用户选择的最终收藏状态合并，而不是重放裸 toggle', async () => {
-    let resolveLoad!: (paths: string[]) => void
-    const loadPromise = new Promise<string[]>((resolve) => {
+  it('hydration 期间保留本地收藏修改，和固定页签冲突语义一致', async () => {
+    let resolveLoad!: (state: Partial<RouterStorageState>) => void
+    const loadPromise = new Promise<Partial<RouterStorageState>>((resolve) => {
       resolveLoad = resolve
     })
-    vi.spyOn(favoriteStorage, 'loadFavoriteMenuPaths').mockReturnValueOnce(loadPromise)
-    const router = createTestRouter('pro-layout-favorite-hydration')
+    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const storageAdapter: RouterStorageAdapter = {
+      load: vi.fn(() => loadPromise),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths,
+    }
+    const router = createPersistentTestRouter(
+      'pro-layout-favorite-hydration',
+      storageAdapter,
+    )
 
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -865,12 +878,16 @@ describe('ReactRouterProLayout', () => {
     expect(screen.getByRole('button', { name: '取消收藏：订单列表' })).toBeTruthy()
 
     await act(async () => {
-      // IndexedDB 原本也已收藏该路径；用户看到未收藏状态后点击的意图仍然应当是“收藏”。
-      resolveLoad(['/orders/list'])
+      resolveLoad({ favoriteRoutePaths: ['/orders/list'] })
       await loadPromise
     })
 
     expect(screen.getByRole('button', { name: '取消收藏：订单列表' })).toBeTruthy()
+    expect(router.getState().favoriteRoutePaths).toEqual(['/orders/list'])
+    expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
+      'pro-layout-favorite-hydration',
+      ['/orders/list'],
+    )
   })
 })
 
@@ -963,6 +980,19 @@ function createTestRouter(
     storageKey,
     keepAlive: true,
     maxFixedTabCount,
+  })
+}
+
+function createPersistentTestRouter(
+  storageKey: string,
+  storageAdapter?: RouterStorageAdapter,
+) {
+  return createRouterCore({
+    routes,
+    defaultRedirectPath: '/dashboard',
+    storageAdapter,
+    storageKey,
+    keepAlive: true,
   })
 }
 

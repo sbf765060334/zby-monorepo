@@ -1,15 +1,11 @@
 import { PlusOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
-import { Button, Dropdown, Empty } from 'antd'
+import { Button, Dropdown, Empty, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
 
-import {
-  isFavoriteMenuRoute,
-  useFavoriteMenusSelector,
-  useToggleFavoriteMenu,
-} from '../favorites'
+import { isFavoriteMenuRoute } from '../favorites'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
@@ -24,11 +20,13 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
   const { hashId, prefixCls } = props
   const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
+  const [messageApi, messageContextHolder] = message.useMessage()
   const currentPathname = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentPathname,
   )
-  const favoritePaths = useFavoriteMenusSelector((state) => state.favoritePaths)
-  const toggleFavorite = useToggleFavoriteMenu()
+  const favoritePaths = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.favoriteRoutePaths,
+  )
   const [open, setOpen] = useState(false)
 
   const visibleFavorites = useMemo(() => favoritePaths.flatMap((path) => {
@@ -86,7 +84,16 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
                 '取消收藏：{{title}}',
                 { title: route.title },
               )}
-              onClick={() => toggleFavorite(path)}
+              onClick={() => {
+                if (router.toggleFavoriteRoute(path)) {
+                  void messageApi.success(
+                    intl.getMessage(
+                      'zby.pro.layout.favorites.uncollectSuccess',
+                      '取消收藏成功',
+                    ),
+                  )
+                }
+              }}
             >
               <StarFilled />
             </button>
@@ -104,23 +111,26 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
   )
 
   return (
-    <Dropdown
-      open={open}
-      onOpenChange={setOpen}
-      trigger={['click']}
-      placement="bottom"
-      rootClassName={hashId}
-      popupRender={() => panel}
-    >
-      <Button
-        type="text"
-        size="small"
-        icon={<PlusOutlined />}
-        className={`${prefixCls}-collection-trigger`}
-        aria-label={intl.getMessage('zby.pro.layout.favorites.trigger', '收藏菜单')}
-        title={intl.getMessage('zby.pro.layout.favorites.trigger', '收藏菜单')}
-      />
-    </Dropdown>
+    <>
+      {messageContextHolder}
+      <Dropdown
+        open={open}
+        onOpenChange={setOpen}
+        trigger={['click']}
+        placement="bottom"
+        rootClassName={hashId}
+        popupRender={() => panel}
+      >
+        <Button
+          type="text"
+          size="small"
+          icon={<PlusOutlined />}
+          className={`${prefixCls}-collection-trigger`}
+          aria-label={intl.getMessage('zby.pro.layout.favorites.trigger', '收藏菜单')}
+          title={intl.getMessage('zby.pro.layout.favorites.trigger', '收藏菜单')}
+        />
+      </Dropdown>
+    </>
   )
 }
 

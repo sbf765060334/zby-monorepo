@@ -1,6 +1,6 @@
 import { ToolOutlined } from '@ant-design/icons'
 import { preloadRoute } from '@zby/router-core'
-import { useRouterCore } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Drawer, message, Tag, theme as antdTheme, Tooltip } from 'antd'
@@ -10,9 +10,8 @@ import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   isFavoriteMenuRoute,
   MenuFavoriteButton,
-  useFavoriteMenusSelector,
-  useToggleFavoriteMenu,
 } from '../favorites'
+import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
 import type { ProLayoutRoute } from '../types'
 import { createMenuDrawerLayout } from './menuLayout'
@@ -55,9 +54,22 @@ function MenuDrawer(props: MenuDrawerProps) {
   const intl = useIntl()
   const { token } = antdTheme.useToken()
   const [messageApi, messageContextHolder] = message.useMessage()
-  const favoritePaths = useFavoriteMenusSelector((state) => state.favoritePaths)
-  const toggleFavorite = useToggleFavoriteMenu()
+  const favoritePaths = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.favoriteRoutePaths,
+  )
   const favoritePathSet = useMemo(() => new Set(favoritePaths), [favoritePaths])
+
+  const toggleFavorite = (path: string) => {
+    const favorite = !favoritePathSet.has(path)
+    if (!router.toggleFavoriteRoute(path))
+      return
+
+    void messageApi.success(
+      favorite
+        ? intl.getMessage('zby.pro.layout.favorites.collectSuccess', '收藏成功')
+        : intl.getMessage('zby.pro.layout.favorites.uncollectSuccess', '取消收藏成功'),
+    )
+  }
 
   // 布局尺寸统一拆成“Drawer 外框”和“Drawer body 内容区”两种口径。
   // availableWidth 包含右侧边框；drawerBodyHeight 已扣除 body 上下 padding，供分列算法直接使用。

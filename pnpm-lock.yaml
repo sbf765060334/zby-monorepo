@@ -159,9 +159,6 @@ importers:
       clsx:
         specifier: 2.1.1
         version: 2.1.1
-      idb-keyval:
-        specifier: 6.3.0
-        version: 6.3.0
       react:
         specifier: '>=18.0.0'
         version: 18.3.1

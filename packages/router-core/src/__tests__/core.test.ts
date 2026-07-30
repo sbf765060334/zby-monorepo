@@ -188,6 +188,7 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs).toEqual([])
     expect(router.getState().pages).toEqual([])
     expect(router.getState().fixedSet).toEqual([])
+    expect(router.getState().favoriteRoutePaths).toEqual([])
     expect(router.getState().storageHydrated).toBe(true)
   })
 
@@ -209,6 +210,10 @@ describe('createRouterCore', () => {
     const fixedSetExposesPush: 'push' extends keyof StateSnapshot['fixedSet']
       ? true
       : false = false
+    const favoriteRoutesExposePush:
+    'push' extends keyof StateSnapshot['favoriteRoutePaths']
+      ? true
+      : false = false
 
     expect(first).not.toBe(second)
     expect(first.store).not.toBe(second.store)
@@ -216,6 +221,7 @@ describe('createRouterCore', () => {
     expect(tabsExposePush).toBe(false)
     expect(pagesExposePush).toBe(false)
     expect(fixedSetExposesPush).toBe(false)
+    expect(favoriteRoutesExposePush).toBe(false)
     expect('setState' in first.store).toBe(false)
 
     first.bindHost({ navigate: vi.fn() })
@@ -276,6 +282,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs: vi.fn(async () => undefined),
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
     router.bindHost({ navigate })
@@ -298,6 +305,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs: vi.fn(async () => undefined),
         saveFixedParamsPathMap,
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
     router.bindHost({ navigate })
@@ -636,6 +644,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs,
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
@@ -719,6 +728,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs,
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
     const snapshot = router.getState()
@@ -734,6 +744,71 @@ describe('createRouterCore', () => {
     expect(subscriber).not.toHaveBeenCalled()
     expect(saveFixedTabs).not.toHaveBeenCalled()
     unsubscribe()
+  })
+
+  it('toggles registered page favorites and persists complete snapshots', async () => {
+    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({})),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths,
+      },
+    })
+
+    expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
+    expect(router.getState().favoriteRoutePaths).toEqual(['/dashboard'])
+    await vi.waitFor(() => {
+      expect(saveFavoriteRoutePaths).toHaveBeenLastCalledWith(
+        'default',
+        ['/dashboard'],
+      )
+    })
+
+    expect(router.toggleFavoriteRoute('/settings')).toBe(false)
+    expect(router.toggleFavoriteRoute('/missing')).toBe(false)
+    expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
+    expect(router.getState().favoriteRoutePaths).toEqual([])
+    await vi.waitFor(() => {
+      expect(saveFavoriteRoutePaths).toHaveBeenLastCalledWith('default', [])
+    })
+  })
+
+  it('hydrates, canonicalizes and preserves unauthorized favorite routes', async () => {
+    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      hasAuth: () => false,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          favoriteRoutePaths: [
+            '/Dashboard/',
+            '/dashboard',
+            '/settings',
+            '/missing',
+            '/admin',
+          ],
+        })),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths,
+      },
+    })
+
+    await router.hydrateStorage()
+
+    expect(router.getState().favoriteRoutePaths).toEqual([
+      '/dashboard',
+      '/admin',
+    ])
+    await vi.waitFor(() => {
+      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
+        'default',
+        ['/dashboard', '/admin'],
+      )
+    })
   })
 
   it('enforces fixed-tab limits and runs close guards', async () => {
@@ -975,6 +1050,7 @@ describe('createRouterCore', () => {
       })),
       saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap,
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
     }
     const router = createRouterCore({
       routes,
@@ -1011,6 +1087,7 @@ describe('createRouterCore', () => {
         ),
         saveFixedTabs: vi.fn(async () => undefined),
         saveFixedParamsPathMap,
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
 
@@ -1024,6 +1101,7 @@ describe('createRouterCore', () => {
         '/project/:id': '/project/1',
         '/customer/:id': '/customer/7',
       },
+      favoriteRoutePaths: [],
     })
     await hydration
     await vi.waitFor(() => {
@@ -1048,6 +1126,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs,
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
 
@@ -1071,6 +1150,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs,
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
 
@@ -1096,6 +1176,7 @@ describe('createRouterCore', () => {
         })),
         saveFixedTabs,
         saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
       },
     })
 
@@ -1122,6 +1203,7 @@ describe('createRouterCore', () => {
         persistedFixedTabs.push([...fixedTabs])
       }),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
     }
     const router = createRouterCore({
       routes,
@@ -1161,6 +1243,7 @@ describe('createRouterCore', () => {
       }),
       saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
     }
     const router = createRouterCore({ routes, storageAdapter: adapter })
     router.configureRuntime({
@@ -1197,6 +1280,7 @@ describe('createRouterCore', () => {
         throw saveError
       }),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
     }
     const router = createRouterCore({
       routes,
@@ -1232,6 +1316,7 @@ describe('createRouterCore', () => {
       ),
       saveFixedTabs: vi.fn(async () => undefined),
       saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
     }
     const router = createRouterCore({
       routes,
@@ -1242,10 +1327,84 @@ describe('createRouterCore', () => {
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.toggleFixed('/dashboard')
 
-    resolveLoad({ fixedTabs: ['/settings/profile'], fixedParamsPathMap: {} })
+    resolveLoad({
+      fixedTabs: ['/settings/profile'],
+      fixedParamsPathMap: {},
+      favoriteRoutePaths: [],
+    })
     await hydration
 
     expect(router.getState().fixedSet).toEqual(['/dashboard'])
     expect(router.getState().storageHydrated).toBe(true)
+  })
+
+  it('hydrates favorites without overwriting local changes made in flight', async () => {
+    let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
+    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(
+          () => new Promise<ReturnType<typeof normalizeRouterStorageState>>((resolve) => {
+            resolveLoad = resolve
+          }),
+        ),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths,
+      },
+    })
+    const hydration = router.hydrateStorage()
+
+    expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
+    resolveLoad({
+      fixedTabs: [],
+      fixedParamsPathMap: {},
+      favoriteRoutePaths: ['/settings/profile'],
+    })
+    await hydration
+
+    expect(router.getState().favoriteRoutePaths).toEqual(['/dashboard'])
+    expect(router.getState().storageHydrated).toBe(true)
+    await vi.waitFor(() => {
+      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
+        'default',
+        ['/dashboard'],
+      )
+    })
+  })
+
+  it('keeps and persists a favorite change when hydration fails', async () => {
+    const loadError = new Error('favorite load failed')
+    let rejectLoad!: (reason?: unknown) => void
+    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(
+          () => new Promise<never>((_resolve, reject) => {
+            rejectLoad = reject
+          }),
+        ),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths,
+      },
+    })
+    const hydration = router.hydrateStorage()
+
+    expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
+    rejectLoad(loadError)
+    await hydration
+
+    expect(router.getState().favoriteRoutePaths).toEqual(['/dashboard'])
+    expect(router.getState().storageHydrated).toBe(false)
+    expect(router.getState().storageLoadError).toBe(loadError)
+    await vi.waitFor(() => {
+      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
+        'default',
+        ['/dashboard'],
+      )
+    })
   })
 })

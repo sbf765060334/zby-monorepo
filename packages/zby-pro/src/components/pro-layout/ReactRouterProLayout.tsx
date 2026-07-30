@@ -3,7 +3,6 @@ import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { memo } from 'react'
 
 import ProLayout from './ProLayout'
-import { FavoriteMenusProvider } from './favorites'
 import type { ReactRouterProLayoutProps } from './types'
 
 /**
@@ -22,9 +21,7 @@ export function ReactRouterProLayout(props: ReactRouterProLayoutProps) {
       onTabClose={onTabClose}
     >
       <RouterCoreReactRouterAdapter>
-        <FavoriteMenusProvider router={router}>
-          <ProLayout {...layoutProps} />
-        </FavoriteMenusProvider>
+        <ProLayout {...layoutProps} />
       </RouterCoreReactRouterAdapter>
     </RouterCoreProvider>
   )
