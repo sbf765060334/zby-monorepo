@@ -29,6 +29,9 @@ export default function useRouteSearchStyles(prefixCls: string) {
           background: styleToken.colorFillSecondary,
           color: styleToken.colorText,
         },
+        '&.ant-btn:not(:disabled):focus-visible': {
+          outline: 'none',
+        },
       },
       [`.${prefixCls}-search-modal`]: {
         [`.${prefixCls}-search-body`]: {

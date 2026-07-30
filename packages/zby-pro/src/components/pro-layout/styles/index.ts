@@ -567,6 +567,9 @@ export default function useProLayoutStyles(prefixCls: string) {
             background: styleToken.colorFillSecondary,
             color: styleToken.colorText,
           },
+          '&.ant-btn:not(:disabled):focus-visible': {
+            outline: 'none',
+          },
         },
 
         [`${componentCls}-content, ${componentCls}-pages, ${componentCls}-page-body`]: {
