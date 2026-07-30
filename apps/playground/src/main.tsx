@@ -13,7 +13,7 @@ import {
   zbyProLocales,
 } from '@zby/pro'
 import { zbyUiLocales } from '@zby/ui'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { playgroundLocales } from './playgroundIntl'
@@ -40,12 +40,20 @@ function PlaygroundApp() {
     defaultValue: 'zh-CN',
     storageKey: 'zby-playground:locale-preference',
   })
-  const locale = localePreference.value
 
   const themePreference = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
     storageKey: 'zby-playground:theme-preference',
   })
+
+  useEffect(() => {
+    const root = document.documentElement
+    const previousColorScheme = root.style.colorScheme
+    root.style.colorScheme = themePreference.appearance
+    return () => {
+      root.style.colorScheme = previousColorScheme
+    }
+  }, [themePreference.appearance])
 
   const algorithm = React.useMemo(() => {
     const appearanceAlgorithm = themePreference.appearance === 'dark'
@@ -59,12 +67,12 @@ function PlaygroundApp() {
 
   return (
     <ConfigProvider
-      locale={antdLocales[locale]}
+      locale={antdLocales[localePreference.value]}
       theme={{ algorithm, cssVar: { prefix: 'zby-playground' } }}
     >
       <AntdApp>
         <ZbyIntlProvider
-          locale={locale}
+          locale={localePreference.value}
           fallbackLocale="zh-CN"
           resources={resources}
           onLocaleChange={(nextLocale) => {
@@ -89,7 +97,7 @@ function PlaygroundApp() {
               extra: (
                 <>
                   <ProLocaleSwitch
-                    value={locale}
+                    value={localePreference.value}
                     onChange={localePreference.setValue}
                   />
                   <ProThemeSwitch
