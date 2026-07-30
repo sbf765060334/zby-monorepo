@@ -31,29 +31,6 @@ export default function useRouteSearchStyles(prefixCls: string) {
         },
       },
       [`.${prefixCls}-search-modal`]: {
-        [`.ant-modal`]: {
-          top: '12vh',
-          paddingBlockEnd: 0,
-        },
-        [`.ant-modal-content`]: {
-          overflow: 'hidden',
-          padding: 0,
-          border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
-          boxShadow: styleToken.boxShadowSecondary,
-        },
-        [`.ant-modal-header`]: {
-          margin: 0,
-          paddingBlock: styleToken.paddingSM,
-          paddingInline: styleToken.paddingLG,
-          borderBlockEnd: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
-        },
-        [`.ant-modal-close`]: {
-          insetBlockStart: styleToken.paddingXS,
-          insetInlineEnd: styleToken.paddingSM,
-        },
-        [`.ant-modal-body`]: {
-          padding: styleToken.paddingLG,
-        },
         [`.${prefixCls}-search-body`]: {
           display: 'flex',
           minHeight: 0,
