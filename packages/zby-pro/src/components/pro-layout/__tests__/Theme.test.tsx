@@ -15,6 +15,8 @@ import { zbyProLocales } from '../../../locales'
 import { ProThemeSwitch, useThemePreference } from '../theme'
 import type { ProThemePreference } from '../theme'
 
+const THEME_STORAGE_KEY = 'zby-pro:theme-preference'
+
 let prefersDark = false
 const colorSchemeListeners = new Set<() => void>()
 
@@ -64,8 +66,8 @@ afterEach(() => {
 
 describe('ProThemeSwitch', () => {
   it('切换明暗和布局密度，并恢复持久化偏好', async () => {
-    const storageKey = 'pro-theme-switch-test'
-    const firstRender = renderThemeFixture(storageKey)
+    const firstRender = renderThemeFixture()
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull()
 
     expect(readRenderedPreference()).toEqual({
       mode: 'light',
@@ -106,14 +108,14 @@ describe('ProThemeSwitch', () => {
     await openThemeMenu()
     fireEvent.click(screen.getByText('紧凑布局'))
     await waitFor(() => {
-      expect(JSON.parse(window.localStorage.getItem(storageKey) || '')).toEqual({
+      expect(JSON.parse(window.localStorage.getItem(THEME_STORAGE_KEY) || '')).toEqual({
         mode: 'dark',
         density: 'compact',
       })
     })
 
     firstRender.unmount()
-    renderThemeFixture(storageKey)
+    renderThemeFixture()
     expect(readRenderedPreference()).toEqual({
       mode: 'dark',
       density: 'compact',
@@ -122,7 +124,7 @@ describe('ProThemeSwitch', () => {
   })
 
   it('跟随系统模式会响应系统明暗变化', async () => {
-    renderThemeFixture('pro-theme-auto-test', { mode: 'auto', density: 'default' })
+    renderThemeFixture({ mode: 'auto', density: 'default' })
     expect(readRenderedPreference().appearance).toBe('light')
     await waitFor(() => expect(colorSchemeListeners.size).toBeGreaterThan(0))
 
@@ -136,11 +138,9 @@ describe('ProThemeSwitch', () => {
 })
 
 function ThemeFixture(props: {
-  storageKey: string
   defaultValue?: ProThemePreference
 }) {
   const preference = useThemePreference({
-    storageKey: props.storageKey,
     defaultValue: props.defaultValue,
   })
 
@@ -158,10 +158,10 @@ function ThemeFixture(props: {
   )
 }
 
-function renderThemeFixture(storageKey: string, defaultValue?: ProThemePreference) {
+function renderThemeFixture(defaultValue?: ProThemePreference) {
   return render(
     <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
-      <ThemeFixture storageKey={storageKey} defaultValue={defaultValue} />
+      <ThemeFixture defaultValue={defaultValue} />
     </ZbyIntlProvider>,
   )
 }

@@ -15,8 +15,8 @@ import type { ProLayoutRoute } from '../types'
 const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 /** 最近搜索只保留有限数量，避免长期使用后无界增长。 */
 const MAX_RECENT_ROUTE_COUNT = 8
-/** 使用 RouterCore 的 storageKey 作为后缀，隔离不同应用和用户空间。 */
-const RECENT_ROUTE_STORAGE_PREFIX = 'zby-pro-layout:route-search:'
+/** 搜索记录不区分应用、用户或租户，统一使用固定空间。 */
+const RECENT_ROUTE_STORAGE_KEY = 'zby-pro-layout:route-search'
 /** 内容区最多使用视口高度的 80%，为 Modal 外围留出安全空间。 */
 const SEARCH_BODY_VIEWPORT_RATIO = 0.8
 /** 为标题、内边距以及视口上下留白预留的固定高度。 */
@@ -34,6 +34,12 @@ interface SearchableRoute {
   titlePath: string
   /** 已标准化的匹配文本，合并标题路径和真实 pathname。 */
   searchText: string
+}
+
+interface RecentRouteState {
+  router: RouterCore<ProLayoutRoute>
+  paths: string[]
+  shouldCleanStorage: boolean
 }
 
 export interface ProRouteSearchProps {
@@ -64,18 +70,12 @@ function RouteSearch(props: ProRouteSearchProps) {
   const inputRef = useRef<InputRef>(null)
   // 保存 resize 防抖定时器，组件卸载时必须一并清理。
   const resizeTimerRef = useRef<number | null>(null)
-  const storageKey = router.getState().storageKey
-
   // 弹窗和搜索交互的最小状态集合。
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
   // undefined 使 SSR 与客户端首次渲染保持一致；挂载后再读取真实视口高度。
   const [bodyMaxHeight, setBodyMaxHeight] = useState<number>()
-  // 最近记录在首次渲染时同步读取，打开弹窗即可直接展示。
-  const [recentPaths, setRecentPaths] = useState<string[]>(
-    () => readRecentRoutePaths(storageKey),
-  )
 
   // 权限路由树在 RouterCore 生命周期内固定，只需在 router 实例变化时重新生成。
   const searchableRoutes = useMemo(
@@ -87,6 +87,30 @@ function RouteSearch(props: ProRouteSearchProps) {
     () => new Map(searchableRoutes.map((item) => [item.path, item])),
     [searchableRoutes],
   )
+  const [recentRouteState, setRecentRouteState] = useState<RecentRouteState>(() => {
+    const storedPaths = readRecentRoutePaths()
+    const paths = storedPaths.filter((path) => routeMap.has(path))
+    return {
+      router,
+      paths,
+      shouldCleanStorage: paths.length !== storedPaths.length,
+    }
+  })
+  let recentPaths = recentRouteState.paths
+
+  if (recentRouteState.router !== router) {
+    recentPaths = recentRouteState.paths.filter((path) => routeMap.has(path))
+    setRecentRouteState({
+      router,
+      paths: recentPaths,
+      shouldCleanStorage: recentPaths.length !== recentRouteState.paths.length,
+    })
+  }
+
+  useEffect(() => {
+    if (recentRouteState.shouldCleanStorage)
+      saveRecentRoutePaths(recentRouteState.paths)
+  }, [recentRouteState])
   const normalizedQuery = normalizeSearchText(query)
   // 有关键词时仅显示当前匹配项；空关键词时不提前返回全部页面。
   const matchedRoutes = useMemo(
@@ -95,7 +119,7 @@ function RouteSearch(props: ProRouteSearchProps) {
       : [],
     [normalizedQuery, searchableRoutes],
   )
-  // 权限已失效或路由已删除的历史路径暂时隐藏，不渲染脏记录。
+  // 最近记录已经按当前权限路由表清理，此处只恢复对应的展示数据。
   const recentRoutes = useMemo(
     () => recentPaths.flatMap((path) => {
       const item = routeMap.get(path)
@@ -197,15 +221,14 @@ function RouteSearch(props: ProRouteSearchProps) {
 
   /** 打开页面并把它提升到最近搜索首位。 */
   const openRoute = (item: SearchableRoute) => {
-    setRecentPaths((currentPaths) => {
+    setRecentRouteState((current) => {
       // 先去重再放到首位，最后统一裁剪到记录上限。
       const nextPaths = [
         item.path,
-        ...currentPaths.filter((path) => path !== item.path),
+        ...current.paths.filter((path) => path !== item.path),
       ].slice(0, MAX_RECENT_ROUTE_COUNT)
-      // 状态与持久化使用同一份快照，避免展示顺序和下次恢复顺序不一致。
-      saveRecentRoutePaths(storageKey, nextPaths)
-      return nextPaths
+      saveRecentRoutePaths(nextPaths)
+      return { router, paths: nextPaths, shouldCleanStorage: false }
     })
     // jumpTo 会复用已经打开的页签，或按 RouterCore 规则创建新页签。
     router.jumpTo(item.path)
@@ -215,16 +238,16 @@ function RouteSearch(props: ProRouteSearchProps) {
   /** 删除一条最近记录，不影响当前路由和已经打开的页签。 */
   const removeRecentRoute = (item: SearchableRoute) => {
     const nextPaths = recentPaths.filter((path) => path !== item.path)
-    setRecentPaths(nextPaths)
-    saveRecentRoutePaths(storageKey, nextPaths)
+    setRecentRouteState({ router, paths: nextPaths, shouldCleanStorage: false })
+    saveRecentRoutePaths(nextPaths)
     // 删除后重新从首项开始，避免 activeIndex 指向已经不存在的记录。
     setActiveIndex(nextPaths.length > 0 ? 0 : -1)
   }
 
-  /** 清空当前 storageKey 下的全部最近记录。 */
+  /** 清空全部最近记录。 */
   const clearRecentRoutes = () => {
-    setRecentPaths([])
-    saveRecentRoutePaths(storageKey, [])
+    setRecentRouteState({ router, paths: [], shouldCleanStorage: false })
+    saveRecentRoutePaths([])
     setActiveIndex(-1)
   }
 
@@ -508,41 +531,35 @@ function normalizeSearchText(value: string) {
   return value.trim().toLocaleLowerCase()
 }
 
-/** 从 localStorage 恢复并清洗当前 RouterCore 空间的最近路径。 */
-function readRecentRoutePaths(storageKey: string): string[] {
-  // SSR 或禁用浏览器 API 的环境直接使用空记录。
+/** 从 localStorage 恢复并清洗最近路径。 */
+function readRecentRoutePaths(): string[] {
   if (typeof window === 'undefined')
     return []
 
   try {
     const value = JSON.parse(
-      window.localStorage.getItem(`${RECENT_ROUTE_STORAGE_PREFIX}${storageKey}`) || '[]',
+      window.localStorage.getItem(RECENT_ROUTE_STORAGE_KEY) || '[]',
     )
-    // 不信任历史存储结构，非数组值直接丢弃。
     if (!Array.isArray(value))
       return []
-    // 只保留非空字符串，按首次出现顺序去重，并应用统一数量上限。
+
     return Array.from(new Set(
       value.filter((item): item is string => typeof item === 'string' && item.length > 0),
     )).slice(0, MAX_RECENT_ROUTE_COUNT)
   } catch {
-    // JSON 损坏或 localStorage 不可读不应阻断搜索入口渲染。
     return []
   }
 }
 
 /** 持久化完整的最近路径快照；失败时降级为当前会话内存状态。 */
-function saveRecentRoutePaths(storageKey: string, paths: readonly string[]) {
+function saveRecentRoutePaths(paths: readonly string[]) {
   if (typeof window === 'undefined')
     return
 
   try {
-    window.localStorage.setItem(
-      `${RECENT_ROUTE_STORAGE_PREFIX}${storageKey}`,
-      JSON.stringify(paths),
-    )
+    window.localStorage.setItem(RECENT_ROUTE_STORAGE_KEY, JSON.stringify(paths))
   } catch {
-    // 搜索记录属于辅助体验；存储不可用时仍允许本次搜索和导航正常完成。
+    // localStorage 不可用时仍允许本次搜索和导航正常完成。
   }
 }
 

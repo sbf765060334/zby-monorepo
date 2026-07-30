@@ -93,11 +93,10 @@ import {
 
 function PlatformLayout() {
   const locale = useLocalePreference({
-    storageKey: 'admin-platform:locale',
+    defaultValue: 'zh-CN',
   })
   const theme = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
-    storageKey: 'admin-platform:theme',
   })
 
   return (
@@ -150,7 +149,7 @@ function PlatformLayout() {
 - 输入后按权限路由的完整标题路径和 pathname 过滤，并高亮所有匹配文字。
 - 每条结果同时展示完整标题层级与真实 pathname。
 - 目录、动态占位路径、通配符、`prompt`、`_blank` 和 `ignore` 分支不会进入结果。
-- 最近搜索按当前 RouterCore 的 `storageKey` 隔离，支持悬浮删除单条和清空全部。
+- 最近搜索固定存储在 `zby-pro-layout:route-search`，路由删除或权限失效后会自动清理对应记录。
 - 内容较多时只有结果列表使用浏览器原生滚动条，搜索框和分区标题保持可见。
 
 ## 页面内容容器
@@ -275,7 +274,7 @@ export function OrderPage() {
 | prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
 | className | 触发按钮类名 | `string` | - |
 
-`useLocalePreference(options)` 默认使用 `zh-CN`，localStorage 键名为 `zby-pro:locale-preference`。可通过 `defaultValue` 和 `storageKey` 覆盖，并通过返回的 `value`、`setValue` 驱动选择器和外层 Provider。
+`useLocalePreference(options)` 默认使用 `zh-CN`，并固定存储在 `zby-pro:locale-preference`。可通过 `defaultValue` 覆盖默认语言，并通过返回的 `value`、`setValue` 驱动选择器和外层 Provider。
 
 ### ProThemeSwitch
 
@@ -287,7 +286,7 @@ export function OrderPage() {
 | prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
 | className | 触发按钮类名 | `string` | - |
 
-`ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，localStorage 键名为 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。
+`ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。
 
 ### ProLayoutContentContainer
 

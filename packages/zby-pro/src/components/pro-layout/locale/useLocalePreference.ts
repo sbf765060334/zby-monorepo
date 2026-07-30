@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import type { ProLocale } from './LocaleSwitch'
 
@@ -8,8 +8,6 @@ const DEFAULT_LOCALE: ProLocale = 'zh-CN'
 export interface UseLocalePreferenceOptions {
   /** 没有有效本地记录时使用的初始语言。 */
   defaultValue?: ProLocale
-  /** localStorage 键名。 */
-  storageKey?: string
 }
 
 export interface UseLocalePreferenceReturn {
@@ -23,15 +21,12 @@ export interface UseLocalePreferenceReturn {
 export function useLocalePreference(
   options: UseLocalePreferenceOptions = {},
 ): UseLocalePreferenceReturn {
-  const storageKey = options.storageKey || DEFAULT_STORAGE_KEY
+  const fallback = options.defaultValue || DEFAULT_LOCALE
   const [value, setLocale] = useState<ProLocale>(() =>
-    readPreference(storageKey, options.defaultValue || DEFAULT_LOCALE))
-
-  useEffect(() => {
-    persistPreference(storageKey, value)
-  }, [storageKey, value])
+    readPreference(DEFAULT_STORAGE_KEY, fallback))
 
   const setValue = useCallback((nextValue: ProLocale) => {
+    persistPreference(DEFAULT_STORAGE_KEY, nextValue)
     setLocale(nextValue)
   }, [])
 

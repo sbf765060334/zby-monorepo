@@ -23,7 +23,11 @@ import ReactRouterProLayout from '../ReactRouterProLayout'
 import PageContent from '../page/PageContent'
 import { ProRouteSearch } from '../search'
 import type { ReactNode } from 'react'
-import type { RouterStorageAdapter, RouterStorageState } from '@zby/router-core'
+import type {
+  RouterCore,
+  RouterStorageAdapter,
+  RouterStorageState,
+} from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
 
 beforeAll(() => {
@@ -104,7 +108,7 @@ describe('ReactRouterProLayout', () => {
 
   it('搜索权限内页面，展示并高亮完整路由路径，且保留最近搜索', async () => {
     const storageKey = 'pro-layout-route-search'
-    const recentStorageKey = `zby-pro-layout:route-search:${storageKey}`
+    const recentStorageKey = 'zby-pro-layout:route-search'
     window.localStorage.removeItem(recentStorageKey)
     const innerHeight = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(1000)
     const searchRoutes: ProLayoutRoute[] = [
@@ -220,7 +224,7 @@ describe('ReactRouterProLayout', () => {
     firstRender.unmount()
     window.localStorage.setItem(
       recentStorageKey,
-      JSON.stringify(['/business/orders/list', '/dashboard']),
+      JSON.stringify(['/business/orders/list', '/removed', '/dashboard']),
     )
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -232,6 +236,10 @@ describe('ReactRouterProLayout', () => {
       </MemoryRouter>,
     )
     await screen.findByTestId('dashboard-page')
+    await waitFor(() => {
+      expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
+        .toEqual(['/business/orders/list', '/dashboard'])
+    })
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
     dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('最近搜索')).toBeTruthy()
@@ -248,6 +256,46 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '清空全部' }))
     expect(within(dialog).getByText('暂无最近搜索')).toBeTruthy()
     expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]')).toEqual([])
+  })
+
+  it('RouterCore 路由表变化后清理失效的最近搜索记录', async () => {
+    const recentStorageKey = 'zby-pro-layout:route-search'
+    window.localStorage.setItem(
+      recentStorageKey,
+      JSON.stringify(['/dashboard', '/orders/list']),
+    )
+    const firstRouter = createTestRouter()
+    const secondRouter = createRouterCore<ProLayoutRoute>({
+      routes: [
+        {
+          path: '/dashboard',
+          title: '工作台',
+          element: DashboardPage,
+        },
+      ],
+      defaultRedirectPath: '/dashboard',
+      storageAdapter: false,
+      storageKey: 'pro-layout-route-search-filter',
+    })
+    const renderSearch = (router: RouterCore<ProLayoutRoute>) => (
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+        <RouterCoreProvider router={router}>
+          <ProRouteSearch />
+        </RouterCoreProvider>
+      </ZbyIntlProvider>
+    )
+    const view = testingLibraryRender(renderSearch(firstRouter))
+
+    expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
+      .toEqual(['/dashboard', '/orders/list'])
+    view.rerender(renderSearch(secondRouter))
+
+    await waitFor(() => {
+      expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
+        .toEqual(['/dashboard'])
+    })
+    view.unmount()
+    window.localStorage.removeItem(recentStorageKey)
   })
 
   it('切换路由时始终由 ProLayout 总开关控制面包屑', async () => {

@@ -92,11 +92,10 @@ import {
 
 function PlatformLayout() {
   const locale = useLocalePreference({
-    storageKey: 'admin-platform:locale',
+    defaultValue: 'zh-CN',
   })
   const theme = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
-    storageKey: 'admin-platform:theme',
   })
 
   return (
@@ -149,7 +148,7 @@ Place `ProRouteSearch` in `header.extra`. Users can open it with the magnifying-
 - With a query, it filters authorized routes by the full title path and pathname and highlights every match.
 - Every result shows both its complete title hierarchy and real pathname.
 - Directories, unresolved dynamic paths, wildcards, `prompt`, `_blank`, and `ignore` branches are excluded.
-- Recent routes are isolated by the current RouterCore `storageKey` and support hover-to-delete and clear-all actions.
+- Recent routes always use `zby-pro-layout:route-search`; removed or unauthorized routes are pruned automatically.
 - For long lists, only the result container uses the browser's native scrollbar; the input and section heading remain visible.
 
 ## Page Content Container
@@ -274,7 +273,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
 | className | Class name on the trigger button | `string` | - |
 
-`useLocalePreference(options)` defaults to `zh-CN` and uses `zby-pro:locale-preference` as its localStorage key. Override them with `defaultValue` and `storageKey`, then use the returned `value` and `setValue` to drive the selector and outer providers.
+`useLocalePreference(options)` defaults to `zh-CN` and always stores it under `zby-pro:locale-preference`. Override the default locale with `defaultValue`, then use the returned `value` and `setValue` to drive the selector and outer providers.
 
 ### ProThemeSwitch
 
@@ -286,7 +285,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
 | className | Class name on the trigger button | `string` | - |
 
-`ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`.
+`ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`.
 
 ### ProLayoutContentContainer
 

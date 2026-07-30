@@ -17,8 +17,6 @@ export interface ProThemePreference {
 export interface UseThemePreferenceOptions {
   /** 没有有效本地记录时使用的初始偏好，缺省字段回落到浅色和默认布局。 */
   defaultValue?: Partial<ProThemePreference>
-  /** localStorage 键名。 */
-  storageKey?: string
 }
 
 /** 业务 ConfigProvider 与 ProThemeSwitch 之间共享的主题状态。 */

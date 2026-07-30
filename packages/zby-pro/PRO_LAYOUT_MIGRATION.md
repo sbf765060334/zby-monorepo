@@ -118,7 +118,6 @@ const router = createRouterCore({
 export function App() {
   const preference = useThemePreference({
     defaultValue: { mode: 'light', density: 'default' },
-    storageKey: 'digital-platform:theme-preference',
   })
   const appearanceAlgorithm = preference.appearance === 'dark'
     ? antdTheme.darkAlgorithm

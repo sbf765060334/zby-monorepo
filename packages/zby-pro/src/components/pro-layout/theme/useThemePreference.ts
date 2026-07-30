@@ -20,20 +20,12 @@ const DEFAULT_PREFERENCE: ProThemePreference = {
 export function useThemePreference(
   options: UseThemePreferenceOptions = {},
 ): UseThemePreferenceReturn {
-  const storageKey = options.storageKey || DEFAULT_STORAGE_KEY
-  const [value, setPreference] = useState<ProThemePreference>(() => {
-    // 初始化阶段先合并业务默认值，再让有效的本地记录覆盖它。
-    const fallback = { ...DEFAULT_PREFERENCE, ...options.defaultValue }
-    return readPreference(storageKey, fallback)
-  })
+  const fallback = { ...DEFAULT_PREFERENCE, ...options.defaultValue }
+  const [value, setPreference] = useState<ProThemePreference>(() =>
+    readPreference(DEFAULT_STORAGE_KEY, fallback))
   const [systemAppearance, setSystemAppearance] = useState<ProThemeAppearance>(
     getSystemAppearance,
   )
-
-  useEffect(() => {
-    // hook 只持久化偏好，不创建 ConfigProvider，也不决定业务 token。
-    persistPreference(storageKey, value)
-  }, [storageKey, value])
 
   useEffect(() => {
     // 只有 auto 模式依赖系统外观；离开 auto 后立即释放监听器。
@@ -51,16 +43,21 @@ export function useThemePreference(
   }, [value.mode])
 
   const setValue = useCallback((nextValue: ProThemePreference) => {
+    persistPreference(DEFAULT_STORAGE_KEY, nextValue)
     setPreference(nextValue)
   }, [])
 
   const setMode = useCallback((mode: ProThemeMode) => {
-    setPreference((current) => current.mode === mode ? current : { ...current, mode })
-  }, [])
+    if (value.mode === mode)
+      return
+    setValue({ ...value, mode })
+  }, [setValue, value])
 
   const setDensity = useCallback((density: ProThemeDensity) => {
-    setPreference((current) => current.density === density ? current : { ...current, density })
-  }, [])
+    if (value.density === density)
+      return
+    setValue({ ...value, density })
+  }, [setValue, value])
 
   // value 保留用户选择的 auto，appearance 则提供业务真正需要应用的 light/dark。
   return useMemo(() => ({

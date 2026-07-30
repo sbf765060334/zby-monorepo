@@ -39,12 +39,10 @@ const antdLocales = {
 function PlaygroundApp() {
   const localePreference = useLocalePreference({
     defaultValue: 'zh-CN',
-    storageKey: 'zby-playground:locale-preference',
   })
 
   const themePreference = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
-    storageKey: 'zby-playground:theme-preference',
   })
 
   useEffect(() => {

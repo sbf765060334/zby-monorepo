@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { zbyProLocales } from '../../../locales'
 import { ProLocaleSwitch, useLocalePreference } from '../locale'
 
+const LOCALE_STORAGE_KEY = 'zby-pro:locale-preference'
+
 beforeEach(() => {
   window.localStorage.clear()
   class ResizeObserverMock {
@@ -28,8 +30,8 @@ afterEach(cleanup)
 
 describe('ProLocaleSwitch', () => {
   it('通过悬浮菜单在简体中文和 English 之间切换', async () => {
-    const storageKey = 'pro-locale-switch-test'
-    const firstRender = render(<LocaleFixture storageKey={storageKey} />)
+    const firstRender = render(<LocaleFixture />)
+    expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull()
 
     const trigger = screen.getByRole('button', { name: '语言设置' })
     expect(trigger.querySelector('.anticon-global')).toBeTruthy()
@@ -46,11 +48,11 @@ describe('ProLocaleSwitch', () => {
     await waitFor(() => {
       expect(screen.getByTestId('locale').textContent).toBe('en-US')
       expect(screen.getByRole('button', { name: 'Language' })).toBeTruthy()
-      expect(window.localStorage.getItem(storageKey)).toBe('en-US')
+      expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('en-US')
     })
 
     firstRender.unmount()
-    render(<LocaleFixture storageKey={storageKey} />)
+    render(<LocaleFixture />)
     expect(screen.getByTestId('locale').textContent).toBe('en-US')
     expect(screen.getByRole('button', { name: 'Language' })).toBeTruthy()
 
@@ -59,13 +61,13 @@ describe('ProLocaleSwitch', () => {
     await waitFor(() => {
       expect(screen.getByTestId('locale').textContent).toBe('zh-CN')
       expect(screen.getByRole('button', { name: '语言设置' })).toBeTruthy()
-      expect(window.localStorage.getItem(storageKey)).toBe('zh-CN')
+      expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('zh-CN')
     })
   })
 })
 
-function LocaleFixture(props: { storageKey: string }) {
-  const preference = useLocalePreference({ storageKey: props.storageKey })
+function LocaleFixture() {
+  const preference = useLocalePreference()
   const locale = preference.value
 
   return (
