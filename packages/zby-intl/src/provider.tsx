@@ -11,7 +11,6 @@ import type { IntlProviderProps, IntlResources } from './types'
 export const IntlConfigContext = React.createContext<{
   fallbackLocale: string
   defaultNamespace: string
-  onLocaleChange?: (locale: string) => void
 }>({
   fallbackLocale: DEFAULT_LOCALE,
   defaultNamespace: DEFAULT_NAMESPACE,
@@ -42,7 +41,6 @@ export function ZbyIntlProvider(props: IntlProviderProps) {
     resources = {},
     defaultNamespace = DEFAULT_NAMESPACE,
     i18n: customI18n,
-    onLocaleChange,
   } = props
 
   // i18next 实例只在 Provider 首次挂载时创建一次。
@@ -71,8 +69,8 @@ export function ZbyIntlProvider(props: IntlProviderProps) {
   // 这些配置供 useIntl 创建 IntlShape 使用。
   // useMemo 可以避免每次渲染都让下游组件拿到新的 context value。
   const contextValue = React.useMemo(
-    () => ({ fallbackLocale, defaultNamespace, onLocaleChange }),
-    [defaultNamespace, fallbackLocale, onLocaleChange],
+    () => ({ fallbackLocale, defaultNamespace }),
+    [defaultNamespace, fallbackLocale],
   )
 
   return (

@@ -75,9 +75,6 @@ function PlaygroundApp() {
           locale={localePreference.value}
           fallbackLocale="zh-CN"
           resources={resources}
-          onLocaleChange={(nextLocale) => {
-            localePreference.setValue(nextLocale === 'en-US' ? 'en-US' : 'zh-CN')
-          }}
         >
           <ReactRouterProLayout
             router={routers}

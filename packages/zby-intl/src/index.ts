@@ -5,7 +5,6 @@ export { createIntl, createIntlShape } from './intl'
 export { IntlProvider, ZbyIntlProvider } from './provider'
 export { mergeIntlResources, normalizeResources } from './resources'
 export type {
-  ChangeLocale,
   CreateI18nOptions,
   CreateIntlOptions,
   DateInput,

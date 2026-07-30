@@ -15,7 +15,6 @@ function getCurrentLocale(instance: i18n, fallbackLocale: string): string {
 export function createIntlShape(
   instance: i18n,
   fallbackLocale = DEFAULT_LOCALE,
-  onLocaleChange?: (locale: string) => void,
   defaultNamespace = DEFAULT_NAMESPACE,
 ): IntlShape {
   const getLocale = () => getCurrentLocale(instance, fallbackLocale)
@@ -38,12 +37,6 @@ export function createIntlShape(
     return instance.t(id, defaultMessage, translateOptions) as string
   }
 
-  // 切换语言后额外触发 onLocaleChange，交给业务保存到 localStorage、接口或全局状态。
-  const changeLocale = async (locale: string) => {
-    await instance.changeLanguage(locale)
-    onLocaleChange?.(locale)
-  }
-
   return {
     // 使用 getter，保证每次读取 locale 都是 i18next 当前最新状态。
     get locale() {
@@ -58,7 +51,6 @@ export function createIntlShape(
     // 日期和数字格式化跟随当前语言自动变化。
     formatDate: (value, options) => formatDate(getLocale(), value, options),
     formatNumber: (value, options) => formatNumber(getLocale(), value, options),
-    changeLocale,
   }
 }
 
@@ -77,5 +69,5 @@ export function createIntl(options: CreateIntlOptions): IntlShape {
       defaultNamespace,
     })
 
-  return createIntlShape(instance, fallbackLocale, undefined, defaultNamespace)
+  return createIntlShape(instance, fallbackLocale, defaultNamespace)
 }

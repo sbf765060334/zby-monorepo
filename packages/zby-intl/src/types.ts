@@ -31,9 +31,6 @@ export type FormatValues = Record<string, string | number | boolean | Date | nul
 // 日期格式化支持 Date，也支持能被 new Date(...) 解析的字符串或时间戳。
 export type DateInput = Date | string | number
 
-// 切换语言是异步动作，因为 i18next.changeLanguage 本身返回 Promise。
-export type ChangeLocale = (locale: Locale) => Promise<void>
-
 // 暴露给业务的翻译参数。这里复用 i18next 的 TOptions，
 // 但把 context 收紧成我们自己的轻量类型，避免业务代码直接感知过多 i18next 细节。
 export type TranslateOptions = Omit<TOptions<Record<string, unknown>>, 'context'> & {
@@ -41,7 +38,7 @@ export type TranslateOptions = Omit<TOptions<Record<string, unknown>>, 'context'
 }
 
 // 组件和业务真正拿到的 intl 对象。
-// 它把 i18next 的能力包了一层，统一提供翻译、日期/数字格式化、语言切换等能力。
+// 它把 i18next 的能力包了一层，统一提供翻译和日期/数字格式化等能力。
 export type IntlShape = {
   // 当前生效语言。优先取 i18next 解析后的语言，其次取 language，最后取 fallbackLocale。
   locale: Locale
@@ -59,8 +56,6 @@ export type IntlShape = {
   formatDate: (value: DateInput, options?: Intl.DateTimeFormatOptions) => string
   // 根据当前语言格式化数字、金额、百分比等。
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string
-  // 切换全局语言，并在需要时通知外层业务持久化 locale。
-  changeLocale: ChangeLocale
 }
 
 // Provider 的入参。业务应用通常在应用入口配置一次。
@@ -76,8 +71,6 @@ export type IntlProviderProps = {
   defaultNamespace?: string
   // 允许业务传入已有 i18next 实例，便于接入公司已有国际化体系。
   i18n?: i18n
-  // changeLocale 后的回调，业务可在这里更新状态或持久化语言。
-  onLocaleChange?: (locale: Locale) => void
 }
 
 // 创建 i18next 实例时需要的配置。
