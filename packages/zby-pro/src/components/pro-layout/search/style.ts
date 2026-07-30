@@ -54,9 +54,18 @@ export default function useRouteSearchStyles(prefixCls: string) {
         [`.ant-modal-body`]: {
           padding: styleToken.paddingLG,
         },
+        [`.${prefixCls}-search-body`]: {
+          display: 'flex',
+          minHeight: 0,
+          flexDirection: 'column',
+        },
+        [`.${prefixCls}-search-body > .ant-input-affix-wrapper`]: {
+          flexShrink: 0,
+        },
         [`.${prefixCls}-search-section-header`]: {
           display: 'flex',
           minHeight: styleToken.controlHeightSM,
+          flexShrink: 0,
           marginBlockStart: styleToken.marginMD,
           marginBlockEnd: styleToken.marginXS,
           alignItems: 'center',
@@ -82,8 +91,8 @@ export default function useRouteSearchStyles(prefixCls: string) {
         },
         [`.${prefixCls}-search-results`]: {
           display: 'flex',
-          maxHeight: `calc(${unit(styleToken.controlHeightLG)} * 8)`,
-          minHeight: `calc(${unit(styleToken.controlHeightLG)} * 3)`,
+          minHeight: 0,
+          flex: '0 1 auto',
           flexDirection: 'column',
           gap: styleToken.marginXXS,
           overflowY: 'auto',

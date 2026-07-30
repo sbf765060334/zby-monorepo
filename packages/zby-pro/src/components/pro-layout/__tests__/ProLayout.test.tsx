@@ -106,6 +106,7 @@ describe('ReactRouterProLayout', () => {
     const storageKey = 'pro-layout-route-search'
     const recentStorageKey = `zby-pro-layout:route-search:${storageKey}`
     window.localStorage.removeItem(recentStorageKey)
+    const innerHeight = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(1000)
     const searchRoutes: ProLayoutRoute[] = [
       {
         path: '/dashboard',
@@ -172,6 +173,19 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('dashboard-page')
     fireEvent.click(screen.getByRole('button', { name: '搜索页面（Ctrl+K）' }))
     let dialog = await screen.findByRole('dialog')
+    const searchBody = dialog.querySelector('.zby-pro-layout-search-body') as HTMLElement
+    const searchResults = dialog.querySelector(
+      '.zby-pro-layout-search-results',
+    ) as HTMLElement
+    await waitFor(() => expect(searchBody.style.maxHeight).toBe('692px'))
+    expect(searchBody.style.height).toBe('')
+    expect(searchBody.style.overflowY).toBe('hidden')
+    expect(getComputedStyle(searchBody).display).toBe('flex')
+    expect(getComputedStyle(searchResults).overflowY).toBe('auto')
+
+    innerHeight.mockReturnValue(600)
+    fireEvent(window, new Event('resize'))
+    await waitFor(() => expect(searchBody.style.maxHeight).toBe('372px'))
     expect(within(dialog).getByText('最近搜索')).toBeTruthy()
     expect(within(dialog).getByText('暂无最近搜索')).toBeTruthy()
 
