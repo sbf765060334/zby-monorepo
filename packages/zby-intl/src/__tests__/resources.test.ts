@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeIntlResources } from './resources'
+import { mergeIntlResources } from '../resources'
 
 // 这组单测专门保护语言包合并规则。
 // zby-ui、zby-pro、业务项目都会各自维护语言包，最终会通过

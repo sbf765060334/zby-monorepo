@@ -2,8 +2,8 @@
 
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ZbyIntlProvider } from './provider'
-import { useIntl } from './useIntl'
+import { ZbyIntlProvider } from '../provider'
+import { useIntl } from '../useIntl'
 
 afterEach(cleanup)
 
