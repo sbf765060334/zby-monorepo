@@ -43,8 +43,15 @@ function SystemSwitcher(props: SystemSwitcherProps) {
                   return
 
                 setOpen(false)
-                if (typeof window !== 'undefined')
-                  window.open(system.url || window.location.origin, '_blank')
+                if (typeof window !== 'undefined') {
+                  const openedWindow = window.open(
+                    system.url || window.location.origin,
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                  if (openedWindow)
+                    openedWindow.opener = null
+                }
               }}
             >
               <span className={`${prefixCls}-system-item-content`}>

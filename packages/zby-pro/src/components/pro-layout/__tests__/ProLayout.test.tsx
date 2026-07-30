@@ -641,6 +641,39 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelector('.zby-pro-layout-header')).toBeNull()
   })
 
+  it('打开外部系统时隔离新窗口的 opener', async () => {
+    const router = createTestRouter()
+    const openedWindow = { opener: window } as unknown as Window
+    const openWindow = vi.spyOn(window, 'open').mockReturnValue(openedWindow)
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          systemList={[{
+            systemName: 'external',
+            name: '外部系统',
+            description: '外部系统',
+            logo: '',
+            url: 'https://external.example.com',
+          }]}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    fireEvent.mouseEnter(screen.getByRole('button', { name: '切换系统' }))
+    fireEvent.click(await screen.findByRole('button', { name: '外部系统' }))
+
+    expect(openWindow).toHaveBeenCalledWith(
+      'https://external.example.com',
+      '_blank',
+      'noopener,noreferrer',
+    )
+    expect(openedWindow.opener).toBeNull()
+  })
+
   it('透传 semantic 样式，并为页签固定和系统切换提供可访问按钮', async () => {
     const router = createTestRouter()
     const { container } = render(
