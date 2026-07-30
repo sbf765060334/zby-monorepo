@@ -3,6 +3,7 @@ import type { ProLayoutRoute } from '@zby/pro'
 import DemoPage from './pages/DemoPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
+import ErrorPage from './pages/ErrorPage'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -269,6 +270,11 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/sample/scroll-area',
         title: '滚动组件',
         element: <ScrollAreaPlayground />,
+      },
+      {
+        path: '/sample/error-page',
+        title: '错误页面',
+        element: <ErrorPage />,
       },
     ],
   },

@@ -79,7 +79,7 @@ function PlaygroundApp() {
         >
           <ReactRouterProLayout
             router={routers}
-            title="ZBY"
+            title="数字化平台"
             showBreadcrumb={true}
             header={{
               logo: (
