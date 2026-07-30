@@ -9,6 +9,7 @@ export type {
 export {
   ProLocaleSwitch,
   ProLayoutContentContainer,
+  ProRouteSearch,
   ProThemeSwitch,
   ReactRouterProLayout,
   useLocalePreference,
@@ -22,6 +23,7 @@ export {
 export type {
   ProLocale,
   ProLocaleSwitchProps,
+  ProRouteSearchProps,
   ProThemeAppearance,
   ProThemeDensity,
   ProThemeMode,

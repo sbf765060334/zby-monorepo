@@ -26,6 +26,8 @@ export type {
   ProLayoutMetrics,
   ProLayoutSelectorEqualityFn,
 } from './metrics'
+export { ProRouteSearch } from './search'
+export type { ProRouteSearchProps } from './search'
 export { ProThemeSwitch, useThemePreference } from './theme'
 export type {
   ProThemeAppearance,

@@ -20,6 +20,17 @@ const enUS = {
         locale: {
           trigger: 'Language',
         },
+        search: {
+          trigger: 'Search pages (Ctrl+K)',
+          title: 'Search pages',
+          placeholder: 'Search page names or paths',
+          recent: 'Recent searches',
+          results: 'Search results',
+          clearAll: 'Clear all',
+          removeRecent: 'Remove recent search: {{title}}',
+          emptyRecent: 'No recent searches',
+          emptyResults: 'No matching pages',
+        },
         tabs: {
           pin: 'Pin tab: {{title}}',
           unpin: 'Unpin tab: {{title}}',

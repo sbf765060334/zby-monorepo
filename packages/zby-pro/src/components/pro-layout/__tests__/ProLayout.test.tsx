@@ -22,6 +22,7 @@ import { zbyProLocales } from '../../../locales'
 import * as favoriteStorage from '../favorites/storage'
 import ReactRouterProLayout from '../ReactRouterProLayout'
 import PageContent from '../page/PageContent'
+import { ProRouteSearch } from '../search'
 import type { ReactNode } from 'react'
 import type { ProLayoutRoute } from '../types'
 
@@ -97,7 +98,142 @@ describe('ReactRouterProLayout', () => {
     expect((await screen.findByTestId('dashboard-page')).textContent).toContain('active')
     expect(screen.getByText('当前位置：')).toBeTruthy()
     expect(screen.getAllByText('工作台').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: '搜索页面（Ctrl+K）' })).toBeNull()
     await waitFor(() => expect(document.title).toBe('工作台 - 数字化平台'))
+  })
+
+  it('搜索权限内页面，展示并高亮完整路由路径，且保留最近搜索', async () => {
+    const storageKey = 'pro-layout-route-search'
+    const recentStorageKey = `zby-pro-layout:route-search:${storageKey}`
+    window.localStorage.removeItem(recentStorageKey)
+    const searchRoutes: ProLayoutRoute[] = [
+      {
+        path: '/dashboard',
+        title: '工作台',
+        element: DashboardPage,
+      },
+      {
+        path: '/business',
+        title: '业务中心',
+        routes: [
+          {
+            path: '/business/orders',
+            title: '订单管理',
+            routes: [
+              {
+                path: '/business/orders/list',
+                title: '订单列表',
+                element: OrdersPage,
+              },
+            ],
+          },
+          {
+            path: '/business/restricted',
+            title: '权限页面',
+            auth: 'restricted',
+            element: ReportsPage,
+          },
+          {
+            path: '/business/hidden',
+            title: '隐藏页面',
+            ignore: true,
+            element: ReportsPage,
+          },
+          {
+            path: '/business/detail/:id',
+            title: '动态详情',
+            element: ReportDetailPage,
+          },
+          {
+            path: '/business/help',
+            title: '外部帮助',
+            _blank: true,
+          },
+        ],
+      },
+    ]
+    const createSearchRouter = () => createRouterCore({
+      routes: searchRoutes,
+      defaultRedirectPath: '/dashboard',
+      hasAuth: () => false,
+      storageAdapter: false,
+      storageKey,
+    })
+    const firstRender = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={createSearchRouter()}
+          title="数字化平台"
+          header={{ extra: <ProRouteSearch /> }}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    fireEvent.click(screen.getByRole('button', { name: '搜索页面（Ctrl+K）' }))
+    let dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('最近搜索')).toBeTruthy()
+    expect(within(dialog).getByText('暂无最近搜索')).toBeTruthy()
+
+    const input = within(dialog).getByPlaceholderText('搜索页面名称或路径')
+    fireEvent.change(input, { target: { value: '订单' } })
+    expect(within(dialog).getByText('搜索结果')).toBeTruthy()
+    const fullTitlePath = dialog.querySelector(
+      '.zby-pro-layout-search-result-title',
+    ) as HTMLElement
+    expect(fullTitlePath.textContent).toBe('业务中心 / 订单管理 / 订单列表')
+    expect(within(dialog).getByText('/business/orders/list')).toBeTruthy()
+    expect(fullTitlePath.querySelectorAll('mark')).toHaveLength(2)
+    expect(Array.from(fullTitlePath.querySelectorAll('mark')).map((item) => item.textContent))
+      .toEqual(['订单', '订单'])
+
+    fireEvent.change(input, { target: { value: '权限页面' } })
+    expect(within(dialog).getByText('未找到匹配页面')).toBeTruthy()
+    fireEvent.change(input, { target: { value: '动态详情' } })
+    expect(within(dialog).getByText('未找到匹配页面')).toBeTruthy()
+
+    fireEvent.change(input, { target: { value: '/business/orders' } })
+    const pathResult = dialog.querySelector(
+      '.zby-pro-layout-search-result-path',
+    ) as HTMLElement
+    expect(pathResult.textContent).toBe('/business/orders/list')
+    expect(pathResult.querySelector('mark')?.textContent).toBe('/business/orders')
+    fireEvent.click(pathResult.closest('button') as HTMLElement)
+    expect((await screen.findByTestId('orders-page')).textContent).toContain('active')
+    expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
+      .toEqual(['/business/orders/list'])
+
+    firstRender.unmount()
+    window.localStorage.setItem(
+      recentStorageKey,
+      JSON.stringify(['/business/orders/list', '/dashboard']),
+    )
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={createSearchRouter()}
+          title="数字化平台"
+          header={{ extra: <ProRouteSearch /> }}
+        />
+      </MemoryRouter>,
+    )
+    await screen.findByTestId('dashboard-page')
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+    dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('最近搜索')).toBeTruthy()
+    expect(within(dialog).getByText('业务中心 / 订单管理 / 订单列表')).toBeTruthy()
+    expect(within(dialog).getByText('工作台')).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', {
+      name: '删除最近搜索：业务中心 / 订单管理 / 订单列表',
+    }))
+    expect(within(dialog).queryByText('业务中心 / 订单管理 / 订单列表')).toBeNull()
+    expect(within(dialog).getByText('工作台')).toBeTruthy()
+    expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
+      .toEqual(['/dashboard'])
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '清空全部' }))
+    expect(within(dialog).getByText('暂无最近搜索')).toBeTruthy()
+    expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]')).toEqual([])
   })
 
   it('切换路由时始终由 ProLayout 总开关控制面包屑', async () => {
@@ -564,6 +700,7 @@ describe('ReactRouterProLayout', () => {
         <ReactRouterProLayout
           router={router}
           title="Digital Platform"
+          header={{ extra: <ProRouteSearch /> }}
         />
       </MemoryRouter>,
       'en-US',
@@ -572,6 +709,7 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('dashboard-page')
     expect(screen.getByText('Current location:')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Pin tab: 工作台' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Search pages (Ctrl+K)' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'Add to favorites: 订单列表' }))

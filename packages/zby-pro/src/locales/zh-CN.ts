@@ -20,6 +20,17 @@ const zhCN = {
         locale: {
           trigger: '语言设置',
         },
+        search: {
+          trigger: '搜索页面（Ctrl+K）',
+          title: '搜索页面',
+          placeholder: '搜索页面名称或路径',
+          recent: '最近搜索',
+          results: '搜索结果',
+          clearAll: '清空全部',
+          removeRecent: '删除最近搜索：{{title}}',
+          emptyRecent: '暂无最近搜索',
+          emptyResults: '未找到匹配页面',
+        },
         tabs: {
           pin: '固定页签：{{title}}',
           unpin: '取消固定页签：{{title}}',
