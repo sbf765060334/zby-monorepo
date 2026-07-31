@@ -64,6 +64,7 @@ interface RouterNavigationPlan {
 interface ExecuteNavigationPlanOptions {
   navigate?: RouterNavigate
   replace?: boolean
+  trackNavigation?: boolean
 }
 
 /**
@@ -332,6 +333,7 @@ export function createRouterCore<Route extends RouterRoute>(
     const executed = executeNavigationPlan(plan, {
       navigate: host.redirect || host.navigate,
       replace: true,
+      trackNavigation: false,
     })
     if (!executed)
       setNavigationStatus('bootstrapping')
@@ -619,8 +621,25 @@ export function createRouterCore<Route extends RouterRoute>(
       ? undefined
       : { replace: options.replace }
     const commitNavigate: RouterNavigate = navigateOptions
-      ? (target) => navigate(target, navigateOptions)
-      : (target) => navigate(target)
+      ? (target) => {
+          trackPathnameNavigation(target)
+          navigate(target, navigateOptions)
+        }
+      : (target) => {
+          trackPathnameNavigation(target)
+          navigate(target)
+        }
+
+    function trackPathnameNavigation(target: Parameters<RouterNavigate>[0]) {
+      if (options.trackNavigation === false)
+        return
+      const targetPathname = typeof target === 'string'
+        ? parseUrl(target).pathname
+        : target.pathname
+      const currentPathname = runtime.latestLocation?.pathname || getState().currentPathname
+      if (targetPathname !== currentPathname)
+        setNavigationStatus('navigating')
+    }
 
     if (!plan.authorized) {
       // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。导航计划已经把动态

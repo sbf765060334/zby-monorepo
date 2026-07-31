@@ -244,18 +244,38 @@ describe('createRouterCore', () => {
 
     router.jumpTo({ pathname: '/dashboard' })
     expect(navigate).toHaveBeenLastCalledWith('/dashboard')
+    expect(router.getState().navigationStatus).toBe('navigating')
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().navigationStatus).toBe('settled')
 
     router.smartNavigate({ searchParams: 'page=2', hash: 'table' })
     expect(navigate).toHaveBeenLastCalledWith(
       { pathname: '/dashboard', search: 'page=2', hash: '#table' },
       { replace: true },
     )
+    expect(router.getState().navigationStatus).toBe('settled')
 
     router.jumpTo({ pathname: '/project/:id' })
     expect(navigate).toHaveBeenLastCalledWith(
       '/project/42?tab=detail#summary',
     )
+    expect(router.getState().navigationStatus).toBe('navigating')
+  })
+
+  it('does not publish pathname navigation for a same-page hash change', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    const subscriber = vi.fn()
+    const unsubscribe = router.subscribe(subscriber)
+
+    router.jumpTo({ pathname: '/dashboard', hash: 'table' })
+
+    expect(navigate).toHaveBeenCalledWith('/dashboard#table')
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(subscriber).not.toHaveBeenCalled()
+    unsubscribe()
   })
 
   it('does not navigate an unresolved dynamic route pattern', () => {
@@ -449,19 +469,25 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
-  it('does not publish state when an unauthorized route keeps the same inactive state', () => {
+  it('tracks pathname navigation without activating an unauthorized route', () => {
+    const navigate = vi.fn()
     const router = createRouterCore({
       routes,
       hasAuth: (code) => code !== 'admin',
       storageAdapter: false,
     })
-    router.bindHost({ navigate: vi.fn() })
+    router.bindHost({ navigate })
 
     const subscriber = vi.fn()
     const unsubscribe = router.subscribe(subscriber)
     router.jumpTo('/admin')
 
-    expect(subscriber).not.toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith('/admin')
+    expect(router.getState().navigationStatus).toBe('navigating')
+    expect(router.getState().activeTabKey).toBeNull()
+    expect(router.getState().activePage).toBeNull()
+    expect(router.getState().tabs).toEqual([])
+    expect(subscriber).toHaveBeenCalledOnce()
     unsubscribe()
   })
 

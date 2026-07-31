@@ -7,6 +7,7 @@ import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
+import NavigationProgress from './navigation-progress'
 import { Breadcrumb, PageContent } from './page'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
@@ -87,6 +88,7 @@ function ProLayout(props: ProLayoutProps) {
 
   return (
     <ProLayoutProvider value={layoutContextValue}>
+      <NavigationProgress />
       <Layout
         className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
         style={{

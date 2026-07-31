@@ -100,6 +100,7 @@ export interface RouterLocation {
 /** 当前宿主地址是否已经完成 Core 落点确认。 */
 export type RouterNavigationStatus =
   | 'bootstrapping'
+  | 'navigating'
   | 'redirecting'
   | 'settled'
 
@@ -258,7 +259,7 @@ export interface RouterRuntimeOptions {
  * @typeParam Route currentRoutes 与 pages 中保留的调用方路由节点类型。
  */
 export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
-  /** 初始化、重定向或最终落定状态；403/404 只能在 settled 后判断。 */
+  /** 初始化、pathname 导航、重定向或最终落定状态；403/404 只能在 settled 后判断。 */
   readonly navigationStatus: RouterNavigationStatus
   /** 最近一次由宿主同步的 pathname。 */
   readonly currentPathname: string
