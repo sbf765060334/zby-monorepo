@@ -205,6 +205,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
         icon={<ThemeIcon />}
         aria-label={title}
         title={title}
+        onPointerEnter={recordThemeSwitchPoint}
         onPointerDown={recordThemeSwitchPoint}
       />
     </Dropdown>

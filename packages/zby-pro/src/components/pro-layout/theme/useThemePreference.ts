@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 
 import type {
   ProThemeAppearance,
@@ -10,6 +10,7 @@ import type {
 } from './types'
 
 const DEFAULT_STORAGE_KEY = 'zby-pro:theme-preference'
+const SYSTEM_THEME_QUERY = '(prefers-color-scheme: dark)'
 /** 未传配置且没有持久化记录时，保持 antd 原生的浅色和默认密度。 */
 const DEFAULT_PREFERENCE: ProThemePreference = {
   mode: 'light',
@@ -23,24 +24,11 @@ export function useThemePreference(
   const fallback = { ...DEFAULT_PREFERENCE, ...options.defaultValue }
   const [value, setPreference] = useState<ProThemePreference>(() =>
     readPreference(DEFAULT_STORAGE_KEY, fallback))
-  const [systemAppearance, setSystemAppearance] = useState<ProThemeAppearance>(
+  const systemAppearance = useSyncExternalStore(
+    subscribeSystemAppearance,
     getSystemAppearance,
+    getServerAppearance,
   )
-
-  useEffect(() => {
-    // 只有 auto 模式依赖系统外观；离开 auto 后立即释放监听器。
-    if (value.mode !== 'auto' || typeof window === 'undefined')
-      return undefined
-
-    const media = window.matchMedia?.('(prefers-color-scheme: dark)')
-    if (!media)
-      return undefined
-
-    const handleChange = () => setSystemAppearance(media.matches ? 'dark' : 'light')
-    handleChange()
-    media.addEventListener?.('change', handleChange)
-    return () => media.removeEventListener?.('change', handleChange)
-  }, [value.mode])
 
   const setValue = useCallback((nextValue: ProThemePreference) => {
     persistPreference(DEFAULT_STORAGE_KEY, nextValue)
@@ -78,7 +66,23 @@ function getSystemAppearance(): ProThemeAppearance {
   // SSR 没有 matchMedia，使用 light 保证服务端输出稳定。
   if (typeof window === 'undefined')
     return 'light'
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return window.matchMedia?.(SYSTEM_THEME_QUERY).matches ? 'dark' : 'light'
+}
+
+function getServerAppearance(): ProThemeAppearance {
+  return 'light'
+}
+
+function subscribeSystemAppearance(onStoreChange: () => void) {
+  if (typeof window === 'undefined')
+    return () => undefined
+
+  const media = window.matchMedia?.(SYSTEM_THEME_QUERY)
+  if (!media)
+    return () => undefined
+
+  media.addEventListener?.('change', onStoreChange)
+  return () => media.removeEventListener?.('change', onStoreChange)
 }
 
 function readPreference(

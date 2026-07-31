@@ -10,6 +10,7 @@ import {
   waitFor,
 } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useLayoutEffect } from 'react'
 
 import { zbyProLocales } from '../../../locales'
 import { ProThemeSwitch, useThemePreference } from '../theme'
@@ -19,11 +20,13 @@ const THEME_STORAGE_KEY = 'zby-pro:theme-preference'
 
 let prefersDark = false
 const colorSchemeListeners = new Set<() => void>()
+const committedPreferences: Array<ProThemePreference & { appearance: 'light' | 'dark' }> = []
 
 beforeEach(() => {
   window.localStorage.clear()
   prefersDark = false
   colorSchemeListeners.clear()
+  committedPreferences.length = 0
   class ResizeObserverMock {
     observe() {}
     unobserve() {}
@@ -61,6 +64,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  Reflect.deleteProperty(document, 'startViewTransition')
+  Reflect.deleteProperty(document.documentElement, 'animate')
   vi.restoreAllMocks()
 })
 
@@ -135,6 +140,66 @@ describe('ProThemeSwitch', () => {
 
     expect(readRenderedPreference().appearance).toBe('dark')
   })
+
+  it('离开跟随系统后系统变色，再返回时直接提交实时主题', async () => {
+    renderThemeFixture({ mode: 'light', density: 'default' })
+
+    act(() => {
+      prefersDark = true
+      colorSchemeListeners.forEach((listener) => listener())
+    })
+    expect(readRenderedPreference().appearance).toBe('light')
+
+    committedPreferences.length = 0
+    await openThemeMenu()
+    fireEvent.click(screen.getAllByRole('menuitem')[0])
+
+    expect(readRenderedPreference()).toEqual({
+      mode: 'auto',
+      density: 'default',
+      appearance: 'dark',
+    })
+    expect(
+      committedPreferences
+        .filter((preference) => preference.mode === 'auto')
+        .map((preference) => preference.appearance),
+    ).toEqual(['dark'])
+  })
+
+  it('悬停打开主题菜单时从主题按钮处开始过渡', async () => {
+    const animate = vi.fn(() => ({ cancel: vi.fn() }))
+    const startViewTransition = vi.fn((callback: () => void) => {
+      callback()
+      return {
+        ready: Promise.resolve(),
+        finished: Promise.resolve(),
+      }
+    })
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition,
+    })
+    Object.defineProperty(document.documentElement, 'animate', {
+      configurable: true,
+      value: animate,
+    })
+
+    renderThemeFixture({ mode: 'light', density: 'default' })
+    const themeTrigger = screen.getByRole('button', { name: '主题设置' })
+    fireEvent.pointerEnter(themeTrigger, { clientX: 960, clientY: 24 })
+    await openThemeMenu()
+    fireEvent.click(screen.getAllByRole('menuitem')[2])
+
+    await waitFor(() => expect(animate).toHaveBeenCalled())
+    expect(animate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clipPath: expect.arrayContaining(['circle(0px at 960px 24px)']),
+      }),
+      expect.objectContaining({
+        pseudoElement: '::view-transition-new(zby-pro-layout-theme)',
+      }),
+    )
+  })
 })
 
 function ThemeFixture(props: {
@@ -143,6 +208,13 @@ function ThemeFixture(props: {
   const preference = useThemePreference({
     defaultValue: props.defaultValue,
   })
+
+  useLayoutEffect(() => {
+    committedPreferences.push({
+      ...preference.value,
+      appearance: preference.appearance,
+    })
+  }, [preference.appearance, preference.value])
 
   return (
     <>

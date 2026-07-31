@@ -14,7 +14,7 @@ import {
   zbyProLocales,
 } from '@zby/pro'
 import { zbyUiLocales } from '@zby/ui'
-import React, { useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { playgroundLocales } from './playgroundIntl'
@@ -45,12 +45,18 @@ function PlaygroundApp() {
     defaultValue: { mode: 'auto', density: 'default' },
   })
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     const previousColorScheme = root.style.colorScheme
+    const previousTheme = root.dataset.theme
     root.style.colorScheme = themePreference.appearance
+    root.dataset.theme = themePreference.appearance
     return () => {
       root.style.colorScheme = previousColorScheme
+      if (previousTheme === undefined)
+        delete root.dataset.theme
+      else
+        root.dataset.theme = previousTheme
     }
   }, [themePreference.appearance])
 

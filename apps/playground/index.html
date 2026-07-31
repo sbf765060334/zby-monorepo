@@ -3,6 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const storageKey = 'zby-pro:theme-preference'
+        let mode = 'auto'
+
+        try {
+          const storedValue = window.localStorage.getItem(storageKey)
+          if (storedValue === 'auto' || storedValue === 'light' || storedValue === 'dark') {
+            mode = storedValue
+          }
+          else if (storedValue) {
+            const parsedValue = JSON.parse(storedValue)
+            if (parsedValue.mode === 'auto' || parsedValue.mode === 'light' || parsedValue.mode === 'dark')
+              mode = parsedValue.mode
+          }
+        }
+        catch {}
+
+        const followsDarkSystem = mode === 'auto'
+          && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+        const appearance = mode === 'dark' || followsDarkSystem ? 'dark' : 'light'
+        document.documentElement.dataset.theme = appearance
+        document.documentElement.style.colorScheme = appearance
+      })()
+    </script>
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f5f5;
+      }
+
+      html[data-theme='dark'] body {
+        background: #000;
+      }
+    </style>
     <title>zby-monorepo playground</title>
   </head>
   <body>
