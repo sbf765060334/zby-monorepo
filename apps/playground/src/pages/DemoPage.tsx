@@ -6,7 +6,7 @@ export default function DemoPage() {
   const router = useRouterCore()
 
   const handleJumpTo404Page = () => {
-    router.jumpTo('/sample/input-range-input-123')
+    router.jumpTo('/sample/input-range-input')
   }
   return (
     <div>
