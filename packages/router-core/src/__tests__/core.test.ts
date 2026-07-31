@@ -46,6 +46,53 @@ describe('route registry', () => {
     expect(matchRoutePath('/project/:id', '/project')).toBe(false)
   })
 
+  it('rejects normalized duplicate route paths during registration', () => {
+    expect(() =>
+      createRouteRegistry({
+        routes: [
+          { path: '/Users', title: 'Users' },
+          { path: '/users/', title: 'Users duplicate' },
+        ],
+      }),
+    ).toThrow('Route paths must be unique.')
+  })
+
+  it('rejects dynamic route patterns that differ only by parameter names', () => {
+    expect(() =>
+      createRouteRegistry({
+        routes: [
+          { path: '/user/:id', title: 'User by id' },
+          { path: '/user/:name', title: 'User by name' },
+        ],
+      }),
+    ).toThrow('match the same URL shape')
+  })
+
+  it('rejects repeated parameter names in one route', () => {
+    expect(() =>
+      createRouteRegistry({
+        routes: [
+          {
+            path: '/organization/:id/user/:id',
+            title: 'Organization user',
+          },
+        ],
+      }),
+    ).toThrow('Parameter names must be unique within a route.')
+  })
+
+  it('keeps distinct static and dynamic route patterns valid', () => {
+    const registry = createRouteRegistry({
+      routes: [
+        { path: '/user/new', title: 'New user' },
+        { path: '/user/:id', title: 'User' },
+      ],
+    })
+
+    expect(registry.resolveLeafRoute('/user/new')?.routeKey).toBe('/user/new')
+    expect(registry.resolveLeafRoute('/user/42')?.routeKey).toBe('/user/:id')
+  })
+
   it('builds an authorization snapshot and resolves directory children', () => {
     const registry = createRouteRegistry({
       routes,

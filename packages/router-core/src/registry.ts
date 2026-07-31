@@ -107,6 +107,7 @@ export function createRouteRegistry<Route extends RouterRoute>(
 ): RouteRegistry<Route> {
   // 先复制路由树，调用方随后替换数组或修改 title 都不会改变当前 Registry 的事实。
   const routes = snapshotRoutes(options.routes)
+  validateRouteTree(routes)
   // 页面判断规则与 Registry 同生命周期；所有索引和查询必须复用同一个判定函数。
   const pageMatcher = options.isPageRoute || isAccessibleRoute
   const isPageRoute: RouteRegistry<Route>['isPageRoute'] = (route) =>
@@ -329,6 +330,84 @@ export function normalizeRoutePath(path: string) {
   return pathname.replace(/\/+$/, '')
 }
 
+interface RoutePatternAnalysis {
+  normalizedPath: string
+  lookupPath: string
+  shapeKey: string
+  parameterNames: string[]
+}
+
+function analyzeRoutePattern(path: string): RoutePatternAnalysis {
+  const normalizedPath = normalizeRoutePath(path)
+  const segments = normalizedPath.split('/')
+  const parameterNames = segments
+    .filter((segment) => segment.startsWith(':'))
+    .map((segment) => segment.slice(1))
+
+  const shapeKey = JSON.stringify(
+    segments.map((segment) => {
+      if (segment === '*')
+        return ['wildcard']
+      if (segment.startsWith(':'))
+        return ['parameter']
+      return ['static', segment.toLowerCase()]
+    }),
+  )
+
+  return {
+    normalizedPath,
+    lookupPath: normalizedPath.toLowerCase(),
+    shapeKey,
+    parameterNames,
+  }
+}
+
+function validateRouteTree<Route extends RouterRoute>(routes: Route[]) {
+  const normalizedPaths = new Map<string, string>()
+  const routeShapes = new Map<string, string>()
+
+  const walk = (route: Route) => {
+    const analysis = analyzeRoutePattern(route.path)
+    const duplicatePath = normalizedPaths.get(analysis.lookupPath)
+
+    if (duplicatePath) {
+      throw new Error(
+        `[RouterCore] Duplicate route paths "${duplicatePath}" and "${route.path}" ` +
+        `resolve to "${analysis.normalizedPath}". Route paths must be unique.`,
+      )
+    }
+
+    const seenParameterNames = new Set<string>()
+    const duplicateParameter = analysis.parameterNames.find((name) => {
+      if (seenParameterNames.has(name))
+        return true
+      seenParameterNames.add(name)
+      return false
+    })
+
+    if (duplicateParameter) {
+      throw new Error(
+        `[RouterCore] Duplicate route parameter ":${duplicateParameter}" ` +
+        `in "${route.path}". Parameter names must be unique within a route.`,
+      )
+    }
+
+    const conflictingShape = routeShapes.get(analysis.shapeKey)
+    if (conflictingShape) {
+      throw new Error(
+        `[RouterCore] Conflicting route patterns "${conflictingShape}" and ` +
+        `"${route.path}" match the same URL shape.`,
+      )
+    }
+
+    normalizedPaths.set(analysis.lookupPath, route.path)
+    routeShapes.set(analysis.shapeKey, route.path)
+    route.routes?.forEach((child) => walk(child as Route))
+  }
+
+  routes.forEach(walk)
+}
+
 function createRouteIndex<Route extends RouterRoute>(routes: Route[]): RouteIndex<Route> {
   const mapping: Record<string, Route> = {}
   const normalizedMapping: Record<string, ResolvedRoute<Route>> = {}
@@ -338,15 +417,6 @@ function createRouteIndex<Route extends RouterRoute>(routes: Route[]): RouteInde
   const walk = (route: Route, parentPath?: string) => {
     const normalizedPath = normalizeRoutePath(route.path)
     const lookupPath = normalizedPath.toLowerCase()
-    const conflict = normalizedMapping[lookupPath]
-    if (conflict) {
-      // `/Users` 与 `/users/` 按平台匹配语义相同，必须在创建阶段直接失败。
-      throw new Error(
-        `[RouterCore] Duplicate route paths "${conflict.routeKey}" and "${route.path}" ` +
-        `resolve to "${normalizedPath}". Route paths must be unique.`,
-      )
-    }
-
     mapping[route.path] = route
     normalizedMapping[lookupPath] = { routeKey: route.path, route }
     if (route.path.includes(':') || route.path.includes('*')) {
