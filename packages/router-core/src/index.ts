@@ -6,6 +6,7 @@ export {
   createRouteRegistry,
   filterAuthorizedRoutes,
   isAccessibleRoute,
+  isConcreteRoutePath,
   matchRoutePath,
   normalizeRoutePath,
   preloadRoute,

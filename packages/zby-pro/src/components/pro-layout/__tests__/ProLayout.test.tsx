@@ -998,6 +998,42 @@ describe('ReactRouterProLayout', () => {
     })
   })
 
+  it('动态参数路由不显示收藏入口', async () => {
+    const router = createRouterCore<ProLayoutRoute>({
+      routes: [
+        {
+          path: '/dashboard',
+          title: '工作台',
+          element: DashboardPage,
+        },
+        {
+          path: '/projects',
+          title: '项目管理',
+          routes: [
+            {
+              path: '/projects/:id',
+              title: '项目详情',
+              element: ReportDetailPage,
+            },
+          ],
+        },
+      ],
+      defaultRedirectPath: '/dashboard',
+      storageAdapter: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    fireEvent.click(screen.getByRole('button', { name: /项目管理/ }))
+    expect(await screen.findByRole('button', { name: '项目详情' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '收藏：项目详情' })).toBeNull()
+  })
+
   it('hydration 期间保留本地收藏修改，和固定页签冲突语义一致', async () => {
     let resolveLoad!: (state: Partial<RouterStorageState>) => void
     const loadPromise = new Promise<Partial<RouterStorageState>>((resolve) => {

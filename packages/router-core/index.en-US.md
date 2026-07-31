@@ -294,7 +294,7 @@ Only fixed-tab keys and concrete path mappings required to restore fixed dynamic
 The root entry also exports:
 
 - `createRouteRegistry`, `snapshotRoutes`, and `filterAuthorizedRoutes`.
-- `matchRoutePath`, `normalizeRoutePath`, `isAccessibleRoute`, and `preloadRoute`.
+- `matchRoutePath`, `normalizeRoutePath`, `isConcreteRoutePath`, `isAccessibleRoute`, and `preloadRoute`.
 - `createIndexedDBRouterStorageAdapter`, `createRemoteRouterStorageAdapter`, and `normalizeRouterStorageState`.
 
 ## Development

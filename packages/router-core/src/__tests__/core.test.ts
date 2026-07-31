@@ -849,6 +849,22 @@ describe('createRouterCore', () => {
     })
   })
 
+  it('rejects parameter and wildcard routes as favorites', () => {
+    const router = createRouterCore({
+      routes: [
+        { path: '/project/:id', title: 'Project', element: {} },
+        { path: '/docs/*', title: 'Docs', element: {} },
+      ],
+      storageAdapter: false,
+    })
+
+    expect(router.toggleFavoriteRoute('/project/:id')).toBe(false)
+    expect(router.toggleFavoriteRoute('/project/42')).toBe(false)
+    expect(router.toggleFavoriteRoute('/docs/*')).toBe(false)
+    expect(router.toggleFavoriteRoute('/docs/guide')).toBe(false)
+    expect(router.getState().favoriteRoutePaths).toEqual([])
+  })
+
   it('hydrates, canonicalizes and preserves unauthorized favorite routes', async () => {
     const saveFavoriteRoutePaths = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -862,6 +878,9 @@ describe('createRouterCore', () => {
             '/settings',
             '/missing',
             '/admin',
+            '/project/:id',
+            '/project/42',
+            '/task/1',
           ],
         })),
         saveFixedTabs: vi.fn(async () => undefined),

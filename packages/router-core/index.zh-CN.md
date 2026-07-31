@@ -294,7 +294,7 @@ Router-core 只持久化固定页签 key，以及恢复固定动态页签所需�
 根入口还导出：
 
 - `createRouteRegistry`、`snapshotRoutes`、`filterAuthorizedRoutes`。
-- `matchRoutePath`、`normalizeRoutePath`、`isAccessibleRoute`、`preloadRoute`。
+- `matchRoutePath`、`normalizeRoutePath`、`isConcreteRoutePath`、`isAccessibleRoute`、`preloadRoute`。
 - `createIndexedDBRouterStorageAdapter`、`createRemoteRouterStorageAdapter`、`normalizeRouterStorageState`。
 
 ## 开发命令
