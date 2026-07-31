@@ -39,8 +39,67 @@ export default function useRouteSearchStyles(prefixCls: string) {
           minHeight: 0,
           flexDirection: 'column',
         },
-        [`.${prefixCls}-search-body > .ant-input-affix-wrapper`]: {
+        [`.${prefixCls}-search-input-wrapper`]: {
+          display: 'flex',
+          width: '100%',
+          minWidth: 0,
+          minHeight: styleToken.controlHeightLG,
+          boxSizing: 'border-box',
           flexShrink: 0,
+          alignItems: 'center',
+          gap: styleToken.paddingXS,
+          paddingBlock: styleToken.paddingXS,
+          paddingInline: styleToken.paddingSM,
+          border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorder}`,
+          borderRadius: styleToken.borderRadius,
+          background: styleToken.colorBgContainer,
+          transition: `border-color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, box-shadow ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
+
+          '&:hover': {
+            borderColor: styleToken.colorPrimaryHover,
+          },
+
+          '&:focus-within': {
+            borderColor: styleToken.colorPrimary,
+            boxShadow: `0 0 0 ${unit(styleToken.controlOutlineWidth)} ${styleToken.controlOutline}`,
+          },
+        },
+        [`.${prefixCls}-search-input-prefix`]: {
+          flexShrink: 0,
+          color: styleToken.colorTextQuaternary,
+          fontSize: styleToken.fontSizeLG,
+        },
+        [`.${prefixCls}-search-input`]: {
+          width: '100%',
+          minWidth: 0,
+          padding: 0,
+          border: 0,
+          outline: 0,
+          background: 'transparent',
+          color: styleToken.colorText,
+          font: 'inherit',
+          fontSize: styleToken.fontSizeLG,
+          lineHeight: styleToken.lineHeightLG,
+
+          '&::placeholder': {
+            color: styleToken.colorTextPlaceholder,
+          },
+        },
+        [`.${prefixCls}-search-input-clear`]: {
+          display: 'inline-flex',
+          flexShrink: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          border: 0,
+          background: 'transparent',
+          color: styleToken.colorTextQuaternary,
+          cursor: 'pointer',
+          fontSize: styleToken.fontSize,
+
+          '&:hover, &:focus-visible': {
+            color: styleToken.colorTextTertiary,
+          },
         },
         [`.${prefixCls}-search-section-header`]: {
           display: 'flex',
@@ -76,22 +135,14 @@ export default function useRouteSearchStyles(prefixCls: string) {
           flexDirection: 'column',
           gap: styleToken.marginXXS,
           overflowY: 'auto',
+          scrollPaddingBlock: styleToken.paddingXS,
         },
-        [`.${prefixCls}-search-result`]: {
+        [`.${prefixCls}-search-result-row`]: {
           position: 'relative',
-          display: 'flex',
           width: '100%',
           minWidth: 0,
-          boxSizing: 'border-box',
-          alignItems: 'center',
-          borderRadius: styleToken.borderRadiusSM,
-          background: 'transparent',
-          color: styleToken.colorText,
         },
-        [`.${prefixCls}-search-result:hover, .${prefixCls}-search-result-active`]: {
-          background: styleToken.colorFillTertiary,
-        },
-        [`.${prefixCls}-search-result-main`]: {
+        [`.${prefixCls}-search-result`]: {
           display: 'flex',
           width: '100%',
           minWidth: 0,
@@ -100,14 +151,15 @@ export default function useRouteSearchStyles(prefixCls: string) {
           gap: styleToken.marginXXS,
           paddingBlock: styleToken.paddingXS,
           paddingInline: styleToken.paddingSM,
-          border: 0,
+          borderRadius: styleToken.borderRadiusSM,
           background: 'transparent',
-          color: 'inherit',
+          color: styleToken.colorText,
           cursor: 'pointer',
-          font: 'inherit',
-          textAlign: 'start',
         },
-        [`.${prefixCls}-search-result-recent .${prefixCls}-search-result-main`]: {
+        [`.${prefixCls}-search-result:hover, .${prefixCls}-search-result[data-selected='true']`]: {
+          background: styleToken.colorFillTertiary,
+        },
+        [`.${prefixCls}-search-result-recent`]: {
           paddingInlineEnd: `calc(${unit(styleToken.controlHeightSM)} + ${unit(styleToken.paddingSM)})`,
         },
         [`.${prefixCls}-search-remove`]: {

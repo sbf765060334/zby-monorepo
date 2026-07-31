@@ -27,6 +27,7 @@ const zhCN = {
           recent: '最近搜索',
           results: '搜索结果',
           clearAll: '清空全部',
+          clearInput: '清空搜索',
           removeRecent: '删除最近搜索：{{title}}',
           emptyRecent: '暂无最近搜索',
           emptyResults: '未找到匹配页面',

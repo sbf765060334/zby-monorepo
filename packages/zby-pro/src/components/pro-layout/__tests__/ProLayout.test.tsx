@@ -52,6 +52,10 @@ beforeAll(() => {
   }
   Object.defineProperty(window, 'ResizeObserver', { configurable: true, value: ResizeObserverMock })
   Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock })
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: vi.fn(),
+  })
 })
 
 afterEach(() => {
@@ -175,6 +179,13 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('dashboard-page')
+    const businessInput = document.createElement('input')
+    document.body.appendChild(businessInput)
+    businessInput.focus()
+    fireEvent.keyDown(businessInput, { key: 'k', code: 'KeyK', ctrlKey: true })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    businessInput.remove()
+
     fireEvent.click(screen.getByRole('button', { name: '搜索页面（Ctrl+K）' }))
     let dialog = await screen.findByRole('dialog')
     const searchBody = dialog.querySelector('.zby-pro-layout-search-body') as HTMLElement
@@ -216,7 +227,7 @@ describe('ReactRouterProLayout', () => {
     ) as HTMLElement
     expect(pathResult.textContent).toBe('/business/orders/list')
     expect(pathResult.querySelector('mark')?.textContent).toBe('/business/orders')
-    fireEvent.click(pathResult.closest('button') as HTMLElement)
+    fireEvent.click(pathResult.closest('[cmdk-item]') as HTMLElement)
     expect((await screen.findByTestId('orders-page')).textContent).toContain('active')
     expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
       .toEqual(['/business/orders/list'])
@@ -240,11 +251,35 @@ describe('ReactRouterProLayout', () => {
       expect(JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]'))
         .toEqual(['/business/orders/list', '/dashboard'])
     })
-    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+    const shortcutEvent = new KeyboardEvent('keydown', {
+      key: 'k',
+      code: 'KeyK',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    })
+    fireEvent(document, shortcutEvent)
+    expect(shortcutEvent.defaultPrevented).toBe(true)
     dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('最近搜索')).toBeTruthy()
     expect(within(dialog).getByText('业务中心 / 订单管理 / 订单列表')).toBeTruthy()
     expect(within(dialog).getByText('工作台')).toBeTruthy()
+    const recentInput = within(dialog).getByRole('combobox')
+    expect(recentInput.getAttribute('aria-controls')).toBeTruthy()
+    await waitFor(() => {
+      expect(dialog.querySelector('[cmdk-item][data-selected="true"]')
+        ?.getAttribute('data-value')).toBe('/business/orders/list')
+    })
+    const scrollIntoView = vi.mocked(Element.prototype.scrollIntoView)
+    scrollIntoView.mockClear()
+    fireEvent.keyDown(recentInput, { key: 'ArrowDown' })
+    await waitFor(() => {
+      const selectedItem = dialog.querySelector('[cmdk-item][data-selected="true"]')
+      expect(selectedItem?.getAttribute('data-value')).toBe('/dashboard')
+      expect(recentInput.getAttribute('aria-activedescendant')).toBe(selectedItem?.id)
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+    })
+    fireEvent.keyDown(recentInput, { key: 'ArrowUp' })
     fireEvent.click(within(dialog).getByRole('button', {
       name: '删除最近搜索：业务中心 / 订单管理 / 订单列表',
     }))

@@ -1,14 +1,15 @@
-import { CloseOutlined, SearchOutlined } from '@ant-design/icons'
+import { CloseCircleFilled, CloseOutlined, SearchOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { useRouterCore } from '@zby/router-core/react'
-import { Button, Empty, Input, Modal } from 'antd'
+import { Button, Empty, Modal } from 'antd'
 import { clsx } from 'clsx'
+import { Command } from 'cmdk'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 
 import useRouteSearchStyles from './style'
 
-import type { InputRef } from 'antd'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { RouterCore } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
 
@@ -67,14 +68,12 @@ function RouteSearch(props: ProRouteSearchProps) {
   // 搜索弹窗通过 Portal 渲染，需要独立 hashId 才能命中作用域样式。
   const hashId = useRouteSearchStyles(prefixCls)
   // Modal 完成打开动画后把焦点交给搜索输入框。
-  const inputRef = useRef<InputRef>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   // 保存 resize 防抖定时器，组件卸载时必须一并清理。
   const resizeTimerRef = useRef<number | null>(null)
   // 弹窗和搜索交互的最小状态集合。
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [activeIndex, setActiveIndex] = useState(-1)
-  const resultItemRefs = useRef<Array<HTMLDivElement | null>>([])
   // undefined 使 SSR 与客户端首次渲染保持一致；挂载后再读取真实视口高度。
   const [bodyMaxHeight, setBodyMaxHeight] = useState<number>()
 
@@ -129,12 +128,19 @@ function RouteSearch(props: ProRouteSearchProps) {
     }),
     [recentPaths, routeMap],
   )
-  // 搜索态和最近态共用同一套列表与键盘导航逻辑。
+  // 搜索态和最近态共用同一套命令列表交互。
   const visibleRoutes = normalizedQuery ? matchedRoutes : recentRoutes
   const triggerTitle = intl.getMessage(
     'zby.pro.layout.search.trigger',
     '搜索页面（Ctrl+K）',
   )
+  const dialogTitle = intl.getMessage(
+    'zby.pro.layout.search.title',
+    '搜索页面',
+  )
+  const sectionTitle = normalizedQuery
+    ? intl.getMessage('zby.pro.layout.search.results', '搜索结果')
+    : intl.getMessage('zby.pro.layout.search.recent', '最近搜索')
 
   /**
    * 初始化并维护视口相关的内容区最大高度。
@@ -177,47 +183,23 @@ function RouteSearch(props: ProRouteSearchProps) {
     }
   }, [])
 
-  /** 注册全局 Ctrl/Cmd + K 快捷键，并在组件卸载时解除监听。 */
-  useEffect(() => {
-    const handleShortcut = (event: globalThis.KeyboardEvent) => {
-      // 同时兼容 Windows/Linux 的 Ctrl 和 macOS 的 Command。
-      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'k')
-        return
+  /** 注册跨平台快捷键；库默认不在表单控件和可编辑区域中触发。 */
+  useHotkeys(
+    'mod+k',
+    () => setOpen(true),
+    { preventDefault: true },
+    [],
+  )
 
-      // 阻止浏览器或宿主应用占用同一快捷键。
-      event.preventDefault()
-      setOpen(true)
-      // 有最近记录时默认选中第一项，Enter 可以直接打开。
-      setActiveIndex(recentRoutes.length > 0 ? 0 : -1)
-    }
-
-    document.addEventListener('keydown', handleShortcut)
-    return () => document.removeEventListener('keydown', handleShortcut)
-  }, [recentRoutes.length])
-
-  /** 关闭时同步清空临时查询和键盘选中态，下次打开固定回到最近搜索。 */
+  /** 关闭时同步清空临时查询，下次打开固定回到最近搜索。 */
   const closeSearch = () => {
     setOpen(false)
     setQuery('')
-    setActiveIndex(-1)
   }
 
-  /** 通过右侧放大镜打开搜索，并恢复最近列表的默认键盘选中项。 */
+  /** 通过右侧放大镜打开搜索。 */
   const showSearch = () => {
     setOpen(true)
-    setActiveIndex(recentRoutes.length > 0 ? 0 : -1)
-  }
-
-  /** 更新关键词，并让键盘选中态始终与新结果集保持一致。 */
-  const changeQuery = (value: string) => {
-    const nextQuery = normalizeSearchText(value)
-    // 这里只判断是否至少存在一项，不额外构造第二份过滤数组。
-    const hasResults = nextQuery
-      ? searchableRoutes.some((item) => item.searchText.includes(nextQuery))
-      : recentRoutes.length > 0
-    setQuery(value)
-    // 新结果存在时从第一项开始，否则取消选择，避免 Enter 命中过期索引。
-    setActiveIndex(hasResults ? 0 : -1)
   }
 
   /** 打开页面并把它提升到最近搜索首位。 */
@@ -241,54 +223,13 @@ function RouteSearch(props: ProRouteSearchProps) {
     const nextPaths = recentPaths.filter((path) => path !== item.path)
     setRecentRouteState({ router, paths: nextPaths, shouldCleanStorage: false })
     saveRecentRoutePaths(nextPaths)
-    // 删除后重新从首项开始，避免 activeIndex 指向已经不存在的记录。
-    setActiveIndex(nextPaths.length > 0 ? 0 : -1)
   }
 
   /** 清空全部最近记录。 */
   const clearRecentRoutes = () => {
     setRecentRouteState({ router, paths: [], shouldCleanStorage: false })
     saveRecentRoutePaths([])
-    setActiveIndex(-1)
   }
-
-  /** 在输入框保持焦点的情况下支持上下方向键选择和 Enter 打开。 */
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    // 空列表不消费按键，保留输入框和 Modal 的原生行为。
-    if (visibleRoutes.length === 0)
-      return
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      // 到达末项后回到第一项，形成循环导航。
-      setActiveIndex((current) => (current + 1) % visibleRoutes.length)
-      return
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      // 在首项继续向上时跳到最后一项。
-      setActiveIndex((current) =>
-        current <= 0 ? visibleRoutes.length - 1 : current - 1,
-      )
-      return
-    }
-
-    if (event.key === 'Enter' && activeIndex >= 0) {
-      event.preventDefault()
-      // activeIndex 只会指向当前 visibleRoutes，直接复用鼠标打开流程。
-      openRoute(visibleRoutes[activeIndex])
-    }
-  }
-
-  useEffect(() => {
-    if (!open || activeIndex < 0)
-      return
-
-    resultItemRefs.current[activeIndex]?.scrollIntoView({
-      block: 'nearest',
-    })
-  }, [activeIndex, open, visibleRoutes])
 
   return (
     <>
@@ -307,10 +248,11 @@ function RouteSearch(props: ProRouteSearchProps) {
         open={open}
         width={680}
         footer={null}
-        title={intl.getMessage('zby.pro.layout.search.title', '搜索页面')}
+        title={dialogTitle}
         className={`${prefixCls}-search-dialog`}
         rootClassName={clsx(`${prefixCls}-search-modal`, hashId)}
         destroyOnHidden
+        focusable={{ trap: true, focusTriggerAfterClose: true }}
         onCancel={closeSearch}
         afterOpenChange={(visible) => {
           // 等待 Portal 和打开动画完成后再聚焦，避免焦点被 Modal 自己的关闭按钮抢走。
@@ -325,30 +267,52 @@ function RouteSearch(props: ProRouteSearchProps) {
          * - 搜索框和分区标题不参与收缩，始终固定在列表上方；
          * - 剩余空间交给结果容器，由结果容器显示浏览器原生纵向滚动条。
          */}
-        <div
+        <Command
+          label={dialogTitle}
+          shouldFilter={false}
+          loop
+          vimBindings={false}
           className={`${prefixCls}-search-body`}
           style={{ maxHeight: bodyMaxHeight, overflowY: 'hidden' }}
         >
-          {/* 搜索框始终是内容区的首个元素，并承载完整键盘导航。 */}
-          <Input
-            ref={inputRef}
-            value={query}
-            size="large"
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder={intl.getMessage(
-              'zby.pro.layout.search.placeholder',
-              '搜索页面名称或路径',
-            )}
-            onChange={(event) => changeQuery(event.target.value)}
-            onKeyDown={handleInputKeyDown}
-          />
+          {/* Command.Input 提供 combobox 语义，并把方向键导航交给 cmdk。 */}
+          <div className={`${prefixCls}-search-input-wrapper`}>
+            <SearchOutlined
+              aria-hidden="true"
+              className={`${prefixCls}-search-input-prefix`}
+            />
+            <Command.Input
+              ref={inputRef}
+              value={query}
+              className={`${prefixCls}-search-input`}
+              placeholder={intl.getMessage(
+                'zby.pro.layout.search.placeholder',
+                '搜索页面名称或路径',
+              )}
+              onValueChange={setQuery}
+            />
+            {query ? (
+              <button
+                type="button"
+                className={`${prefixCls}-search-input-clear`}
+                aria-label={intl.getMessage(
+                  'zby.pro.layout.search.clearInput',
+                  '清空搜索',
+                )}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setQuery('')
+                  inputRef.current?.focus()
+                }}
+              >
+                <CloseCircleFilled />
+              </button>
+            ) : null}
+          </div>
           {/* 空关键词展示最近搜索标题；有关键词后切换成搜索结果标题。 */}
           <div className={`${prefixCls}-search-section-header`}>
             <span className={`${prefixCls}-search-section-title`}>
-              {normalizedQuery
-                ? intl.getMessage('zby.pro.layout.search.results', '搜索结果')
-                : intl.getMessage('zby.pro.layout.search.recent', '最近搜索')}
+              {sectionTitle}
             </span>
             {/* 清空入口只属于最近搜索态，搜索结果态不展示记录管理操作。 */}
             {!normalizedQuery && recentPaths.length > 0 ? (
@@ -365,7 +329,10 @@ function RouteSearch(props: ProRouteSearchProps) {
            * 搜索结果与最近搜索共用这个列表容器：内容较少时保持自然高度；内容较多时在
            * Flex 布局中收缩到剩余空间，并由自身提供原生滚动，避免划走上方搜索框。
            */}
-          <div className={`${prefixCls}-search-results`}>
+          <Command.List
+            label={sectionTitle}
+            className={`${prefixCls}-search-results`}
+          >
             {/* 根据当前模式提供不同空状态，避免把“没有历史”误解成搜索无结果。 */}
             {visibleRoutes.length === 0 ? (
               <Empty
@@ -375,25 +342,16 @@ function RouteSearch(props: ProRouteSearchProps) {
                   : intl.getMessage('zby.pro.layout.search.emptyRecent', '暂无最近搜索')}
               />
             ) : null}
-            {visibleRoutes.map((item, index) => (
-              <div
-                key={item.path}
-                ref={(node) => {
-                  resultItemRefs.current[index] = node
-                }}
-                className={clsx(`${prefixCls}-search-result`, {
-                  // active 同时服务鼠标悬浮反馈和键盘方向键选择。
-                  [`${prefixCls}-search-result-active`]: index === activeIndex,
-                  // 最近态为主按钮预留右侧删除按钮空间。
-                  [`${prefixCls}-search-result-recent`]: !normalizedQuery,
-                })}
-                title={item.titlePath}
-                onMouseEnter={() => setActiveIndex(index)}
-              >
-                <button
-                  type="button"
-                  className={`${prefixCls}-search-result-main`}
-                  onClick={() => openRoute(item)}
+            {visibleRoutes.map((item) => (
+              <div key={item.path} className={`${prefixCls}-search-result-row`}>
+                <Command.Item
+                  value={item.path}
+                  className={clsx(`${prefixCls}-search-result`, {
+                    // 最近态为选项右侧的独立删除按钮预留空间。
+                    [`${prefixCls}-search-result-recent`]: !normalizedQuery,
+                  })}
+                  title={item.titlePath}
+                  onSelect={() => openRoute(item)}
                 >
                   {/* 标题行展示完整层级路径，命中内容由 mark 标签强调。 */}
                   <span className={`${prefixCls}-search-result-title`}>
@@ -403,7 +361,7 @@ function RouteSearch(props: ProRouteSearchProps) {
                   <span className={`${prefixCls}-search-result-path`}>
                     {highlightMatch(item.path, query, prefixCls)}
                   </span>
-                </button>
+                </Command.Item>
                 {/* 单条删除只管理最近记录，不应出现在普通搜索结果中。 */}
                 {!normalizedQuery ? (
                   <button
@@ -426,8 +384,8 @@ function RouteSearch(props: ProRouteSearchProps) {
                 ) : null}
               </div>
             ))}
-          </div>
-        </div>
+          </Command.List>
+        </Command>
       </Modal>
     </>
   )

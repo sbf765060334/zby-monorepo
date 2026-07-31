@@ -43,6 +43,8 @@
     "@zby/intl": "workspace:*",
     "@zby/router-core": "workspace:*",
     "clsx": "2.1.1",
+    "cmdk": "1.1.1",
+    "react-hotkeys-hook": "5.3.3",
     "zustand": "5.0.12"
   },
   "peerDependencies": {

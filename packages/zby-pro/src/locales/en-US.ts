@@ -27,6 +27,7 @@ const enUS = {
           recent: 'Recent searches',
           results: 'Search results',
           clearAll: 'Clear all',
+          clearInput: 'Clear search',
           removeRecent: 'Remove recent search: {{title}}',
           emptyRecent: 'No recent searches',
           emptyResults: 'No matching pages',
