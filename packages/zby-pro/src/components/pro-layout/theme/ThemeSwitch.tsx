@@ -13,6 +13,7 @@ import { useCallback, useRef } from 'react'
 
 import type { MenuProps } from 'antd'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './constants'
+import useThemeSwitchStyles from './style'
 import type { ProThemeAppearance, ProThemeMode, ProThemePreference } from './types'
 import { resolveThemeAppearance } from './useThemePreference'
 
@@ -67,6 +68,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
   } = props
   const intl = useIntl()
   const { token } = antdTheme.useToken()
+  const hashId = useThemeSwitchStyles(prefixCls)
 
   // 动画回调只接收实际 light/dark，ref 用来暂存同时包含 auto 和 density 的完整偏好。
   const pendingPreferenceRef = useRef<ProThemePreference | null>(null)
@@ -201,7 +203,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
       <Button
         type="text"
         size="small"
-        className={clsx(`${prefixCls}-theme-trigger`, className)}
+        className={clsx(`${prefixCls}-theme-trigger`, hashId, className)}
         icon={<ThemeIcon />}
         aria-label={title}
         title={title}

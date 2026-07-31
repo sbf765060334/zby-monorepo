@@ -70,6 +70,24 @@ afterEach(() => {
 })
 
 describe('ProThemeSwitch', () => {
+  it('registers trigger styles independently with its own prefix', () => {
+    render(
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+        <ProThemeSwitch
+          value={{ mode: 'light', density: 'default' }}
+          appearance="light"
+          onChange={() => {}}
+          prefixCls="custom-theme"
+        />
+      </ZbyIntlProvider>,
+    )
+
+    expect(
+      screen.getByRole('button').classList.contains('custom-theme-theme-trigger'),
+    ).toBe(true)
+    expect(document.head.textContent).toContain('.custom-theme-theme-trigger')
+  })
+
   it('切换明暗和布局密度，并恢复持久化偏好', async () => {
     const firstRender = renderThemeFixture()
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull()

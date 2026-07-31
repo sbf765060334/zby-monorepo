@@ -29,6 +29,23 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('ProLocaleSwitch', () => {
+  it('registers trigger styles independently with its own prefix', () => {
+    render(
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+        <ProLocaleSwitch
+          value="zh-CN"
+          onChange={() => {}}
+          prefixCls="custom-locale"
+        />
+      </ZbyIntlProvider>,
+    )
+
+    expect(
+      screen.getByRole('button').classList.contains('custom-locale-locale-trigger'),
+    ).toBe(true)
+    expect(document.head.textContent).toContain('.custom-locale-locale-trigger')
+  })
+
   it('通过悬浮菜单在简体中文和 English 之间切换', async () => {
     const firstRender = render(<LocaleFixture />)
     expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBeNull()

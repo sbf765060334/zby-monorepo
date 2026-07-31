@@ -554,24 +554,6 @@ export default function useProLayoutStyles(prefixCls: string) {
           gap: styleToken.marginXXS,
           color: styleToken.colorTextTertiary,
         },
-        [`${componentCls}-theme-trigger, ${componentCls}-locale-trigger`]: {
-          width: 32,
-          minWidth: 32,
-          height: 32,
-          padding: 0,
-          borderRadius: styleToken.borderRadiusSM,
-          background: 'transparent',
-          color: styleToken.colorText,
-          fontSize: styleToken.fontSizeLG,
-          '&:hover': {
-            background: styleToken.colorFillSecondary,
-            color: styleToken.colorText,
-          },
-          '&.ant-btn:not(:disabled):focus-visible': {
-            outline: 'none',
-          },
-        },
-
         [`${componentCls}-content, ${componentCls}-pages, ${componentCls}-page-body`]: {
           background: styleToken.colorBgLayout,
         },

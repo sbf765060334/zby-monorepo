@@ -4,6 +4,7 @@ import { Button, Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
 
 import type { MenuProps } from 'antd'
+import useLocaleSwitchStyles from './style'
 
 const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 
@@ -36,6 +37,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
   } = props
   const intl = useIntl()
   const { token } = antdTheme.useToken()
+  const hashId = useLocaleSwitchStyles(prefixCls)
 
   // 语言名称使用各自语言的本地写法，避免菜单文案随当前语言改变后难以识别。
   const items: NonNullable<MenuProps['items']> = localeOptions.map((option) => ({
@@ -89,7 +91,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
       <Button
         type="text"
         size="small"
-        className={clsx(`${prefixCls}-locale-trigger`, className)}
+        className={clsx(`${prefixCls}-locale-trigger`, hashId, className)}
         icon={<GlobalOutlined />}
         aria-label={title}
         title={title}
