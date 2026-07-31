@@ -269,6 +269,13 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '数字范围',
         element: <InputNumberRangePlayground />,
         auth: 'sample:input-range-input',
+        routes: [
+          {
+            path: '/sample/input-range-input/detail/:id',
+            title: '数字详情',
+            element: <InputNumberRangePlayground />,
+          },
+        ],
       },
       {
         path: '/sample/scroll-area',

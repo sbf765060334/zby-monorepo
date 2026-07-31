@@ -1,5 +1,6 @@
 import { useIntl } from '@zby/intl'
 import { ProLayoutContentContainer } from '@zby/pro'
+import { useRouterCore } from '@zby/router-core/react'
 import { InputNumberRange } from '@zby/ui'
 import {
   Button,
@@ -37,6 +38,8 @@ export default function InputNumberRangePlayground() {
   const [allowEmpty, setAllowEmpty] = React.useState(true)
   const [order, setOrder] = React.useState(true)
 
+  const router = useRouterCore()
+
   const status = formStatus === 'default' ? undefined : formStatus
   const startPlaceholder = intl.getMessage('zby.ui.inputNumberRange.startPlaceholder', '最小值')
   const endPlaceholder = intl.getMessage('zby.ui.inputNumberRange.endPlaceholder', '最大值')
@@ -68,6 +71,10 @@ export default function InputNumberRangePlayground() {
       {node}
     </div>
   )
+
+  const handleJumpToDetail = () => {
+    router.jumpTo(`/sample/input-range-input/detail/${123}`)
+  }
 
   return (
     <ProLayoutContentContainer
@@ -223,6 +230,7 @@ export default function InputNumberRangePlayground() {
             </div>
           </section>
         </Space>
+        <Button onClick={handleJumpToDetail}>点击进入详情</Button>
       </ProLayoutContentContainer.Item>
     </ProLayoutContentContainer>
   )
