@@ -42,6 +42,8 @@ export type {
   ProLayoutClassNames,
   ProLayoutHeaderConfig,
   ProLayoutHeaderLogo,
+  ProLayoutPageErrorContext,
+  ProLayoutPageErrorHandler,
   ProLayoutProps,
   ProLayoutRoute,
   ProLayoutRouteComponent,

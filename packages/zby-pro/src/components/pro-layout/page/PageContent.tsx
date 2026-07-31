@@ -5,20 +5,21 @@ import { memo, useMemo } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
-import type { ProLayoutRoute } from '../types'
+import type { ProLayoutPageErrorHandler, ProLayoutRoute } from '../types'
 import ExceptionPage from './ExceptionPage'
 import KeepAlivePage from './KeepAlivePage'
 
 /** 页面渲染域对 ProLayout 暴露的组合属性。 */
 export interface PageContentProps {
   prefixCls: string
+  onPageError?: ProLayoutPageErrorHandler
   pageClassName?: string
   pageStyle?: CSSProperties
 }
 
 /** 根据 core 保留的页面实例渲染 KeepAlive 页面，并处理当前地址的 403/404。 */
 function PageContent(props: PageContentProps) {
-  const { pageClassName, pageStyle, prefixCls } = props
+  const { onPageError, pageClassName, pageStyle, prefixCls } = props
   const router = useRouterCore<ProLayoutRoute>()
   const pages = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pages,
@@ -60,6 +61,7 @@ function PageContent(props: PageContentProps) {
           prefixCls={prefixCls}
           page={page}
           active={isPage && page.key === activePage}
+          onPageError={onPageError}
           className={clsx(`${prefixCls}-page-body`, pageClassName)}
           style={pageStyle}
         />

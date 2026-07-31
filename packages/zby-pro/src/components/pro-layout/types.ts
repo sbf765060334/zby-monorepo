@@ -4,6 +4,7 @@ import type {
   ComponentType,
   CSSProperties,
   ElementType,
+  ErrorInfo,
   ReactElement,
   ReactNode,
 } from 'react'
@@ -84,6 +85,18 @@ export type ProLayoutSemanticName =
 export type ProLayoutClassNames = Partial<Record<ProLayoutSemanticName, string>>
 export type ProLayoutStyles = Partial<Record<ProLayoutSemanticName, CSSProperties>>
 
+/** 页面渲染错误上报时提供给宿主的稳定页面上下文。 */
+export interface ProLayoutPageErrorContext {
+  pathname: string
+}
+
+/** 页面错误只通过回调交给宿主，上报工具由应用自行选择。 */
+export type ProLayoutPageErrorHandler = (
+  error: unknown,
+  info: ErrorInfo,
+  context: ProLayoutPageErrorContext,
+) => void
+
 /** 不包含任何 router-core 固定配置的纯 UI 属性。 */
 export interface ProLayoutProps {
   /** 应用标题；当前页面存在标题时，浏览器标题显示为“页面标题 - 应用标题”。 */
@@ -94,6 +107,8 @@ export interface ProLayoutProps {
   showBreadcrumb?: boolean
   /** 当前页面标题变化后的通知回调；无匹配页面时传入空字符串。 */
   setPage?: (pageName: string) => void
+  /** 页面渲染异常后的通知回调；原始异常只交给宿主，不显示给最终用户。 */
+  onPageError?: ProLayoutPageErrorHandler
   /** 离开或刷新页面前是否提示；函数返回 true 时阻止直接离开。 */
   beforeUnload?: boolean | (() => boolean)
   /** 布局根容器的最小宽度；数字按像素处理，用于避免内容区域被过度压缩。 */

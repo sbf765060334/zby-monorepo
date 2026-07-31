@@ -28,6 +28,7 @@ function ProLayout(props: ProLayoutProps) {
     header,
     minimumContentWidth,
     noBar = false,
+    onPageError,
     prefixCls = DEFAULT_PREFIX_CLS,
     rootClassName,
     setPage,
@@ -148,6 +149,7 @@ function ProLayout(props: ProLayoutProps) {
             ) : null}
             <PageContent
               prefixCls={prefixCls}
+              onPageError={onPageError}
               pageClassName={classNames?.page}
               pageStyle={styles?.page}
             />

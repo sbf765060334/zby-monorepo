@@ -193,6 +193,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | header | Logo and content rendered to the right of the global tabs | `ProLayoutHeaderConfig` | - |
 | showBreadcrumb | Show the global breadcrumb below the tab bar | `boolean` | `true` |
 | setPage | Called when the current page title changes; receives an empty string for no match | `(pageName: string) => void` | - |
+| onPageError | Called after a page render error with the original error, React component stack, and current pathname | `ProLayoutPageErrorHandler` | - |
 | beforeUnload | Request a browser prompt before leaving or refreshing | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | Minimum content width; numbers are treated as pixels | `number \| string` | - |
 | noBar | Hide the sider and tab bar and let content fill the viewport | `boolean` | `false` |

@@ -61,6 +61,11 @@ const zhCN = {
           forbidden: '暂无权限查看当前页面，若需当前页面权限，请联系管理员。',
           notFound: '访问的页面暂时不存在，请输入正确的地址。',
         },
+        pageError: {
+          title: '页面加载失败',
+          description: '请重试；如果问题持续存在，请联系管理员。',
+          retry: '重试',
+        },
       },
     },
   },

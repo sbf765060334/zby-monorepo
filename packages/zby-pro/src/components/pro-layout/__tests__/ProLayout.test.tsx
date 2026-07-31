@@ -59,6 +59,7 @@ beforeAll(() => {
 })
 
 afterEach(() => {
+  window.removeEventListener('error', preventExpectedWindowError)
   cleanup()
   vi.restoreAllMocks()
 })
@@ -108,6 +109,41 @@ describe('ReactRouterProLayout', () => {
     expect(screen.getAllByText('工作台').length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: '搜索页面（Ctrl+K）' })).toBeNull()
     await waitFor(() => expect(document.title).toBe('工作台 - 数字化平台'))
+  })
+
+  it('隔离页面渲染异常并通过公开回调交给宿主上报', async () => {
+    const error = new Error('internal-service=http://orders.internal')
+    const onPageError = vi.fn()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    function BrokenPage(): never {
+      throw error
+    }
+    const router = createRouterCore<ProLayoutRoute>({
+      routes: [{ path: '/broken', title: '异常页面', element: BrokenPage }],
+      defaultRedirectPath: '/broken',
+      storageAdapter: false,
+      storageKey: 'pro-layout-page-error',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/broken']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          onPageError={onPageError}
+        />
+      </MemoryRouter>,
+    )
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('页面加载失败')
+    expect(alert.textContent).not.toContain('orders.internal')
+    await waitFor(() => expect(onPageError).toHaveBeenCalledOnce())
+    expect(onPageError.mock.calls[0][0]).toBe(error)
+    expect(onPageError.mock.calls[0][1].componentStack).toContain('BrokenPage')
+    expect(onPageError.mock.calls[0][2]).toEqual({ pathname: '/broken' })
+    consoleError.mockRestore()
   })
 
   it('搜索权限内页面，展示并高亮完整路由路径，且保留最近搜索', async () => {
@@ -977,6 +1013,10 @@ describe('ReactRouterProLayout', () => {
 function DashboardPage() {
   const active = useRouterPageSelector((state) => state.active)
   return <div data-testid="dashboard-page">{active ? 'active' : 'inactive'}</div>
+}
+
+function preventExpectedWindowError(event: ErrorEvent) {
+  event.preventDefault()
 }
 
 function OrdersPage() {

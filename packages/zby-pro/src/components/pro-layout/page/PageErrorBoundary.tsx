@@ -1,107 +1,67 @@
-import { Alert } from 'antd'
-import { Component } from 'react'
+import { ReloadOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
+import { Button } from 'antd'
+import { ErrorBoundary } from 'react-error-boundary'
 
-import type { ErrorInfo, ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import type { FallbackProps, OnErrorCallback } from 'react-error-boundary'
+import ExceptionPage from './ExceptionPage'
 
 interface PageErrorBoundaryProps {
   children: ReactNode
+  prefixCls: string
   /** 只有边界已经报错时，任一 key 变化才允许重新尝试渲染业务页面。 */
-  resetKeys: readonly unknown[]
-}
-
-interface PageErrorBoundaryState {
-  error: Error | null
-  info: ErrorInfo | null
-  resetKeys: readonly unknown[]
+  resetKeys: unknown[]
+  /** 原始异常只交给宿主上报，不进入用户可见的 fallback。 */
+  onError?: OnErrorCallback
 }
 
 /**
- * 页面渲染域中支持按页面身份恢复的 React 错误边界。
+ * 页面渲染域中支持按页面身份恢复的错误边界。
  *
- * 健康状态下 resetKeys 变化只更新边界快照，不会通过 React key 重建业务组件；只有
- * 已捕获错误且 pathname/element 变化时才清空旧错误。这样共享动态页签的正常参数
- * 切换仍保留组件实例，而一个参数页面的渲染错误不会永久污染后续页面。
+ * react-error-boundary 只在已捕获错误后响应 resetKeys 变化，因此共享动态页签的正常
+ * 参数切换仍保留组件实例；错误态则会在 pathname/element 变化提交后自动重新尝试。
  */
-export default class PageErrorBoundary extends Component<
-  PageErrorBoundaryProps,
-  PageErrorBoundaryState
-> {
-  constructor(props: PageErrorBoundaryProps) {
-    super(props)
-    this.state = {
-      error: null,
-      info: null,
-      resetKeys: props.resetKeys,
-    }
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<PageErrorBoundaryState> {
-    return { error }
-  }
-
-  static getDerivedStateFromProps(
-    props: PageErrorBoundaryProps,
-    state: PageErrorBoundaryState,
-  ): Partial<PageErrorBoundaryState> | null {
-    if (areResetKeysEqual(props.resetKeys, state.resetKeys))
-      return null
-
-    // 已报错时先保留旧错误完成本轮提交，让 KeepAlivePage 内 RouterPageProvider 的
-    // layout effect 有机会把 Page Context 同步到新 pathname；componentDidUpdate 随后再
-    // 清错重试。若在这里立即清错，业务组件会在 Context 仍是旧值时再次抛错，并失去
-    // 下一次自动恢复机会。
-    if (state.error)
-      return null
-
-    return {
-      resetKeys: props.resetKeys,
-    }
-  }
-
-  componentDidCatch(_error: Error, info: ErrorInfo) {
-    this.setState({ info })
-  }
-
-  componentDidUpdate() {
-    if (
-      this.state.error &&
-      !areResetKeysEqual(this.props.resetKeys, this.state.resetKeys)
-    ) {
-      this.setState({
-        error: null,
-        info: null,
-        resetKeys: this.props.resetKeys,
-      })
-    }
-  }
-
-  render() {
-    const { children } = this.props
-    const { error, info } = this.state
-
-    if (!error)
-      return children
-
-    const componentStack = info?.componentStack
-    return (
-      <Alert
-        type="error"
-        title={error.toString()}
-        description={componentStack
-          ? (
-              <pre style={{ fontSize: '0.9em', overflowX: 'auto' }}>
-                {componentStack}
-              </pre>
-            )
-          : undefined}
-      />
-    )
-  }
+export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
+  return (
+    <ErrorBoundary
+      fallbackRender={(fallbackProps) => (
+        <PageErrorFallback {...fallbackProps} prefixCls={props.prefixCls} />
+      )}
+      resetKeys={props.resetKeys}
+      onError={props.onError}
+    >
+      {props.children}
+    </ErrorBoundary>
+  )
 }
 
-function areResetKeysEqual(left: readonly unknown[], right: readonly unknown[]) {
-  return left === right || (
-    left.length === right.length &&
-    left.every((item, index) => Object.is(item, right[index]))
+/** 用户只看到稳定的恢复操作，原始异常和组件栈不会进入 DOM。 */
+function PageErrorFallback(props: FallbackProps & { prefixCls: string }) {
+  const intl = useIntl()
+
+  return (
+    <ExceptionPage
+      prefixCls={props.prefixCls}
+      role="alert"
+      status="500"
+      title={intl.getMessage(
+        'zby.pro.layout.pageError.title',
+        '页面加载失败',
+      )}
+      description={intl.getMessage(
+        'zby.pro.layout.pageError.description',
+        '请重试；如果问题持续存在，请联系管理员。',
+      )}
+      extra={(
+        <Button
+          type="primary"
+          icon={<ReloadOutlined aria-hidden="true" />}
+          onClick={() => props.resetErrorBoundary()}
+        >
+          {intl.getMessage('zby.pro.layout.pageError.retry', '重试')}
+        </Button>
+      )}
+    />
   )
 }

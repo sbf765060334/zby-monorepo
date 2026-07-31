@@ -194,6 +194,7 @@ export function OrderPage() {
 | header | Logo 与页签栏右侧扩展内容 | `ProLayoutHeaderConfig` | - |
 | showBreadcrumb | 是否在页签栏下方显示全局面包屑 | `boolean` | `true` |
 | setPage | 当前页面标题变化后的通知；无匹配页面时传入空字符串 | `(pageName: string) => void` | - |
+| onPageError | 页面渲染异常后的通知；接收原始异常、React 组件栈和当前 pathname | `ProLayoutPageErrorHandler` | - |
 | beforeUnload | 离开或刷新页面前是否触发浏览器提示 | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | 内容区域最小宽度；数字按像素处理 | `number \| string` | - |
 | noBar | 隐藏左侧菜单和顶部页签栏，让内容占满视口 | `boolean` | `false` |

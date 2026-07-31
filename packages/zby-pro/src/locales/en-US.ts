@@ -61,6 +61,11 @@ const enUS = {
           forbidden: 'You do not have permission to view this page. Contact an administrator if you need access.',
           notFound: 'The requested page does not exist. Check the address and try again.',
         },
+        pageError: {
+          title: 'Page failed to load',
+          description: 'Try again. If the problem persists, contact an administrator.',
+          retry: 'Try again',
+        },
       },
     },
   },

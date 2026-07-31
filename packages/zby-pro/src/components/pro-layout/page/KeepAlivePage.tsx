@@ -9,7 +9,11 @@ import {
 
 import type { RouterPage } from '@zby/router-core'
 import type { CSSProperties, ElementType } from 'react'
-import type { ProLayoutRoute, ProLayoutRouteComponent } from '../types'
+import type {
+  ProLayoutPageErrorHandler,
+  ProLayoutRoute,
+  ProLayoutRouteComponent,
+} from '../types'
 import PageErrorBoundary from './PageErrorBoundary'
 
 /** 单个 KeepAlive 页面容器的组合属性。 */
@@ -17,6 +21,7 @@ export interface KeepAlivePageProps {
   prefixCls: string
   page: RouterPage<ProLayoutRoute>
   active: boolean
+  onPageError?: ProLayoutPageErrorHandler
   className?: string
   style?: CSSProperties
 }
@@ -45,8 +50,8 @@ const StableRouteElement = memo(
  * RouterPageProvider 负责在绘制前同步真实 pathname、active 和完整 location。
  */
 function KeepAlivePage(props: KeepAlivePageProps) {
-  const { active, className, page, prefixCls, style } = props
-  const resetKeys = useMemo(() => [page.pathname, page.route.element] as const, [page])
+  const { active, className, onPageError, page, prefixCls, style } = props
+  const resetKeys = useMemo(() => [page.pathname, page.route.element], [page])
 
   return (
     <RouterPageProvider page={page} active={active}>
@@ -62,7 +67,13 @@ function KeepAlivePage(props: KeepAlivePageProps) {
           display: active ? (style?.display ?? 'block') : 'none',
         }}
       >
-        <PageErrorBoundary resetKeys={resetKeys}>
+        <PageErrorBoundary
+          prefixCls={prefixCls}
+          resetKeys={resetKeys}
+          onError={onPageError
+            ? (error, info) => onPageError(error, info, { pathname: page.pathname })
+            : undefined}
+        >
           <Suspense fallback={<PageLoading prefixCls={prefixCls} />}>
             <StableRouteElement element={page.route.element} />
           </Suspense>
