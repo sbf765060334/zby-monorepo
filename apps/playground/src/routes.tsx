@@ -246,6 +246,7 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/reports/overview',
         title: '报表总览',
         element: <DemoPage />,
+        auth: '111',
       },
       {
         path: '/reports/live',
@@ -253,6 +254,7 @@ export const appRouters: ProLayoutRoute[ ] = [
         tag: { text: 'Beta', color: 'processing' },
         tooltipProps: { title: '该页不会进入 keepAlive 缓存' },
         element: <DemoPage />,
+        auth: '222',
       },
     ],
   },
@@ -265,6 +267,7 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/sample/input-range-input',
         title: '数字范围',
         element: <InputNumberRangePlayground />,
+        auth: 'sample:input-range-input',
       },
       {
         path: '/sample/scroll-area',

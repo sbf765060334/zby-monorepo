@@ -21,12 +21,15 @@ import { playgroundLocales } from './playgroundIntl'
 import { createRouterCore } from '@zby/router-core'
 import { appRouters } from './routes'
 
+const perssmiosn = ['sample:input-range-input', 'sample:scroll-area']
+
 const routers = createRouterCore<ProLayoutRoute>({
   routes: appRouters,
   defaultRedirectPath: '/dashboard',
   keepAlive: { maxCachedPages: 8 },
   storageKey: 'zby-playground:pro-layout',
   maxFixedTabCount: 4,
+  hasAuth: (code) => perssmiosn.includes(code),
 })
 
 const resources = mergeIntlResources(zbyUiLocales, zbyProLocales, playgroundLocales)

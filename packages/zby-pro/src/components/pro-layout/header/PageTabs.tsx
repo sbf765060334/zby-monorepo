@@ -153,7 +153,7 @@ function PageTabs(props: PageTabsProps) {
         prefixCls={prefixCls}
         items={items}
         fixedKeys={fixedKeys}
-        activeKey={activeKey || undefined}
+        activeKey={activeKey ?? ''}
         type={tabType}
         size="middle"
         hideAdd

@@ -11,7 +11,7 @@ export type ZbyThemeMode = 'light' | 'dark'
 /**
  * 圆形扩散动画的圆心坐标。
  * 坐标系为浏览器视口（viewport），原点在左上角，单位为 CSS 像素。
- * 通常来自 PointerEvent.clientX / clientY。
+ * 可以来自 PointerEvent.clientX / clientY，也可以由触发元素的几何中心计算得到。
  */
 export type ZbyThemeTransitionOrigin = {
   x: number
@@ -70,10 +70,16 @@ export type UseThemeModeTransitionReturn = {
   /**
    * 带圆形扩散 View Transition 的主题切换入口。
    *
+   * 显式传入 origin 时优先使用该坐标；否则使用 recordThemeSwitchPoint 最近记录的
+   * 指针位置，二者都不存在时回退到视口中心。
+   *
    * - 环境支持且用户未禁用动效：执行圆形 clip-path 过渡动画
    * - 否则：直接调用 onThemeModeChange，无动画降级
    */
-  handleThemeModeChange: (nextThemeMode: ZbyThemeMode) => void
+  handleThemeModeChange: (
+    nextThemeMode: ZbyThemeMode,
+    origin?: ZbyThemeTransitionOrigin,
+  ) => void
 }
 
 /**
@@ -140,7 +146,10 @@ export function useThemeModeTransition({
   )
 
   const handleThemeModeChange = React.useCallback(
-    (nextThemeMode: ZbyThemeMode) => {
+    (
+      nextThemeMode: ZbyThemeMode,
+      origin?: ZbyThemeTransitionOrigin,
+    ) => {
       // ── 1. 短路：目标模式与当前相同，无需切换 ──
       if (nextThemeMode === themeMode) {
         return
@@ -167,8 +176,8 @@ export function useThemeModeTransition({
 
       // ── 4. 计算圆形 clip-path 动画参数 ──
 
-      // 圆心：优先使用用户点击坐标，否则取视口几何中心
-      const { x, y } = themeSwitchPointRef.current ?? {
+      // 圆心：优先使用调用方显式坐标，其次使用用户点击坐标，否则取视口几何中心
+      const { x, y } = origin ?? themeSwitchPointRef.current ?? {
         x: window.innerWidth / 2,
         y: window.innerHeight / 2,
       }

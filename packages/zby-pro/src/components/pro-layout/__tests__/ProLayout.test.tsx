@@ -95,6 +95,36 @@ describe('ReactRouterProLayout', () => {
     expect(screen.getByText('404')).toBeTruthy()
   })
 
+  it('未知地址恢复固定页签时不把固定页签标记为活动状态', async () => {
+    const storageAdapter: RouterStorageAdapter = {
+      load: vi.fn(async () => ({
+        fixedTabs: ['/orders/list'],
+        fixedParamsPathMap: {},
+        favoriteRoutePaths: [],
+      })),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+    }
+    const router = createPersistentTestRouter(
+      'pro-layout-fixed-tab-on-not-found',
+      storageAdapter,
+    )
+
+    render(
+      <MemoryRouter initialEntries={['/missing']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('404')).toBeTruthy()
+    await screen.findByRole('button', { name: '取消固定页签：订单列表' })
+    const tab = screen.getByRole('tab')
+    expect(router.getState().activeTabKey).toBeNull()
+    expect(tab.getAttribute('aria-selected')).toBe('false')
+    expect(tab.classList.contains('ant-tabs-tab-active')).toBe(false)
+  })
+
   it('装配 router-core 并渲染全局页签、面包屑和页面 Context', async () => {
     const router = createTestRouter()
 

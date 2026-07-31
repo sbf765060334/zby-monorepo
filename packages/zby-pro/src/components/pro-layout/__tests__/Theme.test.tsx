@@ -184,7 +184,7 @@ describe('ProThemeSwitch', () => {
     ).toEqual(['dark'])
   })
 
-  it('悬停打开主题菜单时从主题按钮处开始过渡', async () => {
+  it('悬停打开主题菜单时固定从主题按钮中心开始过渡', async () => {
     const animate = vi.fn(() => ({ cancel: vi.fn() }))
     const startViewTransition = vi.fn((callback: () => void) => {
       callback()
@@ -204,7 +204,18 @@ describe('ProThemeSwitch', () => {
 
     renderThemeFixture({ mode: 'light', density: 'default' })
     const themeTrigger = screen.getByRole('button', { name: '主题设置' })
-    fireEvent.pointerEnter(themeTrigger, { clientX: 960, clientY: 24 })
+    vi.spyOn(themeTrigger, 'getBoundingClientRect').mockReturnValue({
+      x: 940,
+      y: 8,
+      left: 940,
+      top: 8,
+      right: 980,
+      bottom: 40,
+      width: 40,
+      height: 32,
+      toJSON: () => ({}),
+    })
+    fireEvent.pointerEnter(themeTrigger, { clientX: 942, clientY: 10 })
     await openThemeMenu()
     fireEvent.click(screen.getAllByRole('menuitem')[2])
 

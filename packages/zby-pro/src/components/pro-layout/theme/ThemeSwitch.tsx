@@ -72,6 +72,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
 
   // 动画回调只接收实际 light/dark，ref 用来暂存同时包含 auto 和 density 的完整偏好。
   const pendingPreferenceRef = useRef<ProThemePreference | null>(null)
+  const themeTransitionOriginRef = useRef<{ x: number, y: number } | undefined>(undefined)
 
   // 明暗和密度是两组选项，各自在当前选项右侧显示主题色圆点。
   const renderOptionLabel = (label: string, selected: boolean) => (
@@ -109,12 +110,23 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
       onChange(pendingPreference)
   }, [onChange])
 
-  const { handleThemeModeChange, recordThemeSwitchPoint } = useThemeModeTransition({
+  const { handleThemeModeChange } = useThemeModeTransition({
     themeMode: appearance,
     viewTransitionName: PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME,
     background: token.colorBgLayout,
     onThemeModeChange: commitPendingPreference,
   })
+
+  const recordThemeTriggerCenter = useCallback(
+    (event: { currentTarget: HTMLElement }) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      themeTransitionOriginRef.current = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      }
+    },
+    [],
+  )
 
   const selectMode = useCallback((mode: ProThemeMode) => {
     const nextValue = { ...value, mode }
@@ -127,7 +139,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
     }
 
     pendingPreferenceRef.current = nextValue
-    handleThemeModeChange(nextAppearance)
+    handleThemeModeChange(nextAppearance, themeTransitionOriginRef.current)
   }, [appearance, handleThemeModeChange, onChange, value])
 
   // key 前缀用于区分明暗模式和布局密度，二者互不覆盖。
@@ -176,7 +188,6 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
   ]
   const title = intl.getMessage('zby.pro.layout.theme.trigger', '主题设置')
 
-  // PointerDown 比 click 更早，确保明暗动画能记录到用户实际点击位置。
   return (
     <Dropdown
       trigger={['hover']}
@@ -207,8 +218,8 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
         icon={<ThemeIcon />}
         aria-label={title}
         title={title}
-        onPointerEnter={recordThemeSwitchPoint}
-        onPointerDown={recordThemeSwitchPoint}
+        onFocus={recordThemeTriggerCenter}
+        onPointerEnter={recordThemeTriggerCenter}
       />
     </Dropdown>
   )
