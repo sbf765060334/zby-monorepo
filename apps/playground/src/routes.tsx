@@ -4,6 +4,7 @@ import DemoPage from './pages/DemoPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
 import ErrorPage from './pages/ErrorPage'
+import NavigationProgressPlayground from './pages/NavigationProgressPlayground'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -278,6 +279,11 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/sample/error-page',
         title: '错误页面',
         element: <ErrorPage />,
+      },
+      {
+        path: '/sample/navigation-progress',
+        title: '进度条',
+        element: <NavigationProgressPlayground />,
       },
     ],
   },
