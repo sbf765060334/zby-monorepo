@@ -159,7 +159,6 @@ function PageTabs(props: PageTabsProps) {
     <>
       {messageContextHolder}
       <SortableTabs
-        key={tabType}
         prefixCls={prefixCls}
         items={items}
         fixedKeys={fixedKeys}

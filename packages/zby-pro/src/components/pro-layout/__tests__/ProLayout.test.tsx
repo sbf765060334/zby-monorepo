@@ -881,6 +881,31 @@ describe('ReactRouterProLayout', () => {
     expect(await screen.findByText('已取消页签固定')).toBeTruthy()
   })
 
+  it('页签数量在一和二之间切换时复用页签栏实例', async () => {
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    const tabsRoot = container.querySelector('.ant-tabs')
+    expect(tabsRoot).toBeTruthy()
+    expect(container.querySelector('.ant-tabs-tab-remove')).toBeNull()
+
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    expect(container.querySelector('.ant-tabs')).toBe(tabsRoot)
+    expect(container.querySelectorAll('.ant-tabs-tab-remove')).toHaveLength(2)
+
+    await act(async () => {
+      await router.closeTab('/dashboard')
+    })
+    expect(container.querySelector('.ant-tabs')).toBe(tabsRoot)
+    expect(container.querySelector('.ant-tabs-tab-remove')).toBeNull()
+  })
+
   it('固定页签达到上限时显示提示且保持原固定状态', async () => {
     const router = createTestRouter(undefined, 1)
     render(
