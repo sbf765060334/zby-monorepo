@@ -203,7 +203,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | rootClassName | Stable root class name on the layout root | `string` | - |
 | style | Root inline style; takes precedence over `styles.root` | `React.CSSProperties` | - |
 | classNames | Class names by semantic node | `ProLayoutClassNames` | - |
-| styles | Inline styles by semantic node | `ProLayoutStyles` | - |
+| styles | Non-structural inline styles by semantic node; Header positioning, size, and sider offset remain layout-managed | `ProLayoutStyles` | - |
 | onTabClose | Notification after a tab and its resources have been closed; cannot cancel closing | `(tabKey, info) => void \| Promise<void>` | - |
 | onStorageError | Called when router-core persistence fails to load or save | `(error, info) => void \| Promise<void>` | - |
 

@@ -204,7 +204,7 @@ export function OrderPage() {
 | rootClassName | 布局根节点的稳定根类名 | `string` | - |
 | style | 布局根节点样式，优先级高于 `styles.root` | `React.CSSProperties` | - |
 | classNames | 按语义节点追加类名 | `ProLayoutClassNames` | - |
-| styles | 按语义节点覆盖内联样式 | `ProLayoutStyles` | - |
+| styles | 按语义节点覆盖非结构性内联样式；Header 的定位、尺寸和侧栏占位由布局统一管理 | `ProLayoutStyles` | - |
 | onTabClose | 页签关闭并完成清理后的通知，不能撤销关闭 | `(tabKey, info) => void \| Promise<void>` | - |
 | onStorageError | router-core 持久化加载或保存失败后的通知 | `(error, info) => void \| Promise<void>` | - |
 

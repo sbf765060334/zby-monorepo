@@ -28,7 +28,7 @@ import type {
   RouterStorageAdapter,
   RouterStorageState,
 } from '@zby/router-core'
-import type { ProLayoutRoute } from '../types'
+import type { ProLayoutRoute, ProLayoutStyles } from '../types'
 
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
@@ -879,6 +879,51 @@ describe('ReactRouterProLayout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '取消固定页签：工作台' }))
     expect(await screen.findByText('已取消页签固定')).toBeTruthy()
+  })
+
+  it('Header semantic 样式不能覆盖布局管理的结构属性', async () => {
+    const router = createTestRouter()
+    const unsafeHeaderStyle = {
+      backgroundColor: 'rgb(1, 2, 3)',
+      boxSizing: 'content-box',
+      height: 80,
+      insetBlockStart: 12,
+      insetInlineStart: 16,
+      maxHeight: 96,
+      maxWidth: 320,
+      minHeight: 96,
+      minWidth: 320,
+      paddingInlineStart: 0,
+      position: 'static',
+      width: '50%',
+    } as unknown as NonNullable<ProLayoutStyles['header']>
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          styles={{ header: unsafeHeaderStyle }}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+    expect(header.style.backgroundColor).toBe('rgb(1, 2, 3)')
+    expect(header.style.position).toBe('absolute')
+    expect(header.style.insetBlockStart).toBe('0px')
+    expect(header.style.insetInlineStart).toBe('0px')
+    expect(header.style.width).toBe('100%')
+    expect(header.style.minWidth).toBe('100%')
+    expect(header.style.maxWidth).toBe('100%')
+    expect(header.style.height).toBe('38px')
+    expect(header.style.minHeight).toBe('38px')
+    expect(header.style.maxHeight).toBe('38px')
+    expect(header.style.boxSizing).toBe('border-box')
+    expect(header.style.paddingInlineStart).toBe('68px')
+    expect(main.style.paddingBlockStart).toBe('38px')
+    expect(main.style.paddingInlineStart).toBe('68px')
   })
 
   it('页签数量在一和二之间切换时复用页签栏实例', async () => {

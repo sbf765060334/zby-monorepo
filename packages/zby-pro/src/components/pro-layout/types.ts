@@ -83,7 +83,28 @@ export type ProLayoutSemanticName =
   | 'page'
 
 export type ProLayoutClassNames = Partial<Record<ProLayoutSemanticName, string>>
-export type ProLayoutStyles = Partial<Record<ProLayoutSemanticName, CSSProperties>>
+
+type ProLayoutHeaderLayoutStyleName =
+  | 'boxSizing'
+  | 'height'
+  | 'insetBlockStart'
+  | 'insetInlineStart'
+  | 'maxHeight'
+  | 'maxWidth'
+  | 'minHeight'
+  | 'minWidth'
+  | 'position'
+  | 'width'
+  | 'paddingInlineStart'
+
+/** Header 的定位、尺寸和侧栏占位由 ProLayout 统一管理，semantic style 只负责非结构样式。 */
+export type ProLayoutHeaderStyle = Omit<CSSProperties, ProLayoutHeaderLayoutStyleName>
+
+export type ProLayoutStyles = Partial<
+  Omit<Record<ProLayoutSemanticName, CSSProperties>, 'header'> & {
+    header: ProLayoutHeaderStyle
+  }
+>
 
 /** 页面渲染错误上报时提供给宿主的稳定页面上下文。 */
 export interface ProLayoutPageErrorContext {
@@ -127,7 +148,7 @@ export interface ProLayoutProps {
   style?: CSSProperties
   /** 按语义节点追加 className，不依赖内部生成的 CSS 类名。 */
   classNames?: ProLayoutClassNames
-  /** 按语义节点覆盖内联样式。 */
+  /** 按语义节点覆盖非结构性内联样式；Header 的定位、尺寸和侧栏占位由布局统一管理。 */
   styles?: ProLayoutStyles
 }
 

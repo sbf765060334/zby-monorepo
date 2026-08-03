@@ -23,9 +23,18 @@ const Header = (props: HeaderProps) => {
     <header
       className={clsx(`${prefixCls}-header`, classNames?.header)}
       style={{
-        height,
-        paddingInlineStart: paddingLeft,
         ...styles?.header,
+        position: 'absolute',
+        insetBlockStart: 0,
+        insetInlineStart: 0,
+        width: '100%',
+        minWidth: '100%',
+        maxWidth: '100%',
+        height,
+        minHeight: height,
+        maxHeight: height,
+        boxSizing: 'border-box',
+        paddingInlineStart: paddingLeft,
       }}
     >
       <div
