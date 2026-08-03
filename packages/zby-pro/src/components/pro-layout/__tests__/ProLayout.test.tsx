@@ -853,7 +853,19 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelector('.custom-page')).toBeTruthy()
     expect((container.querySelector('.custom-breadcrumb') as HTMLElement).style.backgroundColor)
       .toBe('rgb(1, 2, 3)')
-    expect(screen.getByRole('button', { name: '固定页签：工作台' })).toBeTruthy()
+    const tab = screen.getByRole('tab', { name: /工作台/ })
+    const sortableNode = tab.closest('.zby-pro-layout-tab-node')
+    expect(sortableNode?.getAttribute('role')).toBeNull()
+    expect(sortableNode?.getAttribute('tabindex')).toBeNull()
+    expect(screen.queryByRole('button', { name: '拖动页签：工作台' })).toBeNull()
+    fireEvent.keyDown(tab, { code: 'Space' })
+    await waitFor(() => {
+      expect(sortableNode?.classList.contains('zby-pro-layout-tab-node-dragging')).toBe(true)
+    })
+    fireEvent.keyDown(tab, { code: 'Escape' })
+    await waitFor(() => {
+      expect(sortableNode?.classList.contains('zby-pro-layout-tab-node-dragging')).toBe(false)
+    })
     expect(screen.getByRole('button', { name: '切换系统' })).toBeTruthy()
 
     const pinButton = screen.getByRole('button', { name: '固定页签：工作台' })

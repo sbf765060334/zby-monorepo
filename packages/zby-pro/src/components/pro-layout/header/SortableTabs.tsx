@@ -15,11 +15,11 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Tabs } from 'antd'
 import { clsx } from 'clsx'
-import { useMemo } from 'react'
+import { Children, cloneElement, isValidElement, useMemo } from 'react'
 
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { TabsProps } from 'antd'
-import type { ReactNode } from 'react'
+import type { KeyboardEventHandler, ReactNode } from 'react'
 
 export type TabReorderRejection = 'unfixedBeforeFixed' | 'fixedAfterUnfixed'
 
@@ -149,6 +149,11 @@ function SortableTabNode(props: {
     transform,
     transition,
   } = useSortable({ id })
+  const tabNode = attachSortableKeyboardControl(
+    children,
+    (event) => listeners?.onKeyDown?.(event),
+    attributes['aria-describedby'],
+  )
 
   return (
     <>
@@ -169,10 +174,12 @@ function SortableTabNode(props: {
         }}
         onFocus={() => onPreload?.(id)}
         onMouseEnter={() => onPreload?.(id)}
-        {...attributes}
-        {...listeners}
+        onPointerDown={(event) => {
+          if (!isNestedInteractiveControl(event.target))
+            listeners?.onPointerDown?.(event)
+        }}
       >
-        {children}
+        {tabNode}
       </div>
       <div
         className={clsx(`${prefixCls}-tab-split`, {
@@ -180,6 +187,53 @@ function SortableTabNode(props: {
         })}
       />
     </>
+  )
+}
+
+type TabControlProps = {
+  children?: ReactNode
+  role?: string
+  onKeyDown?: KeyboardEventHandler<HTMLElement>
+  'aria-describedby'?: string
+}
+
+function attachSortableKeyboardControl(
+  node: ReactNode,
+  onKeyDown: KeyboardEventHandler<HTMLElement>,
+  describedBy: string,
+): ReactNode {
+  if (!isValidElement<TabControlProps>(node))
+    return node
+
+  if (node.props.role === 'tab') {
+    const originalOnKeyDown = node.props.onKeyDown
+    const ariaDescribedBy = [node.props['aria-describedby'], describedBy]
+      .filter(Boolean)
+      .join(' ')
+
+    return cloneElement(node, {
+      'aria-describedby': ariaDescribedBy,
+      onKeyDown: (event) => {
+        onKeyDown(event)
+        if (!event.defaultPrevented)
+          originalOnKeyDown?.(event)
+      },
+    })
+  }
+
+  return cloneElement(
+    node,
+    undefined,
+    Children.map(
+      node.props.children,
+      (child) => attachSortableKeyboardControl(child, onKeyDown, describedBy),
+    ),
+  )
+}
+
+function isNestedInteractiveControl(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(
+    target.closest('button, a, input, select, textarea, [role="button"]'),
   )
 }
 
