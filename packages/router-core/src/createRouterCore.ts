@@ -1363,7 +1363,7 @@ function sanitizeFixedTabKeys<Route extends RouterRoute>(
   return sanitized
 }
 
-/** 清理动态、重复或已经不存在的收藏路由，同时保持首次出现顺序。 */
+/** 清理重复或已经不存在的收藏路由，同时保持首次出现顺序。 */
 function sanitizeFavoriteRoutePaths<Route extends RouterRoute>(
   favoriteRoutePaths: readonly string[],
   registry: RouteRegistry<Route>,
@@ -1374,12 +1374,7 @@ function sanitizeFavoriteRoutePaths<Route extends RouterRoute>(
   favoriteRoutePaths.forEach((path) => {
     const resolved = registry.resolveLeafRoute(path)
     const routeKey = resolved?.routeKey
-    if (
-      !routeKey ||
-      !isConcreteRoutePath(routeKey) ||
-      seen.has(routeKey) ||
-      !registry.isPageRoute(resolved?.route)
-    )
+    if (!routeKey || seen.has(routeKey) || !registry.isPageRoute(resolved?.route))
       return
 
     seen.add(routeKey)

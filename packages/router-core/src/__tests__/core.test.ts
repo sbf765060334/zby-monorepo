@@ -849,20 +849,35 @@ describe('createRouterCore', () => {
     })
   })
 
-  it('rejects parameter and wildcard routes as favorites', () => {
+  it('canonicalizes parameter and wildcard route favorites', () => {
     const router = createRouterCore({
       routes: [
         { path: '/project/:id', title: 'Project', element: {} },
+        {
+          path: '/task/:id',
+          title: 'Task',
+          element: {},
+          supportMultipleTabs: true,
+        },
         { path: '/docs/*', title: 'Docs', element: {} },
       ],
       storageAdapter: false,
     })
 
-    expect(router.toggleFavoriteRoute('/project/:id')).toBe(false)
-    expect(router.toggleFavoriteRoute('/project/42')).toBe(false)
-    expect(router.toggleFavoriteRoute('/docs/*')).toBe(false)
-    expect(router.toggleFavoriteRoute('/docs/guide')).toBe(false)
-    expect(router.getState().favoriteRoutePaths).toEqual([])
+    expect(router.toggleFavoriteRoute('/project/42')).toBe(true)
+    expect(router.toggleFavoriteRoute('/task/1')).toBe(true)
+    expect(router.toggleFavoriteRoute('/docs/guide')).toBe(true)
+    expect(router.getState().favoriteRoutePaths).toEqual([
+      '/project/:id',
+      '/task/:id',
+      '/docs/*',
+    ])
+
+    expect(router.toggleFavoriteRoute('/project/:id')).toBe(true)
+    expect(router.getState().favoriteRoutePaths).toEqual([
+      '/task/:id',
+      '/docs/*',
+    ])
   })
 
   it('hydrates, canonicalizes and preserves unauthorized favorite routes', async () => {
@@ -894,11 +909,13 @@ describe('createRouterCore', () => {
     expect(router.getState().favoriteRoutePaths).toEqual([
       '/dashboard',
       '/admin',
+      '/project/:id',
+      '/task/:id',
     ])
     await vi.waitFor(() => {
       expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
         'default',
-        ['/dashboard', '/admin'],
+        ['/dashboard', '/admin', '/project/:id', '/task/:id'],
       )
     })
   })
