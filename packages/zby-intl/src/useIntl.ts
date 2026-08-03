@@ -1,9 +1,20 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
+import type { ReactOptions } from 'i18next'
+import {
+  useTranslation,
+  type UseTranslationOptions,
+} from 'react-i18next'
 import { DEFAULT_NAMESPACE } from './constants'
 import { createIntlShape } from './intl'
 import { IntlConfigContext } from './provider'
 import type { IntlShape } from './types'
+
+type TranslationOptions = UseTranslationOptions<undefined> &
+  Pick<ReactOptions, 'bindI18nStore'>
+
+const translationOptions: TranslationOptions = {
+  bindI18nStore: 'added removed',
+}
 
 // React 组件内使用的统一入口。
 // 它从 react-i18next 拿到底层 i18next 实例，再包装成项目自己的 IntlShape。
@@ -13,7 +24,10 @@ export function useIntl(): IntlShape {
 
   // useTranslation 会读取最近的 I18nextProvider，
   // 因此组件库和业务代码只要处在 ZbyIntlProvider 下面，就能共享同一个 i18next 实例。
-  const { i18n } = useTranslation(defaultNamespace || DEFAULT_NAMESPACE)
+  const { i18n } = useTranslation(
+    defaultNamespace || DEFAULT_NAMESPACE,
+    translationOptions,
+  )
 
   // createIntlShape 只是包装方法，不应该在每次渲染时重复创建。
   return React.useMemo(

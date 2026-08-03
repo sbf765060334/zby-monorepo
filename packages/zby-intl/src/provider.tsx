@@ -31,6 +31,11 @@ function syncResources(instance: i18n, resources: IntlResources, defaultNamespac
   })
 }
 
+function syncLanguage(instance: i18n, locale: string, fallbackLocale: string) {
+  instance.options.fallbackLng = [fallbackLocale]
+  void instance.changeLanguage(locale)
+}
+
 // 应用级国际化 Provider。
 // 业务应用通常在根节点包一层，把 locale、fallbackLocale、合并后的 resources 传进来。
 export function ZbyIntlProvider(props: IntlProviderProps) {
@@ -43,28 +48,27 @@ export function ZbyIntlProvider(props: IntlProviderProps) {
     i18n: customI18n,
   } = props
 
-  // i18next 实例只在 Provider 首次挂载时创建一次。
-  // 如果业务传了 customI18n，就复用业务已有实例；否则使用 zby-intl 的默认配置创建。
-  const [instance] = React.useState<i18n>(
-    () =>
-      customI18n ??
-      createI18n({
-        locale,
-        fallbackLocale,
-        resources,
-        defaultNamespace,
-      }),
+  // 内部实例随 Provider 生命周期保持稳定；业务传入的实例则始终以最新 prop 为准。
+  const [internalInstance] = React.useState<i18n>(() =>
+    createI18n({
+      locale,
+      fallbackLocale,
+      resources,
+      defaultNamespace,
+    }),
   )
+  const instance = customI18n ?? internalInstance
 
   // 当业务异步加载语言包，或者组件库语言包变更时，把新 resources 合并进 i18next。
   React.useEffect(() => {
     syncResources(instance, resources, defaultNamespace)
   }, [defaultNamespace, instance, resources])
 
-  // locale 是受控入参。外部状态变化后，这里同步通知 i18next 切换语言。
+  // locale 和 fallbackLocale 都是受控入参。fallback 变化后重新解析当前语言，
+  // changeLanguage 会同时更新 resolvedLanguage 并通知 react-i18next 订阅者。
   React.useEffect(() => {
-    instance.changeLanguage(locale)
-  }, [instance, locale])
+    syncLanguage(instance, locale, fallbackLocale)
+  }, [fallbackLocale, instance, locale])
 
   // 这些配置供 useIntl 创建 IntlShape 使用。
   // useMemo 可以避免每次渲染都让下游组件拿到新的 context value。
