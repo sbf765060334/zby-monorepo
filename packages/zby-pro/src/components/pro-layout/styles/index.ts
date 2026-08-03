@@ -576,6 +576,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           },
         },
         [`${componentCls}-breadcrumb-label`]: {
+          marginInlineEnd: styleToken.marginXXS,
           color: styleToken.colorTextTertiary,
           fontSize: styleToken.fontSize,
           whiteSpace: 'nowrap',
@@ -583,6 +584,8 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-breadcrumb-item-title`]: {
           display: 'inline-flex',
           alignItems: 'center',
+          lineHeight: styleToken.lineHeight,
+          verticalAlign: 'top',
         },
         [`${componentCls}-breadcrumb-icon`]: { marginInlineEnd: styleToken.marginXXS },
         [`${componentCls}-breadcrumb-item-clickable`]: {

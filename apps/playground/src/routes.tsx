@@ -1,5 +1,6 @@
 import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ProLayoutRoute } from '@zby/pro'
+import ActionIconPlayground from './pages/ActionIconPlayground'
 import ActionRevealPlayground from './pages/ActionRevealPlayground'
 import DemoPage from './pages/DemoPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
@@ -282,6 +283,11 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/sample/action-reveal',
         title: '动作展开',
         element: <ActionRevealPlayground />,
+      },
+      {
+        path: '/sample/action-icon',
+        title: '动作图标',
+        element: <ActionIconPlayground />,
       },
       {
         path: '/sample/scroll-area',

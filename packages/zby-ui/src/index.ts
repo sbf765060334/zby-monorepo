@@ -1,3 +1,12 @@
+export { default as ActionIcon } from './components/action-icon'
+export type {
+  ActionIconClassNamesType,
+  ActionIconProps,
+  ActionIconSemanticClassNames,
+  ActionIconSemanticName,
+  ActionIconSemanticStyles,
+  ActionIconStylesType,
+} from './components/action-icon'
 export { default as ActionReveal } from './components/action-reveal'
 export type {
   ActionRevealClassNamesType,
