@@ -658,10 +658,10 @@ describe('ReactRouterProLayout', () => {
         'var(--zby-pro-layout-test-control-height)',
       )
       expect(getComputedStyle(breadcrumbContent).fontSize).toBe(
-        'var(--zby-pro-layout-test-font-size-sm)',
+        'var(--zby-pro-layout-test-font-size)',
       )
       expect(getComputedStyle(breadcrumbLabel).fontSize).toBe(
-        'var(--zby-pro-layout-test-font-size-sm)',
+        'var(--zby-pro-layout-test-font-size)',
       )
     }
 
