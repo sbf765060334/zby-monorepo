@@ -75,7 +75,6 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
 
           [`&${contentContainerCls}-stack ${contentContainerCls}-body`]: {
             padding: styleToken.paddingSM,
-            paddingBlockStart: styleToken.paddingXS,
             overflow: 'auto',
           },
 
