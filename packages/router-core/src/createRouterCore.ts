@@ -1413,11 +1413,17 @@ function mergeTabsWithFixedSet<Route extends RouterRoute>(
   return sortTabs([...map.values()], fixedSet)
 }
 
-/** 把固定页签稳定分组到前面，并保持固定组与普通组各自的原始顺序。 */
+/** 固定组遵循 fixedSet 的持久化顺序，普通组保持 tabs 中的原始顺序。 */
 function sortTabs(tabs: readonly RouterTab[], fixedSet: readonly string[]) {
-  return tabs
-    .filter((tab) => fixedSet.includes(tab.key))
-    .concat(tabs.filter((tab) => !fixedSet.includes(tab.key)))
+  const tabMap = new Map(tabs.map((tab) => [tab.key, tab]))
+  const fixedKeySet = new Set(fixedSet)
+  const fixedTabs = fixedSet
+    .map((key) => tabMap.get(key))
+    .filter((tab): tab is RouterTab => Boolean(tab))
+
+  return fixedTabs.concat(
+    tabs.filter((tab) => !fixedKeySet.has(tab.key)),
+  )
 }
 
 /** 只有启用有限 LRU 时，重访页面才需要更新 touchedAt。 */

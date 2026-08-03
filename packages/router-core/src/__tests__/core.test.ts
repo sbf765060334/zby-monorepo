@@ -1291,6 +1291,42 @@ describe('createRouterCore', () => {
     })
   })
 
+  it('restores persisted fixed-tab order after the active route syncs first', async () => {
+    const router = createRouterCore({
+      routes,
+      storageAdapter: {
+        load: vi.fn(async () => ({
+          fixedTabs: ['/dashboard', '/settings/profile'],
+          fixedParamsPathMap: {},
+        })),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+      },
+    })
+
+    router.syncLocation({
+      pathname: '/settings/profile',
+      search: '',
+      hash: '',
+    })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+    ])
+
+    await router.hydrateStorage()
+
+    expect(router.getState().fixedSet).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+    expect(router.getState().activeTabKey).toBe('/settings/profile')
+  })
+
   it('limits hydrated fixed tabs and writes back the cleaned set', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
