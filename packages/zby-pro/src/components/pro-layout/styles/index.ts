@@ -564,7 +564,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           boxSizing: 'border-box',
           alignItems: 'center',
           paddingBlock: styleToken.paddingXXS,
-          paddingInline: styleToken.paddingXS,
+          paddingInline: styleToken.paddingSM,
           background: styleToken.colorBgLayout,
           fontSize: styleToken.fontSize,
 
