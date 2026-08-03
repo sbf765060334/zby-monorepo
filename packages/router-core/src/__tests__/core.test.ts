@@ -945,6 +945,24 @@ describe('createRouterCore', () => {
     ).toBe(true)
   })
 
+  it('keeps the tab and releases the closing lock when a close guard throws', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    const error = new Error('close guard failed')
+    const guard = () => {
+      throw error
+    }
+    router.addBeforeCloseHook(guard, '/settings/profile')
+
+    await expect(router.closeTab('/settings/profile')).rejects.toBe(error)
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    router.clearBeforeCloseHook('/settings/profile', guard)
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+  })
+
   it('closes the old tab and performs only the final navigation', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })

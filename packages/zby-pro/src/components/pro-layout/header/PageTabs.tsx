@@ -133,8 +133,18 @@ function PageTabs(props: PageTabsProps) {
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
-    if (action === 'remove')
-      void router.closeTab(String(key))
+    if (action !== 'remove')
+      return
+
+    void router.closeTab(String(key)).catch((error) => {
+      console.error('[ProLayout] Failed to close tab.', error)
+      void messageApi.error(
+        intl.getMessage(
+          'zby.pro.layout.tabs.closeFailed',
+          '页签关闭失败，请稍后重试',
+        ),
+      )
+    })
   }
 
   const handlePreload = (tabKey: string) => {

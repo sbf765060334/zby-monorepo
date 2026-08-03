@@ -889,6 +889,39 @@ describe('ReactRouterProLayout', () => {
     expect(router.getState().fixedSet).toEqual(['/orders/list'])
   })
 
+  it('关闭守卫失败时保留页签并消费异步异常', async () => {
+    const error = new Error('save draft failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    router.addBeforeCloseHook(async () => {
+      throw error
+    }, '/orders/list')
+
+    const orderTab = screen.getByRole('tab', { name: /订单列表/ })
+    const closeButton = orderTab
+      .closest('.ant-tabs-tab')
+      ?.querySelector<HTMLElement>('.ant-tabs-tab-remove')
+    expect(closeButton).toBeTruthy()
+    fireEvent.click(closeButton!)
+
+    expect(await screen.findByText('页签关闭失败，请稍后重试')).toBeTruthy()
+    expect(router.getState().tabs.some((tab) => tab.key === '/orders/list')).toBe(true)
+    expect(consoleError).toHaveBeenCalledWith(
+      '[ProLayout] Failed to close tab.',
+      error,
+    )
+    expect(container.querySelectorAll('.ant-tabs-tab')).toHaveLength(2)
+  })
+
   it('使用 zby-pro 语言包切换 ProLayout 自有文案，路由标题仍由业务提供', async () => {
     const router = createTestRouter()
     render(

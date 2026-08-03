@@ -37,6 +37,7 @@ const enUS = {
           unpin: 'Unpin tab: {{title}}',
           fixedSuccess: 'Tab pinned',
           unfixedSuccess: 'Tab unpinned',
+          closeFailed: 'Failed to close the tab. Please try again.',
           maxFixedTabs: 'You can pin up to {{count}} tabs. Unpin one tab first.',
           unfixedBeforeFixed: 'Unpinned tabs cannot be moved before pinned tabs',
           fixedAfterUnfixed: 'Pinned tabs cannot be moved after unpinned tabs',
