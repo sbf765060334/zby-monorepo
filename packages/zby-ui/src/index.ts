@@ -1,3 +1,14 @@
+export { default as ActionReveal } from './components/action-reveal'
+export type {
+  ActionRevealClassNamesType,
+  ActionRevealContentProps,
+  ActionRevealContentRender,
+  ActionRevealProps,
+  ActionRevealSemanticClassNames,
+  ActionRevealSemanticName,
+  ActionRevealSemanticStyles,
+  ActionRevealStylesType,
+} from './components/action-reveal'
 export { InputNumberRange } from './components/input-number-range'
 export type {
   InputNumberRangeFieldProps,
