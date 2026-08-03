@@ -73,6 +73,14 @@ function render(node: ReactNode, locale = 'zh-CN') {
   )
 }
 
+const hydrationRoutes: ProLayoutRoute[] = [
+  { path: '/a', title: 'A', element: DashboardPage },
+  { path: '/b', title: 'B', element: DashboardPage },
+  { path: '/c', title: 'C', element: DashboardPage },
+  { path: '/d', title: 'D', element: DashboardPage },
+  { path: '/e', title: 'E', element: OrdersPage },
+]
+
 describe('ReactRouterProLayout', () => {
   it('只在宿主地址落定后渲染 403/404', () => {
     const router = createTestRouter()
@@ -123,6 +131,92 @@ describe('ReactRouterProLayout', () => {
     expect(router.getState().activeTabKey).toBeNull()
     expect(tab.getAttribute('aria-selected')).toBe('false')
     expect(tab.classList.contains('ant-tabs-tab-active')).toBe(false)
+  })
+
+  it('持久化加载完成前保持空页签栏并一次渲染最终页签', async () => {
+    let resolveLoad!: (state: RouterStorageState) => void
+    const storageAdapter: RouterStorageAdapter = {
+      load: vi.fn(
+        () => new Promise<RouterStorageState>((resolve) => {
+          resolveLoad = resolve
+        }),
+      ),
+      saveFixedTabs: vi.fn(async () => undefined),
+      saveFixedParamsPathMap: vi.fn(async () => undefined),
+      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+    }
+    const router = createRouterCore<ProLayoutRoute>({
+      routes: hydrationRoutes,
+      defaultRedirectPath: '/a',
+      storageAdapter,
+    })
+    const { container } = render(
+      <MemoryRouter initialEntries={['/e']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('orders-page')
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/e'])
+    expect(container.querySelector('.zby-pro-layout-tabs')).toBeTruthy()
+    expect(container.querySelector('.ant-tabs')).toBeNull()
+
+    act(() => {
+      resolveLoad({
+        fixedTabs: ['/a', '/b', '/c', '/d'],
+        fixedParamsPathMap: {},
+        favoriteRoutePaths: [],
+      })
+    })
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.ant-tabs-tab')).toHaveLength(5)
+    })
+    expect(
+      Array.from(container.querySelectorAll('.ant-tabs-tab'))
+        .map((tab) => tab.getAttribute('data-node-key')),
+    ).toEqual(['/a', '/b', '/c', '/d', '/e'])
+    expect(screen.getByRole('tab', { name: /E/ }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('持久化加载失败后显示当前内存页签', async () => {
+    const loadError = new Error('load failed')
+    let rejectLoad!: (error: Error) => void
+    const onStorageError = vi.fn()
+    const router = createRouterCore<ProLayoutRoute>({
+      routes: hydrationRoutes,
+      defaultRedirectPath: '/a',
+      storageAdapter: {
+        load: vi.fn(
+          () => new Promise<RouterStorageState>((_resolve, reject) => {
+            rejectLoad = reject
+          }),
+        ),
+        saveFixedTabs: vi.fn(async () => undefined),
+        saveFixedParamsPathMap: vi.fn(async () => undefined),
+        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+      },
+    })
+    const { container } = render(
+      <MemoryRouter initialEntries={['/e']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          onStorageError={onStorageError}
+        />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('orders-page')
+    expect(container.querySelector('.ant-tabs')).toBeNull()
+
+    act(() => rejectLoad(loadError))
+
+    expect(await screen.findByRole('tab', { name: /E/ })).toBeTruthy()
+    expect(onStorageError).toHaveBeenCalledWith(loadError, {
+      storageKey: 'default',
+      phase: 'load',
+    })
   })
 
   it('装配 router-core 并渲染全局页签、面包屑和页面 Context', async () => {

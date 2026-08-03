@@ -42,6 +42,10 @@ function PageTabs(props: PageTabsProps) {
   const descriptions = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pathnameDescriptionMap,
   )
+  const storageSettled = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) =>
+      state.storageHydrated || state.storageLoadError !== undefined,
+  )
   const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
   const pagePathnameMap = useMemo(
     () => new Map(pages.map((page) => [page.key, page.pathname])),
@@ -154,6 +158,9 @@ function PageTabs(props: PageTabsProps) {
   }
 
   const tabType = items.length <= 1 ? 'card' : 'editable-card'
+
+  if (!storageSettled)
+    return null
 
   return (
     <>
