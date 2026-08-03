@@ -532,7 +532,7 @@ describe('ReactRouterProLayout', () => {
     expect(screen.getByText('当前位置：')).toBeTruthy()
   })
 
-  it('showBreadcrumb 总开关关闭时隐藏全局面包屑', async () => {
+  it('showBreadcrumb 总开关关闭时隐藏全局面包屑并在页面滚动时提升 Header', async () => {
     const breadcrumbRoutes: ProLayoutRoute[] = [
       {
         path: '/breadcrumb/visible',
@@ -546,7 +546,7 @@ describe('ReactRouterProLayout', () => {
       storageAdapter: false,
     })
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={['/breadcrumb/visible']}>
         <ReactRouterProLayout
           router={router}
@@ -558,6 +558,15 @@ describe('ReactRouterProLayout', () => {
 
     await screen.findByTestId('reports-page')
     expect(screen.queryByText('当前位置：')).toBeNull()
+
+    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+    const nestedScroller = screen.getByTestId('reports-page')
+
+    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(false)
+    fireEvent.scroll(nestedScroller, { target: { scrollTop: 24 } })
+    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(true)
+    fireEvent.scroll(nestedScroller, { target: { scrollTop: 0 } })
+    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(false)
   })
 
   it('通过图标栏和 Drawer 导航，并复用 KeepAlive 页面实例', async () => {

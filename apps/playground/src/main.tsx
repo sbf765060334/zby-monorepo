@@ -87,7 +87,7 @@ function PlaygroundApp() {
           <ReactRouterProLayout
             router={routers}
             title="数字化平台"
-            showBreadcrumb={true}
+            showBreadcrumb={false}
             header={{
               logo: (
                 <>

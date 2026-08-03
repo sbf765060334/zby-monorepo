@@ -1,7 +1,7 @@
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
@@ -13,13 +13,14 @@ import KeepAlivePage from './KeepAlivePage'
 export interface PageContentProps {
   prefixCls: string
   onPageError?: ProLayoutPageErrorHandler
+  onScrollStateChange?: (scrolled: boolean) => void
   pageClassName?: string
   pageStyle?: CSSProperties
 }
 
 /** 根据 core 保留的页面实例渲染 KeepAlive 页面，并处理当前地址的 403/404。 */
 function PageContent(props: PageContentProps) {
-  const { onPageError, pageClassName, pageStyle, prefixCls } = props
+  const { onPageError, onScrollStateChange, pageClassName, pageStyle, prefixCls } = props
   const router = useRouterCore<ProLayoutRoute>()
   const pages = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pages,
@@ -62,6 +63,7 @@ function PageContent(props: PageContentProps) {
           page={page}
           active={isPage && page.key === activePage}
           onPageError={onPageError}
+          onScrollStateChange={onScrollStateChange}
           className={clsx(`${prefixCls}-page-body`, pageClassName)}
           style={pageStyle}
         />
@@ -70,6 +72,7 @@ function PageContent(props: PageContentProps) {
         <ExceptionContent
           prefixCls={prefixCls}
           className={pageClassName}
+          onScrollStateChange={onScrollStateChange}
           status={pathname === '/' || fullLeaf ? '403' : '404'}
           style={pageStyle}
         />
@@ -81,11 +84,13 @@ function PageContent(props: PageContentProps) {
 function ExceptionContent(props: {
   prefixCls: string
   className?: string
+  onScrollStateChange?: (scrolled: boolean) => void
   status: '403' | '404'
   style?: CSSProperties
 }) {
   const intl = useIntl()
-  const description = props.status === '403'
+  const { onScrollStateChange, status } = props
+  const description = status === '403'
     ? intl.getMessage(
         'zby.pro.layout.exception.forbidden',
         '暂无权限查看当前页面，若需当前页面权限，请联系管理员。',
@@ -95,14 +100,21 @@ function ExceptionContent(props: {
         '访问的页面暂时不存在，请输入正确的地址。',
       )
 
+  useEffect(() => {
+    onScrollStateChange?.(false)
+  }, [onScrollStateChange, status])
+
   return (
     <div
       className={clsx(`${props.prefixCls}-page-body`, props.className)}
+      onScroll={onScrollStateChange
+        ? (event) => onScrollStateChange(event.currentTarget.scrollTop > 0)
+        : undefined}
       style={{ width: '100%', height: '100%', overflow: 'auto', ...props.style }}
     >
       <ExceptionPage
         prefixCls={props.prefixCls}
-        status={props.status}
+        status={status}
         description={description}
       />
     </div>

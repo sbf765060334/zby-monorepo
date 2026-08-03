@@ -10,6 +10,7 @@ export interface HeaderProps {
   hashId: string
   height: number
   paddingLeft: number
+  scrolled?: boolean
   extra?: ReactNode
   classNames?: ProLayoutClassNames
   styles?: ProLayoutStyles
@@ -17,11 +18,15 @@ export interface HeaderProps {
 
 /** 顶部全局页签栏及业务扩展区域。 */
 const Header = (props: HeaderProps) => {
-  const { classNames, extra, hashId, height, paddingLeft, prefixCls, styles } = props
+  const { classNames, extra, hashId, height, paddingLeft, prefixCls, scrolled, styles } = props
 
   return (
     <header
-      className={clsx(`${prefixCls}-header`, classNames?.header)}
+      className={clsx(
+        `${prefixCls}-header`,
+        scrolled && `${prefixCls}-header-scrolled`,
+        classNames?.header,
+      )}
       style={{
         ...styles?.header,
         position: 'absolute',

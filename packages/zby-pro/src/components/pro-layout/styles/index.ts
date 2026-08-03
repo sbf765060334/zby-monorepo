@@ -287,8 +287,9 @@ export default function useProLayoutStyles(prefixCls: string) {
           alignItems: 'center',
           paddingInline: styleToken.paddingSM,
           background: styleToken.colorBgContainer,
-          transition: `padding-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
+          transition: `padding-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, box-shadow ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
         },
+        [`${componentCls}-header-scrolled`]: { boxShadow: surfaceShadow },
 
         [`${componentCls}-tabs`]: {
           display: 'flex',

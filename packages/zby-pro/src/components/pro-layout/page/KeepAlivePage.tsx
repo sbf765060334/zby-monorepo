@@ -4,7 +4,9 @@ import {
   isValidElement,
   memo,
   Suspense,
+  useEffect,
   useMemo,
+  useRef,
 } from 'react'
 
 import type { RouterPage } from '@zby/router-core'
@@ -22,6 +24,7 @@ export interface KeepAlivePageProps {
   page: RouterPage<ProLayoutRoute>
   active: boolean
   onPageError?: ProLayoutPageErrorHandler
+  onScrollStateChange?: (scrolled: boolean) => void
   className?: string
   style?: CSSProperties
 }
@@ -50,13 +53,55 @@ const StableRouteElement = memo(
  * RouterPageProvider 负责在绘制前同步真实 pathname、active 和完整 location。
  */
 function KeepAlivePage(props: KeepAlivePageProps) {
-  const { active, className, onPageError, page, prefixCls, style } = props
+  const {
+    active,
+    className,
+    onPageError,
+    onScrollStateChange,
+    page,
+    prefixCls,
+    style,
+  } = props
+  const scrolledElementsRef = useRef(new Set<HTMLElement>())
+  const lastReportedScrolledRef = useRef(false)
   const resetKeys = useMemo(() => [page.pathname, page.route.element], [page])
+
+  useEffect(() => {
+    if (!active)
+      return
+
+    for (const element of scrolledElementsRef.current) {
+      if (!element.isConnected || element.scrollTop <= 0)
+        scrolledElementsRef.current.delete(element)
+    }
+    const scrolled = scrolledElementsRef.current.size > 0
+    lastReportedScrolledRef.current = scrolled
+    onScrollStateChange?.(scrolled)
+  }, [active, onScrollStateChange])
 
   return (
     <RouterPageProvider page={page} active={active}>
       <div
         className={className}
+        onScrollCapture={active && onScrollStateChange
+          ? (event) => {
+              const element = event.target
+              if (!(element instanceof HTMLElement))
+                return
+
+              if (element.scrollTop > 0)
+                scrolledElementsRef.current.add(element)
+              else
+                scrolledElementsRef.current.delete(element)
+
+              const scrolled = scrolledElementsRef.current.size > 0
+              if (lastReportedScrolledRef.current === scrolled)
+                return
+
+              lastReportedScrolledRef.current = scrolled
+              onScrollStateChange(scrolled)
+            }
+          : undefined}
         style={{
           width: '100%',
           height: '100%',

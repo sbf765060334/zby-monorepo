@@ -1,7 +1,7 @@
 import { useRouterCoreSelector } from '@zby/router-core/react'
 import { Layout } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
@@ -46,6 +46,7 @@ function ProLayout(props: ProLayoutProps) {
     useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
+  const [pageScrolled, setPageScrolled] = useState(false)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
   const currentPageTitle = currentRoute
     ? pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title
@@ -127,6 +128,7 @@ function ProLayout(props: ProLayoutProps) {
               height={headerHeight}
               extra={header?.extra}
               paddingLeft={siderWidth}
+              scrolled={!shouldShowBreadcrumb && pageScrolled}
               classNames={classNames}
               styles={styles}
             />
@@ -152,6 +154,7 @@ function ProLayout(props: ProLayoutProps) {
             <PageContent
               prefixCls={prefixCls}
               onPageError={onPageError}
+              onScrollStateChange={setPageScrolled}
               pageClassName={classNames?.page}
               pageStyle={styles?.page}
             />
