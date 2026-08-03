@@ -264,6 +264,25 @@ export function useThemeModeTransition({
       let themeTransitionAnimation: Animation | undefined
       let transition: ViewTransitionLike
 
+      // startViewTransition 的实现并不一定在调用主题回调前失败：Polyfill、测试桩或非标准实现
+      // 可能先执行 callback、完成主题提交，再从 startViewTransition 本身同步抛错。如果 catch
+      // 无条件再次调用 onThemeModeChange，同一次用户操作就会重复写入状态、持久化或上报埋点。
+      //
+      // 用三态而不是简单 boolean 区分异常发生的准确阶段：
+      // - idle：主题回调尚未开始，可在 catch 中安全降级为直接提交；
+      // - running：异常来自主题回调自身，必须保留原始异常，不能把它当作动画失败重试；
+      // - done：主题已经成功提交，仅 View Transition 启动失败，无需再次提交。
+      let themeCommitState: 'idle' | 'running' | 'done' = 'idle'
+      const commitThemeMode = () => {
+        if (themeCommitState !== 'idle') {
+          return
+        }
+
+        themeCommitState = 'running'
+        onThemeModeChange(nextThemeMode)
+        themeCommitState = 'done'
+      }
+
       try {
         // ── 6. 启动 View Transition ──
         //
@@ -274,12 +293,24 @@ export function useThemeModeTransition({
         // flushSync 会立即执行 onThemeModeChange → React setState → DOM 更新，
         // 确保浏览器在 callback 结束时能捕获到正确的新快照。
         transition = viewTransitionDocument.startViewTransition(() => {
-          flushSync(() => onThemeModeChange(nextThemeMode))
+          flushSync(commitThemeMode)
         })
-      } catch {
-        // startViewTransition 可能因跨文档导航、重复调用等原因抛错，降级为直接切换
+      } catch (error) {
+        // 无论失败发生在哪个阶段，动画都不会继续，先移除为本次过渡注入的临时样式。
         styleElement.remove()
-        onThemeModeChange(nextThemeMode)
+
+        if (themeCommitState === 'idle') {
+          // 浏览器在执行更新回调前就拒绝启动 View Transition，安全降级为无动画切换。
+          commitThemeMode()
+          return
+        }
+
+        if (themeCommitState === 'running') {
+          // 主题业务回调自身抛错。重试既可能重复副作用，也可能掩盖第一次异常，故原样透传。
+          throw error
+        }
+
+        // 主题已经成功更新，只是 startViewTransition 随后抛错；保留新主题且不重复提交。
         return
       }
 
