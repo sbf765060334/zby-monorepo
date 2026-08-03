@@ -159,6 +159,7 @@ export default function ActionRevealPlayground() {
                   onOpenChange={setControlledOpen}
                   triggerIcon={<SettingOutlined />}
                   actionIconProps={{ 'aria-label': '打开受控内容' }}
+                  collapseOnBlur={false}
                   width={300}
                   content={({ close, contentProps }) => {
                     const { ref, ...restProps } = contentProps
