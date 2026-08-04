@@ -1,3 +1,9 @@
+/**
+ * 文件职责：把一个已经创建好的 RouterCore 放进 React Context，并提供全局状态 Hook。
+ *
+ * Provider 不会替调用方创建 Core；它只同步可变化的回调、启动一次持久化加载，并让后
+ * 代组件能够取得同一个稳定实例或精确订阅某个状态字段。
+ */
 import { createContext, useContext, useEffect, useLayoutEffect } from 'react'
 
 import type { ReactNode } from 'react'

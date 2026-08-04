@@ -1,3 +1,9 @@
+/**
+ * 文件职责：决定哪些页面实例应该继续保留，以及缓存超过上限时淘汰哪一个页面。
+ *
+ * 它只处理 RouterPage 描述数组，不渲染组件。可以把它理解成页面缓存的“保留名单和
+ * 清理规则”，活动页面与固定页签会得到额外保护。
+ */
 import type { RouterKeepAliveConfig, RouterPage, RouterRoute } from './types'
 
 /** 复制 KeepAlive 数组配置，形成不会受调用方原地修改影响的实例快照。 */
@@ -29,10 +35,12 @@ export function enforceKeepAlive<Route extends RouterRoute>(
   fixedSet: readonly string[],
 ) {
   if (keepAlive === false) {
+    // 完全关闭 KeepAlive 时只留下当前正在显示的页面，其余页面实例立即交给 UI 卸载。
     const activePages = pages.filter((page) => page.key === activeKey)
     return activePages.length === pages.length ? pages : activePages
   }
 
+  // include/exclude 只过滤非活动页面；当前正在看的页面不能在一次状态计算中被移除。
   const filteredPages = typeof keepAlive === 'object'
     ? pages.filter(
         (page) =>
@@ -45,11 +53,14 @@ export function enforceKeepAlive<Route extends RouterRoute>(
     typeof keepAlive.maxCachedPages !== 'number' ||
     !Number.isFinite(keepAlive.maxCachedPages)
   ) {
+    // 没有配置有效数字上限时，完成名单过滤就可以返回。
     return retained
   }
 
+  // 即使 maxCachedPages 写成 0，只要存在活动页，也至少要保留这一页。
   const limit = Math.max(activeKey ? 1 : 0, Math.floor(keepAlive.maxCachedPages))
   while (retained.length > limit) {
+    // 从可淘汰页面里找 touchedAt 最小的，也就是最久没有访问的那一页。
     const evictable = retained
       .filter((page) => page.key !== activeKey && !fixedSet.includes(page.key))
       .sort((left, right) => left.touchedAt - right.touchedAt)[0]
@@ -60,10 +71,12 @@ export function enforceKeepAlive<Route extends RouterRoute>(
   return retained
 }
 
+/** 按“exclude 优先于 include”的顺序判断一个非活动页面是否应该保留。 */
 function shouldKeepPage<Route extends RouterRoute>(
   page: RouterPage<Route>,
   config: RouterKeepAliveConfig<Route>,
 ) {
+  // 数组配置按页签 key 匹配，函数配置则可以查看完整业务路由元数据。
   if (Array.isArray(config.exclude) && config.exclude.includes(page.key))
     return false
   if (typeof config.exclude === 'function' && config.exclude(page.route))

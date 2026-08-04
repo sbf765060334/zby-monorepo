@@ -1,3 +1,10 @@
+/**
+ * 文件职责：定义 `@zby/router-core` 根入口允许公开的 API。
+ *
+ * 这里像包的“出口清单”：没有写在这里的内部函数不会成为公共 API，从而让调用方只
+ * 依赖稳定能力，而不是不小心依赖某个实现细节。
+ */
+
 /** 创建完全独立的路由、页签、KeepAlive 与持久化 core 实例。 */
 export { createRouterCore } from './createRouterCore'
 

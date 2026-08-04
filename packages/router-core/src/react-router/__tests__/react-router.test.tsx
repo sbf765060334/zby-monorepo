@@ -1,3 +1,9 @@
+/**
+ * 文件职责：验证 React Router Adapter 的地址同步、重定向、history 与宿主解绑行为。
+ *
+ * 这些测试从真实 React 组件边界观察 Core 和 React Router 是否形成闭环，防止只在单元
+ * 函数层面正确、挂到 BrowserRouter 或 MemoryRouter 后却出现时序问题。
+ */
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -18,17 +24,21 @@ import {
   useRouterCoreCreateHref,
 } from '../index'
 
+/** Adapter 场景共用的静态首页与共享动态项目页。 */
 const routes: RouterRoute[] = [
   { path: '/home', title: '首页', element: 'home' },
   { path: '/project/:id', title: '项目', element: 'project' },
 ]
 
+/** 卸载组件并把浏览器历史恢复到根路径，保证每个用例从干净地址开始。 */
 afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
 })
 
+/** 这一组验证 Core 命令和 React Router 地址能形成完整的双向同步。 */
 describe('RouterCoreReactRouterAdapter', () => {
+  /** StrictMode 首屏根路径重定向应只提交一次，并最终等待 `/home` 落定。 */
   it('settles an initial root redirect after BrowserRouter starts listening', async () => {
     window.history.replaceState(null, '', '/')
     const router = createRouterCore({
@@ -69,11 +79,13 @@ describe('RouterCoreReactRouterAdapter', () => {
     unsubscribe()
   })
 
+  /** 首个动态地址可以先进入本地增量，但必须等完整存储加载后才能安全保存。 */
   it('hydrates before persisting the first dynamic location', async () => {
     const loadedStorageKeys: string[] = []
     const savedStorageKeys: string[] = []
     const operations: string[] = []
     const savedParamsPathMaps: Array<Record<string, string>> = []
+    /** 用数组记录远程调用顺序的假 Adapter，帮助断言 load 一定早于 save。 */
     const storageAdapter: RouterStorageAdapter = {
       async load(storageKey) {
         loadedStorageKeys.push(storageKey)
@@ -127,6 +139,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     }])
   })
 
+  /** BrowserRouter 地址要进入 Core，Core 的 jump/replace 也要反向改变浏览器地址。 */
   it('synchronizes BrowserRouter location and forwards Core navigation commands', async () => {
     window.history.replaceState(null, '', '/home?source=browser#top')
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -166,6 +179,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     expect(bindHost).toHaveBeenCalledTimes(1)
   })
 
+  /** smartNavigate 的 replace 不能新增历史记录，回退应直接回到导航前页面。 */
   it('preserves smartNavigate replace semantics in MemoryRouter history', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })
 
@@ -198,6 +212,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     })
   })
 
+  /** 原生 href 首屏就包含 basename，Adapter 卸载时还必须清除失效宿主。 */
   it('derives render-time href from basename and unbinds the navigation host', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const bindHost = vi.spyOn(router, 'bindHost')

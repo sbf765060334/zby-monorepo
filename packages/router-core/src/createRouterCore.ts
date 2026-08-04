@@ -1,3 +1,9 @@
+/**
+ * 文件职责：组装一个完整的 RouterCore 实例，并协调导航、路由匹配、页签和持久化。
+ *
+ * 新手可以把这里理解成“总调度室”：它自己不操作浏览器，也不渲染页面，而是把宿主
+ * 回传的地址交给各个小模块处理，最后向外提供 jumpTo、closeTab 等统一命令。
+ */
 import { createStore } from 'zustand/vanilla'
 
 import { snapshotKeepAlive } from './keepAlive'
@@ -53,17 +59,25 @@ type RouterNavigationInput =
 
 /** 已通过 Registry 验证、可以安全执行的最终导航计划。 */
 interface RouterNavigationPlan {
+  /** 已经确认可交给宿主的具体 pathname。 */
   pathname: string
+  /** 本次调用指定的查询参数；undefined 表示稍后恢复页签缓存。 */
   searchParams?: string | null
+  /** 本次调用指定的 hash；undefined 表示稍后恢复页签缓存。 */
   hash?: string | null
+  /** 目标真实地址对应的稳定页签身份。 */
   tabKey: string
+  /** 当前用户是否能把目标当作页面打开。 */
   authorized: boolean
 }
 
 /** 导航计划执行时允许替换的宿主能力；普通命令继续使用当前 Host.navigate。 */
 interface ExecuteNavigationPlanOptions {
+  /** 临时替换默认 host.navigate，例如目录重定向使用 host.redirect。 */
   navigate?: RouterNavigate
+  /** 是否替换当前浏览器 history 记录。 */
   replace?: boolean
+  /** false 表示本次重定向不发布普通 navigating 阶段。 */
   trackNavigation?: boolean
 }
 
@@ -453,6 +467,7 @@ export function createRouterCore<Route extends RouterRoute>(
           navigate(target)
         }
 
+    /** 只有目标 pathname 真正变化时才发布 navigating，单纯 search/hash 变化不发布。 */
     function trackPathnameNavigation(target: Parameters<RouterNavigate>[0]) {
       if (options.trackNavigation === false)
         return

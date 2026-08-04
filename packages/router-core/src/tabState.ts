@@ -1,3 +1,9 @@
+/**
+ * 文件职责：提供页签状态的纯计算工具，例如清洗旧数据、合并固定页签和比较快照。
+ *
+ * “纯计算”表示这些函数不会直接改 Store 或写数据库：给它们同样的输入，就会得到同
+ * 样的输出，因此持久化加载和页签命令都可以安全复用这些规则。
+ */
 import { isConcreteRoutePath } from './registry'
 import type { RouteRegistry } from './registry'
 import type { RouterRoute, RouterTab } from './types'
@@ -12,12 +18,14 @@ export function sanitizeFixedTabKeys<Route extends RouterRoute>(
   const sanitized: string[] = []
 
   fixedTabs.forEach((key) => {
+    // 先把旧数据转换成当前 Registry 认可的标准页签 key，并排除重复或非页面路由。
     const tabKey = registry.getTabKey(key)
     const route = tabKey ? registry.resolveLeafRoute(tabKey)?.route : null
     if (!tabKey || seen.has(tabKey) || !registry.isPageRoute(route))
       return
 
     if (!isConcreteRoutePath(tabKey)) {
+      // 共享动态页签的 key 仍带 `:param`，必须同时找到同页签的真实地址才能恢复。
       const pathname = fixedParamsPathMap[tabKey]
       if (
         !pathname ||
@@ -44,6 +52,7 @@ export function sanitizeFavoriteRoutePaths<Route extends RouterRoute>(
   const sanitized: string[] = []
 
   favoriteRoutePaths.forEach((path) => {
+    // 收藏统一保存注册 routeKey；真实动态地址和大小写差异都会被收敛到同一项。
     const resolved = registry.resolveLeafRoute(path)
     const routeKey = resolved?.routeKey
     if (!routeKey || seen.has(routeKey) || !registry.isPageRoute(resolved?.route))
@@ -56,10 +65,12 @@ export function sanitizeFavoriteRoutePaths<Route extends RouterRoute>(
   return sanitized
 }
 
+/** 把已经清洗过的固定页签 key 转成最小 RouterTab 描述。 */
 function createTabsFromFixedSet<Route extends RouterRoute>(
   fixedSet: readonly string[],
   registry: RouteRegistry<Route>,
 ) {
+  // 旧存储仍可能与新路由表不一致，所以生成页签前再确认一次页面身份。
   const tabs = fixedSet.reduce<RouterTab[]>((result, key) => {
     const route = registry.resolveLeafRoute(key)?.route
     if (registry.isPageRoute(route)) {
@@ -76,6 +87,7 @@ export function mergeTabsWithFixedSet<Route extends RouterRoute>(
   fixedSet: readonly string[],
   registry: RouteRegistry<Route>,
 ) {
+  // Map 既能去重，也会保留当前会话已经自定义过的页签标题。
   const map = new Map(tabs.map((tab) => [tab.key, tab]))
   createTabsFromFixedSet(fixedSet, registry).forEach((tab) => {
     if (!map.has(tab.key))
@@ -86,6 +98,7 @@ export function mergeTabsWithFixedSet<Route extends RouterRoute>(
 
 /** 固定组遵循 fixedSet 顺序，普通组保持 tabs 中的原始顺序。 */
 export function sortTabs(tabs: readonly RouterTab[], fixedSet: readonly string[]) {
+  // 固定页签严格按 fixedSet 排列；Map 用来快速从 key 找回完整页签对象。
   const tabMap = new Map(tabs.map((tab) => [tab.key, tab]))
   const fixedKeySet = new Set(fixedSet)
   const fixedTabs = fixedSet
@@ -97,6 +110,7 @@ export function sortTabs(tabs: readonly RouterTab[], fixedSet: readonly string[]
   )
 }
 
+/** 按顺序比较两个字符串数组；顺序不同也属于不同状态。 */
 export function areStringArraysEqual(
   left: readonly string[],
   right: readonly string[],
@@ -107,13 +121,16 @@ export function areStringArraysEqual(
   )
 }
 
+/** 比较两个字符串字典是否拥有完全相同的 key 和 value。 */
 export function areStringRecordsEqual(
   left: Record<string, string>,
   right: Record<string, string>,
 ) {
+  // 引用相同是最快的成功分支，不必再枚举 key。
   if (left === right)
     return true
   const leftKeys = Object.keys(left)
+  // 数量相同再逐项比较，可以同时发现新增、删除和修改。
   return leftKeys.length === Object.keys(right).length &&
     leftKeys.every((key) => left[key] === right[key])
 }

@@ -26,8 +26,8 @@
   },
   "files": [
     "dist",
-    "README.md",
-    "README.zh-CN.md"
+    "src/index.en-US.md",
+    "src/index.zh-CN.md"
   ],
   "sideEffects": false,
   "scripts": {

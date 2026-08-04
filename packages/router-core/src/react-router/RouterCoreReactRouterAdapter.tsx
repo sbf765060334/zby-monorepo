@@ -1,3 +1,9 @@
+/**
+ * 文件职责：在 RouterCore 与 React Router 之间双向传递导航命令和最终地址。
+ *
+ * RouterCore 不直接依赖浏览器路由；这个 Adapter 把 Core 的导航请求交给 React Router，
+ * 再把 React Router 确认后的 location 回传给 Core，使两边各做自己擅长的事情。
+ */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useHref, useLocation, useNavigate } from 'react-router-dom'
 
@@ -45,6 +51,7 @@ export function RouterCoreReactRouterAdapter(
     navigateRef.current = reactRouterNavigate
   }, [reactRouterNavigate])
 
+  // Host 对象在 Adapter 生命周期内保持同一引用，pathname 变化不会触发解绑再绑定。
   const host = useMemo<RouterHost>(() => {
     const navigate: RouterNavigate = (target, options) => {
       // React Router 6/7 都接受与 RouterNavigateTarget 兼容的 string 或 pathname 对象。

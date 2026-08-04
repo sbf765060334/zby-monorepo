@@ -1,3 +1,9 @@
+/**
+ * 文件职责：集中声明 router-core 对外公开的领域类型和接口。
+ *
+ * 这个文件没有运行时代码。阅读它可以先弄清“路由、页签、页面、宿主、存储”分别长
+ * 什么样，再去看其它实现文件；上层项目也从这些类型获得 TypeScript 提示。
+ */
 import type { StoreApi } from 'zustand/vanilla'
 import type { RouteRegistry } from './registry/types'
 
@@ -115,6 +121,11 @@ export type RouterNavigate = (
   options?: { replace?: boolean },
 ) => void
 
+/**
+ * 真正负责改变 URL 的宿主能力。
+ *
+ * Core 只会发出导航请求，不假设浏览器或具体框架；React Router Adapter 会实现它。
+ */
 export interface RouterHost {
   /** core 执行最终地址变更时调用的底层导航能力。 */
   navigate: RouterNavigate
@@ -129,11 +140,13 @@ export interface RouterHost {
 /** 页签关闭前守卫；只有所有守卫都明确返回 true 才允许关闭。 */
 export type RouterBeforeCloseHook = () => boolean | Promise<boolean>
 
+/** 调用关闭命令时允许提供的额外控制项。 */
 export interface RouterCloseOptions {
   /** 组合命令或受信调用方可以跳过页面注册的关闭守卫。 */
   skipBeforeClose?: boolean
 }
 
+/** 页签完成关闭后传给通知回调的补充信息。 */
 export interface RouterAfterTabCloseInfo {
   /** 被关闭页签最后对应的真实 pathname，而不是共享动态 route pattern。 */
   pathname: string
@@ -166,6 +179,7 @@ export type RouterStorageErrorPhase =
   | 'saveFixedParamsPathMap'
   | 'saveFavoriteRoutePaths'
 
+/** 持久化错误回调收到的上下文，帮助业务判断哪一次读写失败。 */
 export interface RouterStorageErrorInfo {
   /** 本次读写对应的持久化命名空间。 */
   storageKey: string

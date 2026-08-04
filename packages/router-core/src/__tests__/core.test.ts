@@ -1,3 +1,9 @@
+/**
+ * 文件职责：用可执行测试守住 RouteRegistry、导航、页签、KeepAlive 和持久化的核心契约。
+ *
+ * 每个 `it` 都描述一个用户可观察场景。阅读测试时可以先看标题，再按“准备输入、执行
+ * 命令、检查结果”的顺序理解；这些断言也保证注释和文档修改不会改变运行行为。
+ */
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -11,6 +17,7 @@ import {
   type RouterStorageErrorInfo,
 } from '../index'
 
+/** 大多数 Core 场景复用的最小路由树，覆盖目录、动态页签、独立页签和权限路由。 */
 const routes: RouterRoute[] = [
   { path: '/dashboard', title: 'Dashboard', element: {} },
   {
@@ -38,7 +45,9 @@ interface PlatformRoute extends RouterRoute {
   element?: { kind: 'page' }
 }
 
+/** 这一组先单独验证路由树与匹配器，排除 Store、宿主和持久化的干扰。 */
 describe('route registry', () => {
+  /** 最基础的匹配规则：大小写、尾斜杠、参数和末尾通配符都要符合约定。 */
   it('matches static, parameter and wildcard paths', () => {
     expect(matchRoutePath('/Dashboard', '/dashboard/')).toBe(true)
     expect(matchRoutePath('/project/:id', '/project/42?tab=detail')).toBe(true)
@@ -46,6 +55,7 @@ describe('route registry', () => {
     expect(matchRoutePath('/project/:id', '/project')).toBe(false)
   })
 
+  /** 注册阶段就拒绝规范化后相同的路径，避免运行时不知道应该选哪一个。 */
   it('rejects normalized duplicate route paths during registration', () => {
     expect(() =>
       createRouteRegistry({
@@ -57,6 +67,7 @@ describe('route registry', () => {
     ).toThrow('Route paths must be unique.')
   })
 
+  /** 参数名字不同不代表 URL 形状不同，这类冲突也必须提前报错。 */
   it('rejects dynamic route patterns that differ only by parameter names', () => {
     expect(() =>
       createRouteRegistry({
@@ -68,6 +79,7 @@ describe('route registry', () => {
     ).toThrow('match the same URL shape')
   })
 
+  /** 同一 pattern 里参数重名会覆盖值，因此验证错误提示是否明确。 */
   it('rejects repeated parameter names in one route', () => {
     expect(() =>
       createRouteRegistry({
@@ -81,6 +93,7 @@ describe('route registry', () => {
     ).toThrow('Parameter names must be unique within a route.')
   })
 
+  /** 静态路径比动态路径更具体，两者可以共存且静态项应优先命中。 */
   it('keeps distinct static and dynamic route patterns valid', () => {
     const registry = createRouteRegistry({
       routes: [
@@ -93,6 +106,7 @@ describe('route registry', () => {
     expect(registry.resolveLeafRoute('/user/42')?.routeKey).toBe('/user/:id')
   })
 
+  /** 权限快照既要隐藏受限页，也要能为目录找到第一个可访问子页面。 */
   it('builds an authorization snapshot and resolves directory children', () => {
     const registry = createRouteRegistry({
       routes,
@@ -108,6 +122,7 @@ describe('route registry', () => {
     expect(registry.getTabKey('/task/1')).toBe('/task/1')
   })
 
+  /** 创建后修改调用方原对象不能影响 Registry 内部已经固定的路由事实。 */
   it('owns a route-tree snapshot instead of the caller objects', () => {
     const input: RouterRoute[] = [
       { path: '/home', title: 'Before', element: {} },
@@ -121,6 +136,7 @@ describe('route registry', () => {
     expect(registry.resolveLeafRoute('/later')).toBeNull()
   })
 
+  /** 业务扩展的 icon、tag、element 类型要一路保留到查询结果和页面状态。 */
   it('preserves caller route metadata types through registry and core', () => {
     const platformRoutes: PlatformRoute[] = [
       {
@@ -171,6 +187,7 @@ describe('route registry', () => {
     expect(pageKind).toBe('page')
   })
 
+  /** 预加载只是优化，同步或异步失败都不能冒泡成业务未处理异常。 */
   it('isolates synchronous and asynchronous preload failures', async () => {
     const directPreload = vi.fn(() => {
       throw new Error('synchronous preload failed')
@@ -201,7 +218,9 @@ describe('route registry', () => {
   })
 })
 
+/** 这一组从公开命令观察完整 Core，覆盖导航、页签、缓存、回调和存储协作。 */
 describe('createRouterCore', () => {
+  /** 自定义权限函数与默认“全部允许”函数都应成为实例生命周期内的稳定查询。 */
   it('exposes the fixed authorization query with an allow-all default', () => {
     const restricted = createRouterCore({
       routes,
@@ -221,6 +240,7 @@ describe('createRouterCore', () => {
     ).not.toBeNull()
   })
 
+  /** Core 初始状态应为空，但 storageKey、上限和持久化开关要立即反映创建参数。 */
   it('uses fixed configuration in an otherwise empty first store snapshot', () => {
     const router = createRouterCore({
       routes,
@@ -239,6 +259,7 @@ describe('createRouterCore', () => {
     expect(router.getState().storageHydrated).toBe(true)
   })
 
+  /** 两次创建的 Store、页签和回调必须彼此隔离，不能出现跨实例串数据。 */
   it('creates a new independent state container on every factory call', () => {
     const first = createRouterCore({ routes, storageAdapter: false })
     const second = createRouterCore({ routes, storageAdapter: false })
@@ -279,6 +300,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** jumpTo 负责完整导航，smartNavigate 在同页只 replace 查询参数与 hash。 */
   it('opens pages with jumpTo and replaces current-page URL with smartNavigate', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -309,6 +331,7 @@ describe('createRouterCore', () => {
     expect(router.getState().navigationStatus).toBe('navigating')
   })
 
+  /** 只改 hash 不应把全局导航状态切成 navigating。 */
   it('does not publish pathname navigation for a same-page hash change', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -325,6 +348,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 没有具体参数值的动态 pattern 不能直接交给浏览器导航。 */
   it('does not navigate an unresolved dynamic route pattern', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -336,6 +360,7 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs).toEqual([])
   })
 
+  /** 固定的共享动态页签必须借助持久化映射恢复最后真实地址。 */
   it('restores a fixed dynamic tab from its persisted concrete pathname', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({
@@ -360,6 +385,7 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenCalledWith('/project/42')
   })
 
+  /** 存储加载前宿主已确认的新参数地址，应覆盖并修复存储中的旧映射。 */
   it('uses a pre-hydration pathname to repair a fixed dynamic tab mapping', async () => {
     const navigate = vi.fn()
     const saveFixedParamsPathMap = vi.fn(async () => undefined)
@@ -393,6 +419,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** search/hash 缓存更新不属于全局领域状态，不应通知 Store 订阅者。 */
   it('updates URL cache without publishing state when only search or hash changes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -414,6 +441,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 页面 listener 要收到同 pathname 下每一次 search/hash 地址确认。 */
   it('publishes every confirmed location to the current page listener', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const listener = vi.fn()
@@ -442,6 +470,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 页面晚挂载时应立即补收最新地址，而不是等下一次导航才有数据。 */
   it('replays the latest location when its page listener subscribes later', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({
@@ -472,6 +501,7 @@ describe('createRouterCore', () => {
     expect(listener).toHaveBeenCalledOnce()
   })
 
+  /** 首次补发就抛错的 listener 必须撤销，避免以后重复污染地址同步。 */
   it('removes a page listener when its immediate replay throws', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({
@@ -499,6 +529,7 @@ describe('createRouterCore', () => {
     expect(listener).toHaveBeenCalledOnce()
   })
 
+  /** 重复打开已经活动且无需刷新 LRU 的页面时，应复用原 Store 快照。 */
   it('does not publish state when reopening the active page changes no domain state', () => {
     const router = createRouterCore({
       routes,
@@ -516,6 +547,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 可以导航到受限地址展示 403，但不能为无权限路由创建页面实例。 */
   it('tracks pathname navigation without activating an unauthorized route', () => {
     const navigate = vi.fn()
     const router = createRouterCore({
@@ -538,6 +570,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 无权限动态地址仍应保留调用方明确传入的真实 pathname，不能换成旧缓存。 */
   it('keeps an explicit pathname for unauthorized shared dynamic routes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({
@@ -567,6 +600,7 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenLastCalledWith('/secret/1')
   })
 
+  /** smartNavigate 一旦跨 pathname，就必须复用 jumpTo 的权限与页签完整流程。 */
   it('delegates smartNavigate to jumpTo when pathname changes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -578,6 +612,7 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenLastCalledWith('/settings/profile')
   })
 
+  /** 目录地址只请求一次叶子重定向，并等待宿主回传后再创建页面。 */
   it('bootstraps a directory location once and waits for its leaf location', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -603,6 +638,7 @@ describe('createRouterCore', () => {
     expect(router.getState().navigationStatus).toBe('settled')
   })
 
+  /** 根路径通过 redirect 宿主请求默认页，最终状态以宿主确认地址为准。 */
   it('requests an effect redirect for the root location and settles on confirmation', () => {
     const navigate = vi.fn()
     const redirect = vi.fn()
@@ -624,6 +660,7 @@ describe('createRouterCore', () => {
     expect(router.getState().activePage).toBe('/dashboard')
   })
 
+  /** 重定向尚未提交就卸载宿主时，新宿主绑定后应允许再次发起。 */
   it('retries an uncommitted redirect after the host is rebound', () => {
     const firstRedirect = vi.fn()
     const secondRedirect = vi.fn()
@@ -643,6 +680,7 @@ describe('createRouterCore', () => {
     expect(router.getState().navigationStatus).toBe('redirecting')
   })
 
+  /** 没有宿主时暂缓的目录跳转，在宿主到位后必须重新尝试。 */
   it('retries a deferred directory bootstrap after the host is bound', () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -658,6 +696,7 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenCalledWith('/settings/profile', { replace: true })
   })
 
+  /** 后来的暂缓地址要清掉旧去重标记，防止返回旧页时漏掉重新激活。 */
   it('clears an older bootstrap marker when a later pathname is deferred', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.bindHost({ navigate: vi.fn() })
@@ -672,6 +711,7 @@ describe('createRouterCore', () => {
     expect(router.getState().activePage).toBe('/dashboard')
   })
 
+  /** 目录跳转与 403 场景要正确分流，受限页面始终不能进入页面缓存。 */
   it('redirects directories and creates no page for unauthorized routes', () => {
     const navigate = vi.fn()
     const router = createRouterCore({
@@ -688,6 +728,7 @@ describe('createRouterCore', () => {
     expect(router.getState().pages).toEqual([])
   })
 
+  /** KeepAlive 配置在创建时快照化，之后修改调用方数组不能改变淘汰规则。 */
   it('applies fixed KeepAlive configuration for the core lifetime', () => {
     const exclude = ['/dashboard']
     const router = createRouterCore({
@@ -706,6 +747,7 @@ describe('createRouterCore', () => {
     ])
   })
 
+  /** 合法重排更新全部页签，但只有固定组顺序变化才写持久化。 */
   it('reorders the complete tab set and persists only a changed fixed order', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -770,6 +812,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 缺项、重复、未知 key 或跨越固定分组的排列都不能修改当前状态。 */
   it('rejects incomplete, duplicate, unknown and cross-group tab arrangements', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
@@ -790,6 +833,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 只有已打开页签才能固定，未知 key 不应产生状态或存储写入。 */
   it('does not fix unknown or unopened tab keys', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -819,6 +863,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 收藏只接受已注册页面，每次变化保存完整且有序的收藏快照。 */
   it('toggles registered page favorites and persists complete snapshots', async () => {
     const saveFavoriteRoutePaths = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -849,6 +894,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 动态真实地址收藏应收敛到 route pattern，避免同一路由出现重复项。 */
   it('canonicalizes parameter and wildcard route favorites', () => {
     const router = createRouterCore({
       routes: [
@@ -880,6 +926,7 @@ describe('createRouterCore', () => {
     ])
   })
 
+  /** 加载收藏时要规范化路径，并保留暂时无权限但仍存在的完整路由。 */
   it('hydrates, canonicalizes and preserves unauthorized favorite routes', async () => {
     const saveFavoriteRoutePaths = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -920,6 +967,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 固定页签上限和关闭守卫都必须在改变状态前生效。 */
   it('enforces fixed-tab limits and runs close guards', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({
@@ -945,6 +993,7 @@ describe('createRouterCore', () => {
     ).toBe(true)
   })
 
+  /** 守卫抛错要保留页签，同时释放并发锁让用户可以再次关闭。 */
   it('keeps the tab and releases the closing lock when a close guard throws', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
@@ -963,6 +1012,7 @@ describe('createRouterCore', () => {
     expect(await router.closeTab('/settings/profile')).toBe(true)
   })
 
+  /** 组合命令关闭旧页后只导航一次新地址，不先跳到相邻页。 */
   it('closes the old tab and performs only the final navigation', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -982,6 +1032,7 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary')
   })
 
+  /** 新地址无法解析时必须在删除旧页签前失败，保持状态与浏览器一致。 */
   it('keeps the old tab when the replacement target is unknown', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -1002,6 +1053,7 @@ describe('createRouterCore', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
+  /** 最终导航必须早于关闭通知，避免通知回调解绑宿主后导航丢失。 */
   it('navigates before onTabClose can unbind the host', async () => {
     const events: string[] = []
     const navigate = vi.fn(() => events.push('navigate'))
@@ -1029,6 +1081,7 @@ describe('createRouterCore', () => {
     expect(events).toEqual(['navigate', 'onTabClose'])
   })
 
+  /** 等待异步守卫期间宿主卸载时，应取消提交并保留旧页签。 */
   it('keeps the old tab when the host is unbound during a close guard', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -1053,6 +1106,7 @@ describe('createRouterCore', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
+  /** 关闭通知同步抛错只能记录日志，不能破坏已经完成的组合导航。 */
   it('continues the replacement navigation when onTabClose throws', async () => {
     const error = new Error('callback failed')
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -1086,6 +1140,7 @@ describe('createRouterCore', () => {
     }
   })
 
+  /** 异步关闭通知不阻塞命令，rejection 也不能成为未处理异常。 */
   it('does not wait for or leak an asynchronous onTabClose rejection', async () => {
     const error = new Error('async callback failed')
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -1121,6 +1176,7 @@ describe('createRouterCore', () => {
     }
   })
 
+  /** Provider 更新运行时回调时不应让 Store 订阅者重新渲染。 */
   it('updates callback references without publishing a state change', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const subscriber = vi.fn()
@@ -1132,6 +1188,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** pathname 描述采用增量合并，重复值和空输入不能发布新状态。 */
   it('publishes pathname descriptions only when their values change', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const initialState = router.getState()
@@ -1165,6 +1222,7 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** hydration 前已经确认的真实动态地址应覆盖存储旧值并回写修复。 */
   it('writes back a current dynamic pathname that overrides hydrated storage', async () => {
     const saveFixedParamsPathMap = vi.fn(async () => undefined)
     const adapter: RouterStorageAdapter = {
@@ -1201,6 +1259,7 @@ describe('createRouterCore', () => {
     expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
   })
 
+  /** 加载进行中确认的新 pathname 要与存储中的其它 key 合并，不能覆盖整张表。 */
   it('merges a dynamic pathname confirmed while hydration is in flight', async () => {
     let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
     const saveFixedParamsPathMap = vi.fn(async () => undefined)
@@ -1242,6 +1301,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 缺少可信真实地址的固定动态页签无法恢复，应清理并回写存储。 */
   it('removes an unrestorable fixed dynamic tab loaded from storage', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -1266,6 +1326,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 旧存储中的大小写、尾斜杠和重复 key 要整理成当前标准页签集合。 */
   it('normalizes and deduplicates persisted fixed tab keys', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -1291,6 +1352,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 宿主先建活动页时，稍后 hydration 仍应按持久化顺序补齐固定组。 */
   it('restores persisted fixed-tab order after the active route syncs first', async () => {
     const router = createRouterCore({
       routes,
@@ -1327,6 +1389,7 @@ describe('createRouterCore', () => {
     expect(router.getState().activeTabKey).toBe('/settings/profile')
   })
 
+  /** 加载数据超过当前固定上限时要裁剪，并把清理结果写回存储。 */
   it('limits hydrated fixed tabs and writes back the cleaned set', async () => {
     const saveFixedTabs = vi.fn(async () => undefined)
     const router = createRouterCore({
@@ -1352,6 +1415,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 一次保存失败要通知错误，但不能阻断下一次更完整的新快照保存。 */
   it('reports a failed save and persists the next complete field snapshot', async () => {
     const saveError = new Error('temporary save failure')
     const persistedFixedTabs: string[][] = []
@@ -1396,6 +1460,7 @@ describe('createRouterCore', () => {
     ])
   })
 
+  /** 错误回调同步抛错不能改变 hydration 自己已经确认的结果。 */
   it('isolates a synchronous onStorageError failure from hydration', async () => {
     const loadError = new Error('load failed')
     const callbackError = new Error('storage callback failed')
@@ -1427,6 +1492,7 @@ describe('createRouterCore', () => {
     }
   })
 
+  /** 错误回调异步 rejection 必须被隔离，不能泄漏成全局未处理异常。 */
   it('does not leak an asynchronous onStorageError rejection after save failure', async () => {
     const saveError = new Error('save failed')
     const callbackError = new Error('async storage callback failed')
@@ -1469,6 +1535,7 @@ describe('createRouterCore', () => {
     }
   })
 
+  /** 加载期间用户修改固定页签时，返回的旧存储值不能覆盖本地新状态。 */
   it('hydrates fixed tabs without overwriting local changes made in flight', async () => {
     let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
     const adapter: RouterStorageAdapter = {
@@ -1501,6 +1568,7 @@ describe('createRouterCore', () => {
     expect(router.getState().storageHydrated).toBe(true)
   })
 
+  /** 收藏与固定页签遵循同样的版本保护，等待期间的本地收藏优先。 */
   it('hydrates favorites without overwriting local changes made in flight', async () => {
     let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
     const saveFavoriteRoutePaths = vi.fn(async () => undefined)
@@ -1537,6 +1605,7 @@ describe('createRouterCore', () => {
     })
   })
 
+  /** 即使加载失败，用户刚做的收藏仍保留在内存并继续尝试保存。 */
   it('keeps and persists a favorite change when hydration fails', async () => {
     const loadError = new Error('favorite load failed')
     let rejectLoad!: (reason?: unknown) => void

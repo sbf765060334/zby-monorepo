@@ -1,3 +1,9 @@
+/**
+ * 文件职责：提供持久化数据的清洗规则，以及 IndexedDB/远程存储适配器实现。
+ *
+ * 它只解决“数据怎么读写”，不决定何时加载。所有外部数据都会先被整理成可信的完整
+ * 结构，同一个 storageKey 的写操作也会排队，避免并发保存互相覆盖。
+ */
 import { createStore, get, update } from 'idb-keyval'
 
 import type { RouterStorageAdapter, RouterStorageState } from './types'
@@ -13,7 +19,9 @@ import type { RouterStorageAdapter, RouterStorageState } from './types'
 const DB_NAME = 'zby-router-core'
 const STATE_STORE = 'router-state'
 
+/** 队列里实际执行的一次异步保存任务。 */
 type StorageWriteAction = () => Promise<void>
+/** 传入命名空间和任务，把任务接到对应命名空间队尾。 */
 type StorageWriteQueue = (
   storageKey: string,
   action: StorageWriteAction,
@@ -39,6 +47,7 @@ export function normalizeRouterStorageState(
   }
 }
 
+/** 创建浏览器默认使用的 IndexedDB 存储适配器。 */
 export function createIndexedDBRouterStorageAdapter(): RouterStorageAdapter {
   return {
     async load(storageKey) {
@@ -57,11 +66,13 @@ export function createIndexedDBRouterStorageAdapter(): RouterStorageAdapter {
       })
     },
     saveFixedParamsPathMap(storageKey, fixedParamsPathMap) {
+      // 与固定页签相同，只提交本字段的 patch，保留数据库中的其它最新字段。
       return updateIndexedDBState(storageKey, {
         fixedParamsPathMap: normalizeStringMap(fixedParamsPathMap),
       })
     },
     saveFavoriteRoutePaths(storageKey, favoriteRoutePaths) {
+      // 收藏顺序有展示意义，因此标准化时保留原数组顺序。
       return updateIndexedDBState(storageKey, {
         favoriteRoutePaths: normalizeStringArray(favoriteRoutePaths),
       })
@@ -69,6 +80,11 @@ export function createIndexedDBRouterStorageAdapter(): RouterStorageAdapter {
   }
 }
 
+/**
+ * 包装业务提供的远程适配器，为它补上输入清洗和同一 storageKey 的串行写入。
+ *
+ * 远程接口本身仍由调用方实现；本函数只保证 Core 调用它时的数据边界与写入顺序一致。
+ */
 export function createRemoteRouterStorageAdapter(
   config: RouterStorageAdapter,
 ): RouterStorageAdapter {
@@ -89,6 +105,7 @@ export function createRemoteRouterStorageAdapter(
       )
     },
     saveFixedParamsPathMap(storageKey, fixedParamsPathMap) {
+      // 对象也要在入队前复制，否则等待期间被调用方修改会改变实际请求内容。
       const normalized = normalizeStringMap(fixedParamsPathMap)
       return enqueueWrite(
         storageKey,
@@ -96,6 +113,7 @@ export function createRemoteRouterStorageAdapter(
       )
     },
     saveFavoriteRoutePaths(storageKey, favoriteRoutePaths) {
+      // 每种字段共享同一条 storageKey 队列，所以服务器收到的顺序与用户操作顺序一致。
       const normalized = normalizeStringArray(favoriteRoutePaths)
       return enqueueWrite(
         storageKey,
@@ -105,6 +123,7 @@ export function createRemoteRouterStorageAdapter(
   }
 }
 
+/** 懒创建 idb-keyval Store；SSR 或不支持 IndexedDB 时返回 null。 */
 function getIndexedDBStore() {
   if (typeof indexedDB === 'undefined')
     return null
@@ -113,6 +132,7 @@ function getIndexedDBStore() {
   return indexedDBStore
 }
 
+/** 在同一 storageKey 的写队列里，读取最新整份状态并只合并本次字段。 */
 async function updateIndexedDBState(
   storageKey: string,
   patch: Partial<RouterStorageState>,
@@ -136,6 +156,7 @@ async function updateIndexedDBState(
   )
 }
 
+/** 创建一条按 storageKey 分组的 Promise 写队列。 */
 function createStorageWriteQueue(): StorageWriteQueue {
   // Map 只保存每个 storageKey 当前队尾的永不 reject Promise。
   const queueTails = new Map<string, Promise<void>>()
@@ -159,6 +180,7 @@ function createStorageWriteQueue(): StorageWriteQueue {
   }
 }
 
+/** 把不可信输入收敛为只含字符串的新数组。 */
 function normalizeStringArray(value: unknown): string[] {
   // 非数组视为空状态；数组中只保留可以作为持久化路径的字符串。
   return Array.isArray(value)
@@ -166,6 +188,7 @@ function normalizeStringArray(value: unknown): string[] {
     : []
 }
 
+/** 把不可信输入收敛为 key/value 都是字符串的新普通对象。 */
 function normalizeStringMap(value: unknown): Record<string, string> {
   // 数组虽然属于 object，但不能作为 pathname 键值记录读取。
   if (typeof value !== 'object' || value === null || Array.isArray(value))

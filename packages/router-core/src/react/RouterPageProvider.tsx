@@ -1,3 +1,9 @@
+/**
+ * 文件职责：为每个 KeepAlive 页面建立独立 Context，保存它自己的地址和激活状态。
+ *
+ * 全局 Core 关心所有页签，这个文件只关心“当前这一页”。业务页面因此可以订阅自己的
+ * pathname、location、active 等数据，而不会因其它页签变化被无意义地重新渲染。
+ */
 import { createContext, useContext, useLayoutEffect, useState } from 'react'
 import { createStore } from 'zustand/vanilla'
 

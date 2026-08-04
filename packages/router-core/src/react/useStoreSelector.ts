@@ -1,3 +1,9 @@
+/**
+ * 文件职责：把 Zustand 风格的只读 Store 接入 React，并只订阅 selector 选中的结果。
+ *
+ * 它相当于一个“小筛子”：Store 可以很大，但组件只拿自己关心的部分；结果没有真正变
+ * 化时会复用旧引用，从而减少无关重渲染并满足 React 外部 Store 协议。
+ */
 import { useCallback, useRef, useSyncExternalStore } from 'react'
 
 /** React 外部 Store 协议需要的最小只读接口。 */
@@ -37,6 +43,7 @@ export function useStoreSelector<State, Selected>(
     selected: Selected
   } | undefined>(undefined)
 
+  // 把“读取 Store + 执行 selector + 比较结果”收口成一个稳定函数供客户端和 SSR 复用。
   const readSelectedState = useCallback(
     (state: State) => {
       const previous = selectedRef.current
@@ -67,10 +74,12 @@ export function useStoreSelector<State, Selected>(
     [equalityFn, selector, store],
   )
 
+  // 客户端渲染读取 Store 当前快照。
   const getSnapshot = useCallback(
     () => readSelectedState(store.getState()),
     [readSelectedState, store],
   )
+  // SSR/hydration 读取 Store 创建时的初始快照，符合 useSyncExternalStore 协议。
   const getServerSnapshot = useCallback(
     () => readSelectedState(store.getInitialState()),
     [readSelectedState, store],
