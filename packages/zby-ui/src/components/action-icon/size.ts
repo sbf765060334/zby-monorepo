@@ -4,6 +4,7 @@ type SizeValue = number | string
 
 export interface ActionIconSizeTokenSource {
   fontSize: SizeValue
+  fontSizeLG: SizeValue
   lineHeight: SizeValue
   paddingXXS: SizeValue
   paddingXS: SizeValue
@@ -30,6 +31,13 @@ function addSize(value: SizeValue, offset: SizeValue): SizeValue {
   return `calc(${unwrapCalc(unit(value))} + ${unwrapCalc(unit(offset))})`
 }
 
+/** 在数字 token 和 CSS 变量 token 下取得尺寸的一部分。 */
+function divideSize(value: SizeValue, divisor: number): SizeValue {
+  if (typeof value === 'number') return value / divisor
+
+  return `calc(${unwrapCalc(unit(value))} / ${divisor})`
+}
+
 /**
  * 三档尺寸以正文行盒为起点，并使用间距 token 递增。
  * 默认主题下得到 22 / 26 / 30px，同时会跟随字体、行高和间距主题变化。
@@ -41,5 +49,19 @@ export function getActionIconSizes(token: ActionIconSizeTokenSource) {
     small,
     middle: addSize(small, token.paddingXXS),
     large: addSize(small, token.paddingXS),
+  }
+}
+
+/**
+ * 图标字号从 fontSizeLG 起步，并以半个、一个 paddingXXS 逐级递增。
+ * 默认主题下得到 16 / 18 / 20px，保持三档图标和点击区域同步放大。
+ */
+export function getActionIconFontSizes(token: ActionIconSizeTokenSource) {
+  const small = token.fontSizeLG
+
+  return {
+    small,
+    middle: addSize(small, divideSize(token.paddingXXS, 2)),
+    large: addSize(small, token.paddingXXS),
   }
 }

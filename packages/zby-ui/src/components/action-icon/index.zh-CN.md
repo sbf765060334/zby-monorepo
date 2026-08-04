@@ -43,7 +43,7 @@ export default () => (
 | icon | 图标节点，优先级高于 `children` | `ReactNode` | - |
 | selected | 选中状态，同时设置 `aria-pressed` | `boolean` | `false` |
 | shape | 图标按钮形状 | `square \| circle` | `square` |
-| size | 尺寸；small 跟随正文行高，middle/large 使用间距 Token 递增；`medium` 为兼容别名 | `small \| middle \| medium \| large` | 继承 `ConfigProvider` |
+| size | 尺寸；外框和图标都使用字号、行高及间距 Token 逐级放大；`medium` 为兼容别名 | `small \| middle \| medium \| large` | 继承 `ConfigProvider` |
 | styles | 语义节点内联样式，可传对象或接收归一化 props 的回调 | `ActionIconStylesType` | - |
 | variant | 外观变体；`inline` 为紧凑行内模式 | `outlined \| dashed \| solid \| filled \| text \| link \| inline` | - |
 

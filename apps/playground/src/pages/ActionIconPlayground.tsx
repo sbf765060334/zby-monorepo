@@ -243,15 +243,18 @@ export default function ActionIconPlayground() {
 
       <PlaygroundSection
         title="尺寸与状态"
-        description="small 与正文行高一致，middle/large 使用 paddingXXS、paddingXS 递增。"
+        description="外框使用正文行高与间距 Token，内部图标同步按三档逐级放大。"
       >
         <PlaygroundGrid>
-          <PlaygroundCase title="22 / 26 / 30px" description="medium 是 middle 的兼容别名。">
+          <PlaygroundCase
+            title="外框 22 / 26 / 30px"
+            description="图标为 16 / 18 / 20px；medium 是 middle 的兼容别名。"
+          >
             <Space wrap size="large" align="center">
               {([
-                ['small', '22px'],
-                ['middle', '26px'],
-                ['large', '30px'],
+                ['small', '22px / icon 16px'],
+                ['middle', '26px / icon 18px'],
+                ['large', '30px / icon 20px'],
               ] as const).map(([itemSize, label]) => (
                 <Space key={itemSize} orientation="vertical" align="center" size={4}>
                   <ActionIcon

@@ -8,7 +8,7 @@ import * as React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import ActionIcon from '../index'
-import { getActionIconSizes } from '../size'
+import { getActionIconFontSizes, getActionIconSizes } from '../size'
 
 afterEach(() => {
   cleanup()
@@ -20,6 +20,7 @@ describe('ActionIcon', () => {
     expect(
       getActionIconSizes({
         fontSize: 14,
+        fontSizeLG: 16,
         lineHeight: 22 / 14,
         paddingXXS: 4,
         paddingXS: 8,
@@ -29,11 +30,34 @@ describe('ActionIcon', () => {
     expect(
       getActionIconSizes({
         fontSize: 16,
+        fontSizeLG: 18,
         lineHeight: 1.5,
         paddingXXS: 6,
         paddingXS: 12,
       }),
     ).toEqual({ small: 24, middle: 30, large: 36 })
+  })
+
+  it('increases icon glyph sizes with the same three-step semantics', () => {
+    expect(
+      getActionIconFontSizes({
+        fontSize: 14,
+        fontSizeLG: 16,
+        lineHeight: 22 / 14,
+        paddingXXS: 4,
+        paddingXS: 8,
+      }),
+    ).toEqual({ small: 16, middle: 18, large: 20 })
+
+    expect(
+      getActionIconFontSizes({
+        fontSize: 16,
+        fontSizeLG: 18,
+        lineHeight: 1.5,
+        paddingXXS: 6,
+        paddingXS: 12,
+      }),
+    ).toEqual({ small: 18, middle: 21, large: 24 })
   })
 
   it('renders native button states without relying on antd Button DOM', () => {

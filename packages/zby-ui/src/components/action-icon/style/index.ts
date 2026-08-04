@@ -3,7 +3,7 @@ import type { CSSObject } from '@ant-design/cssinjs'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import * as React from 'react'
 
-import { getActionIconSizes } from '../size'
+import { getActionIconFontSizes, getActionIconSizes } from '../size'
 
 const presetColors = [
   'blue',
@@ -396,15 +396,16 @@ export default function useStyle(prefixCls: string) {
     typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar.key : undefined
   const cssVarCls = cssVarKey ?? 'css-var-root'
   const actionIconSizes = getActionIconSizes(styleToken)
+  const actionIconFontSizes = getActionIconFontSizes(styleToken)
   const mergedToken: ActionIconToken = {
     ...styleToken,
     componentCls: `.${prefixCls}`,
     actionIconSizeSM: actionIconSizes.small,
     actionIconSize: actionIconSizes.middle,
     actionIconSizeLG: actionIconSizes.large,
-    actionIconFontSizeSM: unit(styleToken.fontSize),
-    actionIconFontSize: unit(styleToken.fontSize),
-    actionIconFontSizeLG: unit(styleToken.fontSizeLG),
+    actionIconFontSizeSM: actionIconFontSizes.small,
+    actionIconFontSize: actionIconFontSizes.middle,
+    actionIconFontSizeLG: actionIconFontSizes.large,
   }
 
   useStyleRegister(
