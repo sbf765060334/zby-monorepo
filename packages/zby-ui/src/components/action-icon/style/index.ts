@@ -3,6 +3,8 @@ import type { CSSObject } from '@ant-design/cssinjs'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import * as React from 'react'
 
+import { getActionIconSizes } from '../size'
+
 const presetColors = [
   'blue',
   'purple',
@@ -29,26 +31,6 @@ type ActionIconToken = GlobalToken & {
   actionIconFontSizeSM: number | string
   actionIconFontSize: number | string
   actionIconFontSizeLG: number | string
-}
-
-/** 根据公开字号和行高 token 计算正文实际行盒高度。 */
-function getTextLineHeight(
-  fontSize: number | string,
-  lineHeight: number | string,
-): number | string {
-  if (typeof fontSize === 'number' && typeof lineHeight === 'number') {
-    return Math.round(fontSize * lineHeight)
-  }
-
-  return `calc(${unit(fontSize)} * ${lineHeight})`
-}
-
-/** 在数字 token 和 CSS 变量 token 下统一增加像素尺寸。 */
-function addPixelSize(value: number | string, offset: number): number | string {
-  if (typeof value === 'number') return value + offset
-
-  const expression = value.startsWith('calc(') ? value.slice(5, -1) : value
-  return `calc(${expression} + ${offset}px)`
 }
 
 function resetComponent(token: ActionIconToken): CSSObject {
@@ -413,14 +395,13 @@ export default function useStyle(prefixCls: string) {
   const cssVarKey =
     typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar.key : undefined
   const cssVarCls = cssVarKey ?? 'css-var-root'
-  // small 与默认正文行高一致；其余两档各增加 4px，适合文本内联和紧凑操作区。
-  const actionIconSizeSM = getTextLineHeight(styleToken.fontSize, styleToken.lineHeight)
+  const actionIconSizes = getActionIconSizes(styleToken)
   const mergedToken: ActionIconToken = {
     ...styleToken,
     componentCls: `.${prefixCls}`,
-    actionIconSizeSM,
-    actionIconSize: addPixelSize(actionIconSizeSM, 4),
-    actionIconSizeLG: addPixelSize(actionIconSizeSM, 8),
+    actionIconSizeSM: actionIconSizes.small,
+    actionIconSize: actionIconSizes.middle,
+    actionIconSizeLG: actionIconSizes.large,
     actionIconFontSizeSM: unit(styleToken.fontSize),
     actionIconFontSize: unit(styleToken.fontSize),
     actionIconFontSizeLG: unit(styleToken.fontSizeLG),

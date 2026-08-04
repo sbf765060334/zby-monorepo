@@ -90,7 +90,7 @@ function renderWithoutMotion(node: React.ReactElement) {
 }
 
 describe('ActionReveal', () => {
-  it('replaces the trigger with an antd Button and renders content without a wrapper', async () => {
+  it('replaces the ActionIcon trigger and renders content without a wrapper', async () => {
     const { container } = renderWithoutMotion(
       <ActionReveal
         triggerIcon={<SearchOutlined />}
@@ -101,8 +101,8 @@ describe('ActionReveal', () => {
     )
 
     const trigger = container.querySelector<HTMLButtonElement>('.ant-action-reveal-trigger')!
-    expect(trigger.classList.contains('ant-btn')).toBe(true)
-    expect(trigger.classList.contains('ant-btn-text')).toBe(true)
+    expect(trigger.classList.contains('ant-action-icon')).toBe(true)
+    expect(trigger.classList.contains('ant-btn')).toBe(false)
     expect(trigger.getAttribute('aria-label')).toBe('Open search')
     expect(container.querySelector('.ant-action-reveal')).toBeNull()
 
@@ -262,7 +262,7 @@ describe('ActionReveal', () => {
     )
   })
 
-  it('inherits Button state and DOM conventions from antd ConfigProvider', () => {
+  it('inherits ActionIcon state and DOM conventions from antd ConfigProvider', () => {
     const { container, rerender } = render(
       <ConfigProvider componentDisabled componentSize="large">
         <ActionReveal triggerIcon={<SearchOutlined />} content={renderRevealContent} />
@@ -271,7 +271,7 @@ describe('ActionReveal', () => {
 
     const trigger = container.querySelector<HTMLButtonElement>('.ant-action-reveal-trigger')!
     expect(trigger.disabled).toBe(true)
-    expect(trigger.classList.contains('ant-btn-lg')).toBe(true)
+    expect(trigger.classList.contains('ant-action-icon-lg')).toBe(true)
 
     rerender(
       <ConfigProvider direction="rtl" prefixCls="custom" theme={{ token: { motion: false } }}>

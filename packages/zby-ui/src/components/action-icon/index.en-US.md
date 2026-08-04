@@ -43,7 +43,7 @@ Native button attributes are supported except `children`, `color`, and `type`. T
 | icon | Icon node; takes priority over `children` | `ReactNode` | - |
 | selected | Selected state; also sets `aria-pressed` | `boolean` | `false` |
 | shape | Trigger shape | `square \| circle` | `square` |
-| size | Size; `medium` is a compatibility alias from the source repository | `small \| middle \| medium \| large` | Inherited from `ConfigProvider` |
+| size | Size; small follows the text line box while middle/large use spacing tokens; `medium` is a compatibility alias | `small \| middle \| medium \| large` | Inherited from `ConfigProvider` |
 | styles | Semantic inline styles as an object or normalized-props callback | `ActionIconStylesType` | - |
 | variant | Visual variant; `inline` is a compact inline mode | `outlined \| dashed \| solid \| filled \| text \| link \| inline` | - |
 

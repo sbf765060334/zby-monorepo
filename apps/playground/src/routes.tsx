@@ -269,14 +269,14 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: 'UI示例组',
         routes: [
           {
-            path: '/demo/ui/action-reveal',
-            title: '动作展开',
-            element: <ActionRevealPlayground />,
-          },
-          {
             path: '/demo/ui/action-icon',
             title: '动作图标',
             element: <ActionIconPlayground />,
+          },
+          {
+            path: '/demo/ui/action-reveal',
+            title: '动作展开',
+            element: <ActionRevealPlayground />,
           },
           {
             path: '/demo/ui/action-text',

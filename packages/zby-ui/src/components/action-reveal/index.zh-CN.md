@@ -41,7 +41,7 @@ export default () => (
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| actionIconProps | 透传给关闭态 `antd Button` 的属性；按钮 `type` 默认为 `text` | `Partial<ButtonProps>` | - |
+| actionIconProps | 透传给关闭态 `ActionIcon` 的属性 | `Partial<ActionIconProps>` | - |
 | autoFocus | 展开后是否聚焦内容 ref | `boolean` | `true` |
 | className | 展开态内容根节点的 className | `string` | - |
 | classNames | 语义节点的 className，可传对象或接收归一化 props 的回调 | `ActionRevealClassNamesType` | - |
@@ -67,5 +67,5 @@ export default () => (
 
 | 名称 | 说明 |
 | --- | --- |
-| trigger | 关闭态的 `antd Button` |
+| trigger | 关闭态的 `ActionIcon` |
 | content | 展开态内容根节点 |

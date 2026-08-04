@@ -1,7 +1,10 @@
 import * as React from 'react'
-import type { ButtonProps } from 'antd'
-import { Button, ConfigProvider, theme as antdTheme } from 'antd'
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
+
+import ActionIcon from '../action-icon'
+import type { ActionIconProps } from '../action-icon'
+import { getActionIconSizes } from '../action-icon/size'
 
 type RevealWidth = React.CSSProperties['width']
 
@@ -77,7 +80,7 @@ export interface ActionRevealProps {
   /** 透传到当前实际渲染的触发按钮或内容根节点。 */
   hidden?: boolean
   /** 触发按钮尺寸；未传时继承 ConfigProvider。 */
-  size?: ButtonProps['size']
+  size?: ActionIconProps['size']
   /** 是否禁用收起态触发按钮；未传时继承 ConfigProvider。 */
   disabled?: boolean
   /** 受控展开状态。 */
@@ -92,8 +95,8 @@ export interface ActionRevealProps {
   autoFocus?: boolean
   /** 收起态按钮图标。 */
   triggerIcon?: React.ReactNode
-  /** 透传给收起态 antd Button 的属性。 */
-  actionIconProps?: Partial<ButtonProps>
+  /** 透传给收起态 ActionIcon 的属性。 */
+  actionIconProps?: Partial<ActionIconProps>
   /** 展开目标宽度；未传时优先取样式宽度，否则自动测量自然宽度。 */
   width?: RevealWidth
   /** 动画起始宽度；未传时优先使用实际触发按钮宽度。 */
@@ -231,20 +234,21 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
   const [measuredTriggerWidth, setMeasuredTriggerWidth] = React.useState<number>()
   const [measuredContentWidth, setMeasuredContentWidth] = React.useState<number>()
 
-  const triggerRef = React.useRef<HTMLAnchorElement | HTMLButtonElement>(null)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
   const contentRef = React.useRef<unknown>(null)
 
   // 前者记录本次关闭是否希望恢复焦点，后者跨过卸载渲染保存最终决定。
   const restoreFocusOnCloseRef = React.useRef<boolean | null>(null)
   const restoreFocusAfterCloseRef = React.useRef(false)
 
-  // 无法读取真实按钮宽度（例如外部直接将 open 设为 true）时，以按钮高度作为兜底。
+  // 外部直接将 open 设为 true 时没有 trigger 可测量，使用与 ActionIcon 相同的尺寸公式兜底。
+  const actionIconSizes = getActionIconSizes(token)
   const fallbackCollapsedWidth =
     size === 'small'
-      ? token.controlHeightSM
+      ? actionIconSizes.small
       : size === 'large'
-        ? token.controlHeightLG
-        : token.controlHeight
+        ? actionIconSizes.large
+        : actionIconSizes.middle
   const mergedCollapsedWidth = collapsedWidth ?? measuredTriggerWidth ?? fallbackCollapsedWidth
 
   const mergedProps: ActionRevealProps = {
@@ -393,7 +397,7 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
     }
   }, [renderContent])
 
-  const handleTriggerClick: React.MouseEventHandler<HTMLElement> = (event) => {
+  const handleTriggerClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
     // 保留调用方 onClick 的优先处理权；preventDefault 可以阻止本次展开。
     actionIconProps?.onClick?.(event)
     if (event.defaultPrevented) return
@@ -435,13 +439,12 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
     [ref],
   )
 
-  // 完全收起时只渲染 antd Button；展开内容不会留下额外包装节点。
+  // 完全收起时只渲染 ActionIcon；展开内容不会留下额外包装节点。
   if (!renderContent) {
     return (
-      <Button
+      <ActionIcon
         {...actionIconProps}
         ref={triggerRef}
-        type={actionIconProps?.type ?? 'text'}
         hidden={hidden}
         icon={triggerIcon}
         disabled={disabled}

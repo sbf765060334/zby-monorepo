@@ -8,6 +8,7 @@ import * as React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import ActionIcon from '../index'
+import { getActionIconSizes } from '../size'
 
 afterEach(() => {
   cleanup()
@@ -15,6 +16,26 @@ afterEach(() => {
 })
 
 describe('ActionIcon', () => {
+  it('derives all sizes from typography and spacing tokens', () => {
+    expect(
+      getActionIconSizes({
+        fontSize: 14,
+        lineHeight: 22 / 14,
+        paddingXXS: 4,
+        paddingXS: 8,
+      }),
+    ).toEqual({ small: 22, middle: 26, large: 30 })
+
+    expect(
+      getActionIconSizes({
+        fontSize: 16,
+        lineHeight: 1.5,
+        paddingXXS: 6,
+        paddingXS: 12,
+      }),
+    ).toEqual({ small: 24, middle: 30, large: 36 })
+  })
+
   it('renders native button states without relying on antd Button DOM', () => {
     const { container } = render(
       <>
@@ -279,10 +300,10 @@ describe('ActionIcon', () => {
       'width:calc(var(--ant-font-size) * var(--ant-line-height))',
     )
     expect(styleText).toContain(
-      'width:calc(var(--ant-font-size) * var(--ant-line-height) + 4px)',
+      'width:calc(var(--ant-font-size) * var(--ant-line-height) + var(--ant-padding-xxs))',
     )
     expect(styleText).toContain(
-      'width:calc(var(--ant-font-size) * var(--ant-line-height) + 8px)',
+      'width:calc(var(--ant-font-size) * var(--ant-line-height) + var(--ant-padding-xs))',
     )
     expect(styleText).toContain('background:transparent;border-color:currentColor')
     expect(styleText).not.toContain('transition:all')

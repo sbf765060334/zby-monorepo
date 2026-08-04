@@ -40,7 +40,7 @@ export default () => (
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
-| actionIconProps | Props passed to the closed-state `antd Button`; its `type` defaults to `text` | `Partial<ButtonProps>` | - |
+| actionIconProps | Props passed to the closed-state `ActionIcon` | `Partial<ActionIconProps>` | - |
 | autoFocus | Whether to focus the content ref after opening | `boolean` | `true` |
 | className | Class name for the expanded content root | `string` | - |
 | classNames | Semantic class names, as an object or a function of normalized props | `ActionRevealClassNamesType` | - |
@@ -66,5 +66,5 @@ export default () => (
 
 | Name | Description |
 | --- | --- |
-| trigger | Closed-state `antd Button` |
+| trigger | Closed-state `ActionIcon` |
 | content | Expanded content root |
