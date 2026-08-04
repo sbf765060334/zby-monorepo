@@ -442,31 +442,40 @@ export default function ActionTextPlayground() {
             <div style={gridStyle}>
               <PreviewCase
                 title="自身 hover 展示"
-                description="操作顺序固定为复制、编辑、自定义操作。"
+                description="文本支持链接 hover 和 visited 状态，操作顺序固定为复制、编辑、自定义操作。"
               >
-                <ActionText
-                  copyable
-                  editable={{ text: 'Hover 门店' }}
-                  actionsVisibleOn="self-hover"
-                  actions={[
-                    {
-                      key: 'view',
-                      icon: <EyeOutlined />,
-                      label: '查看',
-                      color: 'primary',
-                      onClick: () => reportEvent('点击查看操作'),
-                    },
-                    {
-                      key: 'delete',
-                      icon: <DeleteOutlined />,
-                      title: '删除',
-                      danger: true,
-                      onClick: () => reportEvent('点击删除操作'),
-                    },
-                  ]}
-                >
-                  鼠标移入显示完整操作区
-                </ActionText>
+                <div>
+                  <ActionText
+                    copyable
+                    editable={{ text: 'Hover 门店' }}
+                    clickable={{
+                      href: '#action-text-self-hover-preview',
+                      onClick: (event) => {
+                        event.preventDefault()
+                        reportEvent('点击自身 hover 文本')
+                      },
+                    }}
+                    actionsVisibleOn="self-hover"
+                    actions={[
+                      {
+                        key: 'view',
+                        icon: <EyeOutlined />,
+                        label: '查看',
+                        color: 'primary',
+                        onClick: () => reportEvent('点击查看操作'),
+                      },
+                      {
+                        key: 'delete',
+                        icon: <DeleteOutlined />,
+                        title: '删除',
+                        danger: true,
+                        onClick: () => reportEvent('点击删除操作'),
+                      },
+                    ]}
+                  >
+                    鼠标移入显示完整操作区
+                  </ActionText>
+                </div>
               </PreviewCase>
 
               <PreviewCase
