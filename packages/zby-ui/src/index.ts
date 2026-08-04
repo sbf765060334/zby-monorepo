@@ -7,6 +7,24 @@ export type {
   ActionIconSemanticStyles,
   ActionIconStylesType,
 } from './components/action-icon'
+export { default as ActionText } from './components/action-text'
+export type {
+  ActionTextAction,
+  ActionTextClassNamesType,
+  ActionTextClickableConfig,
+  ActionTextCopyConfig,
+  ActionTextEditableCancelInfo,
+  ActionTextEditableConfig,
+  ActionTextEditableConfirmInfo,
+  ActionTextEditableRenderContext,
+  ActionTextEllipsisConfig,
+  ActionTextProps,
+  ActionTextSemanticClassNames,
+  ActionTextSemanticName,
+  ActionTextSemanticStyles,
+  ActionTextStylesType,
+  ActionTextVisibleOn,
+} from './components/action-text'
 export { default as ActionReveal } from './components/action-reveal'
 export type {
   ActionRevealClassNamesType,
