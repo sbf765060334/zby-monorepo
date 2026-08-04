@@ -2,102 +2,297 @@
 category: Components
 group: Data Display
 title: ScrollArea
-description: A scrollable container with configurable native or custom scrollbars.
+description: A bounded scroll container with native or custom scrollbars, direction control, and horizontal wheel mapping.
 ---
 
 ## When To Use
 
-Use ScrollArea when a bounded area needs to scroll independently from the page, such as a task list, a horizontally overflowing data region, or a two-dimensional canvas. It provides a real scrollable viewport while allowing the scrollbar appearance and behavior to be customized.
+Use ScrollArea for bounded content that needs to scroll independently from the page:
 
-## Basic Usage
+- Height-constrained lists, logs, menus, filters, or detail panels;
+- Width-constrained data regions, timelines, or toolbars that scroll horizontally;
+- Canvases or large content panels that may overflow in both directions;
+- Consistent scrollbar visuals, hover/scroll visibility strategies, or access to the actual scrolling element;
+- Horizontal regions where a standard vertical mouse wheel should move the content naturally.
+
+Avoid it when:
+
+- The main document should use normal page scrolling. Extra nested scroll regions can make navigation harder;
+- The content has no width or height boundary. ScrollArea needs a calculable constraint before overflow can exist;
+- Virtual rendering is required. ScrollArea provides the container, not list virtualization, so combine it with a virtual-list solution;
+- You only need a one-off `scrollIntoView` call and do not need a separate scroll container or custom scrollbar.
+
+## How To Use
+
+### Basic vertical scrolling
 
 ```tsx
 import { ScrollArea } from '@zby/ui'
 
 export default () => (
   <ScrollArea style={{ height: 240 }}>
-    <LongList />
+    {Array.from({ length: 30 }, (_, index) => (
+      <div key={index}>Record {index + 1}</div>
+    ))}
   </ScrollArea>
 )
 ```
 
-Set a definite width or height on the root container. The content inside the component determines whether the corresponding direction overflows.
+The default is `direction="vertical"`. Give the root a calculable height or maximum height. A vertical thumb appears only when content is taller than the viewport.
 
-## API
+### Horizontal scrolling and wheel mapping
 
-### ScrollArea
+```tsx
+<ScrollArea
+  direction="horizontal"
+  scrollbar={['hover', 'scrolling']}
+  style={{ width: 480 }}
+  styles={{ content: { width: 960, whiteSpace: 'nowrap' } }}
+>
+  <WideContent />
+</ScrollArea>
+```
 
-Except for `children`, ScrollArea accepts the standard attributes of a `div`. The forwarded ref points to the root element; use `viewportRef` to access the element that actually scrolls.
+Horizontal mode uses `wheelBehavior="axis-mapping"` by default. When the viewport has only horizontal overflow, dominant vertical wheel input is converted to horizontal movement. Native behavior is preserved when:
 
-| Property | Description | Type | Default |
-| --- | --- | --- | --- |
-| direction | Allowed scroll directions | `vertical \| horizontal \| both` | `vertical` |
-| scrollbar | Custom scrollbar visibility strategy. `true` is equivalent to `always`; `false` hides the custom tracks | `boolean \| ScrollAreaScrollbarTrigger \| ScrollAreaScrollbarTrigger[]` | `hover` |
-| wheelBehavior | Wheel handling mode. `axis-mapping` maps vertical wheel input to horizontal scrolling when only horizontal overflow exists | `native \| axis-mapping` | `axis-mapping` |
-| nativeScrollbar | Keep the browser native scrollbar and do not render custom tracks or thumbs | `boolean` | `false` |
-| viewportRef | Ref for the actual scrolling viewport | `React.Ref<HTMLDivElement>` | - |
-| viewportProps | Native `div` attributes passed to the scrolling viewport | `ScrollAreaViewportProps` | - |
-| classNames | Semantic class names for internal nodes. Accepts an object or a function receiving the resolved props | `ScrollAreaClassNamesType` | - |
-| styles | Semantic inline styles for internal nodes. Accepts an object or a function receiving the resolved props | `ScrollAreaStylesType` | - |
-| prefixCls | Custom CSS class prefix | `string` | From `ConfigProvider` |
-| rootClassName | Stable class name added to the root element | `string` | - |
-| className | Class name added to the root element | `string` | - |
-| style | Inline style applied to the root element | `React.CSSProperties` | - |
-| children | Scrollable content | `React.ReactNode` | - |
-| onWheel | Wheel callback. It runs before the optional axis mapping logic | `React.WheelEventHandler<HTMLDivElement>` | - |
+- `wheelBehavior="native"` is set;
+- The content also has vertical overflow;
+- The event comes from a nested ScrollArea;
+- The event target is inside a nested element that can still scroll vertically;
+- An application `onWheel` callback has called `preventDefault()`;
+- The horizontal edge has been reached, allowing continued wheel input to return to the page or outer container instead of creating a scroll trap.
 
-### Scrollbar Strategies
+### Two-dimensional scrolling
 
-`scrollbar` controls only the custom scrollbar. The viewport remains scrollable with the wheel, touch input, keyboard, or programmatic scrolling when it is `false`.
+```tsx
+<ScrollArea direction="both" scrollbar="always" style={{ width: 600, height: 320 }}>
+  <div style={{ width: 1200, height: 800 }}>
+    <LargeCanvas />
+  </div>
+</ScrollArea>
+```
 
-| Value | Description |
+`direction="both"` enables horizontal and vertical tracks. A usable thumb appears only when content actually overflows in that direction.
+
+### Scrollbar visibility strategies
+
+```tsx
+<ScrollArea scrollbar={['hover', 'scrolling']} style={{ height: 240 }}>
+  <LongList />
+</ScrollArea>
+```
+
+`scrollbar` controls only custom scrollbar visibility. It does not disable viewport scrolling. Even with `false`, wheel, touch, keyboard, and programmatic scrolling still work.
+
+| Configuration | Behavior |
 | --- | --- |
-| `hover` | Show the scrollbar while the pointer is over the root element |
-| `scrolling` | Show the scrollbar while scrolling or dragging, then hide it 1200 ms after scrolling stops |
-| `always` | Always show the scrollbar track |
-| `['hover', 'scrolling']` | Combine multiple visibility triggers |
+| `hover` | Show while the pointer is inside the root |
+| `scrolling` | Show while scrolling or dragging, then hide about 1200 ms after scrolling stops |
+| `always` | Always show tracks that contain a thumb |
+| `['hover', 'scrolling']` | Show when either trigger is active; duplicate items are removed |
 | `true` | Alias of `always` |
-| `false` | Do not render custom tracks or thumbs |
+| `false` | Hide custom tracks and thumbs without disabling scrolling |
 
-### ScrollAreaViewportProps
+### Native browser scrollbars
 
-`viewportProps` is passed to the actual scrolling element. Its `onScroll` and `onWheel` callbacks are composed with ScrollArea's internal behavior. `viewportProps.ref` and `viewportRef` both receive the same DOM element.
+```tsx
+<ScrollArea nativeScrollbar direction="both" style={{ width: 600, height: 320 }}>
+  <LargeContent />
+</ScrollArea>
+```
 
-| Property | Description | Type |
-| --- | --- | --- |
-| className | Additional class name for the scrolling viewport | `string` |
-| style | Inline style for the scrolling viewport | `React.CSSProperties` |
-| ref | Ref for the scrolling viewport | `React.Ref<HTMLDivElement>` |
-| onScroll | Callback invoked when the viewport scrolls | `React.UIEventHandler<HTMLDivElement>` |
-| onWheel | Callback invoked for viewport wheel events | `React.WheelEventHandler<HTMLDivElement>` |
+With `nativeScrollbar`, the viewport keeps browser-native scrollbars and custom tracks, thumbs, and the corner are not displayed. `direction` still limits overflow directions, while the custom `scrollbar` visibility strategy has no visual effect.
 
-Other standard `div` attributes are also supported.
+### Accessing the actual scrolling element
 
-### Semantic Nodes
+```tsx
+import { ScrollArea } from '@zby/ui'
+import { useRef } from 'react'
 
-`classNames` and `styles` accept the following semantic node names. Use them to style the internal structure without depending on generated CSS class names.
+export default () => {
+  const viewportRef = useRef<HTMLDivElement>(null)
 
-| Name | Description |
-| --- | --- |
-| root | Outer ScrollArea container |
-| viewport | Element that performs native scrolling |
-| content | Wrapper around the supplied children |
-| horizontalTrack | Horizontal scrollbar track |
-| horizontalThumb | Horizontal scrollbar thumb |
-| verticalTrack | Vertical scrollbar track |
-| verticalThumb | Vertical scrollbar thumb |
+  return (
+    <>
+      <button onClick={() => viewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}>
+        Back to top
+      </button>
+      <ScrollArea
+        style={{ height: 240 }}
+        viewportRef={viewportRef}
+        viewportProps={{
+          'aria-label': 'Activity log',
+          onScroll: (event) => console.log(event.currentTarget.scrollTop),
+        }}
+      >
+        <LongList />
+      </ScrollArea>
+    </>
+  )
+}
+```
+
+The component ref points to the outer root. `viewportRef` points to the element that owns `scrollTop`, `scrollLeft`, and `scrollTo()`. Put scroll listeners on `viewportProps.onScroll` as well.
+
+### Semantic styling
 
 ```tsx
 <ScrollArea
   direction="vertical"
-  classNames={{
-    viewport: 'orders-viewport',
-    verticalThumb: 'orders-scroll-thumb',
-  }}
+  classNames={({ props }) => ({
+    root: `orders-scroll-${props.direction}`,
+    viewport: 'orders-scroll-viewport',
+  })}
   styles={{
-    verticalTrack: { width: 8 },
+    root: { height: 280 },
+    content: { padding: 12 },
+    verticalTrack: { width: 10 },
+    verticalThumb: { background: '#8c8c8c' },
   }}
 >
   <OrderList />
 </ScrollArea>
 ```
+
+`classNames` and `styles` accept either an object or a function receiving the final normalized props. Prefer semantic nodes over generated CSS hash class names.
+
+### Theming scrollbars
+
+```tsx
+import { ConfigProvider } from 'antd'
+import { ScrollArea } from '@zby/ui'
+
+<ConfigProvider
+  theme={{
+    components: {
+      ScrollArea: {
+        trackSize: 10,
+        thumbBg: 'rgba(0, 0, 0, 0.28)',
+        thumbHoverBg: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 2,
+      },
+    },
+  }}
+>
+  <ScrollArea style={{ height: 240 }}>
+    <LongList />
+  </ScrollArea>
+</ConfigProvider>
+```
+
+Use component tokens for application-wide scrollbar styling and `styles` for local instance differences.
+
+## Props
+
+Except for `children`, ScrollArea inherits native `div` attributes and applies them to the root. The forwarded ref also points to the root. `onWheel` is the exception: it runs in the viewport's native wheel flow so application code can handle the event before optional axis mapping.
+
+| Property | Description | Type | Default |
+| --- | --- | --- | --- |
+| direction | Allowed overflow direction and custom tracks | `ScrollAreaDirection` | `vertical` |
+| scrollbar | Custom scrollbar visibility strategy; multiple triggers can be combined | `ScrollAreaScrollbar` | `hover` |
+| wheelBehavior | Wheel-axis handling; mapping applies only to horizontal-only overflow | `ScrollAreaWheelBehavior` | `axis-mapping` |
+| nativeScrollbar | Keep browser-native scrollbars and hide custom tracks | `boolean` | `false` |
+| viewportRef | Ref for the element that actually scrolls | `React.Ref<HTMLDivElement>` | - |
+| viewportProps | Native `div` attributes passed to the viewport | `ScrollAreaViewportProps` | - |
+| classNames | Additional class names for semantic nodes, as an object or function | `ScrollAreaClassNamesType` | - |
+| styles | Inline styles for semantic nodes, as an object or function | `ScrollAreaStylesType` | - |
+| prefixCls | Custom component CSS class prefix | `string` | Generated by ConfigProvider |
+| rootClassName | Stable class name appended to the root | `string` | - |
+| className | Native class name appended to the root | `string` | - |
+| style | Native inline style on the root; matching fields override `styles.root` | `CSSProperties` | - |
+| dir | Text and horizontal scroll direction; inherited from ConfigProvider when omitted | `ltr \| rtl` | From ConfigProvider or `ltr` |
+| children | Scrollable content placed inside the content semantic node | `ReactNode` | - |
+| onWheel | Viewport wheel callback; calling `preventDefault()` skips axis mapping for that event | `WheelEventHandler<HTMLDivElement>` | - |
+
+### ScrollAreaDirection
+
+```ts
+type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both'
+```
+
+| Value | Viewport overflow | Custom tracks |
+| --- | --- | --- |
+| `vertical` | Vertical auto, horizontal hidden | Vertical |
+| `horizontal` | Horizontal auto, vertical hidden | Horizontal |
+| `both` | Horizontal and vertical auto | Horizontal and vertical |
+
+### ScrollAreaScrollbar
+
+```ts
+type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
+
+type ScrollAreaScrollbar =
+  | boolean
+  | ScrollAreaScrollbarTrigger
+  | ScrollAreaScrollbarTrigger[]
+```
+
+Arrays combine visibility triggers and duplicate values are removed. `true` normalizes to `['always']`; `false` disables custom scrollbar visibility.
+
+### ScrollAreaWheelBehavior
+
+```ts
+type ScrollAreaWheelBehavior = 'native' | 'axis-mapping'
+```
+
+| Value | Behavior |
+| --- | --- |
+| `native` | Do not modify the wheel axis; the browser and input device decide movement |
+| `axis-mapping` | Map dominant vertical wheel delta to `scrollLeft` for horizontal-only overflow |
+
+Axis mapping handles pixel, line, and page wheel delta modes and adjusts the movement sign for RTL direction.
+
+### ScrollAreaViewportProps
+
+```ts
+type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
+  ref?: React.Ref<HTMLDivElement>
+}
+```
+
+`viewportProps` supports other standard `div` attributes. The following fields have additional composition rules:
+
+| Field | Description | Type |
+| --- | --- | --- |
+| ref | Receives the same actual scrolling element as `viewportRef` | `React.Ref<HTMLDivElement>` |
+| className | Merged with internal classes and `classNames.viewport` | `string` |
+| style | Merged after `styles.viewport`, so matching declarations here take precedence | `CSSProperties` |
+| onScroll | Called when the viewport scrolls | `UIEventHandler<HTMLDivElement>` |
+| onWheel | Called after component-level `onWheel`; it may prevent subsequent axis mapping | `WheelEventHandler<HTMLDivElement>` |
+
+### ScrollAreaClassNamesType / ScrollAreaStylesType
+
+```ts
+type ScrollAreaClassNamesType =
+  | Readonly<ScrollAreaSemanticClassNames>
+  | ((info: { props: ScrollAreaProps }) => Readonly<ScrollAreaSemanticClassNames>)
+
+type ScrollAreaStylesType =
+  | Readonly<ScrollAreaSemanticStyles>
+  | ((info: { props: ScrollAreaProps }) => Readonly<ScrollAreaSemanticStyles>)
+```
+
+Function callbacks receive final `direction`, `scrollbar`, `wheelBehavior`, `nativeScrollbar`, and `dir` values. `scrollbar` has already been normalized to a trigger array or `false`.
+
+| Field | Node | classNames type | styles type |
+| --- | --- | --- | --- |
+| root | Outermost layout and state container | `string` | `CSSProperties` |
+| viewport | Element that owns the native scroll position | `string` | `CSSProperties` |
+| content | Wrapper around `children` | `string` | `CSSProperties` |
+| horizontalTrack | Horizontal scrollbar track | `string` | `CSSProperties` |
+| horizontalThumb | Horizontal scrollbar thumb | `string` | `CSSProperties` |
+| verticalTrack | Vertical scrollbar track | `string` | `CSSProperties` |
+| verticalThumb | Vertical scrollbar thumb | `string` | `CSSProperties` |
+
+`ScrollAreaSemanticName` is the union of the semantic field names above.
+
+### ScrollAreaComponentToken
+
+Configure these values through `ConfigProvider.theme.components.ScrollArea`:
+
+| Token | Description | Type | Default |
+| --- | --- | --- | --- |
+| trackSize | Visible track size; the thumb hit target extends beyond it | `number` | `8` |
+| thumbBg | Default thumb background | `string` | `colorTextQuaternary` |
+| thumbHoverBg | Thumb background on hover | `string` | `colorTextTertiary` |
+| zIndex | Custom scrollbar stacking level | `number` | `zIndexBase + 1` |

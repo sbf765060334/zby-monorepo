@@ -2,18 +2,29 @@
 category: Components
 group: General
 title: ActionIcon
-description: Lightweight icon-only action trigger.
+description: A lightweight, compact icon-only action with complete interaction states.
 ---
 
 ## When To Use
 
-- When an icon action should feel lighter than a regular button;
-- When selected, danger, or disabled states are needed, or when wrapping the action with `Badge`;
-- For compact actions in table columns and toolbars.
+Use ActionIcon when the icon itself clearly communicates a compact action:
 
-The icon node is marked `aria-hidden`, so icon-only actions should provide an accessible name through `aria-label`.
+- Search, refresh, settings, delete, and similar actions in table columns, list rows, card corners, or toolbars;
+- Actions that need selected, danger, disabled, color, or visual variant feedback;
+- Inline actions that must align with body text, `ActionText`, or `ActionReveal`;
+- Cases that need native `button` keyboard, focus, disabled, and click semantics without a regular Button label or horizontal padding.
 
-## Basic Usage
+Avoid it when:
+
+- The icon is ambiguous. Prefer a labeled `Button`, or at least add a Tooltip;
+- The control must submit a form. ActionIcon always uses `type="button"`;
+- The icon is decorative and has no interaction. Render the icon without button semantics instead.
+
+The icon wrapper has `aria-hidden="true"`. Every icon-only action must provide an accessible name with `aria-label`; `title` is only a supplemental hint.
+
+## How To Use
+
+### Basic action
 
 ```tsx
 import { SearchOutlined } from '@ant-design/icons'
@@ -23,33 +34,151 @@ export default () => (
   <ActionIcon
     icon={<SearchOutlined />}
     aria-label="Search"
-    color="primary"
-    variant="filled"
+    title="Search"
+    onClick={() => console.log('search')}
   />
 )
 ```
 
-## API
+When `icon` is omitted, `children` is used. If both are present, `icon` always wins.
 
-Native button attributes are supported except `children`, `color`, and `type`. The component always renders `type="button"`.
+### Size, shape, and state
+
+```tsx
+import { DeleteOutlined, StarOutlined } from '@ant-design/icons'
+import { ActionIcon } from '@zby/ui'
+import { Space } from 'antd'
+
+export default () => (
+  <Space>
+    <ActionIcon size="small" icon={<StarOutlined />} aria-label="Favorite" />
+    <ActionIcon
+      size="middle"
+      shape="circle"
+      selected
+      icon={<StarOutlined />}
+      aria-label="Remove favorite"
+    />
+    <ActionIcon
+      size="large"
+      danger
+      icon={<DeleteOutlined />}
+      aria-label="Delete"
+    />
+  </Space>
+)
+```
+
+Default-theme dimensions are shown below. They follow typography, line-height, and spacing tokens when the theme changes.
+
+| size | Frame | Glyph | Typical use |
+| --- | ---: | ---: | --- |
+| `small` | 22px | 16px | Body-text inline actions and ActionText |
+| `middle` / `medium` | 26px | 18px | Default toolbar actions |
+| `large` | 30px | 20px | More prominent standalone actions |
+
+### Color and variant
+
+```tsx
+import { CheckOutlined, SettingOutlined } from '@ant-design/icons'
+import { ActionIcon } from '@zby/ui'
+import { Space } from 'antd'
+
+export default () => (
+  <Space>
+    <ActionIcon
+      color="primary"
+      variant="filled"
+      icon={<SettingOutlined />}
+      aria-label="Settings"
+    />
+    <ActionIcon
+      color="green"
+      variant="solid"
+      icon={<CheckOutlined />}
+      aria-label="Confirm"
+    />
+    <ActionIcon
+      variant="inline"
+      icon={<SettingOutlined />}
+      aria-label="Inline settings"
+    />
+  </Space>
+)
+```
+
+- `solid` defaults to `primary` when no color is provided;
+- `filled` defaults to `default` when no color is provided;
+- `danger` is a shortcut for danger feedback, while an explicit `color` takes priority;
+- `inline` removes fixed width and height while preserving a minimum hit area.
+
+### Semantic customization
+
+`classNames` and `styles` accept either an object or a function of the merged Props:
+
+```tsx
+<ActionIcon
+  selected
+  icon={<StarOutlined />}
+  aria-label="Favorite"
+  classNames={({ props }) => ({
+    root: props.selected ? 'is-selected' : undefined,
+    icon: 'favorite-icon',
+  })}
+  styles={({ props }) => ({
+    icon: { opacity: props.disabled ? 0.5 : 1 },
+  })}
+/>
+```
+
+## Props
+
+Native button attributes are supported except `children`, `color`, and `type`, including `aria-label`, `title`, `onClick`, `onFocus`, `tabIndex`, and `data-*`. The component always renders `type="button"`.
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
-| children | Icon content when `icon` is omitted | `ReactNode` | - |
-| classNames | Semantic class names as an object or normalized-props callback | `ActionIconClassNamesType` | - |
-| color | Color aligned with antd Button color | `default \| primary \| danger \| PresetColor` | - |
-| danger | Applies danger feedback; explicit `color` takes priority | `boolean` | `false` |
-| disabled | Disabled state; inherits `ConfigProvider` when omitted | `boolean` | - |
+| prefixCls | Custom component class prefix | `string` | Generated by `ConfigProvider` |
+| className | Class name appended to the root button | `string` | - |
+| rootClassName | Additional class name appended to the root button | `string` | - |
+| style | Root inline style; applied after context and semantic styles | `CSSProperties` | - |
+| children | Icon content used when `icon` is omitted | `ReactNode` | - |
 | icon | Icon node; takes priority over `children` | `ReactNode` | - |
-| selected | Selected state; also sets `aria-pressed` | `boolean` | `false` |
-| shape | Trigger shape | `square \| circle` | `square` |
-| size | Size; both the frame and glyph scale through typography and spacing tokens; `medium` is a compatibility alias | `small \| middle \| medium \| large` | Inherited from `ConfigProvider` |
-| styles | Semantic inline styles as an object or normalized-props callback | `ActionIconStylesType` | - |
-| variant | Visual variant; `inline` is a compact inline mode | `outlined \| dashed \| solid \| filled \| text \| link \| inline` | - |
+| selected | Selected state; explicitly provided values are reflected through `aria-pressed` | `boolean` | `false` |
+| danger | Enables danger feedback; explicit `color` takes priority | `boolean` | `false` |
+| color | Action color, including antd Button colors and preset colors | `default \| primary \| danger \| PresetColor` | Derived from `danger`, context, and `variant` |
+| variant | Visual variant; `inline` is the compact inline mode | `outlined \| dashed \| solid \| filled \| text \| link \| inline` | Button context |
+| disabled | Disables the native button and its click interaction | `boolean` | Inherited from `ConfigProvider` |
+| size | Frame and glyph size; `medium` is a compatibility alias of `middle` | `small \| middle \| medium \| large` | Inherited from `ConfigProvider`, then `middle` |
+| shape | Trigger shape | `square \| circle` | Button context or `square` |
+| classNames | Semantic class-name object or callback | `ActionIconClassNamesType` | - |
+| styles | Semantic inline-style object or callback | `ActionIconStylesType` | - |
 
-### Semantic Nodes
+Precedence is: explicit component Props > ConfigProvider Button context > component defaults. Root class names are combined, and the root `style` is applied last.
 
-| Name | Description |
-| --- | --- |
-| root | Native button root |
-| icon | Span wrapping the icon content |
+### ActionIconClassNamesType
+
+```ts
+type ActionIconClassNamesType =
+  | Readonly<ActionIconSemanticClassNames>
+  | ((info: { props: ActionIconProps }) => Readonly<ActionIconSemanticClassNames>)
+```
+
+The callback receives the merged selected, danger, color, variant, disabled, size, and shape values.
+
+| Field | Node | Type |
+| --- | --- | --- |
+| root | Native button root | `string` |
+| icon | Span wrapping the icon content | `string` |
+
+### ActionIconStylesType
+
+```ts
+type ActionIconStylesType =
+  | Readonly<ActionIconSemanticStyles>
+  | ((info: { props: ActionIconProps }) => Readonly<ActionIconSemanticStyles>)
+```
+
+| Field | Node | Type |
+| --- | --- | --- |
+| root | Native button root | `CSSProperties` |
+| icon | Span wrapping the icon content | `CSSProperties` |

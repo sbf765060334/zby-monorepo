@@ -86,7 +86,7 @@ export interface ActionTextAction extends Omit<
   title?: React.ReactNode
 }
 
-/** 内置复制操作配置，结构与常用 antd Typography copyable 能力保持兼容。 */
+/** 内置复制操作配置。 */
 export interface ActionTextCopyConfig {
   /** 要复制的文本；函数形式可在点击时同步或异步计算。 */
   text?: string | (() => string | Promise<string>)
@@ -94,8 +94,8 @@ export interface ActionTextCopyConfig {
   onCopy?: (event?: React.MouseEvent<HTMLButtonElement>) => void
   /** 单个图标，或依次表示“复制前、复制后”的两个图标。 */
   icon?: React.ReactNode
-  /** 单个提示，或依次表示“复制前、复制后”的两个提示。false 可关闭提示。 */
-  tooltips?: React.ReactNode
+  /** 单个原生 title，或依次表示“复制前、复制后”的两个 title。false 可关闭提示。 */
+  tooltips?: string | readonly [string?, string?] | false
   /** 写入剪贴板的数据格式。 */
   format?: 'text/plain' | 'text/html'
   /** 复制按钮的键盘 Tab 顺序。 */

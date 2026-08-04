@@ -2,14 +2,31 @@
 category: Components
 group: General
 title: ActionReveal
-description: Switch an action icon to inline content with a reveal animation.
+description: Replaces an action icon with focusable inline content without adding a wrapper element.
 ---
 
 ## When To Use
 
-Use it for lightweight inline reveal interactions in toolbars, such as opening a search or filter input from an icon.
+ActionReveal collapses an infrequent or temporarily unnecessary action into one icon:
 
-## Basic Usage
+- Search, filters, quick input, and compact settings in a toolbar;
+- Replacing an icon with an input, compound search field, or inline action group;
+- Width reveal/collapse animation, automatic focus, and collapse on blur;
+- Content that closes itself with `close()` and restores focus to the trigger afterward.
+
+Avoid it when:
+
+- The expanded content is complex, needs stable reserved space, or changes height substantially. Prefer Drawer, Popover, Collapse, or a fixed region;
+- The content has no explicit width but still requires a width animation. CSS cannot reliably interpolate between a fixed width and `auto`;
+- The returned content cannot forward `contentProps` to its real root. Focus boundaries, width animation, and blur handling would be incorrect.
+
+ActionReveal adds no wrapper DOM. The closed state renders only `ActionIcon`; the expanded state renders the element returned by `content` directly.
+
+## How To Use
+
+### Input with a width animation
+
+With `width`, content expands from the measured trigger width to the target width:
 
 ```tsx
 import { SearchOutlined } from '@ant-design/icons'
@@ -20,13 +37,17 @@ import type { Ref } from 'react'
 export default () => (
   <ActionReveal
     triggerIcon={<SearchOutlined />}
-    actionIconProps={{ 'aria-label': 'Open search' }}
-    width={180}
+    actionIconProps={{
+      'aria-label': 'Open search',
+      title: 'Search',
+    }}
+    width={240}
     content={({ contentProps }) => (
       <Input
         ref={contentProps.ref as Ref<InputRef>}
         className={contentProps.className}
         style={contentProps.style}
+        hidden={contentProps.hidden}
         onBlur={contentProps.onBlur}
         prefix={<SearchOutlined />}
         placeholder="Search"
@@ -36,37 +57,190 @@ export default () => (
 )
 ```
 
-## API
+Forward `contentProps` to the real visual root. On compound controls such as `Input.Search`, its class name marks the complete focus boundary so moving focus between the input and its button does not collapse the content.
+
+### Natural-width content
+
+Without `width`, no live node is measured and no width animation runs. Content opens immediately at its natural width:
+
+```tsx
+import { SettingOutlined } from '@ant-design/icons'
+import { ActionReveal } from '@zby/ui'
+import type { Ref } from 'react'
+
+export default () => (
+  <ActionReveal
+    triggerIcon={<SettingOutlined />}
+    actionIconProps={{ 'aria-label': 'Open quick settings' }}
+    content={({ close, contentProps }) => {
+      const { ref, ...restContentProps } = contentProps
+
+      return (
+        <button
+          {...restContentProps}
+          ref={ref as Ref<HTMLButtonElement>}
+          type="button"
+          onClick={close}
+        >
+          Finish and close
+        </button>
+      )
+    }}
+  />
+)
+```
+
+Provide `width` or `styles.content.width` when a width animation is required. `collapsedWidth` only changes the animation start and does not replace the expanded target width.
+
+### Controlled state and programmatic close
+
+```tsx
+import { SettingOutlined } from '@ant-design/icons'
+import { ActionReveal } from '@zby/ui'
+import { Button, Input, Space } from 'antd'
+import { useState, type Ref } from 'react'
+
+export default () => {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <ActionReveal
+      open={open}
+      onOpenChange={setOpen}
+      triggerIcon={<SettingOutlined />}
+      actionIconProps={{ 'aria-label': 'Open settings' }}
+      width={320}
+      collapseOnBlur={false}
+      content={({ close, contentProps }) => {
+        const { ref, ...restContentProps } = contentProps
+
+        return (
+          <Space
+            {...restContentProps}
+            ref={ref as Ref<HTMLDivElement>}
+            tabIndex={-1}
+          >
+            <Input placeholder="Setting name" />
+            <Button size="small" onClick={close}>
+              Done
+            </Button>
+          </Space>
+        )
+      }}
+    />
+  )
+}
+```
+
+In controlled mode, ActionReveal only requests changes through `onOpenChange`. It opens or closes only after the caller updates `open`.
+
+### Prevent one reveal
+
+`actionIconProps.onClick` runs first. Calling `event.preventDefault()` prevents the default reveal for that click:
+
+```tsx
+<ActionReveal
+  triggerIcon={<SearchOutlined />}
+  actionIconProps={{
+    'aria-label': 'Conditional search',
+    onClick: (event) => {
+      if (!canSearch) event.preventDefault()
+    },
+  }}
+  width={240}
+  content={renderSearch}
+/>
+```
+
+## Props
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
-| actionIconProps | Props passed to the closed-state `ActionIcon` | `Partial<ActionIconProps>` | - |
-| autoFocus | Whether to focus the content ref after opening | `boolean` | `true` |
-| className | Class name for the expanded content root | `string` | - |
-| classNames | Semantic class names, as an object or a function of normalized props | `ActionRevealClassNamesType` | - |
-| collapsedWidth | Reveal animation start width; uses the measured button width when omitted | `number \| string` | - |
-| collapseOnBlur | Whether to collapse when content blurs | `boolean` | `true` |
-| content | Expanded content render function | `ActionRevealContentRender` | - |
-| defaultOpen | Whether content is expanded by default | `boolean` | `false` |
-| disabled | Whether the closed-state button is disabled; inherits `ConfigProvider` when omitted | `boolean` | - |
-| hidden | Whether to hide the currently rendered trigger or content | `boolean` | - |
-| onOpenChange | Called when an open-state change is requested | `(open: boolean) => void` | - |
-| open | Controlled open state | `boolean` | - |
-| prefixCls | Custom CSS class prefix | `string` | Inherited from `ConfigProvider` |
-| rootClassName | Additional class name for the expanded content root | `string` | - |
-| size | Closed-state button size; inherits `ConfigProvider` when omitted | `small \| middle \| large` | - |
-| style | Inline style for the expanded content root | `CSSProperties` | - |
-| styles | Semantic inline styles, as an object or a function of normalized props | `ActionRevealStylesType` | - |
-| triggerIcon | Closed-state button icon | `ReactNode` | - |
-| width | Target expanded width; opens immediately at the natural content width without a width transition when omitted | `number \| string` | - |
+| prefixCls | Custom component class prefix | `string` | Generated by `ConfigProvider` |
+| className | Class name appended to the real expanded-content root | `string` | - |
+| rootClassName | Additional class name for the expanded-content root; there is no separate wrapper | `string` | - |
+| style | Base inline style for the expanded-content root | `CSSProperties` | - |
+| hidden | Hides whichever trigger or content node is currently rendered | `boolean` | - |
+| size | Closed-state ActionIcon size; `medium` aliases `middle` and is not forwarded to content | `small \| middle \| medium \| large` | Inherited from `ConfigProvider` |
+| disabled | Disables the closed-state ActionIcon; the caller controls the expanded content's disabled state | `boolean` | Inherited from `ConfigProvider` |
+| open | Controlled target open state | `boolean` | - |
+| defaultOpen | Initial state in uncontrolled mode | `boolean` | `false` |
+| onOpenChange | Called when a trigger click, blur, or `close` requests a state change | `(open: boolean) => void` | - |
+| collapseOnBlur | Requests collapse after focus leaves the complete content root | `boolean` | `true` |
+| autoFocus | Calls `focus()` on the content ref after mount | `boolean` | `true` |
+| triggerIcon | Closed-state ActionIcon icon | `ReactNode` | - |
+| actionIconProps | Additional props for the closed-state ActionIcon | `Partial<ActionIconProps>` | - |
+| width | Expanded target width; enables internal width motion when present, otherwise opens at natural width | `CSSProperties['width']` | - |
+| collapsedWidth | Width-motion start; takes priority over the measured trigger width | `CSSProperties['width']` | Trigger width or current ActionIcon size |
+| content | Content renderer; its returned element directly replaces the trigger | `ActionRevealContentRender` | Required |
+| classNames | Semantic trigger/content class-name object or callback | `ActionRevealClassNamesType` | - |
+| styles | Semantic trigger/content inline-style object or callback | `ActionRevealStylesType` | - |
 
-`contentProps` contains `className`, `style`, `ref`, `hidden`, and `onBlur`; pass them to the real content root. The `className` identifies the focus boundary of compound content. The content renderer also receives `open`, `expanded`, and `close` for observing the requested state, tracking animation state, or closing content programmatically. After content calls `close`, focus returns to the trigger once it is rendered again.
+Content styles are merged in this order: `style` → `styles.content` → animated endpoint `width`. Explicit caller `overflow` and `transition` values take priority over internal defaults.
 
-Provide `width` or `styles.content.width` when a width reveal animation is required. Without an explicit target width, the component does not measure the live content node, avoiding transient narrow layouts that can change the surrounding container height.
+### ActionRevealContentRender
 
-### Semantic Nodes
+```ts
+type ActionRevealContentRender = (info: {
+  open: boolean
+  expanded: boolean
+  close: () => void
+  contentProps: ActionRevealContentProps
+}) => ReactElement
+```
 
-| Name | Description |
+| Field | Description | Type |
+| --- | --- | --- |
+| open | Current target state; becomes `false` as soon as closing starts | `boolean` |
+| expanded | Current width-endpoint state; `true` when opening and `false` when collapsing | `boolean` |
+| close | Requests collapse and restores trigger focus afterward when focus is still inside | `() => void` |
+| contentProps | Props that must be forwarded to the real content root | `ActionRevealContentProps` |
+
+### ActionRevealContentProps
+
+| Field | Description | Type |
+| --- | --- | --- |
+| ref | Ref used for focus, focus-boundary resolution, and external forwarding | `Ref<unknown>` |
+| className | Combined base, direction, motion-state, instance-scope, and custom class names | `string` |
+| style | Combined width, overflow, transition, and caller styles | `CSSProperties` |
+| hidden | Native hidden state forwarded from the root component | `boolean` |
+| onBlur | Handler that detects whether focus left the complete content area | `FocusEventHandler` |
+
+When adding a custom root `onBlur`, call `contentProps.onBlur(event)` instead of replacing it.
+
+### actionIconProps and ActionIconProps
+
+`actionIconProps` supports ActionIcon colors, variants, shape, selected state, semantic styles, and native button attributes. ActionReveal owns the following fields:
+
+| Field | ActionReveal behavior |
 | --- | --- |
-| trigger | Closed-state `ActionIcon` |
-| content | Expanded content root |
+| icon | Controlled by top-level `triggerIcon` |
+| size | Controlled by top-level `size` |
+| disabled | Controlled by top-level `disabled` and ConfigProvider |
+| onClick | Runs first; `preventDefault()` can stop the reveal |
+| className / style | Merged with `classNames.trigger` / `styles.trigger` |
+
+### ActionRevealClassNamesType
+
+```ts
+type ActionRevealClassNamesType =
+  | Readonly<ActionRevealSemanticClassNames>
+  | ((info: { props: ActionRevealProps }) => Readonly<ActionRevealSemanticClassNames>)
+```
+
+### ActionRevealStylesType
+
+```ts
+type ActionRevealStylesType =
+  | Readonly<ActionRevealSemanticStyles>
+  | ((info: { props: ActionRevealProps }) => Readonly<ActionRevealSemanticStyles>)
+```
+
+Both types use the same semantic fields:
+
+| Field | Node | classNames type | styles type |
+| --- | --- | --- | --- |
+| trigger | Closed-state ActionIcon | `string` | `CSSProperties` |
+| content | Real expanded-content root | `string` | `CSSProperties` |
+
+Callback `props` contains the final merged `open`, `size`, `disabled`, `collapseOnBlur`, and related values.

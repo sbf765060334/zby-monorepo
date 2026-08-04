@@ -159,17 +159,42 @@ describe('ActionText', () => {
     })
     const onCopy = vi.fn()
     const { container } = render(
-      <ActionText copyable={{ text: 'Copied shop', onCopy }}>Shop name</ActionText>,
+      <ActionText
+        copyable={{
+          text: 'Copied shop',
+          tooltips: ['复制门店名称', '门店名称已复制'],
+          onCopy,
+        }}
+      >
+        Shop name
+      </ActionText>,
     )
 
-    fireEvent.click(container.querySelector('[data-action-text-copy]')!)
+    const copyAction = container.querySelector('[data-action-text-copy]')!
+    expect(copyAction.getAttribute('title')).toBe('复制门店名称')
+    expect(copyAction.getAttribute('aria-label')).toBe('复制门店名称')
+
+    fireEvent.click(copyAction)
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('Copied shop')
       expect(onCopy).toHaveBeenCalledTimes(1)
       expect(container.querySelector('[data-action-text-copy-success="true"]')).not.toBeNull()
+      expect(copyAction.getAttribute('title')).toBe('门店名称已复制')
+      expect(copyAction.getAttribute('aria-label')).toBe('门店名称已复制')
     })
     expect(container.querySelector('[data-action-text-copy]')?.classList.contains('ant-action-icon-sm')).toBe(true)
+  })
+
+  it('keeps an accessible label when the native copy title is disabled', () => {
+    const { container } = render(
+      <ActionText copyable={{ tooltips: false }}>Shop name</ActionText>,
+    )
+    const copyAction = container.querySelector('[data-action-text-copy]')!
+
+    expect(copyAction.getAttribute('title')).toBeNull()
+    expect(copyAction.getAttribute('aria-label')).toBe('复制')
+    expect(container.querySelector('.ant-tooltip')).toBeNull()
   })
 
   it('uses zby intl messages for built-in action labels', async () => {

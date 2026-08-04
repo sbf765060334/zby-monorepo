@@ -4,7 +4,6 @@ import {
   LoadingOutlined,
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Tooltip } from 'antd'
 import * as React from 'react'
 
 import ActionIcon from '../action-icon'
@@ -13,10 +12,10 @@ import type { ActionTextCopyConfig } from './ActionText'
 import useCopyAction from './useCopyAction'
 
 /**
- * icon 和 tooltips 都允许传“单值”或“复制前、复制后”两个值。
- * false 明确表示两个阶段都关闭对应内容，与 antd Typography 的配置习惯一致。
+ * icon 允许传“单值”或“复制前、复制后”两个值。
+ * false 明确表示两个阶段都关闭对应内容。
  */
-const toCopyConfigList = <T,>(value: T | T[]) => {
+const toCopyConfigList = <T,>(value: T | readonly T[]) => {
   if (value === false) return [false, false]
 
   return Array.isArray(value) ? value : [value]
@@ -55,40 +54,45 @@ const ActionTextCopyAction: React.FC<ActionTextCopyActionProps> = (props) => {
   const { copied, copyLoading, onClick } = useCopyAction(copyConfig, children)
 
   // 数组第 0 项对应复制前，第 1 项对应复制成功后。
-  const tooltipNodes = toCopyConfigList(copyConfig.tooltips)
   const iconNodes = toCopyConfigList(copyConfig.icon)
 
-  // 内置文案统一来自 zby-intl，业务显式传入 tooltips 时优先使用业务内容。
+  // 内置文案统一来自 zby-intl，业务显式传入 tooltips 时优先作为原生 title。
   const copyText = intl.getMessage('zby.ui.actionText.copy', '复制')
   const copiedText = intl.getMessage('zby.ui.actionText.copied', '已复制')
   const systemStr = copied ? copiedText : copyText
-  const copyTitle = getNode(tooltipNodes[copied ? 1 : 0], systemStr)
-  const ariaLabel = typeof copyTitle === 'string' ? copyTitle : systemStr
+  const titleNodes: readonly (string | undefined)[] =
+    copyConfig.tooltips === false
+      ? []
+      : typeof copyConfig.tooltips === 'string' || copyConfig.tooltips === undefined
+        ? [copyConfig.tooltips]
+        : copyConfig.tooltips
+  const copyTitle = copyConfig.tooltips === false
+    ? undefined
+    : titleNodes[copied ? 1 : 0] ?? systemStr
+  const ariaLabel = copyTitle ?? systemStr
 
   return (
-    <Tooltip title={copyTitle}>
-      <ActionIcon
-        size={size}
-        className={className}
-        style={style}
-        icon={
-          copied
-            ? getNode(iconNodes[1], <CheckOutlined />, true)
-            : getNode(
-                iconNodes[0],
-                copyLoading ? <LoadingOutlined /> : <CopyOutlined />,
-                true,
-              )
-        }
-        onClick={onClick}
-        aria-label={ariaLabel}
-        title={typeof copyTitle === 'string' ? copyTitle : copyText}
-        tabIndex={copyConfig.tabIndex}
-        data-action-text-copy
-        // 该属性用于测试和业务自动化识别成功状态，不承担视觉样式职责。
-        data-action-text-copy-success={copied || undefined}
-      />
-    </Tooltip>
+    <ActionIcon
+      size={size}
+      className={className}
+      style={style}
+      icon={
+        copied
+          ? getNode(iconNodes[1], <CheckOutlined />, true)
+          : getNode(
+              iconNodes[0],
+              copyLoading ? <LoadingOutlined /> : <CopyOutlined />,
+              true,
+            )
+      }
+      onClick={onClick}
+      aria-label={ariaLabel}
+      title={copyTitle}
+      tabIndex={copyConfig.tabIndex}
+      data-action-text-copy
+      // 该属性用于测试和业务自动化识别成功状态，不承担视觉样式职责。
+      data-action-text-copy-success={copied || undefined}
+    />
   )
 }
 
