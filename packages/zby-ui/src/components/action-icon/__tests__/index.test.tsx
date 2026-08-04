@@ -275,9 +275,15 @@ describe('ActionIcon', () => {
     expect(styleText).toContain('ant-action-icon-variant-filled')
     expect(styleText).toContain('ant-action-icon-sm')
     expect(styleText).toContain('ant-action-icon-lg')
-    expect(styleText).toContain('width:var(--ant-control-height-sm)')
-    expect(styleText).toContain('width:var(--ant-control-height)')
-    expect(styleText).toContain('width:var(--ant-control-height-lg)')
+    expect(styleText).toContain(
+      'width:calc(var(--ant-font-size) * var(--ant-line-height))',
+    )
+    expect(styleText).toContain(
+      'width:calc(var(--ant-font-size) * var(--ant-line-height) + 4px)',
+    )
+    expect(styleText).toContain(
+      'width:calc(var(--ant-font-size) * var(--ant-line-height) + 8px)',
+    )
     expect(styleText).toContain('background:transparent;border-color:currentColor')
     expect(styleText).not.toContain('transition:all')
   })

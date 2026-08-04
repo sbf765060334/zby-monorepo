@@ -2,6 +2,7 @@ import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartO
 import type { ProLayoutRoute } from '@zby/pro'
 import ActionIconPlayground from './pages/ActionIconPlayground'
 import ActionRevealPlayground from './pages/ActionRevealPlayground'
+import ActionTextPlayground from './pages/ActionTextPlayground'
 import DemoPage from './pages/DemoPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
@@ -288,6 +289,11 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/sample/action-icon',
         title: '动作图标',
         element: <ActionIconPlayground />,
+      },
+      {
+        path: '/sample/action-text',
+        title: '动作文本',
+        element: <ActionTextPlayground />,
       },
       {
         path: '/sample/scroll-area',
