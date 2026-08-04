@@ -3,7 +3,7 @@ import { theme as antdTheme } from 'antd'
 
 const toCssUnit = (value: number | string) => (typeof value === 'number' ? `${value}px` : value)
 
-export function useInputNumberRangeStyle(prefixCls: string) {
+export function useInputNumberRangeStyle(prefixCls: string, inputNumberPrefixCls: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
   const styleToken = cssVar ?? token
 
@@ -12,10 +12,11 @@ export function useInputNumberRangeStyle(prefixCls: string) {
       theme,
       token: styleToken,
       hashId,
-      path: ['zby-ui', 'input-number-range', prefixCls],
+      path: ['zby-ui', 'input-number-range', prefixCls, inputNumberPrefixCls],
     },
     () => {
       const componentCls = `.${prefixCls}`
+      const inputNumberCls = `.${inputNumberPrefixCls}`
       const border = `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorder}`
       const activeShadow = `0 0 0 ${toCssUnit(styleToken.controlOutlineWidth)} ${styleToken.controlOutline}`
       const errorActiveShadow = `0 0 0 ${toCssUnit(styleToken.controlOutlineWidth)} ${styleToken.colorErrorOutline}`
@@ -64,7 +65,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             boxShadow: 'none',
             outline: 0,
 
-            '&.ant-input-number': {
+            [`&${inputNumberCls}`]: {
               display: 'inline-flex',
               flex: '1 1 0',
               width: 'auto',
@@ -79,7 +80,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               outline: 0,
             },
 
-            '&.ant-input-number:hover, &.ant-input-number:focus, &.ant-input-number:focus-within, &.ant-input-number-focused':
+            [`&${inputNumberCls}:hover, &${inputNumberCls}:focus, &${inputNumberCls}:focus-within, &${inputNumberCls}-focused`]:
               {
                 background: 'transparent',
                 border: 0,
@@ -87,22 +88,22 @@ export function useInputNumberRangeStyle(prefixCls: string) {
                 outline: 0,
               },
 
-            '&.ant-input-number:focus-visible, &.ant-input-number:has(input:focus-visible)': {
+            [`&${inputNumberCls}:focus-visible, &${inputNumberCls}:has(input:focus-visible)`]: {
               outline: 'none',
             },
 
-            '&.ant-input-number-disabled': {
+            [`&${inputNumberCls}-disabled`]: {
               background: 'transparent',
               border: 0,
               boxShadow: 'none',
             },
 
-            '.ant-input-number-input-wrap': {
+            [`${inputNumberCls}-input-wrap`]: {
               flex: 1,
               minWidth: 0,
             },
 
-            '.ant-input-number-input': {
+            [`${inputNumberCls}-input`]: {
               background: 'transparent',
               border: 0,
               boxShadow: 'none',
@@ -125,7 +126,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               },
             },
 
-            '&.ant-input-number-disabled .ant-input-number-input': {
+            [`&${inputNumberCls}-disabled ${inputNumberCls}-input`]: {
               color: styleToken.colorTextDisabled,
             },
           },
@@ -219,7 +220,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             outline: 0,
           },
 
-          [`&${componentCls}-outlined, &:has(${componentCls}-input.ant-input-number-outlined)`]: {
+          [`&${componentCls}-outlined, &:has(${componentCls}-input${inputNumberCls}-outlined)`]: {
             background: styleToken.colorBgContainer,
             border,
 
@@ -228,7 +229,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             },
           },
 
-          [`&${componentCls}-filled, &:has(${componentCls}-input.ant-input-number-filled)`]: {
+          [`&${componentCls}-filled, &:has(${componentCls}-input${inputNumberCls}-filled)`]: {
             background: styleToken.colorFillTertiary,
             border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
 
@@ -241,7 +242,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
             },
           },
 
-          [`&${componentCls}-borderless, &:has(${componentCls}-input.ant-input-number-borderless)`]:
+          [`&${componentCls}-borderless, &:has(${componentCls}-input${inputNumberCls}-borderless)`]:
             {
               background: 'transparent',
               border: `${toCssUnit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
@@ -252,7 +253,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               },
             },
 
-          [`&${componentCls}-underlined, &:has(${componentCls}-input.ant-input-number-underlined)`]:
+          [`&${componentCls}-underlined, &:has(${componentCls}-input${inputNumberCls}-underlined)`]:
             {
               background: styleToken.colorBgContainer,
               borderInline: 0,
@@ -266,7 +267,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               },
             },
 
-          [`&${componentCls}-status-error, &:has(${componentCls}-input.ant-input-number-status-error)`]:
+          [`&${componentCls}-status-error, &:has(${componentCls}-input${inputNumberCls}-status-error)`]:
             {
               '&, &:hover': {
                 borderColor: styleToken.colorError,
@@ -278,7 +279,7 @@ export function useInputNumberRangeStyle(prefixCls: string) {
               },
             },
 
-          [`&${componentCls}-status-warning, &:has(${componentCls}-input.ant-input-number-status-warning)`]:
+          [`&${componentCls}-status-warning, &:has(${componentCls}-input${inputNumberCls}-status-warning)`]:
             {
               '&, &:hover': {
                 borderColor: styleToken.colorWarning,

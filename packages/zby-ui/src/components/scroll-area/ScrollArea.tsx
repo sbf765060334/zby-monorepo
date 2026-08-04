@@ -11,6 +11,7 @@ export type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
 export type ScrollAreaScrollbar =
   boolean | ScrollAreaScrollbarTrigger | ScrollAreaScrollbarTrigger[]
 export type ScrollAreaWheelBehavior = 'native' | 'axis-mapping'
+export type ScrollAreaWheelEventHandler = (event: WheelEvent) => void
 
 export type ScrollAreaSemanticName = keyof ScrollAreaSemanticClassNames &
   keyof ScrollAreaSemanticStyles
@@ -50,9 +51,11 @@ export type ScrollAreaStylesType = ScrollAreaSemanticValue<Readonly<ScrollAreaSe
  * className、style、ref、onScroll 和 onWheel 会与 ScrollArea 内部逻辑合并，
  * 因此业务方可以监听或操作真实滚动容器，而不需要依赖组件内部 DOM 层级。
  */
-export type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
+export type ScrollAreaViewportProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onWheel'> & {
   /** 获取内部真实滚动节点；与 ScrollAreaProps.viewportRef 指向同一个元素。 */
   ref?: React.Ref<HTMLDivElement>
+  /** 在 viewport 的非 passive 原生监听流程中触发。 */
+  onWheel?: ScrollAreaWheelEventHandler
 }
 
 /**
@@ -63,7 +66,8 @@ export type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
  * forwardRef 同样指向 root。onWheel 是一个例外，它会在 viewport 的原生 wheel 监听流程中调用，
  * 以便在 axis-mapping 模式决定是否需要阻止默认纵向滚动前，让业务方先处理事件。
  */
-export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface ScrollAreaProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'onWheel'> {
   /**
    * 自定义组件 CSS 类名前缀。
    *
@@ -130,6 +134,13 @@ export interface ScrollAreaProps extends Omit<React.HTMLAttributes<HTMLDivElemen
    * @default false
    */
   nativeScrollbar?: boolean
+
+  /**
+   * viewport 上的原生滚轮事件回调。
+   *
+   * 使用原生 WheelEvent，以便业务回调可以在横向轴映射前同步 preventDefault。
+   */
+  onWheel?: ScrollAreaWheelEventHandler
 
   /**
    * 获取内部真实滚动 viewport 的 ref。
@@ -308,8 +319,8 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         isRtl,
       } = wheelStateRef.current
 
-      latestOnWheel?.(event as unknown as React.WheelEvent<HTMLDivElement>)
-      viewportOnWheel?.(event as unknown as React.WheelEvent<HTMLDivElement>)
+      latestOnWheel?.(event)
+      viewportOnWheel?.(event)
       if (
         event.defaultPrevented ||
         latestDirection !== 'horizontal' ||
@@ -496,20 +507,25 @@ function hasScrollableVerticalAncestor(
   boundary: HTMLElement,
   deltaY: number,
 ) {
-  if (!(target instanceof HTMLElement)) return false
+  if (!(target instanceof Element)) return false
 
-  let node: HTMLElement | null = target
+  let node: Element | null = target
 
   while (node && node !== boundary) {
-    const { overflowY } = getComputedStyle(node)
-    const canScrollY =
-      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
-      node.scrollHeight > node.clientHeight
+    if (node instanceof HTMLElement) {
+      const { overflowY } = getComputedStyle(node)
+      const canScrollY =
+        (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+        node.scrollHeight > node.clientHeight
 
-    if (canScrollY) {
-      const maxScrollTop = node.scrollHeight - node.clientHeight
-      if ((deltaY < 0 && node.scrollTop > 0) || (deltaY > 0 && node.scrollTop < maxScrollTop)) {
-        return true
+      if (canScrollY) {
+        const maxScrollTop = node.scrollHeight - node.clientHeight
+        if (
+          (deltaY < 0 && node.scrollTop > 0) ||
+          (deltaY > 0 && node.scrollTop < maxScrollTop)
+        ) {
+          return true
+        }
       }
     }
 
@@ -530,9 +546,9 @@ function normalizeWheelDelta(event: WheelEvent, pageSize: number) {
 }
 
 function hasNestedScrollAreaViewport(target: EventTarget | null, boundary: HTMLElement) {
-  if (!(target instanceof HTMLElement)) return false
+  if (!(target instanceof Element)) return false
 
-  let node: HTMLElement | null = target
+  let node: Element | null = target
 
   while (node && node !== boundary) {
     if (node.hasAttribute('data-zby-scroll-area-viewport')) {

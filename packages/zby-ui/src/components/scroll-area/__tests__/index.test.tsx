@@ -280,6 +280,39 @@ describe('ScrollArea', () => {
     expect(viewportRef.current?.scrollLeft).toBe(120)
   })
 
+  it('passes the original native wheel event to root and viewport callbacks', () => {
+    const viewportRef = React.createRef<HTMLDivElement>()
+    const onWheel = vi.fn()
+    const viewportOnWheel = vi.fn()
+    render(
+      <ScrollArea
+        direction="horizontal"
+        scrollbar={false}
+        viewportRef={viewportRef}
+        onWheel={onWheel}
+        viewportProps={{ onWheel: viewportOnWheel }}
+      />,
+    )
+
+    mockScrollMetrics(viewportRef.current!, {
+      clientWidth: 200,
+      clientHeight: 100,
+      scrollWidth: 800,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+    })
+    const wheelEvent = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaY: 120,
+    })
+    viewportRef.current!.dispatchEvent(wheelEvent)
+
+    expect(onWheel).toHaveBeenCalledWith(wheelEvent)
+    expect(viewportOnWheel).toHaveBeenCalledWith(wheelEvent)
+  })
+
   it('normalizes line-based wheel deltas and releases wheel events at the horizontal edge', () => {
     const viewportRef = React.createRef<HTMLDivElement>()
     render(<ScrollArea direction="horizontal" scrollbar={false} viewportRef={viewportRef} />)
@@ -343,17 +376,19 @@ describe('ScrollArea', () => {
     expect(viewportRef.current?.scrollLeft).toBe(0)
   })
 
-  it('does not map wheel events emitted by a nested ScrollArea with another prefix', () => {
+  it('does not map wheel events emitted by SVG content in a nested ScrollArea', () => {
     const outerRef = React.createRef<HTMLDivElement>()
     const innerRef = React.createRef<HTMLDivElement>()
-    render(
+    const { container } = render(
       <ScrollArea direction="horizontal" scrollbar={false} viewportRef={outerRef}>
         <ScrollArea
           prefixCls="inner-scroll-area"
           direction="vertical"
           scrollbar={false}
           viewportRef={innerRef}
-        />
+        >
+          <svg data-testid="nested-svg" />
+        </ScrollArea>
       </ScrollArea>,
     )
 
@@ -373,7 +408,44 @@ describe('ScrollArea', () => {
       scrollLeft: 0,
       scrollTop: 0,
     })
-    fireEvent.wheel(innerRef.current!, { deltaY: 120, deltaX: 0 })
+    fireEvent.wheel(container.querySelector('[data-testid="nested-svg"]')!, {
+      deltaY: 120,
+      deltaX: 0,
+    })
+
+    expect(outerRef.current?.scrollLeft).toBe(0)
+  })
+
+  it('respects a scrollable HTML ancestor when the wheel target is SVG', () => {
+    const outerRef = React.createRef<HTMLDivElement>()
+    const { container } = render(
+      <ScrollArea direction="horizontal" scrollbar={false} viewportRef={outerRef}>
+        <div data-testid="scrollable-ancestor" style={{ overflowY: 'auto' }}>
+          <svg data-testid="scrollable-svg" />
+        </div>
+      </ScrollArea>,
+    )
+    const scrollableAncestor = container.querySelector<HTMLElement>(
+      '[data-testid="scrollable-ancestor"]',
+    )!
+
+    mockScrollMetrics(outerRef.current!, {
+      clientWidth: 200,
+      clientHeight: 100,
+      scrollWidth: 800,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+    })
+    mockScrollMetrics(scrollableAncestor, {
+      clientHeight: 100,
+      scrollHeight: 400,
+      scrollTop: 0,
+    })
+    fireEvent.wheel(container.querySelector('[data-testid="scrollable-svg"]')!, {
+      deltaY: 120,
+      deltaX: 0,
+    })
 
     expect(outerRef.current?.scrollLeft).toBe(0)
   })

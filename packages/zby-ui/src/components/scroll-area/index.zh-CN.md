@@ -185,7 +185,7 @@ import { ScrollArea } from '@zby/ui'
 
 ## Props
 
-除 `children` 外，ScrollArea 继承原生 `div` 属性并把它们应用到 root。组件 ref 同样指向 root。`onWheel` 是特例：它在 viewport 的原生 wheel 流程中调用，以便业务先于横向轴映射处理事件。
+除 `children` 外，ScrollArea 继承原生 `div` 属性并把它们应用到 root。组件 ref 同样指向 root。`onWheel` 是特例：它在 viewport 的原生 wheel 流程中调用并接收原生 `WheelEvent`，以便业务先于横向轴映射处理事件。
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
@@ -203,7 +203,7 @@ import { ScrollArea } from '@zby/ui'
 | style | 应用于 root 的原生内联样式；同名字段覆盖 `styles.root` | `CSSProperties` | - |
 | dir | 文本和横向滚动方向；未传时继承 ConfigProvider | `ltr \| rtl` | 继承 ConfigProvider 或 `ltr` |
 | children | 放入 content 语义节点的可滚动内容 | `ReactNode` | - |
-| onWheel | viewport wheel 回调；如调用 `preventDefault()`，本次轴映射不会继续 | `WheelEventHandler<HTMLDivElement>` | - |
+| onWheel | viewport wheel 回调；如调用 `preventDefault()`，本次轴映射不会继续 | `ScrollAreaWheelEventHandler` | - |
 
 ### ScrollAreaDirection
 
@@ -259,7 +259,7 @@ type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
 | className | 与内部类名及 `classNames.viewport` 合并 | `string` |
 | style | 在 `styles.viewport` 之后合并，同名声明以此处为准 | `CSSProperties` |
 | onScroll | viewport 发生滚动时触发 | `UIEventHandler<HTMLDivElement>` |
-| onWheel | 与组件级 `onWheel` 依次调用；可阻止后续轴映射 | `WheelEventHandler<HTMLDivElement>` |
+| onWheel | 与组件级 `onWheel` 依次调用；可阻止后续轴映射 | `ScrollAreaWheelEventHandler` |
 
 ### ScrollAreaClassNamesType / ScrollAreaStylesType
 

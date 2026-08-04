@@ -13,6 +13,7 @@ export type {
   ScrollAreaStylesType,
   ScrollAreaViewportProps,
   ScrollAreaWheelBehavior,
+  ScrollAreaWheelEventHandler,
 } from './ScrollArea'
 
 export default ScrollArea

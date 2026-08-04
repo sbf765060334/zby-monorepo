@@ -491,7 +491,9 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     } = props
 
     const intl = useIntl()
-    const hashId = useInputNumberRangeStyle(prefixCls)
+    const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
+    const inputNumberPrefixCls = getPrefixCls('input-number')
+    const hashId = useInputNumberRangeStyle(prefixCls, inputNumberPrefixCls)
     const { componentDisabled, componentSize } = ConfigProvider.useConfig()
     const mergedSize = customizeSize ?? componentSize
     const rangeRef = React.useRef<HTMLDivElement>(null)

@@ -111,4 +111,24 @@ describe('InputNumberRange antd context integration', () => {
       controls.every((control) => control.classList.contains('ant-input-number-status-error')),
     ).toBe(true)
   })
+
+  it('targets the InputNumber prefix configured by ConfigProvider', () => {
+    const cache = createCache()
+    const { container } = render(
+      <StyleProvider cache={cache}>
+        <ConfigProvider prefixCls="custom">
+          <InputNumberRange defaultValue={[1, 2]} placeholder={['Min', 'Max']} />
+        </ConfigProvider>
+      </StyleProvider>,
+    )
+
+    const controls = container.querySelectorAll('.custom-input-number')
+    const styleText = extractStyle(cache)
+
+    expect(controls).toHaveLength(2)
+    expect(styleText).toContain('.zby-input-number-range-input.custom-input-number')
+    expect(styleText).toContain(
+      ':has(.zby-input-number-range-input.custom-input-number-outlined)',
+    )
+  })
 })

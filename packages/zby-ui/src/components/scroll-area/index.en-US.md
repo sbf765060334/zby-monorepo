@@ -184,7 +184,7 @@ Use component tokens for application-wide scrollbar styling and `styles` for loc
 
 ## Props
 
-Except for `children`, ScrollArea inherits native `div` attributes and applies them to the root. The forwarded ref also points to the root. `onWheel` is the exception: it runs in the viewport's native wheel flow so application code can handle the event before optional axis mapping.
+Except for `children`, ScrollArea inherits native `div` attributes and applies them to the root. The forwarded ref also points to the root. `onWheel` is the exception: it runs in the viewport's native wheel flow and receives a native `WheelEvent` so application code can handle the event before optional axis mapping.
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
@@ -202,7 +202,7 @@ Except for `children`, ScrollArea inherits native `div` attributes and applies t
 | style | Native inline style on the root; matching fields override `styles.root` | `CSSProperties` | - |
 | dir | Text and horizontal scroll direction; inherited from ConfigProvider when omitted | `ltr \| rtl` | From ConfigProvider or `ltr` |
 | children | Scrollable content placed inside the content semantic node | `ReactNode` | - |
-| onWheel | Viewport wheel callback; calling `preventDefault()` skips axis mapping for that event | `WheelEventHandler<HTMLDivElement>` | - |
+| onWheel | Viewport wheel callback; calling `preventDefault()` skips axis mapping for that event | `ScrollAreaWheelEventHandler` | - |
 
 ### ScrollAreaDirection
 
@@ -258,7 +258,7 @@ type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
 | className | Merged with internal classes and `classNames.viewport` | `string` |
 | style | Merged after `styles.viewport`, so matching declarations here take precedence | `CSSProperties` |
 | onScroll | Called when the viewport scrolls | `UIEventHandler<HTMLDivElement>` |
-| onWheel | Called after component-level `onWheel`; it may prevent subsequent axis mapping | `WheelEventHandler<HTMLDivElement>` |
+| onWheel | Called after component-level `onWheel`; it may prevent subsequent axis mapping | `ScrollAreaWheelEventHandler` |
 
 ### ScrollAreaClassNamesType / ScrollAreaStylesType
 
