@@ -1183,7 +1183,7 @@ describe('ReactRouterProLayout', () => {
     expect(jumpTo).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: '取消收藏：订单列表' })).toBeTruthy()
     expect(await screen.findByText('收藏成功')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '收藏菜单' }))
+    fireEvent.click(await screen.findByRole('button', { name: '收藏菜单' }))
     const collectionHeader = await screen.findByText('收藏的菜单（1）')
     const collectionPanel = collectionHeader.closest('.zby-pro-layout-collection-panel')
     expect(collectionPanel).toBeTruthy()
