@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand/vanilla'
-import type { RouteRegistry } from './registry'
+import type { RouteRegistry } from './registry/types'
 
 /**
  * router-core 的公共领域类型。
