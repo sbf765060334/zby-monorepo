@@ -58,9 +58,11 @@ export default () => (
 | style | Inline style for the expanded content root | `CSSProperties` | - |
 | styles | Semantic inline styles, as an object or a function of normalized props | `ActionRevealStylesType` | - |
 | triggerIcon | Closed-state button icon | `ReactNode` | - |
-| width | Target expanded width; measures the content's natural width before opening when omitted | `number \| string` | - |
+| width | Target expanded width; opens immediately at the natural content width without a width transition when omitted | `number \| string` | - |
 
 `contentProps` contains `className`, `style`, `ref`, `hidden`, and `onBlur`; pass them to the real content root. The `className` identifies the focus boundary of compound content. The content renderer also receives `open`, `expanded`, and `close` for observing the requested state, tracking animation state, or closing content programmatically. After content calls `close`, focus returns to the trigger once it is rendered again.
+
+Provide `width` or `styles.content.width` when a width reveal animation is required. Without an explicit target width, the component does not measure the live content node, avoiding transient narrow layouts that can change the surrounding container height.
 
 ### Semantic Nodes
 

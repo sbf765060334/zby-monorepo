@@ -59,9 +59,11 @@ export default () => (
 | style | 展开态内容根节点的内联样式 | `CSSProperties` | - |
 | styles | 语义节点的内联样式，可传对象或接收归一化 props 的回调 | `ActionRevealStylesType` | - |
 | triggerIcon | 关闭态按钮图标 | `ReactNode` | - |
-| width | 展开后的目标宽度；未传时在打开前测量内容自然宽度 | `number \| string` | - |
+| width | 展开后的目标宽度；未传时按内容自然宽度立即展开，不执行宽度动画 | `number \| string` | - |
 
 `contentProps` 包含 `className`、`style`、`ref`、`hidden` 和 `onBlur`，需要透传给真实内容根节点；其中 `className` 用于识别复合内容的焦点范围。`content` 同时收到 `open`、`expanded` 与 `close`，可用来区分目标状态、动画状态或主动收起内容。内容调用 `close` 主动收起后，焦点会回到重新出现的触发按钮。
+
+需要宽度展开动画时，请传入 `width`，或通过 `styles.content.width` 提供明确的目标宽度。省略目标宽度时不会测量真实内容节点，以免测量过程中的临时窄宽度改变外部容器高度。
 
 ### 语义化节点
 

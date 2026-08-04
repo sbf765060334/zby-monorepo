@@ -321,31 +321,18 @@ describe('ActionReveal', () => {
     expect(content.style.transition).toBe('opacity 1s linear')
   })
 
-  it('measures an animatable target width when no width is provided', async () => {
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
-      bottom: 32,
-      height: 32,
-      left: 0,
-      right: 196,
-      top: 0,
-      width: 196,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    })
+  it('opens at natural width without a transition when no target width is provided', () => {
+    const requestFrame = vi.spyOn(globalThis, 'requestAnimationFrame')
     const { container } = render(
       <ActionReveal triggerIcon={<SearchOutlined />} content={renderRevealContent} />,
     )
 
     fireEvent.click(container.querySelector('.ant-action-reveal-trigger')!)
 
-    await waitFor(() => {
-      expect(
-        container.querySelector('.ant-action-reveal-open'),
-      ).not.toBeNull()
-    })
-    expect(container.querySelector<HTMLElement>('.ant-action-reveal')!.style.width).toBe(
-      '196px',
-    )
+    const content = container.querySelector<HTMLElement>('.ant-action-reveal-open')!
+    expect(content).not.toBeNull()
+    expect(content.style.width).toBe('')
+    expect(content.style.transition).toBe('')
+    expect(requestFrame).not.toHaveBeenCalled()
   })
 })

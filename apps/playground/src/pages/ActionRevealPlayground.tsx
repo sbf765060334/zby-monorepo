@@ -61,13 +61,13 @@ export default function ActionRevealPlayground() {
   return (
     <PlaygroundPage
       title="ActionReveal"
-      description="行内展开、自动测宽、焦点管理、受控状态和语义样式的完整预览。"
+      description="行内展开、宽度动画、自然宽度、焦点管理、受控状态和语义样式的完整预览。"
     >
       <PlaygroundStatus>{lastEvent}</PlaygroundStatus>
 
       <PlaygroundSection
         title="基础展开与宽度"
-        description="覆盖显式宽度、内容自然测宽和语义样式宽度三种动画终点来源。"
+        description="覆盖显式宽度动画、无测量的自然宽度和语义样式宽度三种展开方式。"
       >
         <PlaygroundGrid>
           <PlaygroundCase
@@ -84,12 +84,12 @@ export default function ActionRevealPlayground() {
           </PlaygroundCase>
 
           <PlaygroundCase
-            title="无 width 自动测量"
-            description="目标宽度来自内容自然尺寸，点击内容可主动收起。"
+            title="无 width 自然展开"
+            description="不测量真实节点、不执行宽度动画，直接使用内容自然宽度。"
           >
             <ActionReveal
               triggerIcon={<SettingOutlined />}
-              actionIconProps={{ 'aria-label': '打开自动测宽内容' }}
+              actionIconProps={{ 'aria-label': '打开自然宽度内容' }}
               content={({ close, contentProps }) => {
                 const { ref, ...restProps } = contentProps
 
@@ -99,11 +99,11 @@ export default function ActionRevealPlayground() {
                     ref={ref as React.Ref<HTMLButtonElement>}
                     type="button"
                     onClick={() => {
-                      reportEvent('自动测宽内容主动收起')
+                      reportEvent('自然宽度内容主动收起')
                       close()
                     }}
                   >
-                    自动测宽内容，点击收起
+                    自然宽度内容，点击收起
                   </button>
                 )
               }}

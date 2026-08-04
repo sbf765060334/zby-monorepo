@@ -47,7 +47,7 @@ export type ActionRevealStylesType = ActionRevealSemanticValue<
  * 被正确透传。对于 antd Input 等复合组件，`ref` 可以按其公开 Ref 类型进行断言。
  */
 export type ActionRevealContentProps = {
-  /** 同时用于自动聚焦、尺寸测量和向外转发的内容 ref。 */
+  /** 同时用于自动聚焦、焦点边界判断和向外转发的内容 ref。 */
   ref: React.Ref<unknown>
   /** 包含基础类名、动画状态类名及当前实例的焦点作用域类名。 */
   className: string
@@ -97,7 +97,7 @@ export interface ActionRevealProps {
   triggerIcon?: React.ReactNode
   /** 透传给收起态 ActionIcon 的属性。 */
   actionIconProps?: Partial<ActionIconProps>
-  /** 展开目标宽度；未传时优先取样式宽度，否则自动测量自然宽度。 */
+  /** 展开目标宽度；未传时使用内容自然宽度，并跳过宽度动画。 */
   width?: RevealWidth
   /** 动画起始宽度；未传时优先使用实际触发按钮宽度。 */
   collapsedWidth?: RevealWidth
@@ -230,9 +230,8 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
   const [renderContent, setRenderContent] = React.useState(() => open)
   const [contentExpanded, setContentExpanded] = React.useState(() => open)
 
-  // 两个测量值只服务于动画端点，不改变调用方传入的 width/collapsedWidth。
+  // 触发器测量值只服务于动画起点，不改变调用方传入的 collapsedWidth。
   const [measuredTriggerWidth, setMeasuredTriggerWidth] = React.useState<number>()
-  const [measuredContentWidth, setMeasuredContentWidth] = React.useState<number>()
 
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const contentRef = React.useRef<unknown>(null)
@@ -264,7 +263,8 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
   // 语义 styles 的优先级高于顶层 style；独立 width prop 的优先级最高。
   const mergedContentStyle = { ...style, ...mergedStyles.content }
   const targetWidth = width ?? mergedContentStyle.width
-  const mergedWidth = targetWidth ?? measuredContentWidth
+  // CSS 无法在确定宽度和 auto 之间可靠插值；没有目标宽度时直接使用自然宽度。
+  const widthMotionEnabled = motionEnabled && targetWidth !== undefined
 
   /**
    * 统一派发状态请求。受控模式只通知，不在组件内部擅自改变 open；
@@ -294,46 +294,11 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
     if (open) {
       restoreFocusOnCloseRef.current = null
       restoreFocusAfterCloseRef.current = false
+      // 无目标宽度或关闭 motion 时，首次挂载即使用自然宽度，避免窄宽内容换行撑高容器。
+      if (!widthMotionEnabled) setContentExpanded(true)
       setRenderContent(true)
     }
-  }, [open])
-
-  /**
-   * 未提供目标宽度时，在内容仍为折叠态且浏览器尚未绘制前测量自然宽度。
-   * 临时清除 inline width/transition 可得到真实布局宽度，随后立即还原 DOM，
-   * 再把测量值写入 React 状态作为动画终点。该强制布局每次打开最多执行一次。
-   */
-  React.useLayoutEffect(() => {
-    if (
-      !motionEnabled ||
-      !open ||
-      !renderContent ||
-      contentExpanded ||
-      targetWidth !== undefined
-    ) {
-      return
-    }
-
-    const element = findContentElement(contentRef.current, contentScopeClassName)
-    if (!element) return
-
-    const previousTransition = element.style.transition
-    const previousWidth = element.style.width
-    element.style.transition = 'none'
-    element.style.width = ''
-    const naturalWidth = element.getBoundingClientRect().width
-    element.style.width = previousWidth
-    element.style.transition = previousTransition
-
-    if (naturalWidth > 0) setMeasuredContentWidth(naturalWidth)
-  }, [
-    contentExpanded,
-    contentScopeClassName,
-    motionEnabled,
-    open,
-    renderContent,
-    targetWidth,
-  ])
+  }, [open, widthMotionEnabled])
 
   /**
    * 驱动开合动画状态机：
@@ -343,7 +308,7 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
    */
   React.useEffect(() => {
     if (open) {
-      if (!motionEnabled) {
+      if (!widthMotionEnabled) {
         setContentExpanded(true)
         return undefined
       }
@@ -370,11 +335,10 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
         (restoreFocusOnCloseRef.current ?? focusedInside) && focusedInside,
       )
       restoreFocusOnCloseRef.current = null
-      setMeasuredContentWidth(undefined)
       setRenderContent(false)
     }
 
-    if (!motionEnabled) {
+    if (!widthMotionEnabled) {
       hideContent()
       return undefined
     }
@@ -382,7 +346,7 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
     const timeout = window.setTimeout(hideContent, getMotionDeadline(token.motionDurationMid))
 
     return () => window.clearTimeout(timeout)
-  }, [contentScopeClassName, motionEnabled, open, renderContent, token.motionDurationMid])
+  }, [contentScopeClassName, open, renderContent, token.motionDurationMid, widthMotionEnabled])
 
   // 内容挂载完成后再聚焦，兼容 HTMLElement 与 antd 组件 Ref。
   React.useLayoutEffect(() => {
@@ -480,11 +444,11 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
     ),
     style: {
       ...mergedContentStyle,
-      width: contentExpanded ? mergedWidth : mergedCollapsedWidth,
+      width: contentExpanded ? targetWidth : mergedCollapsedWidth,
       overflow: mergedContentStyle.overflow ?? 'hidden',
       transition:
         mergedContentStyle.transition ??
-        (motionEnabled
+        (widthMotionEnabled
           ? `width ${token.motionDurationMid} ${token.motionEaseInOut}`
           : undefined),
     },
