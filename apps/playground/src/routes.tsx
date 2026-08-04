@@ -1,13 +1,12 @@
-import { BugOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
+import { ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import type { ProLayoutRoute } from '@zby/pro'
 import ActionIconPlayground from './pages/ActionIconPlayground'
 import ActionRevealPlayground from './pages/ActionRevealPlayground'
 import ActionTextPlayground from './pages/ActionTextPlayground'
 import DemoPage from './pages/DemoPage'
+import ErrorPage from './pages/ErrorPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
-import ErrorPage from './pages/ErrorPage'
-import NavigationProgressPlayground from './pages/NavigationProgressPlayground'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -250,7 +249,6 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/reports/overview',
         title: '报表总览',
         element: <DemoPage />,
-        auth: '111',
       },
       {
         path: '/reports/live',
@@ -258,75 +256,58 @@ export const appRouters: ProLayoutRoute[ ] = [
         tag: { text: 'Beta', color: 'processing' },
         tooltipProps: { title: '该页不会进入 keepAlive 缓存' },
         element: <DemoPage />,
-        auth: '222',
       },
     ],
   },
   {
-    path: '/sample',
-    title: '打样',
+    path: '/demo',
+    title: '示例页面',
     icon: ClearOutlined,
     routes: [
       {
-        path: '/sample/input-range-input',
-        title: '数字范围',
-        element: <InputNumberRangePlayground />,
-        auth: 'sample:input-range-input',
+        path: '/demo/ui',
+        title: 'UI示例组',
         routes: [
           {
-            path: '/sample/input-range-input/detail/:id',
-            title: '数字详情',
+            path: '/demo/ui/action-reveal',
+            title: '动作展开',
+            element: <ActionRevealPlayground />,
+          },
+          {
+            path: '/demo/ui/action-icon',
+            title: '动作图标',
+            element: <ActionIconPlayground />,
+          },
+          {
+            path: '/demo/ui/action-text',
+            title: '动作文本',
+            element: <ActionTextPlayground />,
+          },
+          {
+            path: '/demo/ui/input-range-input',
+            title: '数字范围',
             element: <InputNumberRangePlayground />,
+          },
+          {
+            path: '/demo/ui/scroll-area',
+            title: '滚动组件',
+            element: <ScrollAreaPlayground />,
           },
         ],
       },
       {
-        path: '/sample/action-reveal',
-        title: '动作展开',
-        element: <ActionRevealPlayground />,
-      },
-      {
-        path: '/sample/action-icon',
-        title: '动作图标',
-        element: <ActionIconPlayground />,
-      },
-      {
-        path: '/sample/action-text',
-        title: '动作文本',
-        element: <ActionTextPlayground />,
-      },
-      {
-        path: '/sample/scroll-area',
-        title: '滚动组件',
-        element: <ScrollAreaPlayground />,
-      },
-      {
-        path: '/sample/error-page',
-        title: '错误页面',
-        element: <ErrorPage />,
-      },
-      {
-        path: '/sample/navigation-progress',
-        title: '进度条',
-        element: <NavigationProgressPlayground />,
+        path: '/demo/error',
+        title: '错误实例组',
+        routes: [
+          {
+            path: '/demo/error/404',
+            title: '404页面',
+            element: <ErrorPage />,
+          },
+        ],
       },
     ],
+
   },
-  {
-    path: '/bug',
-    title: '缺陷',
-    icon: BugOutlined,
-    routes: [
-      {
-        path: '/bug/overview',
-        title: '打样总览',
-        element: <DemoPage />,
-      },
-      {
-        path: '/bug/live',
-        title: '实时监控',
-        element: <DemoPage />,
-      },
-    ],
-  },
+
 ]
