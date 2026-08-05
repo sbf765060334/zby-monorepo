@@ -57,3 +57,14 @@ export type {
   ScrollAreaViewportProps,
   ScrollAreaWheelBehavior,
 } from './components/scroll-area'
+export { default as Table } from './components/table'
+export type {
+  TableColumnGroupType,
+  TableColumnResizeOptions,
+  TableColumnsType,
+  TableColumnType,
+  TableColumnWidthChangeInfo,
+  TableHeightMode,
+  TableProps,
+  TableRowHighlight,
+} from './components/table'

@@ -1,0 +1,208 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render } from '@testing-library/react'
+import * as React from 'react'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+
+import Table from '../index'
+
+const OriginalResizeObserver = globalThis.ResizeObserver
+const originalMatchMedia = window.matchMedia
+const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+  HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+    const width = this.classList.contains('ant-table-zby') ? 600 : 150
+    return {
+      x: 0,
+      y: 0,
+      width,
+      height: 40,
+      top: 0,
+      left: 0,
+      right: width,
+      bottom: 40,
+      toJSON: () => ({}),
+    }
+  }
+})
+
+afterAll(() => {
+  vi.stubGlobal('ResizeObserver', OriginalResizeObserver)
+  window.matchMedia = originalMatchMedia
+  HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
+})
+
+afterEach(() => cleanup())
+
+interface RowData {
+  id: number
+  name: string
+}
+
+const data: RowData[] = [
+  { id: 1, name: 'Alpha' },
+  { id: 2, name: 'Beta' },
+]
+
+const columns = [
+  { key: 'id', dataIndex: 'id' as const, title: 'ID', width: 120 },
+  {
+    key: 'name',
+    dataIndex: 'name' as const,
+    title: 'Name',
+    width: 160,
+    flex: 1,
+  },
+]
+
+describe('Table', () => {
+  it('uses rowHighlight object presence to toggle the current row', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        rowHighlight={{ onChange }}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    fireEvent.click(rows[0])
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
+    expect(rows[0].getAttribute('aria-current')).toBe('true')
+    expect(onChange).toHaveBeenLastCalledWith(1, data[0])
+
+    fireEvent.click(rows[0])
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(false)
+    expect(onChange).toHaveBeenLastCalledWith(null, null)
+  })
+
+  it('does not change controlled highlight until the key prop changes', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        rowHighlight={{ currentRowKey: 1, onChange }}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    fireEvent.click(rows[1])
+
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
+    expect(rows[1].classList.contains('ant-table-row-current')).toBe(false)
+    expect(onChange).toHaveBeenCalledWith(2, data[1])
+  })
+
+  it('sizes the injected selection column without a native scrollbar gutter', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        rowSelection={{}}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const selectionCol = container.querySelector('.ant-table-header col')
+
+    expect(selectionCol?.getAttribute('style')).toMatch(/width:\s*\d+px/)
+    expect(container.querySelector('.ant-table-selection-column')).not.toBeNull()
+    expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
+  })
+
+  it('moves only the guide during drag and commits a clamped width on pointerup', () => {
+    const onColumnWidthChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        onColumnWidthChange={onColumnWidthChange}
+        columns={[
+          {
+            key: 'id',
+            dataIndex: 'id',
+            title: 'ID',
+            width: 150,
+            minWidth: 100,
+            maxWidth: 200,
+          },
+          columns[1],
+        ]}
+        dataSource={data}
+      />,
+    )
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+    const guide = container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-guide',
+    )!
+
+    fireEvent.pointerDown(handle, { clientX: 150 })
+    fireEvent.pointerMove(document, { clientX: 20 })
+
+    expect(guide.style.display).toBe('block')
+    expect(onColumnWidthChange).not.toHaveBeenCalled()
+
+    fireEvent.pointerUp(document, { clientX: 20 })
+
+    expect(guide.style.display).toBe('none')
+    expect(onColumnWidthChange).toHaveBeenCalledTimes(1)
+    expect(onColumnWidthChange.mock.calls[0][0]).toMatchObject({
+      columnKey: 'id',
+      width: 100,
+    })
+  })
+
+  it('uses the shared ScrollArea viewport in fill and virtual modes', () => {
+    const largeData = Array.from({ length: 100 }, (_, index) => ({
+      id: index,
+      name: `Row ${index}`,
+    }))
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          virtual
+          scroll={{ y: 200 }}
+          columns={columns}
+          dataSource={largeData}
+        />
+      </div>,
+    )
+
+    expect(container.querySelector('.ant-table-zby-fill')).not.toBeNull()
+    expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
+    expect(container.querySelector('.ant-table-tbody-virtual-holder')).not.toBeNull()
+    expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(100)
+    expect(container.querySelector('[class*="virtual-scrollbar"]')).toBeNull()
+  })
+})

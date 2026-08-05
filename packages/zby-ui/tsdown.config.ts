@@ -1,23 +1,47 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
+const sharedConfig = {
   entry: {
     index: './src/index.ts',
     'locales/index': './src/locales/index.ts',
   },
-  format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
-  clean: true,
+  treeshake: {
+    moduleSideEffects: false,
+  },
   deps: {
     neverBundle: [
       'react',
       'react-dom',
       'antd',
       '@radix-ui/react-scroll-area',
+      '@rc-component/context',
+      '@rc-component/table',
       '@ant-design/icons',
       '@ant-design/cssinjs',
       '@zby/intl',
     ],
   },
-})
+}
+
+export default defineConfig([
+  {
+    ...sharedConfig,
+    name: 'esm',
+    format: ['esm'],
+    clean: true,
+    define: {
+      __ZBY_TABLE_ESM__: 'true',
+    },
+  },
+  {
+    ...sharedConfig,
+    name: 'cjs',
+    format: ['cjs'],
+    clean: false,
+    define: {
+      __ZBY_TABLE_ESM__: 'false',
+    },
+  },
+])

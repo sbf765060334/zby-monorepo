@@ -7,6 +7,7 @@ import DemoPage from './pages/DemoPage'
 import ErrorPage from './pages/ErrorPage'
 import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
 import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
+import TablePlayground from './pages/TablePlayground'
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
@@ -292,6 +293,11 @@ export const appRouters: ProLayoutRoute[ ] = [
             path: '/demo/ui/scroll-area',
             title: '滚动组件',
             element: <ScrollAreaPlayground />,
+          },
+          {
+            path: '/demo/ui/table',
+            title: '表格',
+            element: <TablePlayground />,
           },
         ],
       },
