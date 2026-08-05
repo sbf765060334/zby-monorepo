@@ -46,7 +46,8 @@ export default () => (
 ```tsx
 <ScrollArea
   direction="horizontal"
-  scrollbar={['hover', 'scrolling']}
+  scrollbar="hover"
+  wheelBehavior="axis-mapping"
   style={{ width: 480 }}
   styles={{ content: { width: 960, whiteSpace: 'nowrap' } }}
 >
@@ -54,9 +55,8 @@ export default () => (
 </ScrollArea>
 ```
 
-横向模式默认使用 `wheelBehavior="axis-mapping"`：当 viewport 只有横向溢出时，主要的纵向滚轮输入会转换为横向滚动。以下情况会保留原生行为：
+默认的 `wheelBehavior="native"` 完全保留浏览器滚轮行为。显式设置 `wheelBehavior="axis-mapping"` 后，当 viewport 只有横向溢出时，主要的纵向滚轮输入会转换为横向滚动。以下情况仍会保留原生行为：
 
-- 设置 `wheelBehavior="native"`；
 - 内容同时存在纵向溢出；
 - 事件来自嵌套的 ScrollArea；
 - 事件目标位于仍可继续纵向滚动的内部容器；
@@ -78,31 +78,30 @@ export default () => (
 ### 滚动条展示策略
 
 ```tsx
-<ScrollArea scrollbar={['hover', 'scrolling']} style={{ height: 240 }}>
+<ScrollArea scrollbar="scrolling" style={{ height: 240 }}>
   <LongList />
 </ScrollArea>
 ```
 
-`scrollbar` 只控制自定义滚动条的可见性，不会关闭 viewport 的滚动能力。即使设置为 `false`，仍可通过滚轮、触摸、键盘或代码滚动。
+`scrollbar` 用于选择滚动条实现和自定义滚动条的可见性，不会关闭 viewport 的滚动能力。即使设置为 `false`，仍可通过滚轮、触摸、键盘或代码滚动。
 
 | 配置 | 行为 |
 | --- | --- |
 | `hover` | 指针位于 root 内时显示 |
-| `scrolling` | 滚动或拖拽时显示；停止滚动约 1200ms 后隐藏 |
+| `scrolling` | 滚动时显示；停止滚动约 1200ms 后隐藏 |
 | `always` | 始终显示存在 thumb 的轨道 |
-| `['hover', 'scrolling']` | 任一触发条件满足时显示；重复项会自动去重 |
-| `true` | `always` 的别名 |
+| `native` | 使用浏览器原生滚动条，不挂载自定义轨道和滑块 |
 | `false` | 隐藏自定义轨道和滑块，但保留滚动能力 |
 
 ### 使用浏览器原生滚动条
 
 ```tsx
-<ScrollArea nativeScrollbar direction="both" style={{ width: 600, height: 320 }}>
+<ScrollArea scrollbar="native" direction="both" style={{ width: 600, height: 320 }}>
   <LargeContent />
 </ScrollArea>
 ```
 
-`nativeScrollbar` 为 `true` 时，viewport 保留浏览器原生滚动条，不显示自定义 track、thumb 和 corner。`direction` 仍然控制允许溢出的方向，`scrollbar` 的自定义展示策略不再产生视觉效果。
+`scrollbar="native"` 时，viewport 保留浏览器原生滚动条，不挂载自定义 track、thumb 和 corner。`direction` 仍然控制允许溢出的方向。
 
 ### 获取真实滚动节点
 
@@ -190,9 +189,8 @@ import { ScrollArea } from '@zby/ui'
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | direction | 允许滚动并生成自定义轨道的方向 | `ScrollAreaDirection` | `vertical` |
-| scrollbar | 自定义滚动条的展示策略；可组合多个触发条件 | `ScrollAreaScrollbar` | `hover` |
-| wheelBehavior | wheel 轴处理方式；轴映射只在纯横向溢出场景生效 | `ScrollAreaWheelBehavior` | `axis-mapping` |
-| nativeScrollbar | 是否保留浏览器原生滚动条并隐藏自定义轨道 | `boolean` | `false` |
+| scrollbar | 滚动条实现及自定义滚动条的展示策略 | `ScrollAreaScrollbar` | `hover` |
+| wheelBehavior | wheel 轴处理方式；轴映射只在纯横向溢出场景生效 | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | 获取真正发生滚动的 viewport | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | 透传给 viewport 的原生 `div` 属性 | `ScrollAreaViewportProps` | - |
 | classNames | 各语义节点的附加 className 对象或动态函数 | `ScrollAreaClassNamesType` | - |
@@ -220,15 +218,15 @@ type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both'
 ### ScrollAreaScrollbar
 
 ```ts
-type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
-
 type ScrollAreaScrollbar =
-  | boolean
-  | ScrollAreaScrollbarTrigger
-  | ScrollAreaScrollbarTrigger[]
+  | false
+  | 'native'
+  | 'hover'
+  | 'scrolling'
+  | 'always'
 ```
 
-数组用于组合触发条件，内部会去除重复值。`true` 会归一为 `['always']`，`false` 会关闭自定义滚动条显示。
+`hover`、`scrolling` 和 `always` 使用自定义滚动条；`native` 使用浏览器滚动条；`false` 隐藏滚动条但保留滚动能力。
 
 ### ScrollAreaWheelBehavior
 
@@ -246,8 +244,12 @@ type ScrollAreaWheelBehavior = 'native' | 'axis-mapping'
 ### ScrollAreaViewportProps
 
 ```ts
-type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
+type ScrollAreaViewportProps = Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'children' | 'dangerouslySetInnerHTML' | 'onWheel'
+> & {
   ref?: React.Ref<HTMLDivElement>
+  onWheel?: ScrollAreaWheelEventHandler
 }
 ```
 
@@ -273,7 +275,7 @@ type ScrollAreaStylesType =
   | ((info: { props: ScrollAreaProps }) => Readonly<ScrollAreaSemanticStyles>)
 ```
 
-动态函数收到的 `props` 已包含最终的 `direction`、`scrollbar`、`wheelBehavior`、`nativeScrollbar` 和 `dir`。其中 `scrollbar` 已归一为触发条件数组或 `false`。
+动态函数收到的 `props` 已包含最终的 `direction`、标量 `scrollbar`、`wheelBehavior` 和 `dir`。
 
 | 字段 | 对应节点 | classNames 类型 | styles 类型 |
 | --- | --- | --- | --- |

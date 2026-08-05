@@ -7,9 +7,12 @@ import useStyle from './style'
 import { composeRef } from './utils'
 
 export type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both'
-export type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
 export type ScrollAreaScrollbar =
-  boolean | ScrollAreaScrollbarTrigger | ScrollAreaScrollbarTrigger[]
+  | false
+  | 'native'
+  | 'hover'
+  | 'scrolling'
+  | 'always'
 export type ScrollAreaWheelBehavior = 'native' | 'axis-mapping'
 export type ScrollAreaWheelEventHandler = (event: WheelEvent) => void
 
@@ -51,7 +54,10 @@ export type ScrollAreaStylesType = ScrollAreaSemanticValue<Readonly<ScrollAreaSe
  * className、style、ref、onScroll 和 onWheel 会与 ScrollArea 内部逻辑合并，
  * 因此业务方可以监听或操作真实滚动容器，而不需要依赖组件内部 DOM 层级。
  */
-export type ScrollAreaViewportProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onWheel'> & {
+export type ScrollAreaViewportProps = Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'children' | 'dangerouslySetInnerHTML' | 'onWheel'
+> & {
   /** 获取内部真实滚动节点；与 ScrollAreaProps.viewportRef 指向同一个元素。 */
   ref?: React.Ref<HTMLDivElement>
   /** 在 viewport 的非 passive 原生监听流程中触发。 */
@@ -67,7 +73,10 @@ export type ScrollAreaViewportProps = Omit<React.HTMLAttributes<HTMLDivElement>,
  * 以便在 axis-mapping 模式决定是否需要阻止默认纵向滚动前，让业务方先处理事件。
  */
 export interface ScrollAreaProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'onWheel'> {
+  extends Omit<
+    React.HTMLAttributes<HTMLDivElement>,
+    'children' | 'dangerouslySetInnerHTML' | 'onWheel'
+  > {
   /**
    * 自定义组件 CSS 类名前缀。
    *
@@ -100,12 +109,11 @@ export interface ScrollAreaProps
   /**
    * 自定义滚动条的展示策略。
    *
-   * - true：等价于 'always'，轨道始终可见；
    * - false：不展示自定义轨道，但 viewport 仍可通过滚轮、触摸或代码正常滚动；
+   * - 'native'：使用浏览器原生滚动条，不渲染自定义轨道；
    * - 'hover'：鼠标或指针进入 root 时显示；
-   * - 'scrolling'：滚动或拖拽时显示，停止滚动 1200ms 后隐藏；
+   * - 'scrolling'：滚动时显示，停止滚动 1200ms 后隐藏；
    * - 'always'：始终显示；
-   * - 数组：组合多种触发方式，例如 ['hover', 'scrolling']。
    *
    * @default 'hover'
    */
@@ -120,20 +128,9 @@ export interface ScrollAreaProps
    *
    * axis-mapping 会避开嵌套 ScrollArea，并尊重业务回调已经调用的 preventDefault。
    *
-   * @default 'axis-mapping'
+   * @default 'native'
    */
   wheelBehavior?: ScrollAreaWheelBehavior
-
-  /**
-   * 是否使用浏览器原生滚动条。
-   *
-   * 为 false 时隐藏 viewport 的原生滚动条，并根据 scrollbar 配置展示自定义轨道；
-   * 为 true 时保留浏览器原生滚动条且不渲染自定义 track/thumb。
-   * 该属性只改变滚动条外观，不改变 direction 对 overflow 方向的约束。
-   *
-   * @default false
-   */
-  nativeScrollbar?: boolean
 
   /**
    * viewport 上的原生滚轮事件回调。
@@ -162,8 +159,8 @@ export interface ScrollAreaProps
   /**
    * 为各语义 DOM 节点追加类名。
    *
-   * 可以直接传对象，也可以传回调。回调收到的 props 已包含归一化后的 direction、
-   * scrollbar、wheelBehavior 和 nativeScrollbar，适合根据最终配置动态生成类名。
+   * 可以直接传对象，也可以传回调。回调收到的 props 已包含最终的 direction、
+   * scrollbar、wheelBehavior 和 dir，适合根据最终配置动态生成类名。
    * 支持 root、viewport、content、horizontalTrack、horizontalThumb、
    * verticalTrack 和 verticalThumb。
    */
@@ -187,16 +184,7 @@ export interface ScrollAreaProps
   children?: React.ReactNode
 }
 
-type NormalizedScrollbar = false | ScrollAreaScrollbarTrigger[]
-
-const SCROLLBAR_VISIBLE_DURATION = 1200
-
-function normalizeScrollbar(scrollbar: ScrollAreaScrollbar | undefined): NormalizedScrollbar {
-  if (scrollbar === true) return ['always']
-  if (scrollbar === false) return false
-  if (Array.isArray(scrollbar)) return Array.from(new Set(scrollbar))
-  return [scrollbar ?? 'hover']
-}
+const SCROLLBAR_HIDE_DELAY = 1200
 
 function canScrollHorizontal(direction: ScrollAreaDirection) {
   return direction === 'horizontal' || direction === 'both'
@@ -204,6 +192,23 @@ function canScrollHorizontal(direction: ScrollAreaDirection) {
 
 function canScrollVertical(direction: ScrollAreaDirection) {
   return direction === 'vertical' || direction === 'both'
+}
+
+function getViewportOverflowStyle(
+  direction: ScrollAreaDirection,
+): React.CSSProperties {
+  return {
+    overflowX: canScrollHorizontal(direction) ? 'auto' : 'hidden',
+    overflowY: canScrollVertical(direction) ? 'auto' : 'hidden',
+  }
+}
+
+function getScrollbarType(
+  scrollbar: ScrollAreaScrollbar,
+): React.ComponentProps<typeof ScrollAreaPrimitive.Root>['type'] {
+  if (scrollbar === 'hover') return 'hover'
+  if (scrollbar === 'scrolling') return 'scroll'
+  return 'always'
 }
 
 function resolveSemanticValue<T>(
@@ -226,7 +231,6 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     direction: customizeDirection,
     scrollbar: customizeScrollbar,
     wheelBehavior: customizeWheelBehavior,
-    nativeScrollbar: customizeNativeScrollbar,
     viewportRef,
     viewportProps,
     classNames,
@@ -249,19 +253,31 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   const prefixCls = getPrefixCls('scroll-area', customizePrefixCls)
   const [hashId, componentCSSVariables] = useStyle(prefixCls)
   const mergedDirection = customizeDirection ?? 'vertical'
-  const scrollbar = React.useMemo(
-    () => normalizeScrollbar(customizeScrollbar),
-    [customizeScrollbar],
-  )
-  const wheelBehavior = customizeWheelBehavior ?? 'axis-mapping'
-  const nativeScrollbar = customizeNativeScrollbar ?? false
+  const scrollbar = customizeScrollbar ?? 'hover'
+  const wheelBehavior = customizeWheelBehavior ?? 'native'
+  const usesNativeScrollbar = scrollbar === 'native'
+  const hasCustomScrollbar = scrollbar !== false && !usesNativeScrollbar
+  const showHorizontalTrack =
+    hasCustomScrollbar && canScrollHorizontal(mergedDirection)
+  const showVerticalTrack = hasCustomScrollbar && canScrollVertical(mergedDirection)
+  const shouldHandleWheel =
+    Boolean(onWheel) ||
+    Boolean(viewportPropsOnWheel) ||
+    (mergedDirection === 'horizontal' && wheelBehavior === 'axis-mapping')
   const directionMode =
     customizeDirectionMode === 'rtl' || customizeDirectionMode === 'ltr'
       ? customizeDirectionMode
       : (contextDirection ?? 'ltr')
-  const rootRef = React.useRef<HTMLDivElement>(null)
   const internalViewportRef = React.useRef<HTMLDivElement>(null)
-  const scrollEndTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const composedViewportRef = React.useMemo(
+    () =>
+      composeRef(
+        internalViewportRef,
+        viewportRef ?? null,
+        viewportPropsRef ?? null,
+      ),
+    [viewportRef, viewportPropsRef],
+  )
 
   /**
    * wheel 监听器必须使用 passive: false 才能在横向映射时阻止浏览器默认纵向滚动。
@@ -288,28 +304,16 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     direction: mergedDirection,
     scrollbar,
     wheelBehavior,
-    nativeScrollbar,
   }
   const mergedClassNames = resolveSemanticValue(classNames, mergedProps)
   const mergedStyles = resolveSemanticValue(styles, mergedProps)
 
   React.useEffect(() => {
+    if (!shouldHandleWheel) return undefined
+
     const viewport = internalViewportRef.current
-    const root = rootRef.current
     if (!viewport) return undefined
 
-    const showScrollingState = () => {
-      if (scrollbar === false || !scrollbar.includes('scrolling')) return
-
-      root?.classList.add(`${prefixCls}-scrolling`)
-      if (scrollEndTimerRef.current) {
-        clearTimeout(scrollEndTimerRef.current)
-      }
-      scrollEndTimerRef.current = setTimeout(() => {
-        root?.classList.remove(`${prefixCls}-scrolling`)
-        scrollEndTimerRef.current = null
-      }, SCROLLBAR_VISIBLE_DURATION)
-    }
     const onNativeWheel = (event: WheelEvent) => {
       const {
         onWheel: latestOnWheel,
@@ -328,14 +332,12 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
       ) {
         return
       }
-      if (hasNestedScrollAreaViewport(event.target, viewport)) return
-
       const hasHorizontalOverflow = viewport.scrollWidth > viewport.clientWidth
       const hasVerticalOverflow = viewport.scrollHeight > viewport.clientHeight
       const shouldMapVerticalWheel =
         hasHorizontalOverflow &&
         !hasVerticalOverflow &&
-        !hasScrollableVerticalAncestor(event.target, viewport, event.deltaY) &&
+        !shouldYieldVerticalWheelToDescendant(event.target, viewport, event.deltaY) &&
         Math.abs(event.deltaY) > Math.abs(event.deltaX)
 
       if (!shouldMapVerticalWheel) return
@@ -357,27 +359,11 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
       }
     }
 
-    viewport.addEventListener('scroll', showScrollingState, { passive: true })
     viewport.addEventListener('wheel', onNativeWheel, { passive: false })
     return () => {
-      viewport.removeEventListener('scroll', showScrollingState)
       viewport.removeEventListener('wheel', onNativeWheel)
-      root?.classList.remove(`${prefixCls}-scrolling`)
-      if (scrollEndTimerRef.current) {
-        clearTimeout(scrollEndTimerRef.current)
-        scrollEndTimerRef.current = null
-      }
     }
-  }, [nativeScrollbar, prefixCls, scrollbar])
-
-  const setDraggingState = (dragging: boolean) => {
-    rootRef.current?.classList.toggle(`${prefixCls}-dragging`, dragging)
-  }
-
-  const scrollbarClassNames =
-    scrollbar === false
-      ? `${prefixCls}-scrollbar-none`
-      : scrollbar.map((trigger) => `${prefixCls}-scrollbar-${trigger}`)
+  }, [shouldHandleWheel, usesNativeScrollbar])
 
   const contentNode = (
     <div
@@ -387,17 +373,13 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
       {children}
     </div>
   )
-  const composedViewportRef = composeRef(
-    internalViewportRef,
-    viewportRef ?? null,
-    viewportPropsRef ?? null,
-  )
   const viewportClassName = clsx(
     `${prefixCls}-viewport`,
     mergedClassNames.viewport,
     viewportPropsClassName,
   )
   const viewportStyle = {
+    ...getViewportOverflowStyle(mergedDirection),
     ...mergedStyles.viewport,
     ...viewportPropsStyle,
   }
@@ -405,16 +387,15 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   return (
     <ScrollAreaPrimitive.Root
       {...restProps}
-      ref={composeRef(ref, rootRef)}
-      type="always"
+      ref={ref}
+      type={getScrollbarType(scrollbar)}
       dir={directionMode}
-      scrollHideDelay={SCROLLBAR_VISIBLE_DURATION}
+      scrollHideDelay={SCROLLBAR_HIDE_DELAY}
       className={clsx(
         prefixCls,
         `${prefixCls}-${mergedDirection}`,
-        scrollbarClassNames,
         hashId,
-        { [`${prefixCls}-native`]: nativeScrollbar },
+        { [`${prefixCls}-native`]: usesNativeScrollbar },
         className,
         rootClassName,
         mergedClassNames.root,
@@ -425,7 +406,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         ...style,
       }}
     >
-      {nativeScrollbar ? (
+      {usesNativeScrollbar ? (
         <div
           {...restViewportProps}
           ref={composedViewportRef}
@@ -449,9 +430,8 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         </ScrollAreaPrimitive.Viewport>
       )}
 
-      {!nativeScrollbar && canScrollHorizontal(mergedDirection) ? (
+      {showHorizontalTrack ? (
         <ScrollAreaPrimitive.Scrollbar
-          forceMount
           orientation="horizontal"
           className={clsx(
             `${prefixCls}-track`,
@@ -459,10 +439,6 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
             mergedClassNames.horizontalTrack,
           )}
           style={mergedStyles.horizontalTrack}
-          onPointerDownCapture={() => setDraggingState(true)}
-          onPointerUpCapture={() => setDraggingState(false)}
-          onPointerCancel={() => setDraggingState(false)}
-          onLostPointerCapture={() => setDraggingState(false)}
         >
           <ScrollAreaPrimitive.Thumb
             aria-hidden="true"
@@ -472,9 +448,8 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         </ScrollAreaPrimitive.Scrollbar>
       ) : null}
 
-      {!nativeScrollbar && canScrollVertical(mergedDirection) ? (
+      {showVerticalTrack ? (
         <ScrollAreaPrimitive.Scrollbar
-          forceMount
           orientation="vertical"
           className={clsx(
             `${prefixCls}-track`,
@@ -482,10 +457,6 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
             mergedClassNames.verticalTrack,
           )}
           style={mergedStyles.verticalTrack}
-          onPointerDownCapture={() => setDraggingState(true)}
-          onPointerUpCapture={() => setDraggingState(false)}
-          onPointerCancel={() => setDraggingState(false)}
-          onLostPointerCapture={() => setDraggingState(false)}
         >
           <ScrollAreaPrimitive.Thumb
             aria-hidden="true"
@@ -495,14 +466,14 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         </ScrollAreaPrimitive.Scrollbar>
       ) : null}
 
-      {!nativeScrollbar && mergedDirection === 'both' ? (
+      {showHorizontalTrack && showVerticalTrack ? (
         <ScrollAreaPrimitive.Corner className={`${prefixCls}-corner`} />
       ) : null}
     </ScrollAreaPrimitive.Root>
   )
 })
 
-function hasScrollableVerticalAncestor(
+function shouldYieldVerticalWheelToDescendant(
   target: EventTarget | null,
   boundary: HTMLElement,
   deltaY: number,
@@ -512,6 +483,10 @@ function hasScrollableVerticalAncestor(
   let node: Element | null = target
 
   while (node && node !== boundary) {
+    if (node.hasAttribute('data-zby-scroll-area-viewport')) {
+      return true
+    }
+
     if (node instanceof HTMLElement) {
       const { overflowY } = getComputedStyle(node)
       const canScrollY =
@@ -543,21 +518,6 @@ function normalizeWheelDelta(event: WheelEvent, pageSize: number) {
   if (event.deltaMode === 1) return event.deltaY * 16
   if (event.deltaMode === 2) return event.deltaY * pageSize
   return event.deltaY
-}
-
-function hasNestedScrollAreaViewport(target: EventTarget | null, boundary: HTMLElement) {
-  if (!(target instanceof Element)) return false
-
-  let node: Element | null = target
-
-  while (node && node !== boundary) {
-    if (node.hasAttribute('data-zby-scroll-area-viewport')) {
-      return true
-    }
-    node = node.parentElement
-  }
-
-  return false
 }
 
 ScrollArea.displayName = 'ScrollArea'

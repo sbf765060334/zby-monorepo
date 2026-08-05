@@ -123,6 +123,16 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         touchAction: 'none',
         userSelect: 'none',
         transition: `opacity ${token.motionDurationMid} ${token.motionEaseInOut}`,
+
+        '&[data-state="visible"]': {
+          opacity: 1,
+          pointerEvents: 'auto',
+        },
+
+        '&[data-state="hidden"]': {
+          opacity: 0,
+          pointerEvents: 'none',
+        },
       },
 
       [`> ${componentCls}-track > ${componentCls}-thumb`]: {
@@ -181,35 +191,10 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
         background: 'transparent',
       },
 
-      [`&${componentCls}-scrollbar-always > ${componentCls}-track, &${componentCls}-scrollbar-hover:hover > ${componentCls}-track, &${componentCls}-scrolling > ${componentCls}-track, &${componentCls}-dragging > ${componentCls}-track`]:
-      {
-        opacity: 1,
-        pointerEvents: 'auto',
-      },
-
-      [`> ${componentCls}-track:not(:has(> ${componentCls}-thumb))`]: {
+      [`> ${componentCls}-track:empty`]: {
         visibility: 'hidden',
         opacity: 0,
         pointerEvents: 'none',
-      },
-
-      [`&${componentCls}-scrollbar-none > ${componentCls}-track, &${componentCls}-scrollbar-none > ${componentCls}-corner`]:
-      {
-        display: 'none',
-      },
-
-      [`&${componentCls}-vertical > ${componentCls}-viewport`]: {
-        overflowX: 'hidden',
-        overflowY: 'auto',
-      },
-
-      [`&${componentCls}-horizontal > ${componentCls}-viewport`]: {
-        overflowX: 'auto',
-        overflowY: 'hidden',
-      },
-
-      [`&${componentCls}-both > ${componentCls}-viewport`]: {
-        overflow: 'auto',
       },
     },
   }

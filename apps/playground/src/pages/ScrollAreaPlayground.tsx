@@ -6,7 +6,6 @@ import {
   Segmented,
   Slider,
   Space,
-  Switch,
   Typography,
   theme,
 } from 'antd'
@@ -24,7 +23,7 @@ const { Text, Title } = Typography
 const ControlField = PlaygroundControl
 const DemoCase = PlaygroundCase
 
-type ScrollbarMode = 'hover' | 'scrolling' | 'always' | 'off'
+type ScrollbarMode = 'hover' | 'scrolling' | 'always' | 'native' | 'off'
 
 const verticalRows = Array.from({ length: 24 }, (_, index) => ({
   id: String(index + 1).padStart(2, '0'),
@@ -150,8 +149,7 @@ export default function ScrollAreaPlayground() {
   const { token } = theme.useToken()
   const [direction, setDirection] = React.useState<ScrollAreaDirection>('vertical')
   const [scrollbarMode, setScrollbarMode] = React.useState<ScrollbarMode>('hover')
-  const [wheelBehavior, setWheelBehavior] = React.useState<ScrollAreaWheelBehavior>('axis-mapping')
-  const [nativeScrollbar, setNativeScrollbar] = React.useState(false)
+  const [wheelBehavior, setWheelBehavior] = React.useState<ScrollAreaWheelBehavior>('native')
   const [scrollPosition, setScrollPosition] = React.useState({ left: 0, top: 0 })
   const [wheelEventSource, setWheelEventSource] = React.useState('等待滚轮事件')
   const [trackSize, setTrackSize] = React.useState(10)
@@ -220,6 +218,7 @@ export default function ScrollAreaPlayground() {
                 { label: 'hover', value: 'hover' },
                 { label: 'scroll', value: 'scrolling' },
                 { label: 'always', value: 'always' },
+                { label: 'native', value: 'native' },
                 { label: 'off', value: 'off' },
               ]}
               onChange={(value) => setScrollbarMode(value as ScrollbarMode)}
@@ -233,14 +232,6 @@ export default function ScrollAreaPlayground() {
               onChange={(value) => setWheelBehavior(value as ScrollAreaWheelBehavior)}
             />
           </ControlField>
-          <ControlField label="nativeScrollbar">
-            <Switch
-              checked={nativeScrollbar}
-              checkedChildren="Native"
-              unCheckedChildren="Custom"
-              onChange={setNativeScrollbar}
-            />
-          </ControlField>
         </div>
 
         <DemoCase title="实时预览">
@@ -248,7 +239,6 @@ export default function ScrollAreaPlayground() {
             direction={direction}
             scrollbar={scrollbar}
             wheelBehavior={wheelBehavior}
-            nativeScrollbar={nativeScrollbar}
             onWheel={() => setWheelEventSource('root onWheel 已触发')}
             style={{ ...scrollFrameStyle, height: 260 }}
             viewportProps={{
@@ -281,12 +271,8 @@ export default function ScrollAreaPlayground() {
               <VerticalContent />
             </ScrollArea>
           </DemoCase>
-          <DemoCase title="hover + scrolling">
-            <ScrollArea
-              direction="vertical"
-              scrollbar={['hover', 'scrolling']}
-              style={scrollFrameStyle}
-            >
+          <DemoCase title="vertical / scrolling">
+            <ScrollArea direction="vertical" scrollbar="scrolling" style={scrollFrameStyle}>
               <VerticalContent />
             </ScrollArea>
           </DemoCase>
@@ -300,8 +286,8 @@ export default function ScrollAreaPlayground() {
               <HorizontalContent />
             </ScrollArea>
           </DemoCase>
-          <DemoCase title="both / scrollbar=true">
-            <ScrollArea direction="both" scrollbar style={scrollFrameStyle}>
+          <DemoCase title="both / always">
+            <ScrollArea direction="both" scrollbar="always" style={scrollFrameStyle}>
               <BothContent />
             </ScrollArea>
           </DemoCase>
@@ -310,8 +296,8 @@ export default function ScrollAreaPlayground() {
               <VerticalContent />
             </ScrollArea>
           </DemoCase>
-          <DemoCase title="nativeScrollbar">
-            <ScrollArea direction="both" nativeScrollbar style={scrollFrameStyle}>
+          <DemoCase title='scrollbar="native"'>
+            <ScrollArea direction="both" scrollbar="native" style={scrollFrameStyle}>
               <BothContent />
             </ScrollArea>
           </DemoCase>

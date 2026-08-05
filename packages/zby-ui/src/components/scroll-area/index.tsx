@@ -6,7 +6,6 @@ export type {
   ScrollAreaDirection,
   ScrollAreaProps,
   ScrollAreaScrollbar,
-  ScrollAreaScrollbarTrigger,
   ScrollAreaSemanticClassNames,
   ScrollAreaSemanticName,
   ScrollAreaSemanticStyles,

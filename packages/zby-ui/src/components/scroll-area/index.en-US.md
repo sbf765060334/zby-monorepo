@@ -45,7 +45,8 @@ The default is `direction="vertical"`. Give the root a calculable height or maxi
 ```tsx
 <ScrollArea
   direction="horizontal"
-  scrollbar={['hover', 'scrolling']}
+  scrollbar="hover"
+  wheelBehavior="axis-mapping"
   style={{ width: 480 }}
   styles={{ content: { width: 960, whiteSpace: 'nowrap' } }}
 >
@@ -53,9 +54,8 @@ The default is `direction="vertical"`. Give the root a calculable height or maxi
 </ScrollArea>
 ```
 
-Horizontal mode uses `wheelBehavior="axis-mapping"` by default. When the viewport has only horizontal overflow, dominant vertical wheel input is converted to horizontal movement. Native behavior is preserved when:
+The default `wheelBehavior="native"` leaves browser wheel behavior untouched. With the explicit `wheelBehavior="axis-mapping"` option, dominant vertical wheel input is converted to horizontal movement when the viewport has horizontal-only overflow. Native behavior is still preserved when:
 
-- `wheelBehavior="native"` is set;
 - The content also has vertical overflow;
 - The event comes from a nested ScrollArea;
 - The event target is inside a nested element that can still scroll vertically;
@@ -77,31 +77,30 @@ Horizontal mode uses `wheelBehavior="axis-mapping"` by default. When the viewpor
 ### Scrollbar visibility strategies
 
 ```tsx
-<ScrollArea scrollbar={['hover', 'scrolling']} style={{ height: 240 }}>
+<ScrollArea scrollbar="scrolling" style={{ height: 240 }}>
   <LongList />
 </ScrollArea>
 ```
 
-`scrollbar` controls only custom scrollbar visibility. It does not disable viewport scrolling. Even with `false`, wheel, touch, keyboard, and programmatic scrolling still work.
+`scrollbar` selects the scrollbar implementation and custom visibility behavior. It does not disable viewport scrolling. Even with `false`, wheel, touch, keyboard, and programmatic scrolling still work.
 
 | Configuration | Behavior |
 | --- | --- |
 | `hover` | Show while the pointer is inside the root |
-| `scrolling` | Show while scrolling or dragging, then hide about 1200 ms after scrolling stops |
+| `scrolling` | Show while scrolling, then hide about 1200 ms after scrolling stops |
 | `always` | Always show tracks that contain a thumb |
-| `['hover', 'scrolling']` | Show when either trigger is active; duplicate items are removed |
-| `true` | Alias of `always` |
+| `native` | Use browser-native scrollbars without mounting custom tracks or thumbs |
 | `false` | Hide custom tracks and thumbs without disabling scrolling |
 
 ### Native browser scrollbars
 
 ```tsx
-<ScrollArea nativeScrollbar direction="both" style={{ width: 600, height: 320 }}>
+<ScrollArea scrollbar="native" direction="both" style={{ width: 600, height: 320 }}>
   <LargeContent />
 </ScrollArea>
 ```
 
-With `nativeScrollbar`, the viewport keeps browser-native scrollbars and custom tracks, thumbs, and the corner are not displayed. `direction` still limits overflow directions, while the custom `scrollbar` visibility strategy has no visual effect.
+With `scrollbar="native"`, the viewport keeps browser-native scrollbars and does not mount custom tracks, thumbs, or the corner. `direction` still limits overflow directions.
 
 ### Accessing the actual scrolling element
 
@@ -189,9 +188,8 @@ Except for `children`, ScrollArea inherits native `div` attributes and applies t
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
 | direction | Allowed overflow direction and custom tracks | `ScrollAreaDirection` | `vertical` |
-| scrollbar | Custom scrollbar visibility strategy; multiple triggers can be combined | `ScrollAreaScrollbar` | `hover` |
-| wheelBehavior | Wheel-axis handling; mapping applies only to horizontal-only overflow | `ScrollAreaWheelBehavior` | `axis-mapping` |
-| nativeScrollbar | Keep browser-native scrollbars and hide custom tracks | `boolean` | `false` |
+| scrollbar | Scrollbar implementation and custom visibility strategy | `ScrollAreaScrollbar` | `hover` |
+| wheelBehavior | Wheel-axis handling; mapping applies only to horizontal-only overflow | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | Ref for the element that actually scrolls | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | Native `div` attributes passed to the viewport | `ScrollAreaViewportProps` | - |
 | classNames | Additional class names for semantic nodes, as an object or function | `ScrollAreaClassNamesType` | - |
@@ -219,15 +217,15 @@ type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both'
 ### ScrollAreaScrollbar
 
 ```ts
-type ScrollAreaScrollbarTrigger = 'hover' | 'scrolling' | 'always'
-
 type ScrollAreaScrollbar =
-  | boolean
-  | ScrollAreaScrollbarTrigger
-  | ScrollAreaScrollbarTrigger[]
+  | false
+  | 'native'
+  | 'hover'
+  | 'scrolling'
+  | 'always'
 ```
 
-Arrays combine visibility triggers and duplicate values are removed. `true` normalizes to `['always']`; `false` disables custom scrollbar visibility.
+`hover`, `scrolling`, and `always` use custom scrollbars; `native` uses browser scrollbars; `false` hides scrollbars without disabling scrolling.
 
 ### ScrollAreaWheelBehavior
 
@@ -245,8 +243,12 @@ Axis mapping handles pixel, line, and page wheel delta modes and adjusts the mov
 ### ScrollAreaViewportProps
 
 ```ts
-type ScrollAreaViewportProps = React.HTMLAttributes<HTMLDivElement> & {
+type ScrollAreaViewportProps = Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'children' | 'dangerouslySetInnerHTML' | 'onWheel'
+> & {
   ref?: React.Ref<HTMLDivElement>
+  onWheel?: ScrollAreaWheelEventHandler
 }
 ```
 
@@ -272,7 +274,7 @@ type ScrollAreaStylesType =
   | ((info: { props: ScrollAreaProps }) => Readonly<ScrollAreaSemanticStyles>)
 ```
 
-Function callbacks receive final `direction`, `scrollbar`, `wheelBehavior`, `nativeScrollbar`, and `dir` values. `scrollbar` has already been normalized to a trigger array or `false`.
+Function callbacks receive final `direction`, scalar `scrollbar`, `wheelBehavior`, and `dir` values.
 
 | Field | Node | classNames type | styles type |
 | --- | --- | --- | --- |
