@@ -29,7 +29,7 @@ beforeAll(() => {
     dispatchEvent: vi.fn(),
   }))
   HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-    const width = this.classList.contains('ant-table-zby') ? 600 : 150
+    const width = this.classList.contains('ant-table-wrapper-zby') ? 600 : 150
     return {
       x: 0,
       y: 0,
@@ -118,11 +118,12 @@ describe('Table', () => {
   })
 
   it('sizes the injected selection column without a native scrollbar gutter', () => {
+    const onChange = vi.fn()
     const { container } = render(
       <Table<RowData>
         rowKey="id"
         pagination={false}
-        rowSelection={{}}
+        rowSelection={{ onChange }}
         columns={columns}
         dataSource={data}
       />,
@@ -133,6 +134,80 @@ describe('Table', () => {
     expect(selectionCol?.getAttribute('style')).toMatch(/width:\s*\d+px/)
     expect(container.querySelector('.ant-table-selection-column')).not.toBeNull()
     expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
+
+    fireEvent.click(
+      container.querySelector<HTMLInputElement>(
+        '.ant-table-tbody .ant-table-row .ant-checkbox-input',
+      )!,
+    )
+    expect(onChange.mock.calls[0][0]).toEqual([1])
+  })
+
+  it('keeps the forked sorter pipeline working', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[
+          columns[0],
+          {
+            ...columns[1],
+            sorter: (left, right) => left.name.localeCompare(right.name),
+          },
+        ]}
+        dataSource={[data[1], data[0]]}
+      />,
+    )
+
+    fireEvent.click(container.querySelector('.ant-table-column-sorters')!)
+
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+    expect(rows[0].textContent).toContain('Alpha')
+    expect(rows[1].textContent).toContain('Beta')
+  })
+
+  it('keeps the forked controlled filter pipeline working', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[
+          columns[0],
+          {
+            ...columns[1],
+            filters: [{ text: 'Alpha', value: 'Alpha' }],
+            filteredValue: ['Alpha'],
+            onFilter: (value, record) => record.name === value,
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].textContent).toContain('Alpha')
+  })
+
+  it('keeps the forked pagination pipeline working', () => {
+    const paginatedData = Array.from({ length: 12 }, (_, index) => ({
+      id: index + 1,
+      name: `Row ${index + 1}`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={{ pageSize: 5 }}
+        columns={columns}
+        dataSource={paginatedData}
+      />,
+    )
+
+    fireEvent.click(container.querySelector('.ant-pagination-item-2')!)
+
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+    expect(rows).toHaveLength(5)
+    expect(rows[0].textContent).toContain('Row 6')
   })
 
   it('moves only the guide during drag and commits a clamped width on pointerup', () => {
@@ -199,7 +274,7 @@ describe('Table', () => {
       </div>,
     )
 
-    expect(container.querySelector('.ant-table-zby-fill')).not.toBeNull()
+    expect(container.querySelector('.ant-table-wrapper-zby-fill')).not.toBeNull()
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(container.querySelector('.ant-table-tbody-virtual-holder')).not.toBeNull()
     expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(100)

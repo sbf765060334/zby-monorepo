@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   collectColumnSizingLeaves,
   resolveColumnWidths,
-} from '../columnSizing'
-import type { TableColumnsType } from '../types'
+} from '../hooks/useColumnSizing'
+import type { TableColumnsType } from '../interface'
 
 interface RowData {
   id: number
@@ -65,5 +65,21 @@ describe('Table column sizing', () => {
 
     expect(result.widths.get('id')).toBe(100)
     expect(result.widths.get('name')).toBe(300)
+  })
+
+  it('continues with ordinary columns after explicit flex columns reach maxWidth', () => {
+    const columns: TableColumnsType<RowData> = [
+      { key: 'id', dataIndex: 'id', width: 100, maxWidth: 180 },
+      { key: 'name', dataIndex: 'name', width: 100, maxWidth: 150, flex: 1 },
+      { key: 'remark', dataIndex: 'remark', width: 100, maxWidth: 220 },
+    ]
+    const leaves = collectColumnSizingLeaves(columns, new Map())
+    const result = resolveColumnWidths(leaves, 500)
+
+    expect(result.widths.get('name')).toBe(150)
+    expect(result.widths.get('remark')).toBe(220)
+    expect(result.widths.get('id')).toBe(130)
+    expect(result.totalWidth).toBe(500)
+    expect(result.unresolvedWidth).toBe(0)
   })
 })

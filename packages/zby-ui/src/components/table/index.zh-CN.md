@@ -3,7 +3,7 @@ category: Components
 group: 数据展示
 title: Table
 subtitle: 表格
-description: 基于 antd Table 受控 fork，增加高度填充、提交式列宽拖拽、行高亮和纵向虚拟化。
+description: 基于 Ant Design 6.5.3 Table 源码 fork，增加高度填充、提交式列宽拖拽、行高亮和纵向虚拟化。
 ---
 
 ## 何时使用
@@ -121,6 +121,7 @@ const columns: TableColumnsType<Order> = [
 
 - 先计算所有可见叶子列的基础宽度；
 - 容器还有剩余空间时，按 `flex` 权重分给未手动调整的 flex 列；
+- 显式 flex 列达到 `maxWidth` 后，按从右到左的顺序继续交给仍可增长的普通业务列；
 - 没有显式 flex 列时，最后一个合适的普通列承担隐式填充；
 - 手动调整过的 flex 列退出 flex 池，避免松手后立刻被弹回；
 - 不生成额外的空白 `<th>` 或 `<td>`。
@@ -222,4 +223,3 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 | resizable | 在全局开启调整后，是否允许当前叶子列调整 | `boolean` | `true` |
 
 固定列不会参与 flex 扩张。列组自身不显示拖拽手柄，拖拽和宽度分配以可见叶子列为单位。
-

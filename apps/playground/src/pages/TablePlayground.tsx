@@ -92,7 +92,7 @@ const responsiveColumns: TableColumnsType<OrderRecord> = [
     dataIndex: 'customer',
     width: 160,
     minWidth: 120,
-    maxWidth: 320,
+    maxWidth: 520,
     flex: 1,
     shouldCellUpdate: (record, previous) => record.customer !== previous.customer,
   },
@@ -162,7 +162,7 @@ export default function TablePlayground() {
   return (
     <PlaygroundPage
       title="Table"
-      description="受控 fork：高度填充、提交式列宽拖拽、当前行高亮和共享滚动视口。"
+      description="基于 Ant Design 6.5.3 的源码级 fork：高度填充、提交式列宽拖拽、当前行高亮和共享滚动视口。"
     >
       <PlaygroundStatus>{lastEvent}</PlaygroundStatus>
 

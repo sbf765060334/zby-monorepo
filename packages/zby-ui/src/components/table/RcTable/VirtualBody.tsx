@@ -1,28 +1,17 @@
 import { useContext } from '@rc-component/context'
-import EsBody from '@rc-component/table/es/Body'
-import EsColGroup from '@rc-component/table/es/ColGroup'
-import EsTableContext from '@rc-component/table/es/context/TableContext'
-import EsUseFlattenRecords from '@rc-component/table/es/hooks/useFlattenRecords'
-import EsBodyLine from '@rc-component/table/es/VirtualTable/BodyLine'
+import Body from '@rc-component/table/es/Body'
+import ColGroup from '@rc-component/table/es/ColGroup'
+import TableContext from '@rc-component/table/es/context/TableContext'
+import useFlattenRecords from '@rc-component/table/es/hooks/useFlattenRecords'
+import BodyLine from '@rc-component/table/es/VirtualTable/BodyLine'
 import {
-  GridContext as EsGridContext,
-  StaticContext as EsStaticContext,
+  GridContext,
+  StaticContext,
 } from '@rc-component/table/es/VirtualTable/context'
-import LibBody from '@rc-component/table/lib/Body'
-import LibColGroup from '@rc-component/table/lib/ColGroup'
-import LibTableContext from '@rc-component/table/lib/context/TableContext'
-import LibUseFlattenRecords from '@rc-component/table/lib/hooks/useFlattenRecords'
-import LibBodyLine from '@rc-component/table/lib/VirtualTable/BodyLine'
-import {
-  GridContext as LibGridContext,
-  StaticContext as LibStaticContext,
-} from '@rc-component/table/lib/VirtualTable/context'
 import * as React from 'react'
 import type { GetComponent, GetRowKey } from '@rc-component/table/es/interface'
 
-import ScrollArea from '../scroll-area'
-
-declare const __ZBY_TABLE_ESM__: boolean
+import ScrollArea from '../../scroll-area'
 
 const EMPTY_COLUMNS: never[] = []
 const EMPTY_KEYS = new Set<React.Key>()
@@ -35,24 +24,6 @@ const defaultGetComponent = (
   _path: readonly (string | number)[],
   defaultComponent?: React.ElementType,
 ) => defaultComponent
-
-const USE_ES_TABLE_BUILD =
-  typeof __ZBY_TABLE_ESM__ === 'undefined' || __ZBY_TABLE_ESM__
-const SelectedBody = USE_ES_TABLE_BUILD ? EsBody : LibBody
-const SelectedColGroup = USE_ES_TABLE_BUILD ? EsColGroup : LibColGroup
-const SelectedTableContext = USE_ES_TABLE_BUILD
-  ? EsTableContext
-  : LibTableContext
-const selectedUseFlattenRecords = USE_ES_TABLE_BUILD
-  ? EsUseFlattenRecords
-  : LibUseFlattenRecords
-const SelectedBodyLine = USE_ES_TABLE_BUILD ? EsBodyLine : LibBodyLine
-const SelectedGridContext = USE_ES_TABLE_BUILD
-  ? EsGridContext
-  : LibGridContext
-const SelectedStaticContext = USE_ES_TABLE_BUILD
-  ? EsStaticContext
-  : LibStaticContext
 
 interface RcScrollBodyInfo {
   scrollbarSize: number
@@ -168,7 +139,7 @@ function TableScrollBody<RecordType extends object>(
     tableWidth,
     onTableScroll,
   } = props
-  const tableContext = useContext(SelectedTableContext) ?? {}
+  const tableContext = useContext(TableContext) ?? {}
   const prefixCls = tableContext.prefixCls ?? 'ant-table'
   const flattenColumns = tableContext.flattenColumns ?? EMPTY_COLUMNS
   const getRowKey: GetRowKey<RecordType> =
@@ -188,7 +159,7 @@ function TableScrollBody<RecordType extends object>(
     typeof scrollY === 'number' ? scrollY : 0,
   )
 
-  const flattenData = selectedUseFlattenRecords(
+  const flattenData = useFlattenRecords(
     data,
     childrenColumnName,
     expandedKeys,
@@ -375,15 +346,14 @@ function TableScrollBody<RecordType extends object>(
       <table
         style={{
           width: tableWidth,
-          minWidth: '100%',
           tableLayout,
         }}
       >
-        <SelectedColGroup
+        <ColGroup
           colWidths={flattenColumns.map((column) => column.width ?? 0)}
           columns={flattenColumns}
         />
-        <SelectedBody data={data} measureColumnWidth />
+        <Body data={data} measureColumnWidth />
       </table>
     )
   } else {
@@ -398,7 +368,7 @@ function TableScrollBody<RecordType extends object>(
             itemKey={rowKey}
             onHeightChange={onHeightChange}
           >
-            <SelectedBodyLine
+            <BodyLine
               data={item}
               rowKey={rowKey}
               index={index}
@@ -409,14 +379,13 @@ function TableScrollBody<RecordType extends object>(
       })
 
     bodyNode = (
-      <SelectedStaticContext.Provider value={staticContext}>
-        <SelectedGridContext.Provider value={gridContext}>
+      <StaticContext.Provider value={staticContext}>
+        <GridContext.Provider value={gridContext}>
           <div
             className={`${prefixCls}-tbody-virtual-holder`}
             style={{
               position: 'relative',
               width: tableWidth,
-              minWidth: '100%',
               height: totalHeight,
             }}
           >
@@ -433,8 +402,8 @@ function TableScrollBody<RecordType extends object>(
               {visibleRows}
             </div>
           </div>
-        </SelectedGridContext.Provider>
-      </SelectedStaticContext.Provider>
+        </GridContext.Provider>
+      </StaticContext.Provider>
     )
   }
 
@@ -451,7 +420,7 @@ function TableScrollBody<RecordType extends object>(
         root: bodyHeightStyle,
         content: {
           width: tableWidth,
-          minWidth: '100%',
+          minWidth: 0,
           minHeight: '100%',
         },
       }}

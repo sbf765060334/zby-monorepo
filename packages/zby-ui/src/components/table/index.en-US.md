@@ -2,7 +2,7 @@
 category: Components
 group: Data Display
 title: Table
-description: A controlled fork of antd Table with fill height, commit-on-release resizing, current-row highlighting, and vertical virtualization.
+description: A source-level fork of Ant Design 6.5.3 Table with fill height, commit-on-release resizing, current-row highlighting, and vertical virtualization.
 ---
 
 ## When To Use
@@ -114,6 +114,7 @@ Dragging moves only a dashed guide. The real width is committed once on pointer 
 
 - Start with the base width of every visible leaf column;
 - Distribute remaining container width among unmodified flex columns by weight;
+- After explicit flex columns reach `maxWidth`, continue with eligible regular business columns from right to left;
 - If no explicit flex column exists, use the last eligible regular column as an implicit flex column;
 - Remove a manually resized flex column from the flex pool so it does not snap back after release;
 - Never create filler `<th>` or `<td>` elements.

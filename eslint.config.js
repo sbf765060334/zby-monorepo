@@ -91,4 +91,16 @@ export default antfu(
       curly: 'off',
     },
   },
+  {
+    // Keep Ant Design 6.5.3 Table's upstream hook and development-warning
+    // patterns intact inside the source fork.
+    files: ['packages/zby-ui/src/components/table/**/*.{ts,tsx}'],
+    rules: {
+      'node/prefer-global/process': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'ts/no-non-null-asserted-optional-chain': 'off',
+    },
+  },
 )

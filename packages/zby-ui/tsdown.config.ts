@@ -40,6 +40,10 @@ export default defineConfig([
     name: 'cjs',
     format: ['cjs'],
     clean: false,
+    alias: {
+      'antd/es': 'antd/lib',
+      '@rc-component/table/es': '@rc-component/table/lib',
+    },
     define: {
       __ZBY_TABLE_ESM__: 'false',
     },

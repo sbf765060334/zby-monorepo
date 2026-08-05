@@ -200,6 +200,9 @@ importers:
       '@ant-design/cssinjs':
         specifier: '>=1.0.0'
         version: 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ant-design/fast-color':
+        specifier: 3.0.1
+        version: 3.0.1
       '@ant-design/icons':
         specifier: 6.3.2
         version: 6.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -212,6 +215,12 @@ importers:
       '@rc-component/table':
         specifier: 1.10.4
         version: 1.10.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tree':
+        specifier: 1.3.2
+        version: 1.3.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util':
+        specifier: 1.12.0
+        version: 1.12.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@zby/intl':
         specifier: workspace:*
         version: link:../zby-intl
