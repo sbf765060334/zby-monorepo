@@ -15,7 +15,7 @@ Table keeps the upper-level features of antd 6.5.3 Table, including custom cells
 - Click-to-toggle current-row highlighting for data investigation;
 - Vertical row virtualization with a visible scrollbar, fill layout, and normal horizontal scrolling.
 
-This version does not include ActionText and does not virtualize columns. Virtual and non-virtual bodies share one native scroll viewport and the zby ScrollArea visual treatment. Table intentionally exposes no scrollbar styling props.
+This version does not include ActionText and does not virtualize columns. Tables with explicit scrolling, fill layout, or virtualization share one native viewport and the zby ScrollArea visual treatment. A basic table without scrolling preserves the upstream AntD auto-layout path. Table intentionally exposes no scrollbar styling props.
 
 ## Usage
 
@@ -209,7 +209,7 @@ All other properties come from antd 6.5.3 `TableProps`.
 
 | Field | Description | Type | Default |
 | --- | --- | --- | --- |
-| width | Base width in pixels | `number` | `120` |
+| width | Optional base width in pixels; when omitted, basic tables preserve AntD auto sizing | `number` | - |
 | minWidth | Minimum committed width in pixels | `number` | `50` |
 | maxWidth | Maximum committed width in pixels | `number` | `Infinity` |
 | flex | Weight used to receive remaining container width; non-positive values are ignored | `number` | - |

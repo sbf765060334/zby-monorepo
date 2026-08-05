@@ -16,7 +16,7 @@ Table 保留 antd 6.5.3 Table 的列渲染、排序、筛选、分页、展开�
 - 追查数据时，需要点击一行标记为当前行，再次点击同一行取消；
 - 大数据表需要纵向虚拟化，同时保留可见滚动条、fill 布局和普通横向滚动。
 
-本次实现不包含 ActionText，也不进行横向列虚拟化。普通和虚拟模式都复用组件内部的同一个原生滚动 viewport，滚动条视觉由 zby ScrollArea 统一提供，但 Table 不暴露滚动条样式属性。
+本次实现不包含 ActionText，也不进行横向列虚拟化。显式滚动、fill 或虚拟模式复用组件内部的同一个原生滚动 viewport，滚动条视觉由 zby ScrollArea 统一提供；未配置滚动的基础表格保留 AntD 上游自动布局路径。Table 不暴露滚动条样式属性。
 
 ## 怎么使用
 
@@ -216,7 +216,7 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 
 | 字段 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| width | 基础列宽，单位 px | `number` | `120` |
+| width | 可选基础列宽，单位 px；省略时基础表格保留 AntD 自动列宽 | `number` | - |
 | minWidth | 最小提交宽度，单位 px | `number` | `50` |
 | maxWidth | 最大提交宽度，单位 px | `number` | `Infinity` |
 | flex | 分配剩余容器宽度的权重；非正数视为未设置 | `number` | - |

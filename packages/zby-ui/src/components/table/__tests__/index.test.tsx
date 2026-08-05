@@ -117,7 +117,7 @@ describe('Table', () => {
     expect(onChange).toHaveBeenCalledWith(2, data[1])
   })
 
-  it('sizes the injected selection column without a native scrollbar gutter', () => {
+  it('sizes the injected selection column without forcing a split header', () => {
     const onChange = vi.fn()
     const { container } = render(
       <Table<RowData>
@@ -129,10 +129,11 @@ describe('Table', () => {
       />,
     )
 
-    const selectionCol = container.querySelector('.ant-table-header col')
+    const selectionCol = container.querySelector('.ant-table-content col')
 
     expect(selectionCol?.getAttribute('style')).toMatch(/width:\s*\d+px/)
     expect(container.querySelector('.ant-table-selection-column')).not.toBeNull()
+    expect(container.querySelector('.ant-table-header')).toBeNull()
     expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
 
     fireEvent.click(
@@ -141,6 +142,78 @@ describe('Table', () => {
       )!,
     )
     expect(onChange.mock.calls[0][0]).toEqual([1])
+  })
+
+  it('preserves AntD auto layout when columns and scroll are unspecified', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[
+          { key: 'id', dataIndex: 'id', title: 'ID' },
+          { key: 'name', dataIndex: 'name', title: 'Name' },
+        ]}
+        dataSource={data}
+      />,
+    )
+
+    const table = container.querySelector<HTMLTableElement>(
+      '.ant-table-content table',
+    )!
+    const headerCells = container.querySelectorAll('.ant-table-thead th')
+
+    expect(container.querySelector('.ant-scroll-area-viewport')).toBeNull()
+    expect(container.querySelector('.ant-table-header')).toBeNull()
+    expect(table.style.width).toBe('')
+    expect(table.style.tableLayout).toBe('auto')
+    expect(headerCells[0].getAttribute('style') ?? '').not.toMatch(/120px/)
+    expect(headerCells[1].getAttribute('style') ?? '').not.toMatch(/120px/)
+  })
+
+  it('uses a vertical-only ScrollArea when only scroll.y is configured', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        scroll={{ y: 200 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const viewport = container.querySelector<HTMLElement>(
+      '.ant-scroll-area-viewport',
+    )!
+
+    expect(viewport).not.toBeNull()
+    expect(viewport.style.overflowX).toBe('hidden')
+    expect(viewport.style.overflowY).toBe('auto')
+  })
+
+  it('measures auto-sized columns before entering the fill viewport', () => {
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          columns={[
+            { key: 'id', dataIndex: 'id', title: 'ID' },
+            { key: 'name', dataIndex: 'name', title: 'Name' },
+          ]}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    const headerCells = container.querySelectorAll<HTMLElement>(
+      '.ant-table-thead th',
+    )
+
+    expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
+    expect(headerCells[0].style.width).toBe('150px')
+    expect(headerCells[1].style.width).toBe('450px')
+    expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
   })
 
   it('keeps the forked sorter pipeline working', () => {

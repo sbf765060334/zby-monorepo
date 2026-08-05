@@ -413,6 +413,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // ============================ Width =============================
   const getContainerWidth = useContainerWidth(prefixCls)
   const mergedScroll = scroll ?? table?.scroll
+  const hasExplicitScroll =
+    mergedScroll?.x !== undefined || mergedScroll?.y !== undefined
+  const useSharedScrollArea =
+    Boolean(virtual) || heightMode === 'fill' || hasExplicitScroll
 
   // ============================= Refs =============================
   const rootRef = React.useRef<HTMLDivElement>(null)
@@ -422,6 +426,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     columns: resizedColumns,
     components: resizeComponents,
     tableWidth,
+    widthsReady,
+    hasHorizontalOverflow,
     resizeGuide,
   } = useResizableColumns({
     columns: mergedColumns,
@@ -430,6 +436,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     prefixCls,
     direction,
     enabled: enableColumnResizing,
+    resolveWidths: useSharedScrollArea,
     selectionWidth,
     scrollX: mergedScroll?.x,
     onColumnWidthChange,
@@ -803,7 +810,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         fill={heightMode === 'fill'}
         scrollY={mergedScroll?.y}
         itemHeight={listItemHeight}
-        tableWidth={tableWidth}
+        tableWidth={tableWidth ?? 1}
+        horizontal={
+          mergedScroll?.x !== undefined || hasHorizontalOverflow
+        }
         onTableScroll={onScroll}
       />
     )
@@ -811,7 +821,9 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     return Object.assign(renderer, userBodyComponents)
   }, [
     heightMode,
+    hasHorizontalOverflow,
     listItemHeight,
+    mergedScroll?.x,
     mergedScroll?.y,
     onScroll,
     tableWidth,
@@ -819,20 +831,47 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     virtual,
   ])
   const bodyComponents = React.useMemo(
-    () => ({
-      ...resizeComponents,
-      body: bodyRenderer,
-    }),
-    [bodyRenderer, resizeComponents],
+    () => useSharedScrollArea && widthsReady && tableWidth !== undefined
+      ? {
+          ...resizeComponents,
+          body: bodyRenderer,
+        }
+      : resizeComponents,
+    [
+      bodyRenderer,
+      resizeComponents,
+      tableWidth,
+      useSharedScrollArea,
+      widthsReady,
+    ],
   )
   const effectiveScroll = React.useMemo(
-    () => ({
-      ...mergedScroll,
-      x: tableWidth,
-      // A truthy y lets rc-table delegate body rendering to our shared viewport.
-      y: mergedScroll?.y ?? (virtual ? 500 : 1),
-    }),
-    [mergedScroll, tableWidth, virtual],
+    () => {
+      if (!useSharedScrollArea || !widthsReady || tableWidth === undefined) {
+        return mergedScroll
+      }
+
+      const nextScroll = {
+        ...mergedScroll,
+        // rc-table calls a function body only in its fixed-header branch.
+        // Keep this compatibility value inside enhanced scroll paths.
+        y: mergedScroll?.y ?? (virtual ? 500 : 1),
+      }
+
+      if (mergedScroll?.x !== undefined || hasHorizontalOverflow) {
+        nextScroll.x = tableWidth
+      }
+
+      return nextScroll
+    },
+    [
+      hasHorizontalOverflow,
+      mergedScroll,
+      tableWidth,
+      useSharedScrollArea,
+      virtual,
+      widthsReady,
+    ],
   )
 
   // ========================== Render ==========================

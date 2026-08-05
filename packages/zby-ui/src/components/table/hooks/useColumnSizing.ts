@@ -6,13 +6,13 @@ import type {
   ColumnType,
 } from '../interface'
 
-export const DEFAULT_COLUMN_WIDTH = 120
 export const DEFAULT_MIN_COLUMN_WIDTH = 50
+export const COLUMN_WIDTH_ROUNDING_TOLERANCE = 1
 
 export interface ColumnSizingLeaf<RecordType> {
   key: React.Key
   column: ColumnGroupType<RecordType> | ColumnType<RecordType>
-  baseWidth: number
+  baseWidth?: number
   minWidth: number
   maxWidth: number
   flex: number
@@ -23,6 +23,7 @@ export interface ColumnWidthResolution {
   widths: Map<React.Key, number>
   totalWidth: number
   unresolvedWidth: number
+  complete: boolean
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -55,6 +56,7 @@ export function getColumnKey<RecordType>(
 export function collectColumnSizingLeaves<RecordType>(
   columns: ColumnsType<RecordType>,
   userWidths: ReadonlyMap<React.Key, number>,
+  measuredWidths: ReadonlyMap<React.Key, number> = new Map(),
   path: readonly number[] = [],
 ): ColumnSizingLeaf<RecordType>[] {
   const leaves: ColumnSizingLeaf<RecordType>[] = []
@@ -65,7 +67,12 @@ export function collectColumnSizingLeaves<RecordType>(
     const currentPath = [...path, index]
     if ('children' in column && column.children?.length) {
       leaves.push(
-        ...collectColumnSizingLeaves(column.children, userWidths, currentPath),
+        ...collectColumnSizingLeaves(
+          column.children,
+          userWidths,
+          measuredWidths,
+          currentPath,
+        ),
       )
       return
     }
@@ -77,14 +84,11 @@ export function collectColumnSizingLeaves<RecordType>(
     const maxWidth = isFiniteNumber(column.maxWidth)
       ? Math.max(minWidth, column.maxWidth)
       : Number.POSITIVE_INFINITY
-    const configuredWidth = isFiniteNumber(column.width)
-      ? column.width
-      : DEFAULT_COLUMN_WIDTH
-    const baseWidth = clampColumnWidth(
-      userWidths.get(key) ?? configuredWidth,
-      minWidth,
-      maxWidth,
-    )
+    const configuredWidth = userWidths.get(key) ??
+      (isFiniteNumber(column.width) ? column.width : measuredWidths.get(key))
+    const baseWidth = isFiniteNumber(configuredWidth)
+      ? clampColumnWidth(configuredWidth, minWidth, maxWidth)
+      : undefined
 
     leaves.push({
       key,
@@ -111,12 +115,65 @@ export function resolveColumnWidths<RecordType>(
   manuallyResizedKeys: ReadonlySet<React.Key> = new Set(),
 ): ColumnWidthResolution {
   const widths = new Map<React.Key, number>()
-  leaves.forEach((leaf) => widths.set(leaf.key, leaf.baseWidth))
+  leaves.forEach((leaf) => {
+    if (leaf.baseWidth !== undefined) widths.set(leaf.key, leaf.baseWidth)
+  })
 
-  const baseTotal = leaves.reduce((total, leaf) => total + leaf.baseWidth, 0)
+  const complete = leaves.every((leaf) => leaf.baseWidth !== undefined)
+  const resolvedLeaves = leaves.filter(
+    (leaf): leaf is ColumnSizingLeaf<RecordType> & { baseWidth: number } =>
+      leaf.baseWidth !== undefined,
+  )
+
+  if (!complete) {
+    const totalWidth = resolvedLeaves.reduce(
+      (total, leaf) => total + leaf.baseWidth,
+      0,
+    )
+
+    return {
+      widths,
+      totalWidth,
+      unresolvedWidth: Math.max(0, targetWidth - totalWidth),
+      complete: false,
+    }
+  }
+
+  let baseTotal = resolvedLeaves.reduce(
+    (total, leaf) => total + leaf.baseWidth,
+    0,
+  )
+
+  // DOM geometry can retain half pixels while clientWidth is integer based.
+  // Normalize only this rounding-sized mismatch so a table that exactly fits
+  // does not create a useless 1px horizontal scroll range.
+  let roundingOverflow = baseTotal - targetWidth
+  if (
+    targetWidth > 0 &&
+    roundingOverflow > 0 &&
+    roundingOverflow <= COLUMN_WIDTH_ROUNDING_TOLERANCE
+  ) {
+    const shrinkCandidates = [...resolvedLeaves].reverse().filter(
+      (leaf) => !leaf.fixed && leaf.baseWidth > leaf.minWidth,
+    )
+
+    for (const leaf of shrinkCandidates) {
+      if (roundingOverflow <= 0.01) break
+
+      const currentWidth = widths.get(leaf.key) ?? leaf.baseWidth
+      const reduction = Math.min(
+        roundingOverflow,
+        currentWidth - leaf.minWidth,
+      )
+      widths.set(leaf.key, currentWidth - reduction)
+      roundingOverflow -= reduction
+      baseTotal -= reduction
+    }
+  }
+
   let remaining = Math.max(0, targetWidth - baseTotal)
 
-  let candidates = leaves.filter(
+  let candidates = resolvedLeaves.filter(
     (leaf) =>
       !leaf.fixed &&
       leaf.flex > 0 &&
@@ -150,7 +207,7 @@ export function resolveColumnWidths<RecordType>(
   // Explicit flex columns have priority. If they all reach maxWidth, keep
   // walking backwards through ordinary business columns so unused container
   // width never becomes a synthetic filler or leaks into an injected column.
-  const implicitCandidates = [...leaves].reverse().filter(
+  const implicitCandidates = [...resolvedLeaves].reverse().filter(
     (leaf) =>
       !leaf.fixed &&
       !manuallyResizedKeys.has(leaf.key) &&
@@ -175,5 +232,6 @@ export function resolveColumnWidths<RecordType>(
     widths,
     totalWidth,
     unresolvedWidth: Math.max(0, targetWidth - totalWidth),
+    complete: true,
   }
 }

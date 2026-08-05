@@ -8,6 +8,7 @@ import type {
   TableColumnWidthChangeInfo,
 } from '../interface'
 import {
+  COLUMN_WIDTH_ROUNDING_TOLERANCE,
   clampColumnWidth,
   collectColumnSizingLeaves,
   getColumnKey,
@@ -41,6 +42,7 @@ interface UseResizableColumnsOptions<RecordType extends object> {
   prefixCls: string
   direction?: 'ltr' | 'rtl'
   enabled: boolean
+  resolveWidths: boolean
   selectionWidth: number
   scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
     ? Scroll extends { x?: infer X }
@@ -55,7 +57,9 @@ interface UseResizableColumnsOptions<RecordType extends object> {
 interface UseResizableColumnsResult<RecordType extends object> {
   columns: ColumnsType<RecordType>
   components: RcTableProps<RecordType>['components']
-  tableWidth: number
+  tableWidth?: number
+  widthsReady: boolean
+  hasHorizontalOverflow: boolean
   resizeGuide: React.ReactNode
 }
 
@@ -108,8 +112,9 @@ function applyResolvedColumns<RecordType extends object>(
           ...userProps,
           style: {
             ...userProps.style,
-            width,
+            ...(width !== undefined ? { width } : {}),
           },
+          'data-zby-column-key': String(key),
           __zbyColumnKey: key,
           __zbyColumnWidth: width,
           __zbyColumnMinWidth: minWidth,
@@ -132,6 +137,7 @@ export default function useResizableColumns<RecordType extends object>(
     prefixCls,
     direction = 'ltr',
     enabled,
+    resolveWidths,
     selectionWidth,
     scrollX,
     onColumnWidthChange,
@@ -144,13 +150,29 @@ export default function useResizableColumns<RecordType extends object>(
   const [manuallyResizedKeys, setManuallyResizedKeys] = React.useState(
     () => new Set<React.Key>(),
   )
+  const [measuredWidths, setMeasuredWidths] = React.useState(
+    () => new Map<React.Key, number>(),
+  )
+  const shouldResolveWidths = enabled || resolveWidths
 
   React.useLayoutEffect(() => {
+    if (!shouldResolveWidths) return undefined
+
     const root = rootRef.current
     if (!root) return undefined
 
     const updateWidth = () => {
-      const width = root.getBoundingClientRect().width || root.clientWidth
+      const scrollAreaPrefixCls = prefixCls.replace('-table', '-scroll-area')
+      const viewport = root.querySelector<HTMLElement>(
+        `.${scrollAreaPrefixCls}-viewport`,
+      )
+      const container = root.querySelector<HTMLElement>(
+        `.${prefixCls}-container`,
+      )
+      const width = viewport?.clientWidth ||
+        container?.clientWidth ||
+        root.clientWidth ||
+        root.getBoundingClientRect().width
       setContainerWidth((previous) => (previous === width ? previous : width))
     }
 
@@ -159,12 +181,20 @@ export default function useResizableColumns<RecordType extends object>(
 
     const observer = new ResizeObserver(updateWidth)
     observer.observe(root)
+    const viewport = root.querySelector<HTMLElement>(
+      `.${prefixCls.replace('-table', '-scroll-area')}-viewport`,
+    )
+    const container = root.querySelector<HTMLElement>(
+      `.${prefixCls}-container`,
+    )
+    if (container) observer.observe(container)
+    if (viewport) observer.observe(viewport)
     return () => observer.disconnect()
-  }, [rootRef])
+  }, [measuredWidths, prefixCls, rootRef, shouldResolveWidths])
 
   const leaves = React.useMemo(
-    () => collectColumnSizingLeaves(columns, userWidths),
-    [columns, userWidths],
+    () => collectColumnSizingLeaves(columns, userWidths, measuredWidths),
+    [columns, measuredWidths, userWidths],
   )
   const requestedScrollWidth =
     typeof scrollX === 'number' ? Math.max(0, scrollX - selectionWidth) : 0
@@ -177,13 +207,55 @@ export default function useResizableColumns<RecordType extends object>(
     () => resolveColumnWidths(leaves, widthTarget, manuallyResizedKeys),
     [leaves, manuallyResizedKeys, widthTarget],
   )
+
+  React.useLayoutEffect(() => {
+    if (!shouldResolveWidths || widthResolution.complete) return
+
+    const root = rootRef.current
+    if (!root) return
+
+    const unresolvedKeys = new Map(
+      leaves
+        .filter((leaf) => leaf.baseWidth === undefined)
+        .map((leaf) => [String(leaf.key), leaf.key]),
+    )
+    const nextMeasuredWidths = new Map(measuredWidths)
+    let changed = false
+
+    root.querySelectorAll<HTMLElement>('[data-zby-column-key]').forEach((cell) => {
+      const domKey = cell.dataset.zbyColumnKey
+      const key = domKey === undefined ? undefined : unresolvedKeys.get(domKey)
+      if (key === undefined) return
+
+      const width = cell.getBoundingClientRect().width || cell.offsetWidth
+      if (width <= 0 || nextMeasuredWidths.get(key) === width) return
+
+      nextMeasuredWidths.set(key, width)
+      changed = true
+    })
+
+    if (changed) setMeasuredWidths(nextMeasuredWidths)
+  }, [
+    leaves,
+    measuredWidths,
+    rootRef,
+    shouldResolveWidths,
+    widthResolution.complete,
+  ])
+
   const resolvedColumns = React.useMemo(
-    () => applyResolvedColumns(columns, widthResolution.widths, enabled),
-    [columns, enabled, widthResolution.widths],
+    () => shouldResolveWidths
+      ? applyResolvedColumns(columns, widthResolution.widths, enabled)
+      : columns,
+    [columns, enabled, shouldResolveWidths, widthResolution.widths],
   )
-  const tableWidth = Math.max(
-    1,
-    widthResolution.totalWidth + selectionWidth,
+  const tableWidth = widthResolution.complete
+    ? Math.max(1, widthResolution.totalWidth + selectionWidth)
+    : undefined
+  const hasHorizontalOverflow = Boolean(
+    tableWidth !== undefined &&
+    containerWidth > 0 &&
+    tableWidth - containerWidth > COLUMN_WIDTH_ROUNDING_TOLERANCE,
   )
   const originalColumnMap = React.useMemo(
     () => new Map(leaves.map((leaf) => [leaf.key, leaf.column])),
@@ -337,8 +409,13 @@ export default function useResizableColumns<RecordType extends object>(
       const logicalDirection =
         direction === 'rtl' ? -physicalDirection : physicalDirection
       const step = event.shiftKey ? 1 : 10
+      const headerCellWidth = event.currentTarget
+        .closest('th')
+        ?.getBoundingClientRect()
+        .width
       const width = clampColumnWidth(
-        (cellProps.__zbyColumnWidth ?? 0) + logicalDirection * step,
+        (cellProps.__zbyColumnWidth ?? headerCellWidth ?? 0) +
+        logicalDirection * step,
         cellProps.__zbyColumnMinWidth,
         cellProps.__zbyColumnMaxWidth,
       )
@@ -385,7 +462,9 @@ export default function useResizableColumns<RecordType extends object>(
                   role: 'separator',
                   'aria-label': 'Resize column',
                   'aria-orientation': 'vertical',
-                  'aria-valuenow': Math.round(__zbyColumnWidth ?? 0),
+                  'aria-valuenow': __zbyColumnWidth === undefined
+                    ? undefined
+                    : Math.round(__zbyColumnWidth),
                   tabIndex: 0,
                   className: `${prefixCls}-zby-resize-handle`,
                   onPointerDown: (event: React.PointerEvent<HTMLElement>) =>
@@ -401,20 +480,24 @@ export default function useResizableColumns<RecordType extends object>(
   )
 
   const mergedComponents = React.useMemo(
-    () => ({
-      ...components,
-      header: {
-        ...(typeof components?.header === 'object' ? components.header : {}),
-        cell: ResizeHeaderCell,
-      },
-    }),
-    [ResizeHeaderCell, components],
+    () => shouldResolveWidths
+      ? {
+          ...components,
+          header: {
+            ...(typeof components?.header === 'object' ? components.header : {}),
+            cell: ResizeHeaderCell,
+          },
+        }
+      : components,
+    [ResizeHeaderCell, components, shouldResolveWidths],
   )
 
   return {
     columns: resolvedColumns,
     components: mergedComponents,
     tableWidth,
+    widthsReady: widthResolution.complete,
+    hasHorizontalOverflow,
     resizeGuide: (
       <div
         ref={guideRef}

@@ -13,6 +13,20 @@ interface RowData {
 }
 
 describe('Table column sizing', () => {
+  it('keeps an unspecified column width unresolved instead of inventing a default', () => {
+    const columns: TableColumnsType<RowData> = [
+      { key: 'id', dataIndex: 'id' },
+      { key: 'name', dataIndex: 'name', width: 160 },
+    ]
+    const leaves = collectColumnSizingLeaves(columns, new Map())
+    const result = resolveColumnWidths(leaves, 400)
+
+    expect(leaves[0].baseWidth).toBeUndefined()
+    expect(result.widths.has('id')).toBe(false)
+    expect(result.widths.get('name')).toBe(160)
+    expect(result.complete).toBe(false)
+  })
+
   it('distributes remaining width by flex without creating a filler column', () => {
     const columns: TableColumnsType<RowData> = [
       { key: 'id', dataIndex: 'id', width: 200 },
@@ -81,5 +95,18 @@ describe('Table column sizing', () => {
     expect(result.widths.get('id')).toBe(130)
     expect(result.totalWidth).toBe(500)
     expect(result.unresolvedWidth).toBe(0)
+  })
+
+  it('normalizes a subpixel clientWidth mismatch without preserving a 1px scroll range', () => {
+    const columns: TableColumnsType<RowData> = [
+      { key: 'id', dataIndex: 'id', width: 200.25 },
+      { key: 'name', dataIndex: 'name', width: 300.25 },
+    ]
+    const leaves = collectColumnSizingLeaves(columns, new Map())
+    const result = resolveColumnWidths(leaves, 500)
+
+    expect(result.complete).toBe(true)
+    expect(result.totalWidth).toBe(500)
+    expect(result.widths.get('name')).toBe(299.75)
   })
 })

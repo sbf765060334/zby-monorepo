@@ -42,6 +42,7 @@ export interface TableScrollBodyProps<RecordType extends object> {
   scrollY?: number | string
   itemHeight: number
   tableWidth: number
+  horizontal: boolean
   onTableScroll?: React.UIEventHandler<HTMLDivElement>
 }
 
@@ -137,6 +138,7 @@ function TableScrollBody<RecordType extends object>(
     scrollY,
     itemHeight,
     tableWidth,
+    horizontal,
     onTableScroll,
   } = props
   const tableContext = useContext(TableContext) ?? {}
@@ -412,7 +414,7 @@ function TableScrollBody<RecordType extends object>(
       className={`${prefixCls}-body ${prefixCls}-zby-scroll-body ${
         virtual ? `${prefixCls}-tbody-virtual` : ''
       }`}
-      direction="both"
+      direction={horizontal ? 'both' : 'vertical'}
       scrollbar="hover"
       viewportRef={viewportRef}
       viewportProps={{ onScroll: handleScroll }}
