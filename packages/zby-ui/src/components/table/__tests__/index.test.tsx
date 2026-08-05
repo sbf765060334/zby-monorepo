@@ -190,7 +190,7 @@ describe('Table', () => {
     expect(viewport.style.overflowY).toBe('auto')
   })
 
-  it('measures auto-sized columns before entering the fill viewport', () => {
+  it('measures auto-sized columns before adding explicit filler space', () => {
     const { container } = render(
       <div style={{ height: 300 }}>
         <Table<RowData>
@@ -209,10 +209,14 @@ describe('Table', () => {
     const headerCells = container.querySelectorAll<HTMLElement>(
       '.ant-table-thead th',
     )
+    const fillerCell = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-filler-cell',
+    )!
 
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(headerCells[0].style.width).toBe('150px')
-    expect(headerCells[1].style.width).toBe('450px')
+    expect(headerCells[1].style.width).toBe('150px')
+    expect(fillerCell.style.width).toBe('300px')
     expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
   })
 
@@ -326,6 +330,70 @@ describe('Table', () => {
       columnKey: 'id',
       width: 100,
     })
+  })
+
+  it('does not commit when the resize handle is clicked without moving', () => {
+    const onColumnWidthChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        onColumnWidthChange={onColumnWidthChange}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+
+    fireEvent.pointerDown(handle, { clientX: 150 })
+    fireEvent.pointerUp(document, { clientX: 150 })
+
+    expect(onColumnWidthChange).not.toHaveBeenCalled()
+  })
+
+  it('keeps split header and body widths aligned after resizing the last business column', () => {
+    const onColumnWidthChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        scroll={{ y: 200 }}
+        onColumnWidthChange={onColumnWidthChange}
+        columns={[
+          { key: 'id', dataIndex: 'id', title: 'ID', width: 120 },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const handles = container.querySelectorAll<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )
+
+    expect(handles).toHaveLength(2)
+
+    fireEvent.pointerDown(handles[1], { clientX: 300 })
+    fireEvent.pointerMove(document, { clientX: 250 })
+    fireEvent.pointerUp(document, { clientX: 250 })
+
+    const bodyWidths = [
+      ...container.querySelectorAll<HTMLElement>(
+        '.ant-table-zby-scroll-body col',
+      ),
+    ].map((col) => col.style.width)
+    const headerWidths = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-header col'),
+    ].slice(0, bodyWidths.length).map((col) => col.style.width)
+
+    expect(headerWidths).toEqual(bodyWidths)
+    expect(bodyWidths).toEqual(['120px', '110px', '370px'])
+    expect(onColumnWidthChange).toHaveBeenCalledWith(
+      expect.objectContaining({ columnKey: 'name', width: 110 }),
+    )
   })
 
   it('uses the shared ScrollArea viewport in fill and virtual modes', () => {

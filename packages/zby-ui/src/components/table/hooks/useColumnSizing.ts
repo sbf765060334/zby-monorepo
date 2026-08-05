@@ -84,7 +84,8 @@ export function collectColumnSizingLeaves<RecordType>(
     const maxWidth = isFiniteNumber(column.maxWidth)
       ? Math.max(minWidth, column.maxWidth)
       : Number.POSITIVE_INFINITY
-    const configuredWidth = userWidths.get(key) ??
+    const userWidth = userWidths.get(key)
+    const configuredWidth = userWidth ??
       (isFiniteNumber(column.width) ? column.width : measuredWidths.get(key))
     const baseWidth = isFiniteNumber(configuredWidth)
       ? clampColumnWidth(configuredWidth, minWidth, maxWidth)
@@ -97,7 +98,9 @@ export function collectColumnSizingLeaves<RecordType>(
       minWidth,
       maxWidth,
       flex:
-        isFiniteNumber(column.flex) && column.flex > 0 ? column.flex : 0,
+        userWidth === undefined && isFiniteNumber(column.flex) && column.flex > 0
+          ? column.flex
+          : 0,
       fixed: Boolean(column.fixed),
     })
   })
@@ -106,13 +109,13 @@ export function collectColumnSizingLeaves<RecordType>(
 }
 
 /**
- * Resolve displayed leaf widths using the same fixed-plus-flex model used by
- * mainstream Data Grids. It never creates a synthetic filler column.
+ * Resolve business-column widths using a fixed-plus-explicit-flex model.
+ * Any remaining width is reported to the renderer as filler space instead of
+ * being assigned to an ordinary column.
  */
 export function resolveColumnWidths<RecordType>(
   leaves: readonly ColumnSizingLeaf<RecordType>[],
   targetWidth: number,
-  manuallyResizedKeys: ReadonlySet<React.Key> = new Set(),
 ): ColumnWidthResolution {
   const widths = new Map<React.Key, number>()
   leaves.forEach((leaf) => {
@@ -139,37 +142,10 @@ export function resolveColumnWidths<RecordType>(
     }
   }
 
-  let baseTotal = resolvedLeaves.reduce(
+  const baseTotal = resolvedLeaves.reduce(
     (total, leaf) => total + leaf.baseWidth,
     0,
   )
-
-  // DOM geometry can retain half pixels while clientWidth is integer based.
-  // Normalize only this rounding-sized mismatch so a table that exactly fits
-  // does not create a useless 1px horizontal scroll range.
-  let roundingOverflow = baseTotal - targetWidth
-  if (
-    targetWidth > 0 &&
-    roundingOverflow > 0 &&
-    roundingOverflow <= COLUMN_WIDTH_ROUNDING_TOLERANCE
-  ) {
-    const shrinkCandidates = [...resolvedLeaves].reverse().filter(
-      (leaf) => !leaf.fixed && leaf.baseWidth > leaf.minWidth,
-    )
-
-    for (const leaf of shrinkCandidates) {
-      if (roundingOverflow <= 0.01) break
-
-      const currentWidth = widths.get(leaf.key) ?? leaf.baseWidth
-      const reduction = Math.min(
-        roundingOverflow,
-        currentWidth - leaf.minWidth,
-      )
-      widths.set(leaf.key, currentWidth - reduction)
-      roundingOverflow -= reduction
-      baseTotal -= reduction
-    }
-  }
 
   let remaining = Math.max(0, targetWidth - baseTotal)
 
@@ -177,7 +153,6 @@ export function resolveColumnWidths<RecordType>(
     (leaf) =>
       !leaf.fixed &&
       leaf.flex > 0 &&
-      !manuallyResizedKeys.has(leaf.key) &&
       leaf.maxWidth > leaf.baseWidth,
   )
 
@@ -202,25 +177,6 @@ export function resolveColumnWidths<RecordType>(
       const width = widths.get(leaf.key) ?? leaf.baseWidth
       return width < leaf.maxWidth - 0.01
     })
-  }
-
-  // Explicit flex columns have priority. If they all reach maxWidth, keep
-  // walking backwards through ordinary business columns so unused container
-  // width never becomes a synthetic filler or leaks into an injected column.
-  const implicitCandidates = [...resolvedLeaves].reverse().filter(
-    (leaf) =>
-      !leaf.fixed &&
-      !manuallyResizedKeys.has(leaf.key) &&
-      (widths.get(leaf.key) ?? leaf.baseWidth) < leaf.maxWidth - 0.01,
-  )
-
-  for (const leaf of implicitCandidates) {
-    if (remaining <= 0.01) break
-
-    const currentWidth = widths.get(leaf.key) ?? leaf.baseWidth
-    const addition = Math.min(remaining, leaf.maxWidth - currentWidth)
-    widths.set(leaf.key, currentWidth + addition)
-    remaining -= addition
   }
 
   const totalWidth = [...widths.values()].reduce(

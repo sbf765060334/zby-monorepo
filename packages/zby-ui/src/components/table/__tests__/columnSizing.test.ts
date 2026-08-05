@@ -49,9 +49,13 @@ describe('Table column sizing', () => {
       { key: 'name', dataIndex: 'name', width: 200, flex: 1 },
       { key: 'remark', dataIndex: 'remark', width: 100, flex: 1 },
     ]
-    const leaves = collectColumnSizingLeaves(columns, new Map())
-    const result = resolveColumnWidths(leaves, 700, new Set(['name']))
+    const leaves = collectColumnSizingLeaves(
+      columns,
+      new Map([['name', 200]]),
+    )
+    const result = resolveColumnWidths(leaves, 700)
 
+    expect(leaves.find((leaf) => leaf.key === 'name')?.flex).toBe(0)
     expect(result.widths.get('name')).toBe(200)
     expect(result.widths.get('remark')).toBe(300)
     expect(result.totalWidth).toBe(700)
@@ -69,7 +73,7 @@ describe('Table column sizing', () => {
     expect(result.unresolvedWidth).toBe(200)
   })
 
-  it('uses the last ordinary leaf as an implicit flex column', () => {
+  it('reports filler space instead of stretching an ordinary column', () => {
     const columns: TableColumnsType<RowData> = [
       { key: 'id', dataIndex: 'id', width: 100 },
       { key: 'name', dataIndex: 'name', width: 100 },
@@ -78,10 +82,12 @@ describe('Table column sizing', () => {
     const result = resolveColumnWidths(leaves, 400)
 
     expect(result.widths.get('id')).toBe(100)
-    expect(result.widths.get('name')).toBe(300)
+    expect(result.widths.get('name')).toBe(100)
+    expect(result.totalWidth).toBe(200)
+    expect(result.unresolvedWidth).toBe(200)
   })
 
-  it('continues with ordinary columns after explicit flex columns reach maxWidth', () => {
+  it('leaves a remainder after explicit flex columns reach maxWidth', () => {
     const columns: TableColumnsType<RowData> = [
       { key: 'id', dataIndex: 'id', width: 100, maxWidth: 180 },
       { key: 'name', dataIndex: 'name', width: 100, maxWidth: 150, flex: 1 },
@@ -91,13 +97,13 @@ describe('Table column sizing', () => {
     const result = resolveColumnWidths(leaves, 500)
 
     expect(result.widths.get('name')).toBe(150)
-    expect(result.widths.get('remark')).toBe(220)
-    expect(result.widths.get('id')).toBe(130)
-    expect(result.totalWidth).toBe(500)
-    expect(result.unresolvedWidth).toBe(0)
+    expect(result.widths.get('remark')).toBe(100)
+    expect(result.widths.get('id')).toBe(100)
+    expect(result.totalWidth).toBe(350)
+    expect(result.unresolvedWidth).toBe(150)
   })
 
-  it('normalizes a subpixel clientWidth mismatch without preserving a 1px scroll range', () => {
+  it('preserves configured widths when they slightly exceed the viewport', () => {
     const columns: TableColumnsType<RowData> = [
       { key: 'id', dataIndex: 'id', width: 200.25 },
       { key: 'name', dataIndex: 'name', width: 300.25 },
@@ -106,7 +112,7 @@ describe('Table column sizing', () => {
     const result = resolveColumnWidths(leaves, 500)
 
     expect(result.complete).toBe(true)
-    expect(result.totalWidth).toBe(500)
-    expect(result.widths.get('name')).toBe(299.75)
+    expect(result.totalWidth).toBe(500.5)
+    expect(result.widths.get('name')).toBe(300.25)
   })
 })

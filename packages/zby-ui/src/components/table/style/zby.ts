@@ -31,7 +31,7 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         position: 'absolute',
         zIndex: 2,
         insetBlock: 0,
-        insetInlineEnd: -4,
+        insetInlineEnd: 0,
         width: 8,
         padding: 0,
         border: 0,
@@ -43,6 +43,11 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         '&:focus-visible': {
           boxShadow: `inset -1px 0 ${token.colorPrimary}`,
         },
+      },
+
+      [`${componentCls}-zby-filler-cell`]: {
+        padding: '0 !important',
+        pointerEvents: 'none',
       },
 
       [`${componentCls}-thead > tr > th${componentCls}-cell`]: {
