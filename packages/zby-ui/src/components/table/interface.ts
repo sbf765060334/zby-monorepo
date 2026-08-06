@@ -125,8 +125,6 @@ export interface TableColumnResizeOptions {
   minWidth?: number;
   /** Maximum committed width in pixels. */
   maxWidth?: number;
-  /** Remaining horizontal space weight, following Data Grid semantics. */
-  flex?: number;
   /** Whether this leaf column can be resized. */
   resizable?: boolean;
 }

@@ -15,8 +15,6 @@ export interface ColumnSizingLeaf<RecordType> {
   baseWidth?: number
   minWidth: number
   maxWidth: number
-  flex: number
-  fixed: boolean
 }
 
 export interface ColumnWidthResolution {
@@ -58,6 +56,7 @@ export function collectColumnSizingLeaves<RecordType>(
   userWidths: ReadonlyMap<React.Key, number>,
   measuredWidths: ReadonlyMap<React.Key, number> = new Map(),
   path: readonly number[] = [],
+  constrainWidths = true,
 ): ColumnSizingLeaf<RecordType>[] {
   const leaves: ColumnSizingLeaf<RecordType>[] = []
 
@@ -72,23 +71,28 @@ export function collectColumnSizingLeaves<RecordType>(
           userWidths,
           measuredWidths,
           currentPath,
+          constrainWidths,
         ),
       )
       return
     }
 
     const key = getColumnKey(column, currentPath)
-    const minWidth = isFiniteNumber(column.minWidth)
+    const minWidth = constrainWidths && isFiniteNumber(column.minWidth)
       ? Math.max(0, column.minWidth)
-      : DEFAULT_MIN_COLUMN_WIDTH
-    const maxWidth = isFiniteNumber(column.maxWidth)
+      : constrainWidths
+        ? DEFAULT_MIN_COLUMN_WIDTH
+        : 0
+    const maxWidth = constrainWidths && isFiniteNumber(column.maxWidth)
       ? Math.max(minWidth, column.maxWidth)
       : Number.POSITIVE_INFINITY
     const userWidth = userWidths.get(key)
     const configuredWidth = userWidth ??
       (isFiniteNumber(column.width) ? column.width : measuredWidths.get(key))
     const baseWidth = isFiniteNumber(configuredWidth)
-      ? clampColumnWidth(configuredWidth, minWidth, maxWidth)
+      ? constrainWidths
+        ? clampColumnWidth(configuredWidth, minWidth, maxWidth)
+        : configuredWidth
       : undefined
 
     leaves.push({
@@ -97,22 +101,13 @@ export function collectColumnSizingLeaves<RecordType>(
       baseWidth,
       minWidth,
       maxWidth,
-      flex:
-        userWidth === undefined && isFiniteNumber(column.flex) && column.flex > 0
-          ? column.flex
-          : 0,
-      fixed: Boolean(column.fixed),
     })
   })
 
   return leaves
 }
 
-/**
- * Resolve business-column widths using a fixed-plus-explicit-flex model.
- * Any remaining width is reported to the renderer as filler space instead of
- * being assigned to an ordinary column.
- */
+/** Resolve fixed business-column widths and report unused viewport space. */
 export function resolveColumnWidths<RecordType>(
   leaves: readonly ColumnSizingLeaf<RecordType>[],
   targetWidth: number,
@@ -142,45 +137,8 @@ export function resolveColumnWidths<RecordType>(
     }
   }
 
-  const baseTotal = resolvedLeaves.reduce(
+  const totalWidth = resolvedLeaves.reduce(
     (total, leaf) => total + leaf.baseWidth,
-    0,
-  )
-
-  let remaining = Math.max(0, targetWidth - baseTotal)
-
-  let candidates = resolvedLeaves.filter(
-    (leaf) =>
-      !leaf.fixed &&
-      leaf.flex > 0 &&
-      leaf.maxWidth > leaf.baseWidth,
-  )
-
-  while (remaining > 0.01 && candidates.length) {
-    const weightTotal = candidates.reduce(
-      (total, leaf) => total + (leaf.flex || 1),
-      0,
-    )
-    let consumed = 0
-
-    candidates.forEach((leaf) => {
-      const currentWidth = widths.get(leaf.key) ?? leaf.baseWidth
-      const share = remaining * ((leaf.flex || 1) / weightTotal)
-      const addition = Math.min(share, leaf.maxWidth - currentWidth)
-      widths.set(leaf.key, currentWidth + addition)
-      consumed += addition
-    })
-
-    if (consumed <= 0.01) break
-    remaining -= consumed
-    candidates = candidates.filter((leaf) => {
-      const width = widths.get(leaf.key) ?? leaf.baseWidth
-      return width < leaf.maxWidth - 0.01
-    })
-  }
-
-  const totalWidth = [...widths.values()].reduce(
-    (total, width) => total + width,
     0,
   )
 

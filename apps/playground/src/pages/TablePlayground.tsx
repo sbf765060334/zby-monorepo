@@ -194,12 +194,11 @@ const resizableColumns: TableColumnsType<OrderRecord> = [
   },
   {
     key: 'customer',
-    title: '客户（flex: 1）',
+    title: '客户',
     dataIndex: 'customer',
     width: 160,
     minWidth: 120,
     maxWidth: 520,
-    flex: 1,
     shouldCellUpdate: (record, previous) => record.customer !== previous.customer,
   },
   {
@@ -500,10 +499,10 @@ export default function TablePlayground() {
       </PlaygroundSection>
 
       <PlaygroundSection
-        title="列宽拖拽与剩余宽度分配"
-        description="拖动期间只移动贯穿表格的虚线；松手后提交。每列都受 minWidth/maxWidth 约束，flex 业务列负责吸收剩余空间。"
+        title="固定列宽拖拽与 filler"
+        description="拖动期间只移动贯穿表格的虚线；松手后只提交当前列。业务列不自动伸缩，容器余量由 filler 表示，超出容器时横向滚动。"
       >
-        <PlaygroundCase title="提交式拖拽 / min-max / flex / rowSelection 共存">
+        <PlaygroundCase title="提交式拖拽 / min-max / filler / rowSelection 共存">
           <Text type="secondary">
             订单号 150–260px；客户 120–520px；状态 96–150px；金额 110–220px。
           </Text>
@@ -634,7 +633,7 @@ export default function TablePlayground() {
               清空数据
             </Button>
           </Space>
-          <div style={{ ...frameStyle, height: 560 }}>
+          <div style={{ ...frameStyle, height: 650 }}>
             <Table<OrderRecord>
               rowKey="id"
               heightMode="fill"

@@ -74,7 +74,6 @@ const columns = [
     dataIndex: 'name' as const,
     title: 'Name',
     width: 160,
-    flex: 1,
   },
 ]
 
@@ -195,13 +194,42 @@ describe('Table', () => {
     expect(viewport.style.overflowY).toBe('auto')
   })
 
-  it('measures auto-sized columns before adding explicit filler space', () => {
+  it('does not inject enhanced sizing when resizing is disabled', () => {
     const { container } = render(
       <div style={{ height: 300 }}>
         <Table<RowData>
           rowKey="id"
           pagination={false}
           heightMode="fill"
+          columns={[
+            { key: 'id', dataIndex: 'id', title: 'ID', minWidth: 200 },
+            { key: 'name', dataIndex: 'name', title: 'Name', maxWidth: 80 },
+          ]}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
+    expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
+    expect(container.querySelector('.ant-table-zby-resize-handle')).toBeNull()
+    const headers = container.querySelectorAll<HTMLElement>(
+      '.ant-table-thead [data-zby-column-key]',
+    )
+    expect([...headers].map((cell) => cell.style.width)).toEqual([
+      '150px',
+      '150px',
+    ])
+  })
+
+  it('measures auto-sized columns before adding filler in resizing mode', () => {
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          enableColumnResizing
           columns={[
             { key: 'id', dataIndex: 'id', title: 'ID' },
             { key: 'name', dataIndex: 'name', title: 'Name' },
@@ -223,6 +251,146 @@ describe('Table', () => {
     expect(headerCells[1].style.width).toBe('150px')
     expect(fillerCell.style.width).toBe('300px')
     expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
+  })
+
+  it('places filler after ordinary columns when there is no fixed-end column', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const headers = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-thead tr:last-child th'),
+    ]
+
+    expect(headers.map((cell) =>
+      cell.dataset.zbyColumnKey ??
+      (cell.classList.contains('ant-table-zby-filler-cell') ? 'filler' : ''),
+    )).toEqual(['id', 'name', 'filler'])
+  })
+
+  it('does not let numeric scroll.x stretch filler in resizing mode', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        scroll={{ x: 1000 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const filler = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-filler-cell',
+    )!
+    const bodyTable = container.querySelector<HTMLTableElement>(
+      '.ant-table-zby-scroll-body table',
+    )!
+
+    expect(filler.style.width).toBe('320px')
+    expect(bodyTable.style.width).toBe('600px')
+  })
+
+  it('removes filler and scrolls when business widths exceed the viewport', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={[
+          { key: 'id', dataIndex: 'id', title: 'ID', width: 350 },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 300 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '.ant-scroll-area-viewport',
+    )!
+    const bodyTable = container.querySelector<HTMLTableElement>(
+      '.ant-table-zby-scroll-body table',
+    )!
+
+    expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
+    expect(viewport.style.overflowX).toBe('auto')
+    expect(bodyTable.style.width).toBe('650px')
+  })
+
+  it('places filler between fixed-start and fixed-end business columns', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        rowSelection={{}}
+        columns={[
+          { key: 'id', dataIndex: 'id', title: 'ID', width: 100, fixed: 'start' },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 100 },
+          {
+            key: 'action',
+            title: 'Action',
+            width: 100,
+            fixed: 'end',
+            render: () => 'Open',
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const headers = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-thead tr:last-child th'),
+    ]
+
+    expect(headers.map((cell) => {
+      if (cell.dataset.zbyColumnKey) return cell.dataset.zbyColumnKey
+      if (cell.classList.contains('ant-table-selection-column')) return 'selection'
+      if (cell.classList.contains('ant-table-zby-filler-cell')) return 'filler'
+      return ''
+    })).toEqual(['selection', 'id', 'name', 'filler', 'action'])
+  })
+
+  it('keeps filler outside a fixed-end column group', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={[
+          {
+            key: 'info',
+            title: 'Info',
+            children: [
+              { key: 'id', dataIndex: 'id', title: 'ID', width: 100 },
+              { key: 'name', dataIndex: 'name', title: 'Name', width: 100 },
+            ],
+          },
+          {
+            key: 'actions',
+            title: 'Actions',
+            fixed: 'right',
+            children: [
+              { key: 'action', title: 'Action', width: 100, render: () => 'Open' },
+            ],
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const firstHeaderRow = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-thead tr:first-child th'),
+    ]
+    const filler = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-filler-cell',
+    )!
+
+    expect(firstHeaderRow.map((cell) =>
+      cell === filler ? 'filler' : cell.textContent,
+    )).toEqual(['Info', 'filler', 'Actions'])
+    expect(filler.closest('tr')).toBe(firstHeaderRow[0].closest('tr'))
   })
 
   it('keeps the forked sorter pipeline working', () => {
@@ -359,7 +527,7 @@ describe('Table', () => {
     expect(onColumnWidthChange).not.toHaveBeenCalled()
   })
 
-  it('keeps a fixed-right header and body aligned when the last column consumes the filler', () => {
+  it('keeps a fixed-right header and body aligned when that column consumes the filler', () => {
     const onColumnWidthChange = vi.fn()
     const { container } = render(
       <Table<RowData>
@@ -386,6 +554,13 @@ describe('Table', () => {
     )
 
     expect(handles).toHaveLength(2)
+    const initialHeaders = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-thead tr:last-child th'),
+    ]
+    expect(initialHeaders.map((cell) =>
+      cell.dataset.zbyColumnKey ??
+      (cell.classList.contains('ant-table-zby-filler-cell') ? 'filler' : ''),
+    )).toEqual(['id', 'filler', 'name'])
 
     fireEvent.pointerDown(handles[1], { clientX: 280 })
     fireEvent.pointerMove(document, { clientX: 600 })

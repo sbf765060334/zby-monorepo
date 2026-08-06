@@ -11,7 +11,7 @@ interface DemoRecord {
 
 const columns: ColumnsType<DemoRecord> = [
   { title: 'Name', dataIndex: 'name', width: 180, minWidth: 120 },
-  { title: 'Status', dataIndex: 'status', width: 160, flex: 1 },
+  { title: 'Status', dataIndex: 'status', width: 160 },
 ]
 
 const data: DemoRecord[] = [

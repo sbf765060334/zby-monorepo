@@ -11,11 +11,11 @@ Table keeps the upper-level features of antd 6.5.3 Table, including custom cells
 
 - A table that consumes the remaining parent height while preserving the full header, body, and pagination layout for short data sets;
 - Column resizing constrained by `minWidth` and `maxWidth`;
-- Data Grid-style columns that absorb unused container width without a synthetic filler column;
+- Fixed-width resizing with explicit filler space and horizontal overflow;
 - Click-to-toggle current-row highlighting for data investigation;
 - Vertical row virtualization with a visible scrollbar, fill layout, and normal horizontal scrolling.
 
-This version does not include ActionText and does not virtualize columns. Tables with explicit scrolling, fill layout, or virtualization share one native viewport and the zby ScrollArea visual treatment. A basic table without scrolling preserves the upstream AntD auto-layout path. Table intentionally exposes no scrollbar styling props.
+This version does not include ActionText and does not virtualize columns. Tables with explicit scrolling, fill layout, virtualization, or column resizing share one native viewport and the zby ScrollArea visual treatment. A basic table without scrolling preserves the upstream AntD auto-layout path. `scrollAreaProps` exposes only the supported visibility strategy and hide delay, not arbitrary internal ScrollArea props.
 
 ## Usage
 
@@ -76,7 +76,7 @@ Columns retain antd features such as `render`, `onCell`, `shouldCellUpdate`, `el
 
 The parent must provide a calculable height. Add `minHeight: 0` where needed in nested flex or grid layouts so the browser can create an internal scrolling region.
 
-### Resizing and flex columns
+### Fixed-width column resizing
 
 ```tsx
 const columns: TableColumnsType<Order> = [
@@ -95,7 +95,6 @@ const columns: TableColumnsType<Order> = [
     width: 160,
     minWidth: 120,
     maxWidth: 360,
-    flex: 1,
   },
 ]
 
@@ -110,16 +109,9 @@ const columns: TableColumnsType<Order> = [
 
 Dragging moves only a dashed guide. The real width is committed once on pointer release and is always clamped to `minWidth`/`maxWidth`. The separator also supports arrow keys: 10px per press, or 1px while Shift is held.
 
-`flex` follows the fixed-width-plus-remaining-space model used by mainstream Data Grids:
+With resizing enabled, every business leaf keeps a fixed pixel width. Resizing changes only the active leaf; other business columns never grow or shrink to compensate. If their total is narrower than the viewport, Table inserts a non-resizable filler column for the remainder. The filler is appended after ordinary columns and, when fixed-end columns exist, immediately before the first fixed-end column. If business columns are wider than the viewport, the filler disappears and the table scrolls horizontally.
 
-- Start with the base width of every visible leaf column;
-- Distribute remaining container width among unmodified flex columns by weight;
-- After explicit flex columns reach `maxWidth`, continue with eligible regular business columns from right to left;
-- If no explicit flex column exists, use the last eligible regular column as an implicit flex column;
-- Remove a manually resized flex column from the flex pool so it does not snap back after release;
-- Never create filler `<th>` or `<td>` elements.
-
-If every expandable column reaches `maxWidth`, strict maximums and full container coverage cannot both be satisfied. The component preserves column constraints and leaves the mathematically unavoidable body space.
+Without `enableColumnResizing`, Table does not resolve enhanced widths, insert a filler, or read persisted widths; column sizing remains on the AntD 6.5.3 path.
 
 ### Toggle current-row highlighting
 
@@ -174,7 +166,7 @@ Current-row highlighting and `rowSelection` are independent and can coexist. The
 
 Virtual mode renders rows around the viewport and measures actual row heights. It shares the same viewport and scrollbar implementation as normal mode and does not mount a VirtualList scrollbar.
 
-Horizontal movement remains available as normal browser `scrollLeft` on that viewport; columns are not virtualized. A numeric `scroll.x` matching the desired wide-table width is recommended. For a non-fill virtual table, provide `scroll.y`; otherwise the internal default is 500px.
+Horizontal movement remains available as normal browser `scrollLeft` on that viewport; columns are not virtualized. On the native sizing path, a numeric `scroll.x` matching the desired wide-table width is recommended. With resizing enabled, the sum of committed business-column widths determines overflow and numeric `scroll.x` does not stretch the filler. For a non-fill virtual table, provide `scroll.y`; otherwise the internal default is 500px.
 
 ## Additional Table Props
 
@@ -236,7 +228,6 @@ Boolean mode keeps widths only in component memory. Object mode stores committed
 | width | Optional base width in pixels; when omitted, basic tables preserve AntD auto sizing | `number` | - |
 | minWidth | Minimum committed width in pixels | `number` | `50` |
 | maxWidth | Maximum committed width in pixels | `number` | `Infinity` |
-| flex | Weight used to receive remaining container width; non-positive values are ignored | `number` | - |
 | resizable | Whether this leaf can resize when global resizing is enabled | `boolean` | `true` |
 
-Fixed columns do not participate in flex growth. Column groups do not receive resize handles; sizing operates on visible leaf columns.
+Column groups do not receive resize handles; sizing operates on visible leaf columns. The filler is not persisted and is never placed after fixed-end columns.

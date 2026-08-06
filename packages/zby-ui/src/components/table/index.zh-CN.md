@@ -12,11 +12,11 @@ Table 保留 antd 6.5.3 Table 的列渲染、排序、筛选、分页、展开�
 
 - 表格需要填满页面剩余高度，数据较少时也要保持完整的表头、表体和分页布局；
 - 用户需要拖动表头调整列宽，并通过 `minWidth`、`maxWidth` 约束可调范围；
-- 列总宽度小于容器时，需要由业务列吸收剩余空间，而不是生成空白占位列；
+- 开启列宽拖拽后，业务列保持固定像素宽度，剩余空间由明确的 filler 表示；
 - 追查数据时，需要点击一行标记为当前行，再次点击同一行取消；
 - 大数据表需要纵向虚拟化，同时保留可见滚动条、fill 布局和普通横向滚动。
 
-本次实现不包含 ActionText，也不进行横向列虚拟化。显式滚动、fill 或虚拟模式复用组件内部的同一个原生滚动 viewport，滚动条视觉由 zby ScrollArea 统一提供；未配置滚动的基础表格保留 AntD 上游自动布局路径。Table 不暴露滚动条样式属性。
+本次实现不包含 ActionText，也不进行横向列虚拟化。显式滚动、fill、虚拟模式或列宽拖拽复用组件内部的同一个原生滚动 viewport，滚动条视觉由 zby ScrollArea 统一提供；未配置滚动的基础表格保留 AntD 上游自动布局路径。`scrollAreaProps` 只暴露支持的可见策略和隐藏延迟，不透传任意内部 ScrollArea 属性。
 
 ## 怎么使用
 
@@ -81,7 +81,7 @@ export default () => (
 
 父级必须提供可计算的高度，并在嵌套 flex/grid 布局中按需设置 `minHeight: 0`。否则浏览器无法确定“剩余高度”，组件也无法产生内部滚动区域。
 
-### 列宽拖拽和 flex 填充
+### 固定列宽拖拽
 
 ```tsx
 const columns: TableColumnsType<Order> = [
@@ -100,7 +100,6 @@ const columns: TableColumnsType<Order> = [
     width: 160,
     minWidth: 120,
     maxWidth: 360,
-    flex: 1,
   },
 ]
 
@@ -117,16 +116,9 @@ const columns: TableColumnsType<Order> = [
 
 拖动期间只移动贯穿表格的虚线 guide，不修改真实列宽；松开指针后一次性提交最终宽度。拖动值始终被限制在 `minWidth` 和 `maxWidth` 之间。拖拽手柄也支持键盘左右键：默认每次 10px，按住 Shift 时每次 1px。
 
-`flex` 使用 Data Grid 常见的“固定宽度 + 剩余空间权重”模型：
+开启列宽拖拽后，每个业务叶子列都保持真实的像素宽度。拖动只修改当前列，其他业务列不会跟着补偿。业务列总宽小于视口时，Table 用一个不可拖拽的 filler 列表示剩余空间；没有尾部固定列时 filler 位于业务列最后，存在尾部固定列时 filler 位于第一个尾部固定列之前。业务列总宽超过视口时 filler 消失，表格产生横向滚动。
 
-- 先计算所有可见叶子列的基础宽度；
-- 容器还有剩余空间时，按 `flex` 权重分给未手动调整的 flex 列；
-- 显式 flex 列达到 `maxWidth` 后，按从右到左的顺序继续交给仍可增长的普通业务列；
-- 没有显式 flex 列时，最后一个合适的普通列承担隐式填充；
-- 手动调整过的 flex 列退出 flex 池，避免松手后立刻被弹回；
-- 不生成额外的空白 `<th>` 或 `<td>`。
-
-如果所有可扩展列都达到 `maxWidth`，那么“严格遵守 maxWidth”和“完全填满容器”在数学上无法同时成立。组件优先遵守列约束，保留剩余表体空间。
+未开启 `enableColumnResizing` 时，Table 不进入增强列宽解析、不生成 filler，也不读取持久化列宽，继续使用 AntD 6.5.3 的原生列宽路径。
 
 ### 点击当前行，再次点击取消
 
@@ -181,7 +173,7 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 
 虚拟模式只渲染可视区附近的行，并对实际行高进行测量。它与非虚拟模式使用同一个滚动 viewport 和同一套滚动条，不挂载 VirtualList 自己的滚动条。
 
-横向滚动保留，但它是浏览器在同一 viewport 上执行的普通 `scrollLeft`，不会虚拟化列。`scroll.x` 建议传入与宽表目标宽度一致的数字。非 fill 虚拟表建议提供 `scroll.y`；未提供时默认使用 500px 的内部高度。
+横向滚动保留，但它是浏览器在同一 viewport 上执行的普通 `scrollLeft`，不会虚拟化列。原生列宽路径下，`scroll.x` 建议传入与宽表目标宽度一致的数字；开启列宽拖拽后，是否溢出由已提交的业务列总宽决定，数字 `scroll.x` 不会拉宽 filler。非 fill 虚拟表建议提供 `scroll.y`；未提供时默认使用 500px 的内部高度。
 
 ## Table 新增 Props
 
@@ -243,7 +235,6 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 | width | 可选基础列宽，单位 px；省略时基础表格保留 AntD 自动列宽 | `number` | - |
 | minWidth | 最小提交宽度，单位 px | `number` | `50` |
 | maxWidth | 最大提交宽度，单位 px | `number` | `Infinity` |
-| flex | 分配剩余容器宽度的权重；非正数视为未设置 | `number` | - |
 | resizable | 在全局开启调整后，是否允许当前叶子列调整 | `boolean` | `true` |
 
-固定列不会参与 flex 扩张。列组自身不显示拖拽手柄，拖拽和宽度分配以可见叶子列为单位。
+列组自身不显示拖拽手柄，拖拽以可见叶子列为单位。filler 不参与持久化，也不会出现在尾部固定列之后。

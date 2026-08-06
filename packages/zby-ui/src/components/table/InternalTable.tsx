@@ -420,9 +420,12 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const mergedScroll = scroll ?? table?.scroll
   const hasExplicitScroll =
     mergedScroll?.x !== undefined || mergedScroll?.y !== undefined
-  const useSharedScrollArea =
-    Boolean(virtual) || heightMode === 'fill' || hasExplicitScroll
   const columnResizingEnabled = Boolean(enableColumnResizing)
+  const useSharedScrollArea =
+    Boolean(virtual) ||
+    heightMode === 'fill' ||
+    hasExplicitScroll ||
+    columnResizingEnabled
   const columnResizingStorageKey =
     typeof enableColumnResizing === 'object'
       ? enableColumnResizing.storageKey
@@ -447,7 +450,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     direction,
     enabled: columnResizingEnabled,
     storageKey: columnResizingStorageKey,
-    resolveWidths: useSharedScrollArea,
+    useSharedScrollArea,
     selectionWidth,
     scrollX: mergedScroll?.x,
     onColumnWidthChange,
@@ -927,7 +930,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             internalRefs={internalRef}
             transformColumns={transformColumns as any}
             getContainerWidth={getContainerWidth}
-            tailor
             measureRowRender={(measureRow) => (
               <TableMeasureRowContext.Provider value>
                 <ConfigProvider getPopupContainer={(node) => node as HTMLElement}>
