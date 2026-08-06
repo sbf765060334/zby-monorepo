@@ -1,6 +1,7 @@
 import { Table } from '@zby/ui'
 import type { TableColumnsType } from '@zby/ui'
-import { Button, Space, Tag, Typography, theme } from 'antd'
+import { Button, Space, Table as AntTable, Tag, Typography, theme } from 'antd'
+import type { TableColumnsType as AntTableColumnsType } from 'antd'
 import * as React from 'react'
 
 import {
@@ -96,6 +97,26 @@ const basicColumns: TableColumnsType<OrderRecord> = [
     align: 'right',
     render: (amount: number) => `¥ ${amount.toLocaleString('zh-CN')}`,
   },
+]
+
+const antdOverflowColumns: AntTableColumnsType<OrderRecord> = [
+  { key: 'orderNo', title: '订单号', dataIndex: 'orderNo', width: 140 },
+  {
+    key: 'status',
+    title: '状态',
+    dataIndex: 'status',
+    width: 50,
+    render: (status: OrderRecord['status']) => <StatusTag status={status} />,
+  },
+  {
+    key: 'amount',
+    title: '金额',
+    dataIndex: 'amount',
+    width: 110,
+    align: 'right',
+    render: (amount: number) => `¥ ${amount.toLocaleString('zh-CN')}`,
+  },
+  { key: 'owner', title: '负责人', dataIndex: 'owner', width: 120 },
 ]
 
 const customCellColumns: TableColumnsType<OrderRecord> = [
@@ -518,6 +539,31 @@ export default function TablePlayground() {
               onColumnWidthChange={({ columnKey, width }) =>
                 setLastEvent(`列 ${String(columnKey)} 提交为 ${Math.round(width)}px`)
               }
+            />
+          </div>
+        </PlaygroundCase>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="AntD 原版窄列内容溢出"
+        description="直接使用 antd/Table，不经过 ZBY Table。固定布局下，列宽小于不可换行内容时，原版单元格默认不会裁剪越界内容。"
+      >
+        <PlaygroundCase title="tableLayout=fixed / 状态列 50px / 无 ellipsis">
+          <Space orientation="vertical" size={2}>
+            <Text code>import {'{ Table }'} from &apos;antd&apos;</Text>
+            <Text type="secondary">
+              bordered 仅用于标出单元格边界；观察 Tag 是否越过状态列进入金额列。
+            </Text>
+          </Space>
+          <div style={{ width: 420, maxWidth: '100%' }}>
+            <AntTable<OrderRecord>
+              rowKey="id"
+              bordered
+              size="small"
+              tableLayout="fixed"
+              columns={antdOverflowColumns}
+              dataSource={smallData}
+              pagination={false}
             />
           </div>
         </PlaygroundCase>
