@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createCache, extractStyle, StyleProvider } from '@ant-design/cssinjs'
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { ConfigProvider } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -150,6 +150,35 @@ describe('ScrollArea', () => {
     expect(
       container.querySelector('.ant-scroll-area-track-vertical')?.getAttribute('data-state'),
     ).toBe('visible')
+  })
+
+  it('hides a scrolling scrollbar after the default 200ms delay', () => {
+    vi.useFakeTimers()
+    const viewportRef = React.createRef<HTMLDivElement>()
+    const { container } = render(
+      <ScrollArea scrollbar="scrolling" viewportRef={viewportRef}>
+        <div style={{ height: 800 }} />
+      </ScrollArea>,
+    )
+
+    mockScrollMetrics(viewportRef.current!, {
+      clientHeight: 100,
+      scrollHeight: 800,
+      scrollTop: 10,
+    })
+    fireEvent.scroll(viewportRef.current!)
+
+    // Radix detects scroll end after 100ms, then applies our 200ms delay.
+    act(() => vi.advanceTimersByTime(100))
+    act(() => vi.advanceTimersByTime(199))
+    expect(
+      container.querySelector('.ant-scroll-area-track-vertical'),
+    ).not.toBeNull()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(
+      container.querySelector('.ant-scroll-area-track-vertical'),
+    ).toBeNull()
   })
 
   it('renders only the tracks enabled by direction', () => {

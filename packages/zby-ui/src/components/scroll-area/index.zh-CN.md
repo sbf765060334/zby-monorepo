@@ -88,7 +88,7 @@ export default () => (
 | 配置 | 行为 |
 | --- | --- |
 | `hover` | 指针位于 root 内时显示 |
-| `scrolling` | 滚动时显示；停止滚动约 1200ms 后隐藏 |
+| `scrolling` | 滚动时显示；停止滚动约 200ms 后隐藏 |
 | `always` | 始终显示存在 thumb 的轨道 |
 | `native` | 使用浏览器原生滚动条，不挂载自定义轨道和滑块 |
 | `false` | 隐藏自定义轨道和滑块，但保留滚动能力 |
@@ -190,7 +190,7 @@ import { ScrollArea } from '@zby/ui'
 | --- | --- | --- | --- |
 | direction | 允许滚动并生成自定义轨道的方向 | `ScrollAreaDirection` | `vertical` |
 | scrollbar | 滚动条实现及自定义滚动条的展示策略 | `ScrollAreaScrollbar` | `hover` |
-| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `1200` |
+| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `200` |
 | wheelBehavior | wheel 轴处理方式；轴映射只在纯横向溢出场景生效 | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | 获取真正发生滚动的 viewport | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | 透传给 viewport 的原生 `div` 属性 | `ScrollAreaViewportProps` | - |

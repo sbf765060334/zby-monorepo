@@ -68,14 +68,33 @@ interface UseResizableColumnsResult<RecordType extends object> {
 const COLUMN_RESIZE_EPSILON = 0.01
 const COLUMN_WIDTH_STORAGE_PREFIX = 'zby-ui:table:column-widths:'
 const COLUMN_WIDTH_STORAGE_VERSION = 1
+const COLUMN_WIDTH_STORAGE_WRITE_DELAY = 200
 
 interface StoredColumnWidths {
   version: typeof COLUMN_WIDTH_STORAGE_VERSION
   widths: Record<string, number>
 }
 
+interface PendingColumnWidthStorageWrite<RecordType extends object> {
+  storageKey: string
+  userWidths: ReadonlyMap<React.Key, number>
+  leaves: readonly ColumnSizingLeaf<RecordType>[]
+}
+
 function getNumericWidth(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function areColumnWidthMapsEqual(
+  first: ReadonlyMap<React.Key, number>,
+  second: ReadonlyMap<React.Key, number>,
+) {
+  if (first.size !== second.size) return false
+
+  for (const [key, width] of first) {
+    if (second.get(key) !== width) return false
+  }
+  return true
 }
 
 function readStoredColumnWidths<RecordType extends object>(
@@ -127,7 +146,7 @@ function writeStoredColumnWidths<RecordType extends object>(
 ) {
   if (typeof window === 'undefined') return
 
-  const widths: Record<string, number> = {}
+  const widths = Object.create(null) as Record<string, number>
   leaves.forEach((leaf) => {
     const width = userWidths.get(leaf.key)
     if (width === undefined || !Number.isFinite(width)) return
@@ -285,16 +304,23 @@ export default function useResizableColumns<RecordType extends object>(
   const shouldResolveWidths = enabled || resolveWidths
   const normalizedStorageKey = storageKey || undefined
   const storageLeaves = React.useMemo(
-    () => collectColumnSizingLeaves(columns, new Map()),
-    [columns],
+    () => normalizedStorageKey
+      ? collectColumnSizingLeaves(columns, new Map())
+      : [],
+    [columns, normalizedStorageKey],
   )
-  const storageColumnsSignature = JSON.stringify(
-    storageLeaves.map((leaf) => [
-      typeof leaf.key,
-      String(leaf.key),
-      leaf.minWidth,
-      leaf.maxWidth,
-    ]),
+  const storageColumnsSignature = React.useMemo(
+    () => normalizedStorageKey
+      ? JSON.stringify(
+          storageLeaves.map((leaf) => [
+            typeof leaf.key,
+            String(leaf.key),
+            leaf.minWidth,
+            leaf.maxWidth,
+          ]),
+        )
+      : '',
+    [normalizedStorageKey, storageLeaves],
   )
   const storageLeavesRef = React.useRef(storageLeaves)
   storageLeavesRef.current = storageLeaves
@@ -304,8 +330,10 @@ export default function useResizableColumns<RecordType extends object>(
     if (!normalizedStorageKey) {
       if (activeStorageKeyRef.current !== undefined) {
         const next = new Map<React.Key, number>()
-        userWidthsRef.current = next
-        setUserWidths(next)
+        if (!areColumnWidthMapsEqual(userWidthsRef.current, next)) {
+          userWidthsRef.current = next
+          setUserWidths(next)
+        }
       }
       activeStorageKeyRef.current = undefined
       return
@@ -316,9 +344,73 @@ export default function useResizableColumns<RecordType extends object>(
       storageLeavesRef.current,
     )
     activeStorageKeyRef.current = normalizedStorageKey
+    if (areColumnWidthMapsEqual(userWidthsRef.current, next)) return
+
     userWidthsRef.current = next
     setUserWidths(next)
   }, [normalizedStorageKey, storageColumnsSignature])
+
+  const pendingStorageWriteRef = React.useRef<
+    PendingColumnWidthStorageWrite<RecordType> | null
+  >(null)
+  const storageWriteTimerRef = React.useRef<number | null>(null)
+  const cancelPendingStorageWrite = React.useCallback(() => {
+    if (storageWriteTimerRef.current !== null) {
+      window.clearTimeout(storageWriteTimerRef.current)
+      storageWriteTimerRef.current = null
+    }
+    pendingStorageWriteRef.current = null
+  }, [])
+  const flushPendingStorageWrite = React.useCallback(() => {
+    if (storageWriteTimerRef.current !== null) {
+      window.clearTimeout(storageWriteTimerRef.current)
+      storageWriteTimerRef.current = null
+    }
+    const pendingWrite = pendingStorageWriteRef.current
+    pendingStorageWriteRef.current = null
+    if (!pendingWrite) return
+
+    writeStoredColumnWidths(
+      pendingWrite.storageKey,
+      pendingWrite.userWidths,
+      pendingWrite.leaves,
+    )
+  }, [])
+  const persistColumnWidths = React.useCallback(
+    (next: ReadonlyMap<React.Key, number>, deferred: boolean) => {
+      if (!normalizedStorageKey) return
+
+      if (!deferred) {
+        cancelPendingStorageWrite()
+        writeStoredColumnWidths(normalizedStorageKey, next, storageLeaves)
+        return
+      }
+
+      pendingStorageWriteRef.current = {
+        storageKey: normalizedStorageKey,
+        userWidths: next,
+        leaves: storageLeaves,
+      }
+      if (storageWriteTimerRef.current !== null) {
+        window.clearTimeout(storageWriteTimerRef.current)
+      }
+      storageWriteTimerRef.current = window.setTimeout(
+        flushPendingStorageWrite,
+        COLUMN_WIDTH_STORAGE_WRITE_DELAY,
+      )
+    },
+    [
+      cancelPendingStorageWrite,
+      flushPendingStorageWrite,
+      normalizedStorageKey,
+      storageLeaves,
+    ],
+  )
+
+  React.useEffect(
+    () => () => flushPendingStorageWrite(),
+    [flushPendingStorageWrite],
+  )
 
   React.useLayoutEffect(() => {
     if (!shouldResolveWidths) return undefined
@@ -464,17 +556,16 @@ export default function useResizableColumns<RecordType extends object>(
       key: React.Key,
       width: number,
       column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
+      deferPersistence = false,
     ) => {
       const next = new Map(userWidthsRef.current)
       next.set(key, width)
       userWidthsRef.current = next
       setUserWidths(next)
-      if (normalizedStorageKey) {
-        writeStoredColumnWidths(normalizedStorageKey, next, storageLeaves)
-      }
+      persistColumnWidths(next, deferPersistence)
       onColumnWidthChange?.({ columnKey: key, width, column })
     },
-    [normalizedStorageKey, onColumnWidthChange, storageLeaves],
+    [onColumnWidthChange, persistColumnWidths],
   )
 
   const cleanupResizeRef = React.useRef<(() => void) | null>(null)
@@ -619,7 +710,7 @@ export default function useResizableColumns<RecordType extends object>(
         cellProps.__zbyColumnMaxWidth,
       )
       if (Math.abs(width - currentWidth) > COLUMN_RESIZE_EPSILON) {
-        commitColumnWidth(key, width, column)
+        commitColumnWidth(key, width, column, true)
       }
     },
     [commitColumnWidth, direction, originalColumnMap],

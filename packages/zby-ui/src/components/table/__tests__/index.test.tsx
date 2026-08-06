@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -53,6 +53,8 @@ afterAll(() => {
 afterEach(() => {
   cleanup()
   window.localStorage.clear()
+  vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 interface RowData {
@@ -494,6 +496,79 @@ describe('Table', () => {
 
     expect(restoredHeader.style.width).toBe('160px')
     expect(onColumnWidthChange).not.toHaveBeenCalled()
+  })
+
+  it('coalesces repeated keyboard resizing into one storage write', () => {
+    vi.useFakeTimers()
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const onColumnWidthChange = vi.fn()
+    const storageKey = 'keyboard-resizing'
+    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing={{ storageKey }}
+        onColumnWidthChange={onColumnWidthChange}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const getHandle = () => container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+
+    fireEvent.keyDown(getHandle(), { key: 'ArrowRight' })
+    fireEvent.keyDown(getHandle(), { key: 'ArrowRight' })
+    fireEvent.keyDown(getHandle(), { key: 'ArrowRight' })
+
+    expect(onColumnWidthChange).toHaveBeenCalledTimes(3)
+    expect(setItem).not.toHaveBeenCalled()
+
+    act(() => vi.advanceTimersByTime(199))
+    expect(setItem).not.toHaveBeenCalled()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(setItem).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(window.localStorage.getItem(persistedKey)!)).toEqual({
+      version: 1,
+      widths: { id: 150 },
+    })
+  })
+
+  it('persists a __proto__ column key as ordinary data', () => {
+    const storageKey = 'prototype-column-key'
+    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing={{ storageKey }}
+        columns={[
+          {
+            key: '__proto__',
+            dataIndex: 'id',
+            title: 'ID',
+            width: 120,
+          },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+
+    fireEvent.pointerDown(handle, { clientX: 120 })
+    fireEvent.pointerMove(document, { clientX: 140 })
+    fireEvent.pointerUp(document, { clientX: 140 })
+
+    const persisted = JSON.parse(window.localStorage.getItem(persistedKey)!)
+    expect(Object.entries(persisted.widths)).toContainEqual([
+      '__proto__',
+      140,
+    ])
   })
 
   it('forwards the supported ScrollArea visibility settings', () => {

@@ -197,7 +197,7 @@ Table exposes only ScrollArea settings that cannot break header synchronization 
 | Field | Description | Type | Default |
 | --- | --- | --- | --- |
 | scrollbar | Scrollbar implementation and visibility strategy | `ScrollAreaScrollbar` | `hover` |
-| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `1200` |
+| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `200` |
 
 ### TableColumnResizingConfig
 
@@ -209,7 +209,7 @@ Table exposes only ScrollArea settings that cannot break header synchronization 
 />
 ```
 
-Boolean mode keeps widths only in component memory. Object mode stores committed business leaf-column widths under `zby-ui:table:column-widths:${storageKey}`. Restore ignores missing columns, invalid data, and internal helper columns, then reapplies current min/max constraints. Give persisted business columns stable `column.key` values.
+Boolean mode keeps widths only in component memory. Object mode stores committed business leaf-column widths under `zby-ui:table:column-widths:${storageKey}`. Pointer resizing writes immediately on release; repeated keyboard adjustments are coalesced and written 200ms after input stops. Restore ignores missing columns, invalid data, and internal helper columns, then reapplies current min/max constraints. Give persisted business columns stable `column.key` values.
 
 ### TableRowHighlight
 

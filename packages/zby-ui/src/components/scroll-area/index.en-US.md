@@ -87,7 +87,7 @@ The default `wheelBehavior="native"` leaves browser wheel behavior untouched. Wi
 | Configuration | Behavior |
 | --- | --- |
 | `hover` | Show while the pointer is inside the root |
-| `scrolling` | Show while scrolling, then hide about 1200 ms after scrolling stops |
+| `scrolling` | Show while scrolling, then hide about 200 ms after scrolling stops |
 | `always` | Always show tracks that contain a thumb |
 | `native` | Use browser-native scrollbars without mounting custom tracks or thumbs |
 | `false` | Hide custom tracks and thumbs without disabling scrolling |
@@ -189,7 +189,7 @@ Except for `children`, ScrollArea inherits native `div` attributes and applies t
 | --- | --- | --- | --- |
 | direction | Allowed overflow direction and custom tracks | `ScrollAreaDirection` | `vertical` |
 | scrollbar | Scrollbar implementation and custom visibility strategy | `ScrollAreaScrollbar` | `hover` |
-| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `1200` |
+| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `200` |
 | wheelBehavior | Wheel-axis handling; mapping applies only to horizontal-only overflow | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | Ref for the element that actually scrolls | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | Native `div` attributes passed to the viewport | `ScrollAreaViewportProps` | - |

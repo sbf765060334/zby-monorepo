@@ -112,7 +112,7 @@ export interface ScrollAreaProps
    * - false：不展示自定义轨道，但 viewport 仍可通过滚轮、触摸或代码正常滚动；
    * - 'native'：使用浏览器原生滚动条，不渲染自定义轨道；
    * - 'hover'：鼠标或指针进入 root 时显示；
-   * - 'scrolling'：滚动时显示，停止滚动 1200ms 后隐藏；
+   * - 'scrolling'：滚动时显示，停止滚动 200ms 后隐藏；
    * - 'always'：始终显示；
    *
    * @default 'hover'
@@ -124,7 +124,7 @@ export interface ScrollAreaProps
    *
    * 仅对 hover 和 scrolling 展示策略有意义。
    *
-   * @default 1200
+   * @default 200
    */
   scrollHideDelay?: number
 

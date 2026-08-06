@@ -204,7 +204,7 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 | 字段 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | scrollbar | 滚动条实现与展示策略 | `ScrollAreaScrollbar` | `hover` |
-| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `1200` |
+| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `200` |
 
 ### TableColumnResizingConfig
 
@@ -216,7 +216,7 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 />
 ```
 
-布尔形式只在组件内存中保存本次调整。对象形式会把已提交的业务叶子列宽度保存到 `zby-ui:table:column-widths:${storageKey}`；恢复时会忽略不存在的列、无效数据以及内部辅助列，并重新应用当前列的 min/max 限制。建议为需要持久化的业务列提供稳定的 `column.key`。
+布尔形式只在组件内存中保存本次调整。对象形式会把已提交的业务叶子列宽度保存到 `zby-ui:table:column-widths:${storageKey}`；鼠标拖拽在松手时立即写入，连续键盘调整会合并并在停止 200ms 后写入。恢复时会忽略不存在的列、无效数据以及内部辅助列，并重新应用当前列的 min/max 限制。建议为需要持久化的业务列提供稳定的 `column.key`。
 
 ### TableRowHighlight
 
