@@ -286,7 +286,7 @@ describe('Table', () => {
     ])
   })
 
-  it('scopes resize-only cell clipping and divider hover styles', () => {
+  it('scopes resize-only cell clipping without adding divider hover styles', () => {
     const { container } = render(
       <>
         <div data-table-mode="plain">
@@ -342,21 +342,7 @@ describe('Table', () => {
         'ant-table-zby-column-resizing',
       ),
     ).toBe(true)
-    expect(
-      getTable('plain').classList.contains(
-        'ant-table-zby-resize-divider-hover',
-      ),
-    ).toBe(false)
-    expect(
-      getTable('resizable').classList.contains(
-        'ant-table-zby-resize-divider-hover',
-      ),
-    ).toBe(true)
-    expect(
-      getTable('bordered-resizable').classList.contains(
-        'ant-table-zby-resize-divider-hover',
-      ),
-    ).toBe(false)
+    expect(styleText).not.toContain('ant-table-zby-resize-divider-hover')
     expect(
       getTable('resizable').querySelector(
         'th[data-zby-column-key="id"] .ant-table-zby-resize-handle',
@@ -368,16 +354,16 @@ describe('Table', () => {
       ),
     ).not.toBeNull()
     expect(styleText).toMatch(
-      /ant-table-zby-resize-divider-hover.*ant-table-zby-resize-handle::?after\{[^}]*height:1\.6em/,
-    )
-    expect(styleText).toMatch(
-      /ant-table-zby-resize-divider-hover.*ant-table-zby-resize-handle:hover:not\(:focus-visible\)::?after\{[^}]*background-color:var\(--ant-color-primary\)/,
-    )
-    expect(styleText).toMatch(
       /ant-table-zby-column-resizing.*ant-table-tbody>tr>td\.ant-table-cell:not\(\.ant-table-cell-fix\).*overflow:hidden/,
     )
     expect(styleText).toMatch(
       /ant-table-zby-column-resizing.*ant-table-tbody-virtual.*ant-table-cell:not\(\.ant-table-cell-fix\).*overflow:hidden/,
+    )
+    expect(styleText).toMatch(
+      /ant-table-zby-resize-guide\{[^}]*overflow:hidden/,
+    )
+    expect(styleText).toMatch(
+      /ant-table-zby-resize-guide::?after\{[^}]*translateX\(var\(--zby-table-resize-guide-x,0px\)\)/,
     )
   })
 
@@ -786,9 +772,20 @@ describe('Table', () => {
     )!
 
     fireEvent.pointerDown(handle, { clientX: 150 })
+    fireEvent.pointerMove(document, { clientX: 400 })
+
+    expect(guide.style.width).toBe('150px')
+    expect(guide.style.getPropertyValue('--zby-table-resize-guide-x')).toBe(
+      '200px',
+    )
+
     fireEvent.pointerMove(document, { clientX: 20 })
 
     expect(guide.style.display).toBe('block')
+    expect(guide.style.left).toBe('0px')
+    expect(guide.style.getPropertyValue('--zby-table-resize-guide-x')).toBe(
+      '100px',
+    )
     expect(onColumnWidthChange).not.toHaveBeenCalled()
 
     fireEvent.pointerUp(document, { clientX: 20 })

@@ -23,8 +23,18 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         display: 'none',
         width: 0,
         height: 0,
-        borderInlineStart: `1px dashed ${token.colorPrimary}`,
+        overflow: 'hidden',
         pointerEvents: 'none',
+
+        '&::after': {
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 0,
+          borderInlineStart: `1px dashed ${token.colorPrimary}`,
+          transform: 'translateX(var(--zby-table-resize-guide-x, 0px))',
+          content: '""',
+        },
       },
 
       [`${componentCls}-zby-resize-handle`]: {
@@ -52,28 +62,6 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         `${componentCls}-tbody-virtual ${componentCls}-cell:not(${componentCls}-cell-fix)`
       ]: {
         overflow: 'hidden',
-      },
-
-      [
-      `${componentCls}${componentCls}-zby-resize-divider-hover ` +
-        `${componentCls}-zby-resize-handle`
-      ]: {
-        '&::after': {
-          position: 'absolute',
-          insetBlockStart: '50%',
-          insetInlineEnd: 0,
-          width: 1,
-          height: '1.6em',
-          backgroundColor: 'transparent',
-          transform: 'translateY(-50%)',
-          transition: `background-color ${token.motionDurationMid}`,
-          content: '""',
-          pointerEvents: 'none',
-        },
-
-        '&:hover:not(:focus-visible)::after': {
-          backgroundColor: token.colorPrimary,
-        },
       },
 
       [`${componentCls}-zby-filler-cell`]: {

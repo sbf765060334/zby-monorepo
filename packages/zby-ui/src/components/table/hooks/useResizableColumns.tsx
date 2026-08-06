@@ -731,7 +731,9 @@ export default function useResizableColumns<RecordType extends object>(
       let candidateWidth = startInfo.width
 
       activeGuide.style.display = 'block'
+      activeGuide.style.left = `${containerRect.left - rootRect.left}px`
       activeGuide.style.top = `${containerRect.top - rootRect.top}px`
+      activeGuide.style.width = `${containerRect.width}px`
       activeGuide.style.height = `${containerRect.height}px`
 
       const updateGuide = (clientX: number) => {
@@ -749,8 +751,11 @@ export default function useResizableColumns<RecordType extends object>(
             ? -(candidateWidth - startInfo.width)
             : candidateWidth - startInfo.width
         const guideX =
-          startInfo.startBoundaryClientX + physicalDelta - rootRect.left
-        activeGuide.style.transform = `translateX(${guideX}px)`
+          startInfo.startBoundaryClientX + physicalDelta - containerRect.left
+        activeGuide.style.setProperty(
+          '--zby-table-resize-guide-x',
+          `${guideX}px`,
+        )
       }
 
       updateGuide(event.clientX)
