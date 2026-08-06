@@ -313,6 +313,16 @@ function TableScrollBody<RecordType extends object>(
     [offsets, rowKeys],
   )
 
+  React.useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    info.onScroll({
+      currentTarget: viewport,
+      scrollLeft: viewport.scrollLeft,
+    })
+  }, [horizontal, info.onScroll, tableWidth])
+
   const handleScroll: React.UIEventHandler<HTMLDivElement> = (event) => {
     setScrollTop(event.currentTarget.scrollTop)
     info.onScroll({

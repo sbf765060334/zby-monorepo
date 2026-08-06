@@ -289,6 +289,26 @@ describe('Table', () => {
     expect(gutter.querySelector('.ant-table-zby-resize-handle')).toBeNull()
   })
 
+  it('does not render the filler as another header divider', () => {
+    render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const styleText = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent ?? '')
+      .join('')
+      .replace(/\s/g, '')
+
+    expect(styleText).toMatch(
+      /ant-table-zby-filler-cell::?before\{display:none/,
+    )
+  })
+
   it('derives the resize end gutter from density tokens and allows overrides', () => {
     const { container } = render(
       <>
@@ -685,6 +705,85 @@ describe('Table', () => {
     expect(onColumnWidthChange).toHaveBeenCalledWith(
       expect.objectContaining({ columnKey: 'name', width: 480 }),
     )
+  })
+
+  it('clears fixed-column shadows when resizing removes horizontal overflow', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={[
+          {
+            key: 'id',
+            dataIndex: 'id',
+            title: 'ID',
+            width: 120,
+            fixed: 'left',
+          },
+          {
+            key: 'name',
+            dataIndex: 'name',
+            title: 'Name',
+            width: 500,
+          },
+          {
+            key: 'action',
+            title: 'Action',
+            width: 100,
+            fixed: 'right',
+            render: () => 'Open',
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const viewport = container.querySelector<HTMLElement>(
+      '.ant-scroll-area-viewport',
+    )!
+    let storedScrollLeft = 80
+    const hasFiller = () => Boolean(
+      container.querySelector('.ant-table-zby-filler-cell'),
+    )
+
+    Object.defineProperties(viewport, {
+      clientWidth: { configurable: true, get: () => 600 },
+      scrollWidth: {
+        configurable: true,
+        get: () => hasFiller() ? 600 : 732,
+      },
+      scrollLeft: {
+        configurable: true,
+        get: () => hasFiller() ? 0 : storedScrollLeft,
+        set: (value: number) => {
+          storedScrollLeft = value
+        },
+      },
+    })
+
+    fireEvent.scroll(viewport)
+    expect(
+      container.querySelector('.ant-table-cell-fix-start-shadow-show'),
+    ).not.toBeNull()
+    expect(
+      container.querySelector('.ant-table-cell-fix-end-shadow-show'),
+    ).not.toBeNull()
+
+    const handle = container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="name"] .ant-table-zby-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 500 })
+    fireEvent.pointerMove(document, { clientX: 200 })
+    fireEvent.pointerUp(document, { clientX: 200 })
+
+    expect(hasFiller()).toBe(true)
+    expect(viewport.scrollLeft).toBe(0)
+    expect(
+      container.querySelector('.ant-table-cell-fix-start-shadow-show'),
+    ).toBeNull()
+    expect(
+      container.querySelector('.ant-table-cell-fix-end-shadow-show'),
+    ).toBeNull()
   })
 
   it('does not read or write persisted widths in boolean resizing mode', () => {
