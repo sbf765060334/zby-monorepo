@@ -920,6 +920,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
                 [`${prefixCls}-small`]: mergedSize === 'small',
                 [`${prefixCls}-bordered`]: bordered,
                 [`${prefixCls}-empty`]: rawData.length === 0,
+                [`${prefixCls}-zby-resize-divider-hover`]:
+                  columnResizingEnabled && !bordered,
               },
               cssVarCls,
               rootCls,

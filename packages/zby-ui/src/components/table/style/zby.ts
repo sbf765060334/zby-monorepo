@@ -45,6 +45,28 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         },
       },
 
+      [
+      `${componentCls}${componentCls}-zby-resize-divider-hover ` +
+        `${componentCls}-zby-resize-handle`
+      ]: {
+        '&::after': {
+          position: 'absolute',
+          insetBlockStart: '50%',
+          insetInlineEnd: 0,
+          width: 1,
+          height: '1.6em',
+          backgroundColor: 'transparent',
+          transform: 'translateY(-50%)',
+          transition: `background-color ${token.motionDurationMid}`,
+          content: '""',
+          pointerEvents: 'none',
+        },
+
+        '&:hover:not(:focus-visible)::after': {
+          backgroundColor: token.colorPrimary,
+        },
+      },
+
       [`${componentCls}-zby-filler-cell`]: {
         padding: '0 !important',
         pointerEvents: 'none',

@@ -227,6 +227,80 @@ describe('Table', () => {
     ])
   })
 
+  it('enables divider hover only for unbordered resizable tables', () => {
+    const { container } = render(
+      <>
+        <div data-table-mode="plain">
+          <Table<RowData>
+            rowKey="id"
+            pagination={false}
+            columns={columns}
+            dataSource={data}
+          />
+        </div>
+        <div data-table-mode="resizable">
+          <Table<RowData>
+            rowKey="id"
+            pagination={false}
+            enableColumnResizing
+            columns={[{ ...columns[0], resizable: false }, columns[1]]}
+            dataSource={data}
+          />
+        </div>
+        <div data-table-mode="bordered-resizable">
+          <Table<RowData>
+            rowKey="id"
+            bordered
+            pagination={false}
+            enableColumnResizing
+            columns={columns}
+            dataSource={data}
+          />
+        </div>
+      </>,
+    )
+    const getTable = (mode: string) =>
+      container.querySelector<HTMLElement>(
+        `[data-table-mode="${mode}"] .ant-table`,
+      )!
+    const styleText = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent ?? '')
+      .join('')
+      .replace(/\s/g, '')
+
+    expect(
+      getTable('plain').classList.contains(
+        'ant-table-zby-resize-divider-hover',
+      ),
+    ).toBe(false)
+    expect(
+      getTable('resizable').classList.contains(
+        'ant-table-zby-resize-divider-hover',
+      ),
+    ).toBe(true)
+    expect(
+      getTable('bordered-resizable').classList.contains(
+        'ant-table-zby-resize-divider-hover',
+      ),
+    ).toBe(false)
+    expect(
+      getTable('resizable').querySelector(
+        'th[data-zby-column-key="id"] .ant-table-zby-resize-handle',
+      ),
+    ).toBeNull()
+    expect(
+      getTable('resizable').querySelector(
+        'th[data-zby-column-key="name"] .ant-table-zby-resize-handle',
+      ),
+    ).not.toBeNull()
+    expect(styleText).toMatch(
+      /ant-table-zby-resize-divider-hover.*ant-table-zby-resize-handle::?after\{[^}]*height:1\.6em/,
+    )
+    expect(styleText).toMatch(
+      /ant-table-zby-resize-divider-hover.*ant-table-zby-resize-handle:hover:not\(:focus-visible\)::?after\{[^}]*background-color:var\(--ant-color-primary\)/,
+    )
+  })
+
   it('measures auto-sized columns before adding filler in resizing mode', () => {
     const { container } = render(
       <div style={{ height: 300 }}>
