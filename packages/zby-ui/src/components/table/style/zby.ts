@@ -50,10 +50,6 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         pointerEvents: 'none',
       },
 
-      [`${componentCls}-thead > tr > th${componentCls}-cell`]: {
-        position: 'relative',
-      },
-
       [`${componentCls}-row${componentCls}-row-current > ${componentCls}-cell`]: {
         background: token.colorPrimaryBg,
       },

@@ -645,7 +645,6 @@ export default function TablePlayground() {
               columns={wideColumns}
               dataSource={fillDemoData}
               pagination={false}
-              scroll={{ x: 1290 }}
               rowHighlight={{
                 onChange: (key) =>
                   setLastEvent(

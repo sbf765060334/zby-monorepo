@@ -22,7 +22,7 @@ export function PlaygroundPage(props: PlaygroundPageProps) {
               <Title level={3} style={{ margin: 0 }}>
                 {title}
               </Title>
-              <Tag color="blue" bordered={false}>
+              <Tag color="blue" variant="filled">
                 @zby/ui
               </Tag>
             </Space>

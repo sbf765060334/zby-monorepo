@@ -359,7 +359,7 @@ describe('Table', () => {
     expect(onColumnWidthChange).not.toHaveBeenCalled()
   })
 
-  it('keeps split header and body widths aligned after resizing the last business column', () => {
+  it('keeps a fixed-right header and body aligned when the last column consumes the filler', () => {
     const onColumnWidthChange = vi.fn()
     const { container } = render(
       <Table<RowData>
@@ -370,7 +370,13 @@ describe('Table', () => {
         onColumnWidthChange={onColumnWidthChange}
         columns={[
           { key: 'id', dataIndex: 'id', title: 'ID', width: 120 },
-          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+          {
+            key: 'name',
+            dataIndex: 'name',
+            title: 'Name',
+            width: 160,
+            fixed: 'right',
+          },
         ]}
         dataSource={data}
       />,
@@ -381,9 +387,9 @@ describe('Table', () => {
 
     expect(handles).toHaveLength(2)
 
-    fireEvent.pointerDown(handles[1], { clientX: 300 })
-    fireEvent.pointerMove(document, { clientX: 250 })
-    fireEvent.pointerUp(document, { clientX: 250 })
+    fireEvent.pointerDown(handles[1], { clientX: 280 })
+    fireEvent.pointerMove(document, { clientX: 600 })
+    fireEvent.pointerUp(document, { clientX: 600 })
 
     const bodyWidths = [
       ...container.querySelectorAll<HTMLElement>(
@@ -393,11 +399,16 @@ describe('Table', () => {
     const headerWidths = [
       ...container.querySelectorAll<HTMLElement>('.ant-table-header col'),
     ].slice(0, bodyWidths.length).map((col) => col.style.width)
+    const lastHeader = container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="name"]',
+    )!
 
     expect(headerWidths).toEqual(bodyWidths)
-    expect(bodyWidths).toEqual(['120px', '110px', '370px'])
+    expect(bodyWidths).toEqual(['120px', '480px'])
+    expect(getComputedStyle(lastHeader).position).toBe('sticky')
+    expect(lastHeader.querySelector('.ant-table-zby-resize-handle')).not.toBeNull()
     expect(onColumnWidthChange).toHaveBeenCalledWith(
-      expect.objectContaining({ columnKey: 'name', width: 110 }),
+      expect.objectContaining({ columnKey: 'name', width: 480 }),
     )
   })
 
