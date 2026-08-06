@@ -46,6 +46,15 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
       },
 
       [
+      `${componentCls}${componentCls}-zby-column-resizing ` +
+        `${componentCls}-tbody > tr > td${componentCls}-cell:not(${componentCls}-cell-fix), ` +
+        `${componentCls}${componentCls}-zby-column-resizing ` +
+        `${componentCls}-tbody-virtual ${componentCls}-cell:not(${componentCls}-cell-fix)`
+      ]: {
+        overflow: 'hidden',
+      },
+
+      [
       `${componentCls}${componentCls}-zby-resize-divider-hover ` +
         `${componentCls}-zby-resize-handle`
       ]: {

@@ -227,7 +227,7 @@ describe('Table', () => {
     ])
   })
 
-  it('enables divider hover only for unbordered resizable tables', () => {
+  it('scopes resize-only cell clipping and divider hover styles', () => {
     const { container } = render(
       <>
         <div data-table-mode="plain">
@@ -270,6 +270,21 @@ describe('Table', () => {
 
     expect(
       getTable('plain').classList.contains(
+        'ant-table-zby-column-resizing',
+      ),
+    ).toBe(false)
+    expect(
+      getTable('resizable').classList.contains(
+        'ant-table-zby-column-resizing',
+      ),
+    ).toBe(true)
+    expect(
+      getTable('bordered-resizable').classList.contains(
+        'ant-table-zby-column-resizing',
+      ),
+    ).toBe(true)
+    expect(
+      getTable('plain').classList.contains(
         'ant-table-zby-resize-divider-hover',
       ),
     ).toBe(false)
@@ -298,6 +313,12 @@ describe('Table', () => {
     )
     expect(styleText).toMatch(
       /ant-table-zby-resize-divider-hover.*ant-table-zby-resize-handle:hover:not\(:focus-visible\)::?after\{[^}]*background-color:var\(--ant-color-primary\)/,
+    )
+    expect(styleText).toMatch(
+      /ant-table-zby-column-resizing.*ant-table-tbody>tr>td\.ant-table-cell:not\(\.ant-table-cell-fix\).*overflow:hidden/,
+    )
+    expect(styleText).toMatch(
+      /ant-table-zby-column-resizing.*ant-table-tbody-virtual.*ant-table-cell:not\(\.ant-table-cell-fix\).*overflow:hidden/,
     )
   })
 
