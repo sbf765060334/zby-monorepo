@@ -19,6 +19,7 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
   } = token
   const tableBorder = `${unit(lineWidth)} ${lineType} ${tableBorderColor}`
   const [varName, varRef] = genCssVar(antCls, 'table')
+  const scrollAreaCls = componentCls.replace('-table', '-scroll-area')
 
   const getSizeBorderStyle = (
     size: 'small' | 'medium',
@@ -54,6 +55,12 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
         [`> ${componentCls}-container`]: {
           borderInlineStart: tableBorder,
           borderTop: tableBorder,
+
+          [`> ${componentCls}-zby-scroll-body ${scrollAreaCls}-content > table`]: {
+            '> tbody > tr > th, > tbody > tr > td': {
+              borderInlineEnd: tableBorder,
+            },
+          },
 
           '&:first-child': {
             borderTop: varRef('nested-border-top', tableBorder),

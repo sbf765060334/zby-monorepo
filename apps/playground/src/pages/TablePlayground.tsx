@@ -368,6 +368,7 @@ export default function TablePlayground() {
               columns={basicColumns}
               dataSource={smallData}
               pagination={false}
+              enableColumnResizing
             />
           </PlaygroundCase>
 

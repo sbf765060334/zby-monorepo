@@ -608,10 +608,15 @@ export default function useResizableColumns<RecordType extends object>(
       )
       if (!enabled) return businessColumns
 
+      const mergeEndGutterIntoFiller =
+        widthResolution.complete &&
+        widthResolution.unresolvedWidth > COLUMN_RESIZE_EPSILON &&
+        !businessColumns.some((column) => containsFixedEndLeaf(column))
       const columnsWithFiller = widthResolution.complete
         ? insertFillerColumn(
             businessColumns,
-            widthResolution.unresolvedWidth,
+            widthResolution.unresolvedWidth +
+              (mergeEndGutterIntoFiller ? resizeEndGutterWidth : 0),
             fillerColumnKey,
             prefixCls,
           )
@@ -619,7 +624,7 @@ export default function useResizableColumns<RecordType extends object>(
 
       return insertResizeEndGutterColumn(
         columnsWithFiller,
-        resizeEndGutterWidth,
+        mergeEndGutterIntoFiller ? 0 : resizeEndGutterWidth,
         resizeEndGutterColumnKey,
         prefixCls,
       )

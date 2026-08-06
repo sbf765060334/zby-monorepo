@@ -408,7 +408,7 @@ describe('Table', () => {
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(headerCells[0].style.width).toBe('150px')
     expect(headerCells[1].style.width).toBe('150px')
-    expect(fillerCell.style.width).toBe('288px')
+    expect(fillerCell.style.width).toBe('300px')
     expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
   })
 
@@ -433,14 +433,39 @@ describe('Table', () => {
         : cell.classList.contains('ant-table-zby-resize-end-gutter-cell')
           ? 'resize-gutter'
           : ''),
-    )).toEqual(['id', 'name', 'filler', 'resize-gutter'])
+    )).toEqual(['id', 'name', 'filler'])
 
-    const gutter = container.querySelector<HTMLElement>(
-      '.ant-table-thead .ant-table-zby-resize-end-gutter-cell',
+    const filler = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-filler-cell',
     )!
-    expect(gutter.style.width).toBe('12px')
-    expect(getComputedStyle(gutter).position).not.toBe('sticky')
-    expect(gutter.querySelector('.ant-table-zby-resize-handle')).toBeNull()
+    const gutter = container.querySelector(
+      '.ant-table-thead .ant-table-zby-resize-end-gutter-cell',
+    )
+    expect(filler.style.width).toBe('320px')
+    expect(filler.querySelector('.ant-table-zby-resize-handle')).toBeNull()
+    expect(gutter).toBeNull()
+  })
+
+  it('keeps bordered body dividers inside the shared ScrollArea', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        bordered
+        pagination={false}
+        enableColumnResizing
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const styleText = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent ?? '')
+      .join('')
+      .replace(/\s/g, '')
+
+    expect(container.querySelector('.ant-table-bordered')).not.toBeNull()
+    expect(styleText).toMatch(
+      /ant-table-zby-scroll-body.*ant-scroll-area-content>table>tbody>tr>td\{border-inline-end:/,
+    )
   })
 
   it('does not render the filler as another header divider', () => {
@@ -464,6 +489,7 @@ describe('Table', () => {
   })
 
   it('derives the resize end gutter from density tokens and allows overrides', () => {
+    const overflowColumns = columns.map((item) => ({ ...item, width: 400 }))
     const { container } = render(
       <>
         <div data-density="default">
@@ -471,7 +497,7 @@ describe('Table', () => {
             rowKey="id"
             pagination={false}
             enableColumnResizing
-            columns={columns}
+            columns={overflowColumns}
             dataSource={data}
           />
         </div>
@@ -481,7 +507,7 @@ describe('Table', () => {
               rowKey="id"
               pagination={false}
               enableColumnResizing
-              columns={columns}
+              columns={overflowColumns}
               dataSource={data}
             />
           </div>
@@ -494,7 +520,7 @@ describe('Table', () => {
               rowKey="id"
               pagination={false}
               enableColumnResizing
-              columns={columns}
+              columns={overflowColumns}
               dataSource={data}
             />
           </div>
@@ -529,7 +555,7 @@ describe('Table', () => {
       '.ant-table-zby-scroll-body table',
     )!
 
-    expect(filler.style.width).toBe('308px')
+    expect(filler.style.width).toBe('320px')
     expect(bodyTable.style.width).toBe('600px')
   })
 
