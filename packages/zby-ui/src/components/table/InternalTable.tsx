@@ -425,6 +425,9 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const hasExplicitScroll =
     mergedScroll?.x !== undefined || mergedScroll?.y !== undefined
   const columnResizingEnabled = Boolean(enableColumnResizing)
+  const mergedTableLayout = columnResizingEnabled
+    ? 'fixed'
+    : tableProps.tableLayout
   const useSharedScrollArea =
     Boolean(virtual) ||
     heightMode === 'fill' ||
@@ -434,6 +437,14 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     typeof enableColumnResizing === 'object'
       ? enableColumnResizing.storageKey
       : undefined
+
+  if (process.env.NODE_ENV !== 'production') {
+    warning(
+      !(columnResizingEnabled && tableProps.tableLayout === 'auto'),
+      'usage',
+      '`tableLayout="auto"` is ignored when `enableColumnResizing` is enabled. Column resizing requires `tableLayout="fixed"`.',
+    )
+  }
 
   // ============================= Refs =============================
   const rootRef = React.useRef<HTMLDivElement>(null)
@@ -905,6 +916,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         <HeaderTableContext.Provider value={headerTableContext}>
           <TableComponent
             {...tableProps}
+            tableLayout={mergedTableLayout}
             components={bodyComponents}
             scroll={effectiveScroll}
             classNames={mergedClassNames as RcTableProps<RecordType>['classNames']}

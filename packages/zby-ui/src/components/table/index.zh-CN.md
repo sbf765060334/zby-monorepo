@@ -120,7 +120,7 @@ const columns: TableColumnsType<Order> = [
 
 开启列宽拖拽时，Table 还会在所有业务列之后生成一个不可拖拽、不可持久化的末端安全区，避免最右侧业务列的拖拽手柄被表格边框或滚动层遮挡。普通末列的安全区跟随横向内容滚动；存在尾部固定列时，安全区固定在最右端并使用不透明表格背景，尾部固定列仍不会透出后方内容。安全区默认宽度在默认/紧凑主题下分别为 12px/10px，可通过 Table 组件 token `resizeEndGutterWidth` 调整。
 
-未开启 `enableColumnResizing` 时，Table 不进入增强列宽解析、不生成 filler，也不读取持久化列宽，继续使用 AntD 6.5.3 的原生列宽路径。
+开启 `enableColumnResizing` 时，Table 强制使用 `tableLayout="fixed"`，保证提交宽度、表头、表体、filler 与滚动范围使用同一套数值模型；显式传入 `tableLayout="auto"` 会被忽略，并在开发环境给出警告。未开启时，Table 不进入增强列宽解析、不生成 filler，也不读取持久化列宽，继续使用 AntD 6.5.3 的原生列宽和 `tableLayout` 路径。
 
 ### 点击当前行，再次点击取消
 
@@ -185,7 +185,7 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 | --- | --- | --- | --- |
 | heightMode | 表格高度策略；fill 会填满具有确定高度的父级 | `auto \| fill` | `auto` |
 | scrollAreaProps | 内部 ScrollArea 的安全展示配置 | `TableScrollAreaProps` | - |
-| enableColumnResizing | 是否允许调整列宽；对象形式会按 storageKey 持久化 | `boolean \| TableColumnResizingConfig` | `false` |
+| enableColumnResizing | 是否允许调整列宽；对象形式会按 storageKey 持久化；开启后强制使用 `tableLayout="fixed"` | `boolean \| TableColumnResizingConfig` | `false` |
 | onColumnWidthChange | 指针松开或键盘调整后触发一次 | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | 当前行高亮配置；对象存在即启用 | `TableRowHighlight<T>` | - |
 

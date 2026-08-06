@@ -113,7 +113,7 @@ With resizing enabled, every business leaf keeps a fixed pixel width. Resizing c
 
 Resizing mode also adds a non-resizable, non-persistent end gutter after all business columns so that the final business-column handle is not clipped by the table edge or a scroll overlay. For an ordinary last column, the gutter scrolls with the horizontal content. With fixed-end columns, it remains fixed at the end and uses an opaque table background, so scrolling content cannot show through behind the fixed area. Its default width is 12px with the default theme and 10px with the compact theme; customize it with the Table component token `resizeEndGutterWidth`.
 
-Without `enableColumnResizing`, Table does not resolve enhanced widths, insert a filler, or read persisted widths; column sizing remains on the AntD 6.5.3 path.
+With `enableColumnResizing`, Table forces `tableLayout="fixed"` so committed widths, header, body, filler, and scrolling use the same numeric model. An explicit `tableLayout="auto"` is ignored with a development warning. Without resizing, Table does not resolve enhanced widths, insert a filler, or read persisted widths; column sizing and `tableLayout` remain on the AntD 6.5.3 path.
 
 ### Toggle current-row highlighting
 
@@ -178,7 +178,7 @@ All other properties come from antd 6.5.3 `TableProps`.
 | --- | --- | --- | --- |
 | heightMode | Height strategy; fill consumes a parent with a definite height | `auto \| fill` | `auto` |
 | scrollAreaProps | Safe display settings for the internal ScrollArea | `TableScrollAreaProps` | - |
-| enableColumnResizing | Enable resizing; object form persists widths by storageKey | `boolean \| TableColumnResizingConfig` | `false` |
+| enableColumnResizing | Enable resizing; object form persists widths by storageKey; forces `tableLayout="fixed"` | `boolean \| TableColumnResizingConfig` | `false` |
 | onColumnWidthChange | Called once after pointer release or a keyboard resize | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | Current-row configuration; presence enables the behavior | `TableRowHighlight<T>` | - |
 

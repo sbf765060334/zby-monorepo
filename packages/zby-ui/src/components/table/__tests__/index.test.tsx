@@ -176,6 +176,65 @@ describe('Table', () => {
     expect(headerCells[1].getAttribute('style') ?? '').not.toMatch(/120px/)
   })
 
+  it('forces fixed layout when column resizing is enabled', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { container } = render(
+      <>
+        <div data-layout-mode="default">
+          <Table<RowData>
+            rowKey="id"
+            pagination={false}
+            enableColumnResizing
+            columns={columns}
+            dataSource={data}
+          />
+        </div>
+        <div data-layout-mode="fixed">
+          <Table<RowData>
+            rowKey="id"
+            pagination={false}
+            tableLayout="fixed"
+            enableColumnResizing
+            columns={columns}
+            dataSource={data}
+          />
+        </div>
+      </>,
+    )
+
+    for (const mode of ['default', 'fixed']) {
+      const tables = container.querySelectorAll<HTMLTableElement>(
+        `[data-layout-mode="${mode}"] table`,
+      )
+      expect(tables.length).toBeGreaterThan(0)
+      expect([...tables].every((table) => table.style.tableLayout === 'fixed')).toBe(true)
+    }
+    expect(consoleError.mock.calls.flat().join(' ')).not.toContain(
+      '`tableLayout="auto"` is ignored',
+    )
+  })
+
+  it('ignores auto layout and warns when column resizing is enabled', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        tableLayout="auto"
+        enableColumnResizing
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const tables = container.querySelectorAll<HTMLTableElement>('table')
+    const warningText = consoleError.mock.calls.flat().join(' ')
+
+    expect(tables.length).toBeGreaterThan(0)
+    expect([...tables].every((table) => table.style.tableLayout === 'fixed')).toBe(true)
+    expect(warningText).toContain('`tableLayout="auto"` is ignored')
+    expect(warningText).toContain('`tableLayout="fixed"`')
+  })
+
   it('uses a vertical-only ScrollArea when only scroll.y is configured', () => {
     const { container } = render(
       <Table<RowData>
