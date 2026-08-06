@@ -336,6 +336,9 @@ function TableScrollBody<RecordType extends object>(
     () => ({ columnsOffset }),
     [columnsOffset],
   )
+  // AntD fixed cells add per-column z-offsets above their base layer.
+  // Keep both overlay tracks above the maximum possible fixed-cell layer.
+  const scrollTrackZIndex = flattenColumns.length * 2 + 4
 
   const bodyHeightStyle: React.CSSProperties = fill
     ? {}
@@ -429,6 +432,8 @@ function TableScrollBody<RecordType extends object>(
           minWidth: 0,
           minHeight: '100%',
         },
+        horizontalTrack: { zIndex: scrollTrackZIndex },
+        verticalTrack: { zIndex: scrollTrackZIndex },
       }}
     >
       {bodyNode}

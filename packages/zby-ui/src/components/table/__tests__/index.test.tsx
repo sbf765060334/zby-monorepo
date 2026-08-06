@@ -779,6 +779,52 @@ describe('Table', () => {
     ).not.toBeNull()
   })
 
+  it('keeps shared scroll tracks above fixed columns', () => {
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          enableColumnResizing
+          scrollAreaProps={{ scrollbar: 'always' }}
+          columns={[
+            {
+              key: 'id',
+              dataIndex: 'id',
+              title: 'ID',
+              width: 120,
+              fixed: 'left',
+            },
+            {
+              key: 'name',
+              dataIndex: 'name',
+              title: 'Name',
+              width: 400,
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: 160,
+              fixed: 'right',
+            },
+          ]}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    const horizontalTrack = container.querySelector<HTMLElement>(
+      '.ant-scroll-area-track-horizontal',
+    )!
+    const verticalTrack = container.querySelector<HTMLElement>(
+      '.ant-scroll-area-track-vertical',
+    )!
+
+    expect(Number(horizontalTrack.style.zIndex)).toBeGreaterThan(1)
+    expect(Number(verticalTrack.style.zIndex)).toBeGreaterThan(1)
+  })
+
   it('uses the shared ScrollArea viewport in fill and virtual modes', () => {
     const largeData = Array.from({ length: 100 }, (_, index) => ({
       id: index,
