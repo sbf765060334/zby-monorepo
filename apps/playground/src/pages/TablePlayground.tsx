@@ -57,19 +57,25 @@ const smallData: OrderRecord[] = [
   },
 ]
 
-const virtualData: OrderRecord[] = Array.from({ length: 3000 }, (_, index) => ({
-  id: index + 1,
-  orderNo: `ZBY-${String(index + 1).padStart(6, '0')}`,
-  customer: `客户 ${String((index % 120) + 1).padStart(3, '0')}`,
-  status:
-    index % 3 === 0 ? '待处理' : index % 3 === 1 ? '运输中' : '已完成',
-  amount: 1000 + ((index * 137) % 50000),
-  owner: ['张敏', '李想', '周宁', '王雪'][index % 4],
-  createdAt: `2026-08-${String((index % 28) + 1).padStart(2, '0')} 10:30`,
-  address: ['上海市浦东新区', '浙江省杭州市余杭区', '江苏省苏州市工业园区'][
-    index % 3
-  ],
-}))
+function createOrderRecord(id: number): OrderRecord {
+  const index = id - 1
+
+  return {
+    id,
+    orderNo: `ZBY-${String(id).padStart(6, '0')}`,
+    customer: `客户 ${String((index % 120) + 1).padStart(3, '0')}`,
+    status:
+      index % 3 === 0 ? '待处理' : index % 3 === 1 ? '运输中' : '已完成',
+    amount: 1000 + ((index * 137) % 50000),
+    owner: ['张敏', '李想', '周宁', '王雪'][index % 4],
+    createdAt: `2026-08-${String((index % 28) + 1).padStart(2, '0')} 10:30`,
+    address: ['上海市浦东新区', '浙江省杭州市余杭区', '江苏省苏州市工业园区'][
+      index % 3
+    ],
+  }
+}
+
+const virtualData: OrderRecord[] = Array.from({ length: 3000 }, (_, index) => createOrderRecord(index + 1))
 
 const paginatedData = virtualData.slice(0, 18)
 
@@ -295,7 +301,19 @@ export default function TablePlayground() {
     React.useState<React.Key | null>(2)
   const [lastEvent, setLastEvent] = React.useState('等待表格交互')
   const [virtualEnabled, setVirtualEnabled] = React.useState(true)
+  const [fillDemoVirtual, setFillDemoVirtual] = React.useState(false)
+  const [fillDemoData, setFillDemoData] = React.useState<OrderRecord[]>([])
+  const fillDemoNextIdRef = React.useRef(1)
   const [loading, setLoading] = React.useState(true)
+
+  const appendFillDemoRows = React.useCallback(() => {
+    const startId = fillDemoNextIdRef.current
+    fillDemoNextIdRef.current += 5
+    setFillDemoData((current) => [
+      ...current,
+      ...Array.from({ length: 5 }, (_, index) => createOrderRecord(startId + index)),
+    ])
+  }, [])
 
   const frameStyle: React.CSSProperties = {
     height: 360,
@@ -591,6 +609,52 @@ export default function TablePlayground() {
             />
           </PlaygroundCase>
         </PlaygroundGrid>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Fill 动态数据与渲染模式切换"
+        description="从空数据开始，在同一张高填充宽表中切换普通渲染与虚拟列表渲染，并验证动态追加、行高亮和列宽持久化。"
+      >
+        <PlaygroundCase title="空状态起步 / 8 列 / 持久化列宽">
+          <Space wrap>
+            <Button
+              type={!fillDemoVirtual ? 'primary' : 'default'}
+              onClick={() => setFillDemoVirtual(false)}
+            >
+              普通渲染
+            </Button>
+            <Button
+              type={fillDemoVirtual ? 'primary' : 'default'}
+              onClick={() => setFillDemoVirtual(true)}
+            >
+              虚拟列表渲染
+            </Button>
+            <Button onClick={appendFillDemoRows}>增加 5 条数据</Button>
+            <Button danger onClick={() => setFillDemoData([])}>
+              清空数据
+            </Button>
+          </Space>
+          <div style={{ ...frameStyle, height: 560 }}>
+            <Table<OrderRecord>
+              rowKey="id"
+              heightMode="fill"
+              virtual={fillDemoVirtual}
+              enableColumnResizing={{
+                storageKey: 'table-playground-fill-dynamic-rendering',
+              }}
+              columns={wideColumns}
+              dataSource={fillDemoData}
+              pagination={false}
+              scroll={{ x: 1290 }}
+              rowHighlight={{
+                onChange: (key) =>
+                  setLastEvent(
+                    key === null ? 'Fill 动态表示例高亮已取消' : `Fill 动态表示例高亮行 ${key}`,
+                  ),
+              }}
+            />
+          </div>
+        </PlaygroundCase>
       </PlaygroundSection>
 
       <PlaygroundSection
