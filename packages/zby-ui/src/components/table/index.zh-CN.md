@@ -190,9 +190,33 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | heightMode | 表格高度策略；fill 会填满具有确定高度的父级 | `auto \| fill` | `auto` |
-| enableColumnResizing | 是否为可调整的叶子列显示拖拽手柄 | `boolean` | `false` |
+| scrollAreaProps | 内部 ScrollArea 的安全展示配置 | `TableScrollAreaProps` | - |
+| enableColumnResizing | 是否允许调整列宽；对象形式会按 storageKey 持久化 | `boolean \| TableColumnResizingConfig` | `false` |
 | onColumnWidthChange | 指针松开或键盘调整后触发一次 | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | 当前行高亮配置；对象存在即启用 | `TableRowHighlight<T>` | - |
+
+`heightMode="fill"` 只决定表格填满父级剩余高度，不隔离纵向滚动。表体没有溢出或已经到达纵向边界时，滚轮可以继续滚动外层页面。
+
+### TableScrollAreaProps
+
+Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`direction`、viewport ref、`onScroll` 和内容尺寸仍由 Table 内部管理。该配置在 Table 挂载共享 ScrollArea 时生效，包括 `heightMode="fill"`、虚拟表格以及设置了 `scroll.x`/`scroll.y` 的表格。
+
+| 字段 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| scrollbar | 滚动条实现与展示策略 | `ScrollAreaScrollbar` | `hover` |
+| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `1200` |
+
+### TableColumnResizingConfig
+
+```tsx
+<Table enableColumnResizing />
+
+<Table
+  enableColumnResizing={{ storageKey: 'transport-order-list' }}
+/>
+```
+
+布尔形式只在组件内存中保存本次调整。对象形式会把已提交的业务叶子列宽度保存到 `zby-ui:table:column-widths:${storageKey}`；恢复时会忽略不存在的列、无效数据以及内部辅助列，并重新应用当前列的 min/max 限制。建议为需要持久化的业务列提供稳定的 `column.key`。
 
 ### TableRowHighlight
 

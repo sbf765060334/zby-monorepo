@@ -56,12 +56,14 @@ import type {
   SortOrder,
   TableAction,
   TableCurrentDataSource,
+  TableColumnResizingConfig,
   TableColumnWidthChangeInfo,
   TableHeightMode,
   TableLocale,
   TablePaginationConfig,
   TableRowHighlight,
   TableRowSelection,
+  TableScrollAreaProps,
 } from './interface'
 import RcTable from './RcTable'
 import VirtualBody from './RcTable/VirtualBody'
@@ -196,7 +198,8 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   showSorterTooltip?: boolean | SorterTooltipProps;
   virtual?: boolean;
   heightMode?: TableHeightMode;
-  enableColumnResizing?: boolean;
+  scrollAreaProps?: TableScrollAreaProps;
+  enableColumnResizing?: boolean | TableColumnResizingConfig;
   onColumnWidthChange?: (info: TableColumnWidthChangeInfo<RecordType>) => void;
   rowHighlight?: TableRowHighlight<RecordType>;
 }
@@ -243,6 +246,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     showSorterTooltip = { target: 'full-header' },
     virtual,
     heightMode = 'auto',
+    scrollAreaProps,
     enableColumnResizing = false,
     onColumnWidthChange,
     rowHighlight,
@@ -276,6 +280,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'column',
     'columns',
     'heightMode',
+    'scrollAreaProps',
     'enableColumnResizing',
     'onColumnWidthChange',
     'rowHighlight',
@@ -417,6 +422,11 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     mergedScroll?.x !== undefined || mergedScroll?.y !== undefined
   const useSharedScrollArea =
     Boolean(virtual) || heightMode === 'fill' || hasExplicitScroll
+  const columnResizingEnabled = Boolean(enableColumnResizing)
+  const columnResizingStorageKey =
+    typeof enableColumnResizing === 'object'
+      ? enableColumnResizing.storageKey
+      : undefined
 
   // ============================= Refs =============================
   const rootRef = React.useRef<HTMLDivElement>(null)
@@ -435,7 +445,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     rootRef,
     prefixCls,
     direction,
-    enabled: enableColumnResizing,
+    enabled: columnResizingEnabled,
+    storageKey: columnResizingStorageKey,
     resolveWidths: useSharedScrollArea,
     selectionWidth,
     scrollX: mergedScroll?.x,
@@ -808,6 +819,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         info={info}
         virtual={Boolean(virtual)}
         fill={heightMode === 'fill'}
+        scrollAreaProps={scrollAreaProps}
         scrollY={mergedScroll?.y}
         itemHeight={listItemHeight}
         tableWidth={tableWidth ?? 1}
@@ -826,6 +838,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     mergedScroll?.x,
     mergedScroll?.y,
     onScroll,
+    scrollAreaProps,
     tableWidth,
     userBodyComponents,
     virtual,

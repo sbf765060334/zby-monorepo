@@ -8,11 +8,13 @@ export type {
   ColumnType,
   TableColumnGroupType,
   TableColumnResizeOptions,
+  TableColumnResizingConfig,
   TableColumnsType,
   TableColumnType,
   TableColumnWidthChangeInfo,
   TableHeightMode,
   TableRowHighlight,
+  TableScrollAreaProps,
 } from './interface'
 export type { Reference as TableRef } from '@rc-component/table'
 export type { TablePaginationConfig, TableProps }

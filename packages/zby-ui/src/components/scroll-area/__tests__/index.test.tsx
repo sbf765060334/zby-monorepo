@@ -510,6 +510,7 @@ describe('ScrollArea', () => {
       <ScrollArea
         ref={rootRef}
         direction="horizontal"
+        scrollHideDelay={350}
         viewportRef={viewportRef}
         classNames={({ props }) => {
           semanticProps(props)
@@ -538,6 +539,7 @@ describe('ScrollArea', () => {
       expect.objectContaining({
         direction: 'horizontal',
         scrollbar: 'hover',
+        scrollHideDelay: 350,
         wheelBehavior: 'native',
         dir: 'ltr',
       }),

@@ -12,6 +12,7 @@ import * as React from 'react'
 import type { GetComponent, GetRowKey } from '@rc-component/table/es/interface'
 
 import ScrollArea from '../../scroll-area'
+import type { TableScrollAreaProps } from '../interface'
 
 const EMPTY_COLUMNS: never[] = []
 const EMPTY_KEYS = new Set<React.Key>()
@@ -39,6 +40,7 @@ export interface TableScrollBodyProps<RecordType extends object> {
   info: RcScrollBodyInfo
   virtual: boolean
   fill: boolean
+  scrollAreaProps?: TableScrollAreaProps
   scrollY?: number | string
   itemHeight: number
   tableWidth: number
@@ -135,6 +137,7 @@ function TableScrollBody<RecordType extends object>(
     info,
     virtual,
     fill,
+    scrollAreaProps,
     scrollY,
     itemHeight,
     tableWidth,
@@ -415,7 +418,8 @@ function TableScrollBody<RecordType extends object>(
         virtual ? `${prefixCls}-tbody-virtual` : ''
       }`}
       direction={horizontal ? 'both' : 'vertical'}
-      scrollbar="hover"
+      scrollbar={scrollAreaProps?.scrollbar ?? 'hover'}
+      scrollHideDelay={scrollAreaProps?.scrollHideDelay}
       viewportRef={viewportRef}
       viewportProps={{ onScroll: handleScroll }}
       styles={{

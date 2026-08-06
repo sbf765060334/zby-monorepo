@@ -14,6 +14,7 @@ import {
   getColumnKey,
   resolveColumnWidths,
 } from './useColumnSizing'
+import type { ColumnSizingLeaf } from './useColumnSizing'
 
 interface ResizeHeaderCellProps
   extends React.ThHTMLAttributes<HTMLTableCellElement> {
@@ -42,6 +43,7 @@ interface UseResizableColumnsOptions<RecordType extends object> {
   prefixCls: string
   direction?: 'ltr' | 'rtl'
   enabled: boolean
+  storageKey?: string
   resolveWidths: boolean
   selectionWidth: number
   scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
@@ -64,9 +66,90 @@ interface UseResizableColumnsResult<RecordType extends object> {
 }
 
 const COLUMN_RESIZE_EPSILON = 0.01
+const COLUMN_WIDTH_STORAGE_PREFIX = 'zby-ui:table:column-widths:'
+const COLUMN_WIDTH_STORAGE_VERSION = 1
+
+interface StoredColumnWidths {
+  version: typeof COLUMN_WIDTH_STORAGE_VERSION
+  widths: Record<string, number>
+}
 
 function getNumericWidth(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function readStoredColumnWidths<RecordType extends object>(
+  storageKey: string,
+  leaves: readonly ColumnSizingLeaf<RecordType>[],
+) {
+  const widths = new Map<React.Key, number>()
+  if (typeof window === 'undefined') return widths
+
+  try {
+    const value = window.localStorage.getItem(
+      `${COLUMN_WIDTH_STORAGE_PREFIX}${storageKey}`,
+    )
+    if (!value) return widths
+
+    const parsed = JSON.parse(value) as Partial<StoredColumnWidths> | null
+    if (
+      parsed?.version !== COLUMN_WIDTH_STORAGE_VERSION ||
+      !parsed.widths ||
+      typeof parsed.widths !== 'object' ||
+      Array.isArray(parsed.widths)
+    ) {
+      return widths
+    }
+
+    const leavesByKey = new Map(
+      leaves.map((leaf) => [String(leaf.key), leaf]),
+    )
+    Object.entries(parsed.widths).forEach(([storedKey, storedWidth]) => {
+      const leaf = leavesByKey.get(storedKey)
+      if (!leaf || !Number.isFinite(storedWidth)) return
+
+      widths.set(
+        leaf.key,
+        clampColumnWidth(storedWidth, leaf.minWidth, leaf.maxWidth),
+      )
+    })
+  } catch {
+    // localStorage can be unavailable or contain malformed JSON.
+  }
+
+  return widths
+}
+
+function writeStoredColumnWidths<RecordType extends object>(
+  storageKey: string,
+  userWidths: ReadonlyMap<React.Key, number>,
+  leaves: readonly ColumnSizingLeaf<RecordType>[],
+) {
+  if (typeof window === 'undefined') return
+
+  const widths: Record<string, number> = {}
+  leaves.forEach((leaf) => {
+    const width = userWidths.get(leaf.key)
+    if (width === undefined || !Number.isFinite(width)) return
+
+    widths[String(leaf.key)] = clampColumnWidth(
+      width,
+      leaf.minWidth,
+      leaf.maxWidth,
+    )
+  })
+
+  try {
+    window.localStorage.setItem(
+      `${COLUMN_WIDTH_STORAGE_PREFIX}${storageKey}`,
+      JSON.stringify({
+        version: COLUMN_WIDTH_STORAGE_VERSION,
+        widths,
+      } satisfies StoredColumnWidths),
+    )
+  } catch {
+    // Keep the committed in-memory width when persistence is unavailable.
+  }
 }
 
 function getFillerColumnKey(
@@ -184,6 +267,7 @@ export default function useResizableColumns<RecordType extends object>(
     prefixCls,
     direction = 'ltr',
     enabled,
+    storageKey,
     resolveWidths,
     selectionWidth,
     scrollX,
@@ -194,10 +278,47 @@ export default function useResizableColumns<RecordType extends object>(
   const [userWidths, setUserWidths] = React.useState(
     () => new Map<React.Key, number>(),
   )
+  const userWidthsRef = React.useRef(userWidths)
   const [measuredWidths, setMeasuredWidths] = React.useState(
     () => new Map<React.Key, number>(),
   )
   const shouldResolveWidths = enabled || resolveWidths
+  const normalizedStorageKey = storageKey || undefined
+  const storageLeaves = React.useMemo(
+    () => collectColumnSizingLeaves(columns, new Map()),
+    [columns],
+  )
+  const storageColumnsSignature = JSON.stringify(
+    storageLeaves.map((leaf) => [
+      typeof leaf.key,
+      String(leaf.key),
+      leaf.minWidth,
+      leaf.maxWidth,
+    ]),
+  )
+  const storageLeavesRef = React.useRef(storageLeaves)
+  storageLeavesRef.current = storageLeaves
+  const activeStorageKeyRef = React.useRef<string | undefined>(undefined)
+
+  React.useLayoutEffect(() => {
+    if (!normalizedStorageKey) {
+      if (activeStorageKeyRef.current !== undefined) {
+        const next = new Map<React.Key, number>()
+        userWidthsRef.current = next
+        setUserWidths(next)
+      }
+      activeStorageKeyRef.current = undefined
+      return
+    }
+
+    const next = readStoredColumnWidths(
+      normalizedStorageKey,
+      storageLeavesRef.current,
+    )
+    activeStorageKeyRef.current = normalizedStorageKey
+    userWidthsRef.current = next
+    setUserWidths(next)
+  }, [normalizedStorageKey, storageColumnsSignature])
 
   React.useLayoutEffect(() => {
     if (!shouldResolveWidths) return undefined
@@ -344,14 +465,16 @@ export default function useResizableColumns<RecordType extends object>(
       width: number,
       column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
     ) => {
-      setUserWidths((previous) => {
-        const next = new Map(previous)
-        next.set(key, width)
-        return next
-      })
+      const next = new Map(userWidthsRef.current)
+      next.set(key, width)
+      userWidthsRef.current = next
+      setUserWidths(next)
+      if (normalizedStorageKey) {
+        writeStoredColumnWidths(normalizedStorageKey, next, storageLeaves)
+      }
       onColumnWidthChange?.({ columnKey: key, width, column })
     },
-    [onColumnWidthChange],
+    [normalizedStorageKey, onColumnWidthChange, storageLeaves],
   )
 
   const cleanupResizeRef = React.useRef<(() => void) | null>(null)

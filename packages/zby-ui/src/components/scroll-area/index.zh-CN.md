@@ -190,6 +190,7 @@ import { ScrollArea } from '@zby/ui'
 | --- | --- | --- | --- |
 | direction | 允许滚动并生成自定义轨道的方向 | `ScrollAreaDirection` | `vertical` |
 | scrollbar | 滚动条实现及自定义滚动条的展示策略 | `ScrollAreaScrollbar` | `hover` |
+| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `1200` |
 | wheelBehavior | wheel 轴处理方式；轴映射只在纯横向溢出场景生效 | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | 获取真正发生滚动的 viewport | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | 透传给 viewport 的原生 `div` 属性 | `ScrollAreaViewportProps` | - |

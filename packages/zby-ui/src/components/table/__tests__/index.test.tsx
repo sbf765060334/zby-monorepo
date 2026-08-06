@@ -50,7 +50,10 @@ afterAll(() => {
   HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect
 })
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  window.localStorage.clear()
+})
 
 interface RowData {
   id: number
@@ -394,6 +397,125 @@ describe('Table', () => {
     expect(onColumnWidthChange).toHaveBeenCalledWith(
       expect.objectContaining({ columnKey: 'name', width: 110 }),
     )
+  })
+
+  it('does not read or write persisted widths in boolean resizing mode', () => {
+    const persistedKey = 'zby-ui:table:column-widths:boolean-mode'
+    const persistedValue = JSON.stringify({
+      version: 1,
+      widths: { id: 190 },
+    })
+    window.localStorage.setItem(persistedKey, persistedValue)
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const idHeader = container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="id"]',
+    )!
+    const handle = idHeader.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+
+    expect(idHeader.style.width).toBe('120px')
+
+    fireEvent.pointerDown(handle, { clientX: 120 })
+    fireEvent.pointerMove(document, { clientX: 150 })
+    fireEvent.pointerUp(document, { clientX: 150 })
+
+    expect(window.localStorage.getItem(persistedKey)).toBe(persistedValue)
+  })
+
+  it('persists committed widths and clamps them when restoring', () => {
+    const storageKey = 'resizable-orders'
+    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
+    const firstRender = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        scroll={{ y: 200 }}
+        enableColumnResizing={{ storageKey }}
+        columns={[
+          {
+            key: 'id',
+            dataIndex: 'id',
+            title: 'ID',
+            width: 150,
+            maxWidth: 200,
+          },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const handle = firstRender.container.querySelector<HTMLElement>(
+      '.ant-table-zby-resize-handle',
+    )!
+
+    fireEvent.pointerDown(handle, { clientX: 150 })
+    fireEvent.pointerMove(document, { clientX: 180 })
+    fireEvent.pointerUp(document, { clientX: 180 })
+
+    expect(JSON.parse(window.localStorage.getItem(persistedKey)!)).toEqual({
+      version: 1,
+      widths: { id: 180 },
+    })
+
+    firstRender.unmount()
+    const onColumnWidthChange = vi.fn()
+    const secondRender = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        scroll={{ y: 200 }}
+        enableColumnResizing={{ storageKey }}
+        onColumnWidthChange={onColumnWidthChange}
+        columns={[
+          {
+            key: 'id',
+            dataIndex: 'id',
+            title: 'ID',
+            width: 150,
+            maxWidth: 160,
+          },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const restoredHeader = secondRender.container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="id"]',
+    )!
+
+    expect(restoredHeader.style.width).toBe('160px')
+    expect(onColumnWidthChange).not.toHaveBeenCalled()
+  })
+
+  it('forwards the supported ScrollArea visibility settings', () => {
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          scrollAreaProps={{
+            scrollbar: 'always',
+            scrollHideDelay: 300,
+          }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    expect(
+      container.querySelector('.ant-scroll-area-track-vertical'),
+    ).not.toBeNull()
   })
 
   it('uses the shared ScrollArea viewport in fill and virtual modes', () => {

@@ -70,7 +70,8 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         minWidth: 0,
 
         [`> ${scrollAreaCls}-viewport`]: {
-          overscrollBehavior: 'contain',
+          overscrollBehaviorX: 'contain',
+          overscrollBehaviorY: 'auto',
         },
 
         table: {

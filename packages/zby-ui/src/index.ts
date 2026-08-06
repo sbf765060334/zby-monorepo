@@ -61,10 +61,12 @@ export { default as Table } from './components/table'
 export type {
   TableColumnGroupType,
   TableColumnResizeOptions,
+  TableColumnResizingConfig,
   TableColumnsType,
   TableColumnType,
   TableColumnWidthChangeInfo,
   TableHeightMode,
   TableProps,
   TableRowHighlight,
+  TableScrollAreaProps,
 } from './components/table'

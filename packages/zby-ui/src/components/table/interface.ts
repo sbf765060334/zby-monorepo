@@ -15,6 +15,7 @@ import type { CheckboxProps } from 'antd/es/checkbox'
 import type { DropdownProps } from 'antd/es/dropdown'
 import type { PaginationProps } from 'antd/es/pagination'
 import type { TooltipProps } from 'antd/es/tooltip'
+import type { ScrollAreaScrollbar } from '../scroll-area'
 import type { INTERNAL_SELECTION_ITEM } from './hooks/useSelection'
 import type { InternalTableProps, TableProps } from './InternalTable'
 
@@ -128,6 +129,18 @@ export interface TableColumnResizeOptions {
   flex?: number;
   /** Whether this leaf column can be resized. */
   resizable?: boolean;
+}
+
+export interface TableColumnResizingConfig {
+  /** Persist committed leaf-column widths in localStorage under this logical key. */
+  storageKey: string;
+}
+
+export interface TableScrollAreaProps {
+  /** Internal scrollbar implementation and visibility strategy. */
+  scrollbar?: ScrollAreaScrollbar;
+  /** Delay before hover/scrolling scrollbars hide, in milliseconds. */
+  scrollHideDelay?: number;
 }
 
 export interface FilterDropdownProps {

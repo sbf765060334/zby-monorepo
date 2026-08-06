@@ -120,6 +120,15 @@ export interface ScrollAreaProps
   scrollbar?: ScrollAreaScrollbar
 
   /**
+   * 鼠标或滚动停止后，自定义滚动条延迟隐藏的时间，单位为毫秒。
+   *
+   * 仅对 hover 和 scrolling 展示策略有意义。
+   *
+   * @default 1200
+   */
+  scrollHideDelay?: number
+
+  /**
    * 滚轮事件的轴处理方式。
    *
    * - native：完全保留浏览器原生 wheel 行为；
@@ -184,7 +193,7 @@ export interface ScrollAreaProps
   children?: React.ReactNode
 }
 
-const SCROLLBAR_HIDE_DELAY = 1200
+const SCROLLBAR_HIDE_DELAY = 200
 
 function canScrollHorizontal(direction: ScrollAreaDirection) {
   return direction === 'horizontal' || direction === 'both'
@@ -230,6 +239,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     dir: customizeDirectionMode,
     direction: customizeDirection,
     scrollbar: customizeScrollbar,
+    scrollHideDelay: customizeScrollHideDelay,
     wheelBehavior: customizeWheelBehavior,
     viewportRef,
     viewportProps,
@@ -254,6 +264,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   const [hashId, componentCSSVariables] = useStyle(prefixCls)
   const mergedDirection = customizeDirection ?? 'vertical'
   const scrollbar = customizeScrollbar ?? 'hover'
+  const scrollHideDelay = customizeScrollHideDelay ?? SCROLLBAR_HIDE_DELAY
   const wheelBehavior = customizeWheelBehavior ?? 'native'
   const usesNativeScrollbar = scrollbar === 'native'
   const hasCustomScrollbar = scrollbar !== false && !usesNativeScrollbar
@@ -303,6 +314,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
     dir: directionMode,
     direction: mergedDirection,
     scrollbar,
+    scrollHideDelay,
     wheelBehavior,
   }
   const mergedClassNames = resolveSemanticValue(classNames, mergedProps)
@@ -390,7 +402,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
       ref={ref}
       type={getScrollbarType(scrollbar)}
       dir={directionMode}
-      scrollHideDelay={SCROLLBAR_HIDE_DELAY}
+      scrollHideDelay={scrollHideDelay}
       className={clsx(
         prefixCls,
         `${prefixCls}-${mergedDirection}`,

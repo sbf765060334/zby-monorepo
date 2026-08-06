@@ -189,6 +189,7 @@ Except for `children`, ScrollArea inherits native `div` attributes and applies t
 | --- | --- | --- | --- |
 | direction | Allowed overflow direction and custom tracks | `ScrollAreaDirection` | `vertical` |
 | scrollbar | Scrollbar implementation and custom visibility strategy | `ScrollAreaScrollbar` | `hover` |
+| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `1200` |
 | wheelBehavior | Wheel-axis handling; mapping applies only to horizontal-only overflow | `ScrollAreaWheelBehavior` | `native` |
 | viewportRef | Ref for the element that actually scrolls | `React.Ref<HTMLDivElement>` | - |
 | viewportProps | Native `div` attributes passed to the viewport | `ScrollAreaViewportProps` | - |

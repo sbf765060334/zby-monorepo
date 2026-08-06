@@ -183,9 +183,33 @@ All other properties come from antd 6.5.3 `TableProps`.
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
 | heightMode | Height strategy; fill consumes a parent with a definite height | `auto \| fill` | `auto` |
-| enableColumnResizing | Show resize handles on eligible leaf columns | `boolean` | `false` |
+| scrollAreaProps | Safe display settings for the internal ScrollArea | `TableScrollAreaProps` | - |
+| enableColumnResizing | Enable resizing; object form persists widths by storageKey | `boolean \| TableColumnResizingConfig` | `false` |
 | onColumnWidthChange | Called once after pointer release or a keyboard resize | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | Current-row configuration; presence enables the behavior | `TableRowHighlight<T>` | - |
+
+`heightMode="fill"` only makes the table consume the parent's remaining height. It does not isolate vertical scrolling: when the body has no overflow or reaches a vertical boundary, wheel input can continue to an outer page scroller.
+
+### TableScrollAreaProps
+
+Table exposes only ScrollArea settings that cannot break header synchronization or virtualization. Direction, viewport refs, `onScroll`, and content sizing remain internally controlled. These settings apply when Table mounts the shared ScrollArea: `heightMode="fill"`, virtual tables, or tables with `scroll.x`/`scroll.y`.
+
+| Field | Description | Type | Default |
+| --- | --- | --- | --- |
+| scrollbar | Scrollbar implementation and visibility strategy | `ScrollAreaScrollbar` | `hover` |
+| scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `1200` |
+
+### TableColumnResizingConfig
+
+```tsx
+<Table enableColumnResizing />
+
+<Table
+  enableColumnResizing={{ storageKey: 'transport-order-list' }}
+/>
+```
+
+Boolean mode keeps widths only in component memory. Object mode stores committed business leaf-column widths under `zby-ui:table:column-widths:${storageKey}`. Restore ignores missing columns, invalid data, and internal helper columns, then reapplies current min/max constraints. Give persisted business columns stable `column.key` values.
 
 ### TableRowHighlight
 
