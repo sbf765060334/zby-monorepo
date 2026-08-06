@@ -308,7 +308,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     }
   }, [components])
 
-  const { locale: contextLocale = defaultLocale, table } =
+  const { locale: contextLocale = defaultLocale, table, theme: contextTheme } =
     React.useContext<ConfigConsumerProps>(ConfigContext)
 
   const {
@@ -387,6 +387,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const selectionWidth = mergedRowSelection
     ? getNumericWidth(mergedRowSelection.columnWidth, token.controlHeight)
     : 0
+  const resizeEndGutterWidth = getNumericWidth(
+    contextTheme?.components?.Table?.resizeEndGutterWidth,
+    Math.max(10, token.paddingXS + token.paddingXXS),
+  )
 
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
@@ -452,6 +456,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     storageKey: columnResizingStorageKey,
     useSharedScrollArea,
     selectionWidth,
+    resizeEndGutterWidth,
     scrollX: mergedScroll?.x,
     onColumnWidthChange,
   })
@@ -937,6 +942,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
                 </ConfigProvider>
               </TableMeasureRowContext.Provider>
             )}
+            tailor={useSharedScrollArea}
           />
         </HeaderTableContext.Provider>
         {bottomPaginationNode}

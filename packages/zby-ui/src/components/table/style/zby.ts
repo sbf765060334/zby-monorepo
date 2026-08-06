@@ -50,6 +50,16 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
         pointerEvents: 'none',
       },
 
+      [`${componentCls}-zby-resize-end-gutter-cell`]: {
+        padding: '0 !important',
+        background: token.tableBg,
+        pointerEvents: 'none',
+      },
+
+      [`${componentCls}-thead ${componentCls}-zby-resize-end-gutter-cell`]: {
+        background: token.tableHeaderBg,
+      },
+
       [`${componentCls}-row${componentCls}-row-current > ${componentCls}-cell`]: {
         background: token.colorPrimaryBg,
       },

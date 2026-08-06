@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import ConfigProvider from 'antd/es/config-provider'
+import antdTheme from 'antd/es/theme'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -213,6 +215,9 @@ describe('Table', () => {
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
     expect(container.querySelector('.ant-table-zby-resize-handle')).toBeNull()
+    expect(
+      container.querySelector('.ant-table-zby-resize-end-gutter-cell'),
+    ).toBeNull()
     const headers = container.querySelectorAll<HTMLElement>(
       '.ant-table-thead [data-zby-column-key]',
     )
@@ -249,7 +254,7 @@ describe('Table', () => {
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(headerCells[0].style.width).toBe('150px')
     expect(headerCells[1].style.width).toBe('150px')
-    expect(fillerCell.style.width).toBe('300px')
+    expect(fillerCell.style.width).toBe('288px')
     expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
   })
 
@@ -269,8 +274,67 @@ describe('Table', () => {
 
     expect(headers.map((cell) =>
       cell.dataset.zbyColumnKey ??
-      (cell.classList.contains('ant-table-zby-filler-cell') ? 'filler' : ''),
-    )).toEqual(['id', 'name', 'filler'])
+      (cell.classList.contains('ant-table-zby-filler-cell')
+        ? 'filler'
+        : cell.classList.contains('ant-table-zby-resize-end-gutter-cell')
+          ? 'resize-gutter'
+          : ''),
+    )).toEqual(['id', 'name', 'filler', 'resize-gutter'])
+
+    const gutter = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-resize-end-gutter-cell',
+    )!
+    expect(gutter.style.width).toBe('12px')
+    expect(getComputedStyle(gutter).position).not.toBe('sticky')
+    expect(gutter.querySelector('.ant-table-zby-resize-handle')).toBeNull()
+  })
+
+  it('derives the resize end gutter from density tokens and allows overrides', () => {
+    const { container } = render(
+      <>
+        <div data-density="default">
+          <Table<RowData>
+            rowKey="id"
+            pagination={false}
+            enableColumnResizing
+            columns={columns}
+            dataSource={data}
+          />
+        </div>
+        <ConfigProvider theme={{ algorithm: antdTheme.compactAlgorithm }}>
+          <div data-density="compact">
+            <Table<RowData>
+              rowKey="id"
+              pagination={false}
+              enableColumnResizing
+              columns={columns}
+              dataSource={data}
+            />
+          </div>
+        </ConfigProvider>
+        <ConfigProvider
+          theme={{ components: { Table: { resizeEndGutterWidth: 14 } } }}
+        >
+          <div data-density="custom">
+            <Table<RowData>
+              rowKey="id"
+              pagination={false}
+              enableColumnResizing
+              columns={columns}
+              dataSource={data}
+            />
+          </div>
+        </ConfigProvider>
+      </>,
+    )
+    const getGutterWidth = (density: string) =>
+      container.querySelector<HTMLElement>(
+        `[data-density="${density}"] .ant-table-zby-resize-end-gutter-cell`,
+      )!.style.width
+
+    expect(getGutterWidth('default')).toBe('12px')
+    expect(getGutterWidth('compact')).toBe('10px')
+    expect(getGutterWidth('custom')).toBe('14px')
   })
 
   it('does not let numeric scroll.x stretch filler in resizing mode', () => {
@@ -291,7 +355,7 @@ describe('Table', () => {
       '.ant-table-zby-scroll-body table',
     )!
 
-    expect(filler.style.width).toBe('320px')
+    expect(filler.style.width).toBe('308px')
     expect(bodyTable.style.width).toBe('600px')
   })
 
@@ -317,7 +381,7 @@ describe('Table', () => {
 
     expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
     expect(viewport.style.overflowX).toBe('auto')
-    expect(bodyTable.style.width).toBe('650px')
+    expect(bodyTable.style.width).toBe('662px')
   })
 
   it('places filler between fixed-start and fixed-end business columns', () => {
@@ -349,8 +413,36 @@ describe('Table', () => {
       if (cell.dataset.zbyColumnKey) return cell.dataset.zbyColumnKey
       if (cell.classList.contains('ant-table-selection-column')) return 'selection'
       if (cell.classList.contains('ant-table-zby-filler-cell')) return 'filler'
+      if (cell.classList.contains('ant-table-zby-resize-end-gutter-cell')) {
+        return 'resize-gutter'
+      }
       return ''
-    })).toEqual(['selection', 'id', 'name', 'filler', 'action'])
+    })).toEqual([
+      'selection',
+      'id',
+      'name',
+      'filler',
+      'action',
+      'resize-gutter',
+    ])
+
+    const action = container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="action"]',
+    )!
+    const gutter = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-resize-end-gutter-cell',
+    )!
+    expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
+    expect(action.style.insetInlineEnd).toBe('12px')
+    expect(gutter.style.insetInlineEnd).toBe('0px')
+    expect(getComputedStyle(gutter).position).toBe('sticky')
+    expect(
+      [...document.querySelectorAll('style')].some((style) =>
+        /zby-resize-end-gutter-cell[^}]*background/.test(
+          style.textContent ?? '',
+        ),
+      ),
+    ).toBe(true)
   })
 
   it('keeps filler outside a fixed-end column group', () => {
@@ -388,8 +480,12 @@ describe('Table', () => {
     )!
 
     expect(firstHeaderRow.map((cell) =>
-      cell === filler ? 'filler' : cell.textContent,
-    )).toEqual(['Info', 'filler', 'Actions'])
+      cell === filler
+        ? 'filler'
+        : cell.classList.contains('ant-table-zby-resize-end-gutter-cell')
+          ? 'resize-gutter'
+          : cell.textContent,
+    )).toEqual(['Info', 'filler', 'Actions', 'resize-gutter'])
     expect(filler.closest('tr')).toBe(firstHeaderRow[0].closest('tr'))
   })
 
@@ -559,8 +655,12 @@ describe('Table', () => {
     ]
     expect(initialHeaders.map((cell) =>
       cell.dataset.zbyColumnKey ??
-      (cell.classList.contains('ant-table-zby-filler-cell') ? 'filler' : ''),
-    )).toEqual(['id', 'filler', 'name'])
+      (cell.classList.contains('ant-table-zby-filler-cell')
+        ? 'filler'
+        : cell.classList.contains('ant-table-zby-resize-end-gutter-cell')
+          ? 'resize-gutter'
+          : ''),
+    )).toEqual(['id', 'filler', 'name', 'resize-gutter'])
 
     fireEvent.pointerDown(handles[1], { clientX: 280 })
     fireEvent.pointerMove(document, { clientX: 600 })
@@ -579,7 +679,7 @@ describe('Table', () => {
     )!
 
     expect(headerWidths).toEqual(bodyWidths)
-    expect(bodyWidths).toEqual(['120px', '480px'])
+    expect(bodyWidths).toEqual(['120px', '480px', '12px'])
     expect(getComputedStyle(lastHeader).position).toBe('sticky')
     expect(lastHeader.querySelector('.ant-table-zby-resize-handle')).not.toBeNull()
     expect(onColumnWidthChange).toHaveBeenCalledWith(

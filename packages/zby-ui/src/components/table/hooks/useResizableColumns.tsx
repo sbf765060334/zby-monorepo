@@ -46,6 +46,7 @@ interface UseResizableColumnsOptions<RecordType extends object> {
   storageKey?: string
   useSharedScrollArea: boolean
   selectionWidth: number
+  resizeEndGutterWidth: number
   scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
     ? Scroll extends { x?: infer X }
       ? X
@@ -188,6 +189,23 @@ function getFillerColumnKey(
   return key
 }
 
+function getResizeEndGutterColumnKey(
+  leaves: readonly { key: React.Key }[],
+  prefixCls: string,
+) {
+  const existingKeys = new Set(leaves.map((leaf) => String(leaf.key)))
+  const baseKey = `${prefixCls}-zby-resize-end-gutter`
+  let key = baseKey
+  let index = 0
+
+  while (existingKeys.has(key)) {
+    index += 1
+    key = `${baseKey}-${index}`
+  }
+
+  return key
+}
+
 function containsFixedEndLeaf<RecordType extends object>(
   column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
   inheritedFixed?: ColumnType<RecordType>['fixed'],
@@ -239,6 +257,38 @@ function insertFillerColumn<RecordType extends object>(
     fillerColumn,
     ...columns.slice(fixedEndIndex),
   ]
+}
+
+function insertResizeEndGutterColumn<RecordType extends object>(
+  columns: ColumnsType<RecordType>,
+  width: number,
+  key: React.Key,
+  prefixCls: string,
+): ColumnsType<RecordType> {
+  if (width <= COLUMN_RESIZE_EPSILON) return columns
+
+  const hasFixedEndColumn = columns.some((column) =>
+    containsFixedEndLeaf(column),
+  )
+  const className = `${prefixCls}-zby-resize-end-gutter-cell`
+  const gutterColumn: ColumnType<RecordType> = {
+    key,
+    title: null,
+    width,
+    fixed: hasFixedEndColumn ? 'end' : undefined,
+    resizable: false,
+    className,
+    render: () => null,
+    onHeaderCell: () => ({
+      'aria-hidden': true,
+      style: { width },
+    }),
+    onCell: () => ({
+      'aria-hidden': true,
+    }),
+  }
+
+  return [...columns, gutterColumn]
 }
 
 function applyResolvedColumns<RecordType extends object>(
@@ -317,6 +367,7 @@ export default function useResizableColumns<RecordType extends object>(
     storageKey,
     useSharedScrollArea,
     selectionWidth,
+    resizeEndGutterWidth: resizeEndGutterWidthOption,
     scrollX,
     onColumnWidthChange,
   } = options
@@ -330,6 +381,9 @@ export default function useResizableColumns<RecordType extends object>(
     () => new Map<React.Key, number>(),
   )
   const shouldObserveWidth = enabled || useSharedScrollArea
+  const resizeEndGutterWidth = enabled
+    ? Math.max(0, resizeEndGutterWidthOption)
+    : 0
   const normalizedStorageKey = enabled && storageKey ? storageKey : undefined
   const storageLeaves = React.useMemo(
     () => normalizedStorageKey
@@ -491,7 +545,10 @@ export default function useResizableColumns<RecordType extends object>(
         : [],
     [columns, enabled, measuredWidths, useSharedScrollArea, userWidths],
   )
-  const widthTarget = Math.max(0, containerWidth - selectionWidth)
+  const widthTarget = Math.max(
+    0,
+    containerWidth - selectionWidth - resizeEndGutterWidth,
+  )
   const widthResolution = React.useMemo(
     () => resolveColumnWidths(leaves, widthTarget),
     [leaves, widthTarget],
@@ -536,6 +593,10 @@ export default function useResizableColumns<RecordType extends object>(
     () => getFillerColumnKey(leaves, prefixCls),
     [leaves, prefixCls],
   )
+  const resizeEndGutterColumnKey = React.useMemo(
+    () => getResizeEndGutterColumnKey(leaves, prefixCls),
+    [leaves, prefixCls],
+  )
   const resolvedColumns = React.useMemo(
     () => {
       if (!enabled && !useSharedScrollArea) return columns
@@ -547,7 +608,7 @@ export default function useResizableColumns<RecordType extends object>(
       )
       if (!enabled) return businessColumns
 
-      return widthResolution.complete
+      const columnsWithFiller = widthResolution.complete
         ? insertFillerColumn(
             businessColumns,
             widthResolution.unresolvedWidth,
@@ -555,12 +616,21 @@ export default function useResizableColumns<RecordType extends object>(
             prefixCls,
           )
         : businessColumns
+
+      return insertResizeEndGutterColumn(
+        columnsWithFiller,
+        resizeEndGutterWidth,
+        resizeEndGutterColumnKey,
+        prefixCls,
+      )
     },
     [
       columns,
       enabled,
       fillerColumnKey,
       prefixCls,
+      resizeEndGutterColumnKey,
+      resizeEndGutterWidth,
       useSharedScrollArea,
       widthResolution.complete,
       widthResolution.unresolvedWidth,
@@ -572,6 +642,7 @@ export default function useResizableColumns<RecordType extends object>(
         1,
         widthResolution.totalWidth +
         widthResolution.unresolvedWidth +
+        resizeEndGutterWidth +
         selectionWidth,
       )
     : undefined

@@ -9,6 +9,7 @@ export type {
   TableColumnGroupType,
   TableColumnResizeOptions,
   TableColumnResizingConfig,
+  TableComponentToken,
   TableColumnsType,
   TableColumnType,
   TableColumnWidthChangeInfo,

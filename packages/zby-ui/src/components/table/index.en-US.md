@@ -111,6 +111,8 @@ Dragging moves only a dashed guide. The real width is committed once on pointer 
 
 With resizing enabled, every business leaf keeps a fixed pixel width. Resizing changes only the active leaf; other business columns never grow or shrink to compensate. If their total is narrower than the viewport, Table inserts a non-resizable filler column for the remainder. The filler is appended after ordinary columns and, when fixed-end columns exist, immediately before the first fixed-end column. If business columns are wider than the viewport, the filler disappears and the table scrolls horizontally.
 
+Resizing mode also adds a non-resizable, non-persistent end gutter after all business columns so that the final business-column handle is not clipped by the table edge or a scroll overlay. For an ordinary last column, the gutter scrolls with the horizontal content. With fixed-end columns, it remains fixed at the end and uses an opaque table background, so scrolling content cannot show through behind the fixed area. Its default width is 12px with the default theme and 10px with the compact theme; customize it with the Table component token `resizeEndGutterWidth`.
+
 Without `enableColumnResizing`, Table does not resolve enhanced widths, insert a filler, or read persisted widths; column sizing remains on the AntD 6.5.3 path.
 
 ### Toggle current-row highlighting
@@ -230,4 +232,4 @@ Boolean mode keeps widths only in component memory. Object mode stores committed
 | maxWidth | Maximum committed width in pixels | `number` | `Infinity` |
 | resizable | Whether this leaf can resize when global resizing is enabled | `boolean` | `true` |
 
-Column groups do not receive resize handles; sizing operates on visible leaf columns. The filler is not persisted and is never placed after fixed-end columns.
+Column groups do not receive resize handles; sizing operates on visible leaf columns. Neither the filler nor the end gutter is persisted. The filler is never placed after fixed-end columns, while the end gutter always follows all business columns.
