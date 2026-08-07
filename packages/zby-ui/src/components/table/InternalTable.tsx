@@ -308,7 +308,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     }
   }, [components])
 
-  const { locale: contextLocale = defaultLocale, table, theme: contextTheme } =
+  const { locale: contextLocale = defaultLocale, table } =
     React.useContext<ConfigConsumerProps>(ConfigContext)
 
   const {
@@ -387,11 +387,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const selectionWidth = mergedRowSelection
     ? getNumericWidth(mergedRowSelection.columnWidth, token.controlHeight)
     : 0
-  const resizeEndGutterWidth = getNumericWidth(
-    contextTheme?.components?.Table?.resizeEndGutterWidth,
-    Math.max(10, token.paddingXS + token.paddingXXS),
-  )
-
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
 
@@ -467,7 +462,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     storageKey: columnResizingStorageKey,
     useSharedScrollArea,
     selectionWidth,
-    resizeEndGutterWidth,
     scrollX: mergedScroll?.x,
     onColumnWidthChange,
   })
@@ -843,7 +837,9 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         itemHeight={listItemHeight}
         tableWidth={tableWidth ?? 1}
         horizontal={
-          mergedScroll?.x !== undefined || hasHorizontalOverflow
+          columnResizingEnabled ||
+          mergedScroll?.x !== undefined ||
+          hasHorizontalOverflow
         }
         onTableScroll={onScroll}
       />
@@ -851,6 +847,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
     return Object.assign(renderer, userBodyComponents)
   }, [
+    columnResizingEnabled,
     heightMode,
     hasHorizontalOverflow,
     listItemHeight,
@@ -890,13 +887,18 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         y: mergedScroll?.y ?? (virtual ? 500 : 1),
       }
 
-      if (mergedScroll?.x !== undefined || hasHorizontalOverflow) {
+      if (
+        columnResizingEnabled ||
+        mergedScroll?.x !== undefined ||
+        hasHorizontalOverflow
+      ) {
         nextScroll.x = tableWidth
       }
 
       return nextScroll
     },
     [
+      columnResizingEnabled,
       hasHorizontalOverflow,
       mergedScroll,
       tableWidth,

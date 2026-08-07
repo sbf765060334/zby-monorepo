@@ -134,18 +134,6 @@ export interface TableColumnResizingConfig {
   storageKey: string;
 }
 
-export interface TableComponentToken {
-  /** Width of the end gutter between the last resize handle and the table edge. */
-  resizeEndGutterWidth?: number;
-}
-
-declare module 'antd/es/table/style' {
-  interface ComponentToken {
-    /** Width of the end gutter between the last resize handle and the table edge. */
-    resizeEndGutterWidth: number
-  }
-}
-
 export interface TableScrollAreaProps {
   /** Internal scrollbar implementation and visibility strategy. */
   scrollbar?: ScrollAreaScrollbar;

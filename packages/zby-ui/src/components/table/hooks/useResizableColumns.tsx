@@ -46,7 +46,6 @@ interface UseResizableColumnsOptions<RecordType extends object> {
   storageKey?: string
   useSharedScrollArea: boolean
   selectionWidth: number
-  resizeEndGutterWidth: number
   scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
     ? Scroll extends { x?: infer X }
       ? X
@@ -67,6 +66,10 @@ interface UseResizableColumnsResult<RecordType extends object> {
 }
 
 const COLUMN_RESIZE_EPSILON = 0.01
+// rc-table treats numeric zero as an unspecified width when scroll.x is set
+// and expands that column to at least 1px. A sub-layout-pixel sentinel keeps
+// the stable filler mounted without producing visible end space.
+const COLLAPSED_FILLER_WIDTH = 0.001
 const COLUMN_WIDTH_STORAGE_PREFIX = 'zby-ui:table:column-widths:'
 const COLUMN_WIDTH_STORAGE_VERSION = 1
 const COLUMN_WIDTH_STORAGE_WRITE_DELAY = 200
@@ -189,23 +192,6 @@ function getFillerColumnKey(
   return key
 }
 
-function getResizeEndGutterColumnKey(
-  leaves: readonly { key: React.Key }[],
-  prefixCls: string,
-) {
-  const existingKeys = new Set(leaves.map((leaf) => String(leaf.key)))
-  const baseKey = `${prefixCls}-zby-resize-end-gutter`
-  let key = baseKey
-  let index = 0
-
-  while (existingKeys.has(key)) {
-    index += 1
-    key = `${baseKey}-${index}`
-  }
-
-  return key
-}
-
 function containsFixedEndLeaf<RecordType extends object>(
   column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
   inheritedFixed?: ColumnType<RecordType>['fixed'],
@@ -228,19 +214,24 @@ function insertFillerColumn<RecordType extends object>(
   key: React.Key,
   prefixCls: string,
 ): ColumnsType<RecordType> {
-  if (width <= COLUMN_RESIZE_EPSILON) return columns
-
   const className = `${prefixCls}-zby-filler-cell`
+  const collapsed = width <= COLUMN_RESIZE_EPSILON
+  const resolvedWidth = collapsed
+    ? COLLAPSED_FILLER_WIDTH
+    : Math.max(0, width)
+  const mergedClassName = collapsed
+    ? `${className} ${className}-collapsed`
+    : className
   const fillerColumn: ColumnType<RecordType> = {
     key,
     title: null,
-    width,
+    width: resolvedWidth,
     resizable: false,
-    className,
+    className: mergedClassName,
     render: () => null,
     onHeaderCell: () => ({
       'aria-hidden': true,
-      style: { width },
+      style: { width: resolvedWidth },
     }),
     onCell: () => ({
       'aria-hidden': true,
@@ -257,38 +248,6 @@ function insertFillerColumn<RecordType extends object>(
     fillerColumn,
     ...columns.slice(fixedEndIndex),
   ]
-}
-
-function insertResizeEndGutterColumn<RecordType extends object>(
-  columns: ColumnsType<RecordType>,
-  width: number,
-  key: React.Key,
-  prefixCls: string,
-): ColumnsType<RecordType> {
-  if (width <= COLUMN_RESIZE_EPSILON) return columns
-
-  const hasFixedEndColumn = columns.some((column) =>
-    containsFixedEndLeaf(column),
-  )
-  const className = `${prefixCls}-zby-resize-end-gutter-cell`
-  const gutterColumn: ColumnType<RecordType> = {
-    key,
-    title: null,
-    width,
-    fixed: hasFixedEndColumn ? 'end' : undefined,
-    resizable: false,
-    className,
-    render: () => null,
-    onHeaderCell: () => ({
-      'aria-hidden': true,
-      style: { width },
-    }),
-    onCell: () => ({
-      'aria-hidden': true,
-    }),
-  }
-
-  return [...columns, gutterColumn]
 }
 
 function applyResolvedColumns<RecordType extends object>(
@@ -367,7 +326,6 @@ export default function useResizableColumns<RecordType extends object>(
     storageKey,
     useSharedScrollArea,
     selectionWidth,
-    resizeEndGutterWidth: resizeEndGutterWidthOption,
     scrollX,
     onColumnWidthChange,
   } = options
@@ -381,9 +339,6 @@ export default function useResizableColumns<RecordType extends object>(
     () => new Map<React.Key, number>(),
   )
   const shouldObserveWidth = enabled || useSharedScrollArea
-  const resizeEndGutterWidth = enabled
-    ? Math.max(0, resizeEndGutterWidthOption)
-    : 0
   const normalizedStorageKey = enabled && storageKey ? storageKey : undefined
   const storageLeaves = React.useMemo(
     () => normalizedStorageKey
@@ -545,10 +500,7 @@ export default function useResizableColumns<RecordType extends object>(
         : [],
     [columns, enabled, measuredWidths, useSharedScrollArea, userWidths],
   )
-  const widthTarget = Math.max(
-    0,
-    containerWidth - selectionWidth - resizeEndGutterWidth,
-  )
+  const widthTarget = Math.max(0, containerWidth - selectionWidth)
   const widthResolution = React.useMemo(
     () => resolveColumnWidths(leaves, widthTarget),
     [leaves, widthTarget],
@@ -593,10 +545,6 @@ export default function useResizableColumns<RecordType extends object>(
     () => getFillerColumnKey(leaves, prefixCls),
     [leaves, prefixCls],
   )
-  const resizeEndGutterColumnKey = React.useMemo(
-    () => getResizeEndGutterColumnKey(leaves, prefixCls),
-    [leaves, prefixCls],
-  )
   const resolvedColumns = React.useMemo(
     () => {
       if (!enabled && !useSharedScrollArea) return columns
@@ -608,34 +556,20 @@ export default function useResizableColumns<RecordType extends object>(
       )
       if (!enabled) return businessColumns
 
-      const mergeEndGutterIntoFiller =
-        widthResolution.complete &&
-        widthResolution.unresolvedWidth > COLUMN_RESIZE_EPSILON &&
-        !businessColumns.some((column) => containsFixedEndLeaf(column))
-      const columnsWithFiller = widthResolution.complete
+      return widthResolution.complete
         ? insertFillerColumn(
             businessColumns,
-            widthResolution.unresolvedWidth +
-              (mergeEndGutterIntoFiller ? resizeEndGutterWidth : 0),
+            widthResolution.unresolvedWidth,
             fillerColumnKey,
             prefixCls,
           )
         : businessColumns
-
-      return insertResizeEndGutterColumn(
-        columnsWithFiller,
-        mergeEndGutterIntoFiller ? 0 : resizeEndGutterWidth,
-        resizeEndGutterColumnKey,
-        prefixCls,
-      )
     },
     [
       columns,
       enabled,
       fillerColumnKey,
       prefixCls,
-      resizeEndGutterColumnKey,
-      resizeEndGutterWidth,
       useSharedScrollArea,
       widthResolution.complete,
       widthResolution.unresolvedWidth,
@@ -647,7 +581,6 @@ export default function useResizableColumns<RecordType extends object>(
         1,
         widthResolution.totalWidth +
         widthResolution.unresolvedWidth +
-        resizeEndGutterWidth +
         selectionWidth,
       )
     : undefined
@@ -706,10 +639,13 @@ export default function useResizableColumns<RecordType extends object>(
       const column = originalColumnMap.get(key)
       if (!root || !guide || !headerCell || !column) return
       const activeGuide = guide
+      const resizeHandle = event.currentTarget
+      const pointerId = event.pointerId
 
       cleanupResizeRef.current?.()
       event.preventDefault()
       event.stopPropagation()
+      resizeHandle.setPointerCapture?.(pointerId)
 
       const rootRect = root.getBoundingClientRect()
       const cellRect = headerCell.getBoundingClientRect()
@@ -762,6 +698,9 @@ export default function useResizableColumns<RecordType extends object>(
 
       function cleanup() {
         activeGuide.style.display = 'none'
+        if (resizeHandle.hasPointerCapture?.(pointerId)) {
+          resizeHandle.releasePointerCapture(pointerId)
+        }
         document.removeEventListener('pointermove', onPointerMove)
         document.removeEventListener('pointerup', onPointerUp)
         document.removeEventListener('pointercancel', onPointerCancel)

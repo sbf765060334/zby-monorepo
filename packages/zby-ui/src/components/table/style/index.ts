@@ -24,11 +24,6 @@ import genZbyStyle from './zby'
 
 export interface ComponentToken {
   /**
-   * @descCN 开启列宽拖拽时，末列手柄与表格末端之间的安全区宽度
-   * @descEN Width of the end gutter between the last resize handle and the table edge
-   */
-  resizeEndGutterWidth: number;
-  /**
    * @desc 表头背景
    * @descEN Background of table header
    */
@@ -426,7 +421,6 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
     padding,
     paddingSM,
     paddingXS,
-    paddingXXS,
     colorBorderSecondary,
     borderRadiusLG,
     controlHeight,
@@ -458,7 +452,6 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
   const expandIconSize = expandIconHalfInner * 2 + lineWidth * 3
 
   return {
-    resizeEndGutterWidth: Math.max(10, paddingXS + paddingXXS),
     headerBg: colorFillAlterSolid,
     headerColor: colorTextHeading,
     headerSortActiveBg: colorFillSecondarySolid,
