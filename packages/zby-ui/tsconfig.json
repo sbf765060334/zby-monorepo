@@ -2,7 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "..",
-    "outDir": "dist"
+    "outDir": "dist",
+    "disableSourceOfProjectReferenceRedirect": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/components/table/RcTableInner"],
+  "references": [
+    { "path": "src/components/table/rc-table.tsconfig.json" }
+  ]
 }

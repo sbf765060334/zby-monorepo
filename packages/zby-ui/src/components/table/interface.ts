@@ -7,7 +7,7 @@ import type {
   ColumnType as RcColumnType,
   RenderedCell as RcRenderedCell,
   Reference,
-} from '@rc-component/table'
+} from './RcTableInner'
 
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver'
 import type { AnyObject } from 'antd/es/_util/type'

@@ -5,9 +5,65 @@ import type {
   ColumnsType,
   ColumnType,
 } from '../interface'
+import { INTERNAL_COL_DEFINE } from '../utils/legacyUtil'
 
 export const DEFAULT_MIN_COLUMN_WIDTH = 50
+export const DEFAULT_COLUMN_WIDTH = 160
+export const DEFAULT_INTERNAL_COLUMN_WIDTH = 48
 export const COLUMN_WIDTH_ROUNDING_TOLERANCE = 1
+
+export type ColumnLayoutMode = 'fill' | 'fit' | 'overflow'
+
+export interface ColumnLayoutState {
+  mode: ColumnLayoutMode
+  fillerWidth: number
+  scrollX: number
+  hasHorizontalOverflow: boolean
+}
+
+export function resolveColumnLayout(
+  totalWidth: number,
+  viewportWidth: number,
+): ColumnLayoutState {
+  const normalizedTotalWidth = Math.max(0, Math.round(totalWidth))
+  const normalizedViewportWidth = Math.max(0, Math.round(viewportWidth))
+
+  if (normalizedViewportWidth === 0) {
+    return {
+      mode: 'fit',
+      fillerWidth: 0,
+      scrollX: Math.max(1, normalizedTotalWidth),
+      hasHorizontalOverflow: false,
+    }
+  }
+
+  const delta = normalizedTotalWidth - normalizedViewportWidth
+
+  if (delta < -COLUMN_WIDTH_ROUNDING_TOLERANCE) {
+    return {
+      mode: 'fill',
+      fillerWidth: normalizedViewportWidth - normalizedTotalWidth,
+      scrollX: normalizedViewportWidth,
+      hasHorizontalOverflow: false,
+    }
+  }
+
+  if (delta > COLUMN_WIDTH_ROUNDING_TOLERANCE) {
+    return {
+      mode: 'overflow',
+      fillerWidth: 0,
+      scrollX: Math.max(1, normalizedTotalWidth),
+      hasHorizontalOverflow: true,
+    }
+  }
+
+  return {
+    mode: 'fit',
+    fillerWidth: 0,
+    scrollX: Math.max(1, normalizedTotalWidth, normalizedViewportWidth),
+    hasHorizontalOverflow: false,
+  }
+}
 
 export interface ColumnSizingLeaf<RecordType> {
   key: React.Key
@@ -35,7 +91,7 @@ export function clampColumnWidth(
 ) {
   const normalizedMin = Math.max(0, minWidth)
   const normalizedMax = Math.max(normalizedMin, maxWidth)
-  return Math.min(Math.max(width, normalizedMin), normalizedMax)
+  return Math.round(Math.min(Math.max(width, normalizedMin), normalizedMax))
 }
 
 export function getColumnKey<RecordType>(
@@ -77,18 +133,30 @@ export function collectColumnSizingLeaves<RecordType>(
       return
     }
 
-    const key = getColumnKey(column, currentPath)
-    const minWidth = constrainWidths && isFiniteNumber(column.minWidth)
-      ? Math.max(0, column.minWidth)
-      : constrainWidths
+    const leafColumn = column as ColumnType<RecordType>
+    const key = getColumnKey(leafColumn, currentPath)
+    const isInternalColumn = Boolean(
+      (leafColumn as ColumnType<RecordType> & Record<string, unknown>)[INTERNAL_COL_DEFINE],
+    )
+    const shouldConstrainWidth = constrainWidths && !isInternalColumn
+    const minWidth = shouldConstrainWidth && isFiniteNumber(leafColumn.minWidth)
+      ? Math.max(0, leafColumn.minWidth)
+      : shouldConstrainWidth
         ? DEFAULT_MIN_COLUMN_WIDTH
         : 0
-    const maxWidth = constrainWidths && isFiniteNumber(column.maxWidth)
-      ? Math.max(minWidth, column.maxWidth)
+    const maxWidth = shouldConstrainWidth && isFiniteNumber(leafColumn.maxWidth)
+      ? Math.max(minWidth, leafColumn.maxWidth)
       : Number.POSITIVE_INFINITY
     const userWidth = userWidths.get(key)
+    const fallbackWidth = constrainWidths
+      ? isInternalColumn
+        ? DEFAULT_INTERNAL_COLUMN_WIDTH
+        : DEFAULT_COLUMN_WIDTH
+      : undefined
     const configuredWidth = userWidth ??
-      (isFiniteNumber(column.width) ? column.width : measuredWidths.get(key))
+      (isFiniteNumber(leafColumn.width)
+        ? leafColumn.width
+        : measuredWidths.get(key) ?? fallbackWidth)
     const baseWidth = isFiniteNumber(configuredWidth)
       ? constrainWidths
         ? clampColumnWidth(configuredWidth, minWidth, maxWidth)
@@ -97,7 +165,7 @@ export function collectColumnSizingLeaves<RecordType>(
 
     leaves.push({
       key,
-      column,
+      column: leafColumn,
       baseWidth,
       minWidth,
       maxWidth,

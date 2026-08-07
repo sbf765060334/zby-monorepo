@@ -4,11 +4,7 @@ import type { GenerateStyle } from 'antd/es/theme/internal'
 import type { TableToken } from './index'
 
 const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
-  const {
-    componentCls,
-    motionDurationMid,
-    tableHeaderCellSplitColor,
-  } = token
+  const { componentCls } = token
   const wrapperCls = `${componentCls}-wrapper-zby`
   const fillCls = `${componentCls}-wrapper-zby-fill`
   const scrollAreaCls = componentCls.replace('-table', '-scroll-area')
@@ -49,25 +45,6 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
       [`${componentCls}-zby-filler-cell`]: {
         padding: '0 !important',
         pointerEvents: 'none',
-      },
-
-      [`${componentCls}-thead ${componentCls}-zby-filler-cell::before`]: {
-        position: 'absolute',
-        top: '50%',
-        insetInlineEnd: 0,
-        width: 1,
-        height: '1.6em',
-        backgroundColor: tableHeaderCellSplitColor,
-        transform: 'translateY(-50%)',
-        transition: `background-color ${motionDurationMid}`,
-        content: '""',
-      },
-
-      [
-      `${componentCls}-thead ` +
-        `${componentCls}-zby-filler-cell-collapsed::before`
-      ]: {
-        display: 'none',
       },
 
       [`${componentCls}-row${componentCls}-row-current > ${componentCls}-cell`]: {

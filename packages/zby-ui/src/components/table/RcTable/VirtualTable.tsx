@@ -1,4 +1,4 @@
-import { genTable } from '@rc-component/table'
+import { genTable } from '../RcTableInner'
 
 import type { AnyObject } from 'antd/es/_util/type'
 import type { InternalTableProps } from '../InternalTable'

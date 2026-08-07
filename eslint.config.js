@@ -12,6 +12,7 @@ export default antfu(
       '**/.vite/**',
       '**/.turbo/**',
       '**/.cache/**',
+      'packages/zby-ui/src/components/table/RcTableInner/**',
       '**/*.d.ts',
     ],
     javascript: {

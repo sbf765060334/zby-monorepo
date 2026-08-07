@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { EXPAND_COLUMN } from '@rc-component/table'
+import { EXPAND_COLUMN } from '../RcTableInner'
 import { mergeProps, omit } from '@rc-component/util'
 
 import type { AnyObject } from 'antd/es/_util/type'

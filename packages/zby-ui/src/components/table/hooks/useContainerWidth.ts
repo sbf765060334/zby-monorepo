@@ -1,4 +1,4 @@
-import type { TableProps } from '@rc-component/table'
+import type { TableProps } from '../RcTableInner'
 
 export default function useContainerWidth(prefixCls: string) {
   const getContainerWidth: TableProps['getContainerWidth'] = (ele, width) => {

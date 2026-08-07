@@ -9,18 +9,13 @@ import Table from '../index'
 const OriginalResizeObserver = globalThis.ResizeObserver
 const originalMatchMedia = window.matchMedia
 const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
-let resizeObserverCallback: ResizeObserverCallback | undefined
 
 class ResizeObserverMock {
-  constructor(callback: ResizeObserverCallback) {
-    resizeObserverCallback = callback
-  }
+  constructor(_callback: ResizeObserverCallback) {}
 
   observe() {}
   unobserve() {}
-  disconnect() {
-    resizeObserverCallback = undefined
-  }
+  disconnect() {}
 }
 
 beforeAll(() => {
@@ -36,7 +31,12 @@ beforeAll(() => {
     dispatchEvent: vi.fn(),
   }))
   HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-    const width = this.classList.contains('ant-table-wrapper-zby') ? 600 : 150
+    const width =
+      this.classList.contains('ant-table-wrapper-zby') ||
+      this.classList.contains('ant-table') ||
+      this.classList.contains('ant-scroll-area-viewport')
+        ? 600
+        : 150
     return {
       x: 0,
       y: 0,
@@ -62,7 +62,6 @@ afterEach(() => {
   window.localStorage.clear()
   vi.useRealTimers()
   vi.restoreAllMocks()
-  resizeObserverCallback = undefined
 })
 
 interface RowData {
@@ -368,7 +367,7 @@ describe('Table', () => {
     expect(styleText).not.toContain('ant-table-zby-resize-guide')
   })
 
-  it('measures auto-sized columns before adding filler in resizing mode', () => {
+  it('uses deterministic default widths before adding filler in resizing mode', () => {
     const { container } = render(
       <div style={{ height: 300 }}>
         <Table<RowData>
@@ -393,10 +392,9 @@ describe('Table', () => {
     )!
 
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
-    expect(headerCells[0].style.width).toBe('150px')
-    expect(headerCells[1].style.width).toBe('150px')
-    expect(fillerCell.style.width).toBe('300px')
-    expect([...headerCells].some((cell) => cell.style.width === '120px')).toBe(false)
+    expect(headerCells[0].style.width).toBe('160px')
+    expect(headerCells[1].style.width).toBe('160px')
+    expect(fillerCell.style.width).toBe('280px')
   })
 
   it('places filler after ordinary columns when there is no fixed-end column', () => {
@@ -457,7 +455,7 @@ describe('Table', () => {
     )
   })
 
-  it('renders the filler right divider without a resize handle', () => {
+  it('uses the standard header divider for a filler between columns', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -477,22 +475,11 @@ describe('Table', () => {
 
     expect(filler).not.toBeNull()
     expect(filler.querySelector('.ant-table-zby-resize-handle')).toBeNull()
-    expect(styleText).toMatch(
-      /ant-table-zby-filler-cell::?before\{[^}]*inset-inline-end:0[^}]*background-color:/,
-    )
-    expect(styleText).not.toMatch(
-      /ant-table-zby-filler-cell::?before\{display:none/,
-    )
-    expect(styleText).toMatch(
-      /ant-table-zby-filler-cell-collapsed::?before\{display:none/,
-    )
-    expect(styleText).not.toContain(
-      ':has(+.ant-table-zby-filler-cell-collapsed)',
-    )
+    expect(styleText).toMatch(/th:not\(:last-child\).*::?before/)
+    expect(styleText).not.toMatch(/ant-table-zby-filler-cell::?before/)
   })
 
-  it('keeps a stable zero-width filler and an internal end-handle hit area', () => {
-    let rootWidth = 600
+  it('omits filler in overflow while keeping the final handle inside its header', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -506,19 +493,6 @@ describe('Table', () => {
         dataSource={data}
       />,
     )
-    const root = container.querySelector<HTMLElement>(
-      '.ant-table-wrapper-zby',
-    )!
-    Object.defineProperty(root, 'clientWidth', {
-      configurable: true,
-      get: () => rootWidth,
-    })
-    const firstFiller = container.querySelector<HTMLElement>(
-      '.ant-table-thead .ant-table-zby-filler-cell',
-    )!
-    const firstBusinessHeader = container.querySelector<HTMLElement>(
-      'th[data-zby-column-key="id"]',
-    )!
     const lastHandle = container.querySelector<HTMLElement>(
       'th[data-zby-column-key="name"] .ant-table-zby-resize-handle',
     )!
@@ -527,43 +501,14 @@ describe('Table', () => {
       .join('')
       .replace(/\s/g, '')
 
-    expect(Number.parseFloat(firstFiller.style.width)).toBeLessThan(0.01)
-    expect(
-      firstFiller.classList.contains('ant-table-zby-filler-cell-collapsed'),
-    ).toBe(true)
+    expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
     expect(
       container.querySelector('.ant-table-zby-resize-end-gutter-cell'),
     ).toBeNull()
     expect(styleText).toMatch(
       /ant-table-zby-resize-handle\{[^}]*inset-inline-end:0[^}]*width:8px/,
     )
-    expect(styleText).toMatch(
-      /ant-table-zby-filler-cell-collapsed\{border-inline-end:0/,
-    )
-    expect(styleText).not.toContain(
-      ':has(+.ant-table-zby-filler-cell-collapsed)',
-    )
     expect(lastHandle).not.toBeNull()
-
-    act(() => {
-      rootWidth = 700
-      resizeObserverCallback?.([], {} as ResizeObserver)
-    })
-
-    expect(
-      container.querySelector('.ant-table-thead .ant-table-zby-filler-cell'),
-    ).toBe(firstFiller)
-    expect(
-      container.querySelector('th[data-zby-column-key="id"]'),
-    ).toBe(firstBusinessHeader)
-    expect(firstFiller.style.width).toBe('50px')
-    expect(
-      firstFiller.classList.contains('ant-table-zby-filler-cell-collapsed'),
-    ).toBe(false)
-    expect(
-      container.querySelector<HTMLElement>('.ant-scroll-area-viewport')!
-        .style.overflowX,
-    ).toBe('auto')
   })
 
   it('does not let numeric scroll.x stretch filler in resizing mode', () => {
@@ -588,7 +533,27 @@ describe('Table', () => {
     expect(bodyTable.style.width).toBe('600px')
   })
 
-  it('collapses the stable filler and scrolls when business widths exceed the viewport', () => {
+  it('normalizes fractional business widths before applying fit tolerance', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        columns={[
+          { key: 'id', dataIndex: 'id', title: 'ID', width: 298.6 },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 300 },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const idHeader = container.querySelector<HTMLElement>(
+      'th[data-zby-column-key="id"]',
+    )!
+    expect(idHeader.style.width).toBe('299px')
+    expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
+  })
+
+  it('omits filler and scrolls when business widths exceed the viewport', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -608,10 +573,7 @@ describe('Table', () => {
       '.ant-table-zby-scroll-body table',
     )!
 
-    expect(Number.parseFloat(
-      container.querySelector<HTMLElement>('.ant-table-zby-filler-cell')!
-        .style.width,
-    )).toBeLessThan(0.01)
+    expect(container.querySelector('.ant-table-zby-filler-cell')).toBeNull()
     expect(viewport.style.overflowX).toBe('auto')
     expect(bodyTable.style.width).toBe('650px')
   })
@@ -660,6 +622,35 @@ describe('Table', () => {
     expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
     expect(action.style.insetInlineEnd).toBe('0px')
     expect(container.querySelector('.ant-table-zby-resize-end-gutter-cell')).toBeNull()
+    expect(
+      container.querySelector(
+        '.ant-table-selection-column .ant-table-zby-resize-handle',
+      ),
+    ).toBeNull()
+    expect(container.querySelectorAll('.ant-table-zby-resize-handle')).toHaveLength(3)
+  })
+
+  it('measures internal expand columns without making them resizable', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        enableColumnResizing
+        expandable={{ expandedRowRender: (record) => record.name }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    const expandHeader = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-row-expand-icon-cell',
+    )!
+
+    expect(expandHeader.dataset.zbyInternalColumnKey).toBeDefined()
+    expect(expandHeader.dataset.zbyColumnKey).toBeUndefined()
+    expect(
+      expandHeader.querySelector('.ant-table-zby-resize-handle'),
+    ).toBeNull()
+    expect(container.querySelectorAll('.ant-table-zby-resize-handle')).toHaveLength(2)
   })
 
   it('keeps filler outside a fixed-end column group', () => {
@@ -912,8 +903,15 @@ describe('Table', () => {
     const handles = container.querySelectorAll<HTMLElement>(
       '.ant-table-zby-resize-handle',
     )
+    const styleText = [...document.querySelectorAll('style')]
+      .map((style) => style.textContent ?? '')
+      .join('')
+      .replace(/\s/g, '')
 
     expect(handles).toHaveLength(2)
+    expect(styleText).toMatch(
+      /ant-table-cell-fix-end-shadow::?after\{border-inline-end:/,
+    )
     const initialHeaders = [
       ...container.querySelectorAll<HTMLElement>('.ant-table-thead tr:last-child th'),
     ]
@@ -941,7 +939,7 @@ describe('Table', () => {
     )!
 
     expect(headerWidths).toEqual(bodyWidths)
-    expect(bodyWidths).toEqual(['120px', '0.001px', '480px'])
+    expect(bodyWidths).toEqual(['120px', '480px'])
     expect(getComputedStyle(lastHeader).position).toBe('sticky')
     expect(lastHeader.style.insetInlineEnd).toBe('0px')
     expect(lastHeader.querySelector('.ant-table-zby-resize-handle')).not.toBeNull()
@@ -1186,5 +1184,56 @@ describe('Table', () => {
     expect(container.querySelector('.ant-table-tbody-virtual-holder')).not.toBeNull()
     expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(100)
     expect(container.querySelector('[class*="virtual-scrollbar"]')).toBeNull()
+  })
+
+  it('uses the same resized widths for the header and virtual fixed cells', () => {
+    const largeData = Array.from({ length: 100 }, (_, index) => ({
+      id: index,
+      name: `Row ${index}`,
+    }))
+    const { container } = render(
+      <div style={{ height: 300 }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          heightMode="fill"
+          virtual
+          enableColumnResizing
+          scroll={{ y: 200 }}
+          columns={[
+            { key: 'id', dataIndex: 'id', title: 'ID', width: 120 },
+            {
+              key: 'name',
+              dataIndex: 'name',
+              title: 'Name',
+              width: 160,
+              fixed: 'right',
+            },
+          ]}
+          dataSource={largeData}
+        />
+      </div>,
+    )
+    const headerWidths = [
+      ...container.querySelectorAll<HTMLElement>('.ant-table-header col'),
+    ].slice(0, 3).map((col) => col.style.width)
+    const firstVirtualRow = container.querySelector<HTMLElement>(
+      '.ant-table-tbody-virtual .ant-table-row',
+    )!
+    const bodyCells = [
+      ...firstVirtualRow.querySelectorAll<HTMLElement>('.ant-table-cell'),
+    ]
+
+    expect(headerWidths).toEqual(['120px', '320px', '160px'])
+    expect(bodyCells.map((cell) => cell.style.width)).toEqual([
+      '120px',
+      '320px',
+      '160px',
+    ])
+    expect(bodyCells[2].style.insetInlineEnd).toBe('0px')
+    expect(
+      container.querySelector<HTMLElement>('.ant-table-tbody-virtual-holder')!
+        .style.width,
+    ).toBe('600px')
   })
 })

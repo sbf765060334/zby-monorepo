@@ -1,4 +1,4 @@
-import type { GetRowKey, TableProps as RcTableProps } from '@rc-component/table'
+import type { GetRowKey, TableProps as RcTableProps } from '../RcTableInner'
 import * as React from 'react'
 
 import useControllableValue from '../../_util/hooks/useControllableValue'

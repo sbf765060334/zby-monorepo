@@ -6,6 +6,7 @@ node_modules
 dist
 build
 coverage
+.rc-table-types
 *.tsbuildinfo
 
 # Vite / tool caches

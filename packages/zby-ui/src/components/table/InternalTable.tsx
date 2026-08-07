@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { convertChildrenToColumns, INTERNAL_HOOKS } from '@rc-component/table'
-import type { Reference as RcReference, TableProps as RcTableProps } from '@rc-component/table'
+import { convertChildrenToColumns, INTERNAL_HOOKS } from './RcTableInner'
+import type { Reference as RcReference, TableProps as RcTableProps } from './RcTableInner'
 import { omit, pickAttrs } from '@rc-component/util'
 import { clsx } from 'clsx'
 
@@ -35,7 +35,7 @@ import type { FilterConfig, FilterState } from './hooks/useFilter'
 import useFilter, { getFilterData } from './hooks/useFilter'
 import useLazyKVMap from './hooks/useLazyKVMap'
 import usePagination, { DEFAULT_PAGE_SIZE, getPaginationParam } from './hooks/usePagination'
-import useResizableColumns from './hooks/useResizableColumns'
+import useSharedTableWidth from './hooks/useSharedTableWidth'
 import useRowHighlight from './hooks/useRowHighlight'
 import useSelection from './hooks/useSelection'
 import type { SortState } from './hooks/useSorter'
@@ -440,23 +440,28 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const tblRef = React.useRef<RcReference>(null)
 
   const {
-    columns: resizedColumns,
-    components: resizeComponents,
+    columns: sharedColumns,
     tableWidth,
     widthsReady,
     hasHorizontalOverflow,
-  } = useResizableColumns({
+  } = useSharedTableWidth({
     columns: mergedColumns,
-    components: mergedComponents,
     rootRef,
     prefixCls,
-    direction,
-    enabled: columnResizingEnabled,
-    useSharedScrollArea,
+    enabled: useSharedScrollArea && !columnResizingEnabled,
     selectionWidth,
     scrollX: mergedScroll?.x,
-    onColumnWidthChange,
   })
+  const columnResizeConfig = React.useMemo<RcTableProps<RecordType>['columnResize']>(
+    () => columnResizingEnabled
+      ? {
+          sourceColumns: mergedColumns as RcTableProps<RecordType>['columns'],
+          onColumnWidthChange: (info) =>
+            onColumnWidthChange?.(info as TableColumnWidthChangeInfo<RecordType>),
+        }
+      : undefined,
+    [columnResizingEnabled, mergedColumns, onColumnWidthChange],
+  )
 
   useProxyImperativeHandle(ref, () => ({
     ...tblRef.current!,
@@ -561,7 +566,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   }
   const [transformSorterColumns, sortStates, sorterTitleProps, getSorters] = useSorter<RecordType>({
     prefixCls,
-    mergedColumns: resizedColumns,
+    mergedColumns: sharedColumns,
     // Pass `baseColumns` (pre-responsive) so `defaultSortOrder` and controlled
     // `sortOrder` on a `responsive` column are still honored when the column
     // is hidden at the current breakpoint.
@@ -591,7 +596,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     prefixCls,
     locale: tableLocale,
     dropdownPrefixCls,
-    mergedColumns: resizedColumns,
+    mergedColumns: sharedColumns,
     onFilterChange,
     getPopupContainer: getPopupContainer || getContextPopupContainer,
     rootClassName: clsx(rootClassName, rootCls),
@@ -686,7 +691,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   // ========================== Expandable ==========================
 
-  // Pass origin render status into `@rc-component/table`, this can be removed when refactor with `@rc-component/table`
+  // Pass origin render status into the local RcTable fork.
   (mergedExpandable as any).__PARENT_RENDER_ICON__ = mergedExpandable.expandIcon
 
   // Customize expandable icon
@@ -811,8 +816,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   }, [token, mergedSize])
 
   const userBodyComponents =
-    resizeComponents?.body && typeof resizeComponents.body === 'object'
-      ? resizeComponents.body
+    mergedComponents?.body && typeof mergedComponents.body === 'object'
+      ? mergedComponents.body
       : undefined
   const bodyRenderer = React.useMemo(() => {
     const renderer = (
@@ -827,7 +832,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         scrollAreaProps={scrollAreaProps}
         scrollY={mergedScroll?.y}
         itemHeight={listItemHeight}
-        tableWidth={tableWidth ?? 1}
         horizontal={
           columnResizingEnabled ||
           mergedScroll?.x !== undefined ||
@@ -847,20 +851,22 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     mergedScroll?.y,
     onScroll,
     scrollAreaProps,
-    tableWidth,
     userBodyComponents,
     virtual,
   ])
   const bodyComponents = React.useMemo(
-    () => useSharedScrollArea && widthsReady && tableWidth !== undefined
+    () => useSharedScrollArea && (
+      columnResizingEnabled || (widthsReady && tableWidth !== undefined)
+    )
       ? {
-          ...resizeComponents,
+          ...mergedComponents,
           body: bodyRenderer,
         }
-      : resizeComponents,
+      : mergedComponents,
     [
       bodyRenderer,
-      resizeComponents,
+      columnResizingEnabled,
+      mergedComponents,
       tableWidth,
       useSharedScrollArea,
       widthsReady,
@@ -868,6 +874,14 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   )
   const effectiveScroll = React.useMemo(
     () => {
+      if (useSharedScrollArea && columnResizingEnabled) {
+        return {
+          ...mergedScroll,
+          // RcTable calls a function body only in its fixed-header branch.
+          y: mergedScroll?.y ?? (virtual ? 500 : 1),
+        }
+      }
+
       if (!useSharedScrollArea || !widthsReady || tableWidth === undefined) {
         return mergedScroll
       }
@@ -880,7 +894,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
       }
 
       if (
-        columnResizingEnabled ||
         mergedScroll?.x !== undefined ||
         hasHorizontalOverflow
       ) {
@@ -912,11 +925,12 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             {...tableProps}
             tableLayout={mergedTableLayout}
             components={bodyComponents}
+            columnResize={columnResizeConfig}
             scroll={effectiveScroll}
             classNames={mergedClassNames as RcTableProps<RecordType>['classNames']}
             styles={mergedStyles as RcTableProps<RecordType>['styles']}
             ref={tblRef}
-            columns={resizedColumns as RcTableProps<RecordType>['columns']}
+            columns={sharedColumns as RcTableProps<RecordType>['columns']}
             direction={direction}
             expandable={mergedExpandable}
             prefixCls={prefixCls}

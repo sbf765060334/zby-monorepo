@@ -87,15 +87,15 @@ function StatusTag({ status }: { status: OrderRecord['status'] }) {
 }
 
 const basicColumns: TableColumnsType<OrderRecord> = [
-  { key: 'orderNo', title: '订单号', dataIndex: 'orderNo' },
-  { key: 'customer', title: '客户', dataIndex: 'customer' },
-  { key: 'status', title: '状态', dataIndex: 'status' },
+  { key: 'orderNo', title: '订单号', dataIndex: 'orderNo', width: 200 },
+  { key: 'customer', title: '客户', dataIndex: 'customer', width: 200 },
+  { key: 'status', title: '状态', dataIndex: 'status', width: 100 },
   {
     key: 'amount',
     title: '金额',
     dataIndex: 'amount',
     align: 'right',
-    fixed: 'right',
+    width: 100,
     render: (amount: number) => `¥ ${amount.toLocaleString('zh-CN')}`,
   },
 ]

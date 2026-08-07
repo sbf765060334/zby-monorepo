@@ -15,7 +15,7 @@ export type {
   TableRowHighlight,
   TableScrollAreaProps,
 } from './interface'
-export type { Reference as TableRef } from '@rc-component/table'
+export type { Reference as TableRef } from './RcTableInner'
 export type { TablePaginationConfig, TableProps }
 
 export default Table

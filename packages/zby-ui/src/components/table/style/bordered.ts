@@ -59,10 +59,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           [`> ${componentCls}-zby-scroll-body ${scrollAreaCls}-content > table`]: {
             '> tbody > tr > th, > tbody > tr > td': {
               borderInlineEnd: tableBorder,
-
-              [`&${componentCls}-zby-filler-cell-collapsed`]: {
-                borderInlineEnd: 0,
-              },
             },
           },
 
@@ -82,10 +78,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
                 '> thead > tr > th, > thead > tr > td, > tbody > tr > th, > tbody > tr > td, > tfoot > tr > th, > tfoot > tr > td':
                   {
                     borderInlineEnd: tableBorder,
-
-                    [`&${componentCls}-zby-filler-cell-collapsed`]: {
-                      borderInlineEnd: 0,
-                    },
                   },
 
                 // ============================ Header ============================
@@ -99,16 +91,11 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
                   },
                 },
 
-                // Fixed right should provides additional border
-                // Only add separator border when there are multiple fixed-right columns
-                // (i.e. fix-right-first is not also fix-right-last), otherwise the
-                // ::after border doubles up with the cell's own borderInlineEnd and
-                // creates a spurious extra vertical line. See #56287.
+                // Keep the fixed-end boundary above the scrollable cells it covers.
                 '> thead > tr, > tbody > tr, > tfoot > tr': {
-                  [`> ${componentCls}-cell-fix-right-first:not(${componentCls}-cell-fix-right-last)::after`]:
-                    {
-                      borderInlineEnd: tableBorder,
-                    },
+                  [`> ${componentCls}-cell-fix-end-shadow::after`]: {
+                    borderInlineEnd: tableBorder,
+                  },
                 },
 
                 // ========================== Expandable ==========================

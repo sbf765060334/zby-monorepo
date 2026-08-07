@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { EXPAND_COLUMN, Summary } from '@rc-component/table'
-import type { Reference } from '@rc-component/table'
+import { EXPAND_COLUMN, Summary } from './RcTableInner'
+import type { Reference } from './RcTableInner'
 
 import type { AnyObject } from 'antd/es/_util/type'
 import Column from './Column'

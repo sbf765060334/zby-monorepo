@@ -17,7 +17,8 @@ const sharedConfig = {
       'antd',
       '@radix-ui/react-scroll-area',
       '@rc-component/context',
-      '@rc-component/table',
+      '@rc-component/resize-observer',
+      '@rc-component/virtual-list',
       '@ant-design/icons',
       '@ant-design/cssinjs',
       '@zby/intl',
@@ -42,7 +43,6 @@ export default defineConfig([
     clean: false,
     alias: {
       'antd/es': 'antd/lib',
-      '@rc-component/table/es': '@rc-component/table/lib',
     },
     define: {
       __ZBY_TABLE_ESM__: 'false',

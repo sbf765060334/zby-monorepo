@@ -1,15 +1,15 @@
 import { useContext } from '@rc-component/context'
-import Body from '@rc-component/table/es/Body'
-import ColGroup from '@rc-component/table/es/ColGroup'
-import TableContext from '@rc-component/table/es/context/TableContext'
-import useFlattenRecords from '@rc-component/table/es/hooks/useFlattenRecords'
-import BodyLine from '@rc-component/table/es/VirtualTable/BodyLine'
+import Body from '../RcTableInner/Body'
+import ColGroup from '../RcTableInner/ColGroup'
+import TableContext from '../RcTableInner/context/TableContext'
+import useFlattenRecords from '../RcTableInner/hooks/useFlattenRecords'
+import BodyLine from '../RcTableInner/VirtualTable/BodyLine'
 import {
   GridContext,
   StaticContext,
-} from '@rc-component/table/es/VirtualTable/context'
+} from '../RcTableInner/VirtualTable/context'
 import * as React from 'react'
-import type { GetComponent, GetRowKey } from '@rc-component/table/es/interface'
+import type { GetComponent, GetRowKey } from '../RcTableInner/interface'
 
 import ScrollArea from '../../scroll-area'
 import type { TableScrollAreaProps } from '../interface'
@@ -43,7 +43,6 @@ export interface TableScrollBodyProps<RecordType extends object> {
   scrollAreaProps?: TableScrollAreaProps
   scrollY?: number | string
   itemHeight: number
-  tableWidth: number
   horizontal: boolean
   onTableScroll?: React.UIEventHandler<HTMLDivElement>
 }
@@ -140,7 +139,6 @@ function TableScrollBody<RecordType extends object>(
     scrollAreaProps,
     scrollY,
     itemHeight,
-    tableWidth,
     horizontal,
     onTableScroll,
   } = props
@@ -154,7 +152,19 @@ function TableScrollBody<RecordType extends object>(
   const getComponent: GetComponent =
     tableContext.getComponent ?? (defaultGetComponent as GetComponent)
   const tableLayout = tableContext.tableLayout ?? 'fixed'
+  const columnResizeEnabled = tableContext.columnResizeEnabled ?? false
+  const hasHorizontalOverflow = tableContext.hasHorizontalOverflow ?? horizontal
   const onColumnResize = tableContext.onColumnResize
+  const tableWidth = typeof tableContext.scrollX === 'number'
+    ? Math.max(1, tableContext.scrollX)
+    : Math.max(
+        1,
+        flattenColumns.reduce(
+          (total, column) =>
+            total + (typeof column.width === 'number' ? column.width : 0),
+          0,
+        ),
+      )
   const viewportRef = React.useRef<HTMLDivElement | null>(null)
   const [heightMap, setHeightMap] = React.useState(
     () => new Map<React.Key, number>(),
@@ -371,7 +381,7 @@ function TableScrollBody<RecordType extends object>(
           colWidths={flattenColumns.map((column) => column.width ?? 0)}
           columns={flattenColumns}
         />
-        <Body data={data} measureColumnWidth />
+        <Body data={data} measureColumnWidth={!columnResizeEnabled} />
       </table>
     )
   } else {
@@ -430,7 +440,11 @@ function TableScrollBody<RecordType extends object>(
       className={`${prefixCls}-body ${prefixCls}-zby-scroll-body ${
         virtual ? `${prefixCls}-tbody-virtual` : ''
       }`}
-      direction={horizontal ? 'both' : 'vertical'}
+      direction={
+        horizontal && (!columnResizeEnabled || hasHorizontalOverflow)
+          ? 'both'
+          : 'vertical'
+      }
       scrollbar={scrollAreaProps?.scrollbar ?? 'hover'}
       scrollHideDelay={scrollAreaProps?.scrollHideDelay}
       viewportRef={viewportRef}

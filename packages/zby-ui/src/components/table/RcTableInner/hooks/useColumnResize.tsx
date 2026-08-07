@@ -1,17 +1,21 @@
-import type { TableProps as RcTableProps } from '@rc-component/table'
 import * as React from 'react'
 
 import type {
+  ColumnResizeConfig,
   ColumnGroupType,
   ColumnsType,
   ColumnType,
-  TableColumnWidthChangeInfo,
+  Direction,
+  TableComponents,
 } from '../interface'
+import type { TableProps } from '../Table'
+import { INTERNAL_COL_DEFINE } from '../utils/legacyUtil'
+import { flatColumns } from './useColumns'
 import {
-  COLUMN_WIDTH_ROUNDING_TOLERANCE,
   clampColumnWidth,
   collectColumnSizingLeaves,
   getColumnKey,
+  resolveColumnLayout,
   resolveColumnWidths,
 } from './useColumnSizing'
 
@@ -33,41 +37,40 @@ interface ResizeStartInfo<RecordType> {
   startClientX: number
 }
 
-interface UseResizableColumnsOptions<RecordType extends object> {
+interface UseColumnResizeOptions<RecordType extends object> {
   columns: ColumnsType<RecordType>
-  components?: RcTableProps<RecordType>['components']
-  rootRef: React.RefObject<HTMLDivElement | null>
+  sourceColumns?: ColumnsType<RecordType>
+  components?: TableComponents<RecordType>
   prefixCls: string
-  direction?: 'ltr' | 'rtl'
+  direction?: Direction
   enabled: boolean
-  useSharedScrollArea: boolean
-  selectionWidth: number
-  scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
-    ? Scroll extends { x?: infer X }
-      ? X
-      : never
-    : never
-  onColumnWidthChange?: (
-    info: TableColumnWidthChangeInfo<RecordType>,
-  ) => void
+  viewportWidth: number
+  config?: ColumnResizeConfig<RecordType>
 }
 
-interface UseResizableColumnsResult<RecordType extends object> {
+export interface UseColumnResizeResult<RecordType extends object> {
   columns: ColumnsType<RecordType>
-  components: RcTableProps<RecordType>['components']
-  tableWidth?: number
+  flattenColumns: readonly ColumnType<RecordType>[]
+  components: TableProps<RecordType>['components']
+  scrollX?: number
+  colWidths?: number[]
+  fillerWidth: number
   widthsReady: boolean
   hasHorizontalOverflow: boolean
 }
 
 const COLUMN_RESIZE_EPSILON = 0.01
-// rc-table treats numeric zero as an unspecified width when scroll.x is set
-// and expands that column to at least 1px. A sub-layout-pixel sentinel keeps
-// the stable filler mounted without producing visible end space.
-const COLLAPSED_FILLER_WIDTH = 0.001
 
 function getNumericWidth(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function isInternalColumn<RecordType extends object>(
+  column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
+) {
+  return Boolean(
+    (column as ColumnType<RecordType> & Record<string, unknown>)[INTERNAL_COL_DEFINE],
+  )
 }
 
 function getFillerColumnKey(
@@ -110,23 +113,16 @@ function insertFillerColumn<RecordType extends object>(
   prefixCls: string,
 ): ColumnsType<RecordType> {
   const className = `${prefixCls}-zby-filler-cell`
-  const collapsed = width <= COLUMN_RESIZE_EPSILON
-  const resolvedWidth = collapsed
-    ? COLLAPSED_FILLER_WIDTH
-    : Math.max(0, width)
-  const mergedClassName = collapsed
-    ? `${className} ${className}-collapsed`
-    : className
   const fillerColumn: ColumnType<RecordType> = {
     key,
     title: null,
-    width: resolvedWidth,
+    width,
     resizable: false,
-    className: mergedClassName,
+    className,
     render: () => null,
     onHeaderCell: () => ({
       'aria-hidden': true,
-      style: { width: resolvedWidth },
+      style: { width },
     }),
     onCell: () => ({
       'aria-hidden': true,
@@ -168,16 +164,17 @@ function applyResolvedColumns<RecordType extends object>(
       }
     }
 
+    const leafColumn = column as ColumnType<RecordType>
     const width = widths.get(key)
-    const userOnHeaderCell = column.onHeaderCell
-    const minWidth = getNumericWidth(column.minWidth, 50)
-    const maxWidth = getNumericWidth(
-      column.maxWidth,
-      Number.POSITIVE_INFINITY,
-    )
+    const userOnHeaderCell = leafColumn.onHeaderCell
+    const internalColumn = isInternalColumn(leafColumn)
+    const minWidth = internalColumn ? 0 : getNumericWidth(leafColumn.minWidth, 50)
+    const maxWidth = internalColumn
+      ? Number.POSITIVE_INFINITY
+      : getNumericWidth(leafColumn.maxWidth, Number.POSITIVE_INFINITY)
 
     return {
-      ...column,
+      ...leafColumn,
       key,
       width,
       onHeaderCell: (resolvedColumn: ColumnType<RecordType>) => {
@@ -192,14 +189,16 @@ function applyResolvedColumns<RecordType extends object>(
             ...userProps.style,
             ...(width !== undefined ? { width } : {}),
           },
-          'data-zby-column-key': String(key),
+          ...(internalColumn
+            ? { 'data-zby-internal-column-key': String(key) }
+            : { 'data-zby-column-key': String(key) }),
           ...(enableColumnResizing
             ? {
                 __zbyColumnKey: key,
                 __zbyColumnWidth: width,
                 __zbyColumnMinWidth: minWidth,
                 __zbyColumnMaxWidth: maxWidth,
-                __zbyResizable: column.resizable !== false,
+                __zbyResizable: !internalColumn && leafColumn.resizable !== false,
               }
             : {}),
         } as React.ThHTMLAttributes<HTMLTableCellElement>
@@ -208,142 +207,59 @@ function applyResolvedColumns<RecordType extends object>(
   }) as ColumnsType<RecordType>
 }
 
-export default function useResizableColumns<RecordType extends object>(
-  options: UseResizableColumnsOptions<RecordType>,
-): UseResizableColumnsResult<RecordType> {
+export default function useColumnResize<RecordType extends object>(
+  options: UseColumnResizeOptions<RecordType>,
+): UseColumnResizeResult<RecordType> {
   const {
     columns,
+    sourceColumns,
     components,
-    rootRef,
     prefixCls,
     direction = 'ltr',
     enabled,
-    useSharedScrollArea,
-    selectionWidth,
-    scrollX,
-    onColumnWidthChange,
+    viewportWidth,
+    config,
   } = options
-  const [containerWidth, setContainerWidth] = React.useState(0)
   const [userWidths, setUserWidths] = React.useState(
     () => new Map<React.Key, number>(),
   )
   const userWidthsRef = React.useRef(userWidths)
-  const [measuredWidths, setMeasuredWidths] = React.useState(
-    () => new Map<React.Key, number>(),
-  )
-  const shouldObserveWidth = enabled || useSharedScrollArea
-
-  React.useLayoutEffect(() => {
-    if (!shouldObserveWidth) return undefined
-
-    const root = rootRef.current
-    if (!root) return undefined
-
-    const updateWidth = () => {
-      const scrollAreaPrefixCls = prefixCls.replace('-table', '-scroll-area')
-      const viewport = root.querySelector<HTMLElement>(
-        `.${scrollAreaPrefixCls}-viewport`,
-      )
-      const container = root.querySelector<HTMLElement>(
-        `.${prefixCls}-container`,
-      )
-      const width = viewport?.clientWidth ||
-        container?.clientWidth ||
-        root.clientWidth ||
-        root.getBoundingClientRect().width
-      setContainerWidth((previous) => (previous === width ? previous : width))
-    }
-
-    updateWidth()
-    if (typeof ResizeObserver === 'undefined') return undefined
-
-    const observer = new ResizeObserver(updateWidth)
-    observer.observe(root)
-    const viewport = root.querySelector<HTMLElement>(
-      `.${prefixCls.replace('-table', '-scroll-area')}-viewport`,
-    )
-    const container = root.querySelector<HTMLElement>(
-      `.${prefixCls}-container`,
-    )
-    if (container) observer.observe(container)
-    if (viewport) observer.observe(viewport)
-    return () => observer.disconnect()
-  }, [measuredWidths, prefixCls, rootRef, shouldObserveWidth])
-
   const leaves = React.useMemo(
     () => enabled
-      ? collectColumnSizingLeaves(columns, userWidths, measuredWidths)
-      : useSharedScrollArea
-        ? collectColumnSizingLeaves(
-            columns,
-            new Map(),
-            measuredWidths,
-            [],
-            false,
-          )
-        : [],
-    [columns, enabled, measuredWidths, useSharedScrollArea, userWidths],
+      ? collectColumnSizingLeaves(columns, userWidths)
+      : [],
+    [columns, enabled, userWidths],
   )
-  const widthTarget = Math.max(0, containerWidth - selectionWidth)
+  const widthTarget = Math.max(0, viewportWidth)
   const widthResolution = React.useMemo(
     () => resolveColumnWidths(leaves, widthTarget),
     [leaves, widthTarget],
   )
 
-  React.useLayoutEffect(() => {
-    if (!shouldObserveWidth || widthResolution.complete) return
-
-    const root = rootRef.current
-    if (!root) return
-
-    const unresolvedKeys = new Map(
-      leaves
-        .filter((leaf) => leaf.baseWidth === undefined)
-        .map((leaf) => [String(leaf.key), leaf.key]),
-    )
-    const nextMeasuredWidths = new Map(measuredWidths)
-    let changed = false
-
-    root.querySelectorAll<HTMLElement>('[data-zby-column-key]').forEach((cell) => {
-      const domKey = cell.dataset.zbyColumnKey
-      const key = domKey === undefined ? undefined : unresolvedKeys.get(domKey)
-      if (key === undefined) return
-
-      const width = cell.getBoundingClientRect().width || cell.offsetWidth
-      if (width <= 0 || nextMeasuredWidths.get(key) === width) return
-
-      nextMeasuredWidths.set(key, width)
-      changed = true
-    })
-
-    if (changed) setMeasuredWidths(nextMeasuredWidths)
-  }, [
-    leaves,
-    measuredWidths,
-    rootRef,
-    shouldObserveWidth,
-    widthResolution.complete,
-  ])
-
   const fillerColumnKey = React.useMemo(
     () => getFillerColumnKey(leaves, prefixCls),
     [leaves, prefixCls],
   )
+  const layoutState = React.useMemo(
+    () => resolveColumnLayout(widthResolution.totalWidth, widthTarget),
+    [widthResolution.totalWidth, widthTarget],
+  )
+  const fillerWidth = widthResolution.complete
+    ? layoutState.fillerWidth
+    : 0
   const resolvedColumns = React.useMemo(
     () => {
-      if (!enabled && !useSharedScrollArea) return columns
+      if (!enabled) return columns
 
       const businessColumns = applyResolvedColumns(
         columns,
         widthResolution.widths,
         enabled,
       )
-      if (!enabled) return businessColumns
-
-      return widthResolution.complete
+      return widthResolution.complete && fillerWidth > 0
         ? insertFillerColumn(
             businessColumns,
-            widthResolution.unresolvedWidth,
+            fillerWidth,
             fillerColumnKey,
             prefixCls,
           )
@@ -352,46 +268,51 @@ export default function useResizableColumns<RecordType extends object>(
     [
       columns,
       enabled,
+      fillerWidth,
       fillerColumnKey,
       prefixCls,
-      useSharedScrollArea,
       widthResolution.complete,
-      widthResolution.unresolvedWidth,
       widthResolution.widths,
     ],
   )
-  const resizingTableWidth = widthResolution.complete
-    ? Math.max(
-        1,
-        widthResolution.totalWidth +
-        widthResolution.unresolvedWidth +
-        selectionWidth,
-      )
+  const scrollX = widthResolution.complete
+    ? layoutState.scrollX
     : undefined
-  const nativeTableWidth = useSharedScrollArea &&
-    widthResolution.complete &&
-    containerWidth > 0
-    ? Math.max(
-        1,
-        containerWidth,
-        typeof scrollX === 'number' ? scrollX : 0,
-        widthResolution.totalWidth + selectionWidth,
-      )
-    : undefined
-  const tableWidth = enabled ? resizingTableWidth : nativeTableWidth
   const hasHorizontalOverflow = Boolean(
-    tableWidth !== undefined &&
-    containerWidth > 0 &&
-    tableWidth - containerWidth > COLUMN_WIDTH_ROUNDING_TOLERANCE,
+    widthResolution.complete && layoutState.hasHorizontalOverflow,
+  )
+  const resolvedFlattenColumns = React.useMemo(
+    () => flatColumns(resolvedColumns),
+    [resolvedColumns],
+  )
+  const resolvedColWidths = React.useMemo(
+    () => widthResolution.complete
+      ? resolvedFlattenColumns.map((column) => column.width as number)
+      : undefined,
+    [resolvedFlattenColumns, widthResolution.complete],
   )
   const originalColumnMap = React.useMemo(
-    () => new Map(leaves.map((leaf) => [leaf.key, leaf.column])),
-    [leaves],
+    () => {
+      const map = new Map<
+        React.Key,
+        ColumnGroupType<RecordType> | ColumnType<RecordType>
+      >()
+      if (sourceColumns) {
+        collectColumnSizingLeaves(sourceColumns, new Map()).forEach((leaf) => {
+          map.set(leaf.key, leaf.column)
+        })
+      }
+      leaves.forEach((leaf) => {
+        if (!map.has(leaf.key)) map.set(leaf.key, leaf.column)
+      })
+      return map
+    },
+    [leaves, sourceColumns],
   )
   const originalColumnMapRef = React.useRef(originalColumnMap)
   originalColumnMapRef.current = originalColumnMap
-  const onColumnWidthChangeRef = React.useRef(onColumnWidthChange)
-  onColumnWidthChangeRef.current = onColumnWidthChange
+  const onColumnWidthChangeRef = React.useRef(config?.onColumnWidthChange)
+  onColumnWidthChangeRef.current = config?.onColumnWidthChange
 
   const commitColumnWidth = React.useCallback(
     (
@@ -678,11 +599,12 @@ export default function useResizableColumns<RecordType extends object>(
 
   return {
     columns: resolvedColumns,
+    flattenColumns: resolvedFlattenColumns,
     components: mergedComponents,
-    tableWidth,
-    widthsReady: enabled
-      ? widthResolution.complete
-      : !useSharedScrollArea || widthResolution.complete,
+    scrollX,
+    colWidths: resolvedColWidths,
+    fillerWidth,
+    widthsReady: !enabled || widthResolution.complete,
     hasHorizontalOverflow,
   }
 }
