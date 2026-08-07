@@ -430,7 +430,7 @@ describe('Table', () => {
     ).toBeNull()
   })
 
-  it('keeps bordered body dividers inside the shared ScrollArea', () => {
+  it('keeps bordered filler and body dividers inside the shared ScrollArea', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -447,13 +447,18 @@ describe('Table', () => {
       .replace(/\s/g, '')
 
     expect(container.querySelector('.ant-table-bordered')).not.toBeNull()
+    expect(
+      container.querySelector(
+        '.ant-table-tbody .ant-table-zby-filler-cell.ant-table-cell',
+      ),
+    ).not.toBeNull()
     expect(styleText).toMatch(
       /ant-table-zby-scroll-body.*ant-scroll-area-content>table>tbody>tr>td\{border-inline-end:/,
     )
   })
 
-  it('does not render the filler as another header divider', () => {
-    render(
+  it('renders the filler right divider without a resize handle', () => {
+    const { container } = render(
       <Table<RowData>
         rowKey="id"
         pagination={false}
@@ -462,12 +467,20 @@ describe('Table', () => {
         dataSource={data}
       />,
     )
+    const filler = container.querySelector<HTMLElement>(
+      '.ant-table-thead .ant-table-zby-filler-cell',
+    )!
     const styleText = [...document.querySelectorAll('style')]
       .map((style) => style.textContent ?? '')
       .join('')
       .replace(/\s/g, '')
 
+    expect(filler).not.toBeNull()
+    expect(filler.querySelector('.ant-table-zby-resize-handle')).toBeNull()
     expect(styleText).toMatch(
+      /ant-table-zby-filler-cell::?before\{[^}]*inset-inline-end:0[^}]*background-color:/,
+    )
+    expect(styleText).not.toMatch(
       /ant-table-zby-filler-cell::?before\{display:none/,
     )
   })
