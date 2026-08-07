@@ -537,6 +537,12 @@ describe('Table', () => {
     expect(styleText).toMatch(
       /ant-table-zby-resize-handle\{[^}]*inset-inline-end:0[^}]*width:8px/,
     )
+    expect(styleText).toMatch(
+      /ant-table-zby-filler-cell-collapsed\{border-inline-end:0/,
+    )
+    expect(styleText).not.toContain(
+      ':has(+.ant-table-zby-filler-cell-collapsed)',
+    )
     expect(lastHandle).not.toBeNull()
 
     act(() => {
@@ -885,6 +891,7 @@ describe('Table', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
+        bordered
         pagination={false}
         enableColumnResizing
         scroll={{ y: 200 }}

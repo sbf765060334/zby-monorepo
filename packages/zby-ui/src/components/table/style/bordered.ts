@@ -59,6 +59,10 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           [`> ${componentCls}-zby-scroll-body ${scrollAreaCls}-content > table`]: {
             '> tbody > tr > th, > tbody > tr > td': {
               borderInlineEnd: tableBorder,
+
+              [`&${componentCls}-zby-filler-cell-collapsed`]: {
+                borderInlineEnd: 0,
+              },
             },
           },
 
@@ -78,6 +82,10 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
                 '> thead > tr > th, > thead > tr > td, > tbody > tr > th, > tbody > tr > td, > tfoot > tr > th, > tfoot > tr > td':
                   {
                     borderInlineEnd: tableBorder,
+
+                    [`&${componentCls}-zby-filler-cell-collapsed`]: {
+                      borderInlineEnd: 0,
+                    },
                   },
 
                 // ============================ Header ============================

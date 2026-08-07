@@ -95,6 +95,7 @@ const basicColumns: TableColumnsType<OrderRecord> = [
     title: '金额',
     dataIndex: 'amount',
     align: 'right',
+    fixed: 'right',
     render: (amount: number) => `¥ ${amount.toLocaleString('zh-CN')}`,
   },
 ]

@@ -56,6 +56,10 @@ const genVirtualStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           [`${componentCls}-cell`]: {
             borderInlineEnd: tableBorder,
 
+            [`&${componentCls}-zby-filler-cell-collapsed`]: {
+              borderInlineEnd: 0,
+            },
+
             [`&${componentCls}-cell-fix-right-first:before`]: {
               content: '""',
               position: 'absolute',
