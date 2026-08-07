@@ -483,6 +483,12 @@ describe('Table', () => {
     expect(styleText).not.toMatch(
       /ant-table-zby-filler-cell::?before\{display:none/,
     )
+    expect(styleText).toMatch(
+      /ant-table-zby-filler-cell-collapsed::?before\{display:none/,
+    )
+    expect(styleText).not.toContain(
+      ':has(+.ant-table-zby-filler-cell-collapsed)',
+    )
   })
 
   it('keeps a stable zero-width filler and an internal end-handle hit area', () => {

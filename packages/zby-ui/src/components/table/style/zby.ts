@@ -64,8 +64,8 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
       },
 
       [
-      `${componentCls}-thead ${componentCls}-cell` +
-        `:has(+ ${componentCls}-zby-filler-cell-collapsed)::before`
+      `${componentCls}-thead ` +
+        `${componentCls}-zby-filler-cell-collapsed::before`
       ]: {
         display: 'none',
       },
