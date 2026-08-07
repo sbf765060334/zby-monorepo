@@ -365,12 +365,7 @@ describe('Table', () => {
     expect(styleText).toMatch(
       /ant-table-zby-column-resizing.*ant-table-tbody-virtual.*ant-table-cell:not\(\.ant-table-cell-fix\).*overflow:hidden/,
     )
-    expect(styleText).toMatch(
-      /ant-table-zby-resize-guide\{[^}]*overflow:hidden/,
-    )
-    expect(styleText).toMatch(
-      /ant-table-zby-resize-guide::?after\{[^}]*translateX\(var\(--zby-table-resize-guide-x,0px\)\)/,
-    )
+    expect(styleText).not.toContain('ant-table-zby-resize-guide')
   })
 
   it('measures auto-sized columns before adding filler in resizing mode', () => {
@@ -751,33 +746,49 @@ describe('Table', () => {
     expect(rows[0].textContent).toContain('Row 6')
   })
 
-  it('moves only the guide during drag and commits a clamped width on pointerup', () => {
+  it('syncs a clamped width while dragging without rendering a guide', () => {
+    let frameCallback: FrameRequestCallback | undefined
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frameCallback = callback
+      return 1
+    })
+    const flushFrame = () => {
+      const callback = frameCallback
+      frameCallback = undefined
+      act(() => callback?.(0))
+    }
     const onColumnWidthChange = vi.fn()
+    const LiveResizableTable = () => {
+      const [, setLastWidth] = React.useState(0)
+      return (
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          enableColumnResizing
+          onColumnWidthChange={(info) => {
+            onColumnWidthChange(info)
+            setLastWidth(info.width)
+          }}
+          columns={[
+            {
+              key: 'id',
+              dataIndex: 'id',
+              title: 'ID',
+              width: 150,
+              minWidth: 100,
+              maxWidth: 200,
+            },
+            columns[1],
+          ]}
+          dataSource={data}
+        />
+      )
+    }
     const { container } = render(
-      <Table<RowData>
-        rowKey="id"
-        pagination={false}
-        enableColumnResizing
-        onColumnWidthChange={onColumnWidthChange}
-        columns={[
-          {
-            key: 'id',
-            dataIndex: 'id',
-            title: 'ID',
-            width: 150,
-            minWidth: 100,
-            maxWidth: 200,
-          },
-          columns[1],
-        ]}
-        dataSource={data}
-      />,
+      <LiveResizableTable />,
     )
     const handle = container.querySelector<HTMLElement>(
       '.ant-table-zby-resize-handle',
-    )!
-    const guide = container.querySelector<HTMLElement>(
-      '.ant-table-zby-resize-guide',
     )!
     const setPointerCapture = vi.fn()
     const releasePointerCapture = vi.fn()
@@ -795,31 +806,37 @@ describe('Table', () => {
 
     fireEvent.pointerDown(handle, { clientX: 150, pointerId: 7 })
     fireEvent.pointerMove(document, { clientX: 400 })
+    flushFrame()
 
-    expect(guide.style.width).toBe('150px')
-    expect(guide.style.getPropertyValue('--zby-table-resize-guide-x')).toBe(
-      '200px',
+    expect(
+      container.querySelector<HTMLElement>('th[data-zby-column-key="id"]')!
+        .style.width,
+    ).toBe('200px')
+    expect(onColumnWidthChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ columnKey: 'id', width: 200 }),
     )
+    expect(
+      container.querySelector<HTMLElement>('.ant-table-zby-resize-handle'),
+    ).toBe(handle)
 
     fireEvent.pointerMove(document, { clientX: 20 })
+    flushFrame()
 
-    expect(guide.style.display).toBe('block')
-    expect(guide.style.left).toBe('0px')
-    expect(guide.style.getPropertyValue('--zby-table-resize-guide-x')).toBe(
-      '100px',
+    expect(
+      container.querySelector<HTMLElement>('th[data-zby-column-key="id"]')!
+        .style.width,
+    ).toBe('100px')
+    expect(onColumnWidthChange).toHaveBeenCalledTimes(2)
+    expect(onColumnWidthChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ columnKey: 'id', width: 100 }),
     )
-    expect(onColumnWidthChange).not.toHaveBeenCalled()
+    expect(container.querySelector('.ant-table-zby-resize-guide')).toBeNull()
 
     fireEvent.pointerUp(document, { clientX: 20 })
 
-    expect(guide.style.display).toBe('none')
     expect(setPointerCapture).toHaveBeenCalledWith(7)
     expect(releasePointerCapture).toHaveBeenCalledWith(7)
-    expect(onColumnWidthChange).toHaveBeenCalledTimes(1)
-    expect(onColumnWidthChange.mock.calls[0][0]).toMatchObject({
-      columnKey: 'id',
-      width: 100,
-    })
+    expect(onColumnWidthChange).toHaveBeenCalledTimes(2)
   })
 
   it('does not commit when the resize handle is clicked without moving', () => {
@@ -996,6 +1013,8 @@ describe('Table', () => {
       widths: { id: 190 },
     })
     window.localStorage.setItem(persistedKey, persistedValue)
+    const getItem = vi.spyOn(Storage.prototype, 'getItem')
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -1018,85 +1037,17 @@ describe('Table', () => {
     fireEvent.pointerMove(document, { clientX: 150 })
     fireEvent.pointerUp(document, { clientX: 150 })
 
-    expect(window.localStorage.getItem(persistedKey)).toBe(persistedValue)
+    expect(getItem).not.toHaveBeenCalled()
+    expect(setItem).not.toHaveBeenCalled()
   })
 
-  it('persists committed widths and clamps them when restoring', () => {
-    const storageKey = 'resizable-orders'
-    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
-    const firstRender = render(
-      <Table<RowData>
-        rowKey="id"
-        pagination={false}
-        scroll={{ y: 200 }}
-        enableColumnResizing={{ storageKey }}
-        columns={[
-          {
-            key: 'id',
-            dataIndex: 'id',
-            title: 'ID',
-            width: 150,
-            maxWidth: 200,
-          },
-          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
-        ]}
-        dataSource={data}
-      />,
-    )
-    const handle = firstRender.container.querySelector<HTMLElement>(
-      '.ant-table-zby-resize-handle',
-    )!
-
-    fireEvent.pointerDown(handle, { clientX: 150 })
-    fireEvent.pointerMove(document, { clientX: 180 })
-    fireEvent.pointerUp(document, { clientX: 180 })
-
-    expect(JSON.parse(window.localStorage.getItem(persistedKey)!)).toEqual({
-      version: 1,
-      widths: { id: 180 },
-    })
-
-    firstRender.unmount()
+  it('resizes repeatedly by keyboard without persistence', () => {
     const onColumnWidthChange = vi.fn()
-    const secondRender = render(
-      <Table<RowData>
-        rowKey="id"
-        pagination={false}
-        scroll={{ y: 200 }}
-        enableColumnResizing={{ storageKey }}
-        onColumnWidthChange={onColumnWidthChange}
-        columns={[
-          {
-            key: 'id',
-            dataIndex: 'id',
-            title: 'ID',
-            width: 150,
-            maxWidth: 160,
-          },
-          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
-        ]}
-        dataSource={data}
-      />,
-    )
-    const restoredHeader = secondRender.container.querySelector<HTMLElement>(
-      'th[data-zby-column-key="id"]',
-    )!
-
-    expect(restoredHeader.style.width).toBe('160px')
-    expect(onColumnWidthChange).not.toHaveBeenCalled()
-  })
-
-  it('coalesces repeated keyboard resizing into one storage write', () => {
-    vi.useFakeTimers()
-    const setItem = vi.spyOn(Storage.prototype, 'setItem')
-    const onColumnWidthChange = vi.fn()
-    const storageKey = 'keyboard-resizing'
-    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
     const { container } = render(
       <Table<RowData>
         rowKey="id"
         pagination={false}
-        enableColumnResizing={{ storageKey }}
+        enableColumnResizing
         onColumnWidthChange={onColumnWidthChange}
         columns={columns}
         dataSource={data}
@@ -1111,52 +1062,10 @@ describe('Table', () => {
     fireEvent.keyDown(getHandle(), { key: 'ArrowRight' })
 
     expect(onColumnWidthChange).toHaveBeenCalledTimes(3)
-    expect(setItem).not.toHaveBeenCalled()
-
-    act(() => vi.advanceTimersByTime(199))
-    expect(setItem).not.toHaveBeenCalled()
-
-    act(() => vi.advanceTimersByTime(1))
-    expect(setItem).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(window.localStorage.getItem(persistedKey)!)).toEqual({
-      version: 1,
-      widths: { id: 150 },
-    })
-  })
-
-  it('persists a __proto__ column key as ordinary data', () => {
-    const storageKey = 'prototype-column-key'
-    const persistedKey = `zby-ui:table:column-widths:${storageKey}`
-    const { container } = render(
-      <Table<RowData>
-        rowKey="id"
-        pagination={false}
-        enableColumnResizing={{ storageKey }}
-        columns={[
-          {
-            key: '__proto__',
-            dataIndex: 'id',
-            title: 'ID',
-            width: 120,
-          },
-          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
-        ]}
-        dataSource={data}
-      />,
-    )
-    const handle = container.querySelector<HTMLElement>(
-      '.ant-table-zby-resize-handle',
-    )!
-
-    fireEvent.pointerDown(handle, { clientX: 120 })
-    fireEvent.pointerMove(document, { clientX: 140 })
-    fireEvent.pointerUp(document, { clientX: 140 })
-
-    const persisted = JSON.parse(window.localStorage.getItem(persistedKey)!)
-    expect(Object.entries(persisted.widths)).toContainEqual([
-      '__proto__',
-      140,
-    ])
+    expect(
+      container.querySelector<HTMLElement>('th[data-zby-column-key="id"]')!
+        .style.width,
+    ).toBe('150px')
   })
 
   it('forwards the supported ScrollArea visibility settings', () => {

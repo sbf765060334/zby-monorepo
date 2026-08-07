@@ -2,7 +2,7 @@
 category: Components
 group: Data Display
 title: Table
-description: A source-level fork of Ant Design 6.5.3 Table with fill height, commit-on-release resizing, current-row highlighting, and vertical virtualization.
+description: A source-level fork of Ant Design 6.5.3 Table with fill height, live column resizing, current-row highlighting, and vertical virtualization.
 ---
 
 ## When To Use
@@ -107,13 +107,13 @@ const columns: TableColumnsType<Order> = [
 />
 ```
 
-Dragging moves only a dashed guide. The real width is committed once on pointer release and is always clamped to `minWidth`/`maxWidth`. The separator also supports arrow keys: 10px per press, or 1px while Shift is held.
+Dragging updates the real column width in animation-frame batches, so the table stays in sync with the pointer. The width is always clamped to `minWidth`/`maxWidth`. The separator also supports arrow keys: 10px per press, or 1px while Shift is held.
 
 With resizing enabled, every business leaf keeps a fixed pixel width. Resizing changes only the active leaf; other business columns never grow or shrink to compensate. If their total is narrower than the viewport, Table inserts a non-resizable filler column for the remainder. The filler is appended after ordinary columns and, when fixed-end columns exist, immediately before the first fixed-end column. If business columns are wider than the viewport, the filler collapses to zero width and the table scrolls horizontally.
 
 Resizing mode does not insert a layout gutter after the final business column. The final handle uses a transparent hit area inside its header cell; bordered tables reuse the outer table border, and the standalone header divider before a collapsed filler is hidden. Table keeps one stable filler node: it carries remaining space when available and collapses to zero width otherwise, so crossing the horizontal-overflow threshold does not replace the header-column structure. With fixed-end columns, the filler remains before the fixed columns and the final fixed column sits directly against the table edge.
 
-With `enableColumnResizing`, Table forces `tableLayout="fixed"` so committed widths, header, body, filler, and scrolling use the same numeric model. An explicit `tableLayout="auto"` is ignored with a development warning. Without resizing, Table does not resolve enhanced widths, insert a filler, or read persisted widths; column sizing and `tableLayout` remain on the AntD 6.5.3 path.
+With `enableColumnResizing`, Table forces `tableLayout="fixed"` so current widths, header, body, filler, and scrolling use the same numeric model. An explicit `tableLayout="auto"` is ignored with a development warning. Without resizing, Table does not resolve enhanced widths or insert a filler; column sizing and `tableLayout` remain on the AntD 6.5.3 path.
 
 ### Toggle current-row highlighting
 
@@ -168,7 +168,7 @@ Current-row highlighting and `rowSelection` are independent and can coexist. The
 
 Virtual mode renders rows around the viewport and measures actual row heights. It shares the same viewport and scrollbar implementation as normal mode and does not mount a VirtualList scrollbar.
 
-Horizontal movement remains available as normal browser `scrollLeft` on that viewport; columns are not virtualized. On the native sizing path, a numeric `scroll.x` matching the desired wide-table width is recommended. With resizing enabled, the sum of committed business-column widths determines overflow and numeric `scroll.x` does not stretch the filler. For a non-fill virtual table, provide `scroll.y`; otherwise the internal default is 500px.
+Horizontal movement remains available as normal browser `scrollLeft` on that viewport; columns are not virtualized. On the native sizing path, a numeric `scroll.x` matching the desired wide-table width is recommended. With resizing enabled, the sum of current business-column widths determines overflow and numeric `scroll.x` does not stretch the filler. For a non-fill virtual table, provide `scroll.y`; otherwise the internal default is 500px.
 
 ## Additional Table Props
 
@@ -178,8 +178,8 @@ All other properties come from antd 6.5.3 `TableProps`.
 | --- | --- | --- | --- |
 | heightMode | Height strategy; fill consumes a parent with a definite height | `auto \| fill` | `auto` |
 | scrollAreaProps | Safe display settings for the internal ScrollArea | `TableScrollAreaProps` | - |
-| enableColumnResizing | Enable resizing; object form persists widths by storageKey; forces `tableLayout="fixed"` | `boolean \| TableColumnResizingConfig` | `false` |
-| onColumnWidthChange | Called once after pointer release or a keyboard resize | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
+| enableColumnResizing | Enable live column resizing and force `tableLayout="fixed"` | `boolean` | `false` |
+| onColumnWidthChange | Called while pointer or keyboard resizing changes a column width | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | Current-row configuration; presence enables the behavior | `TableRowHighlight<T>` | - |
 
 `heightMode="fill"` only makes the table consume the parent's remaining height. It does not isolate vertical scrolling: when the body has no overflow or reaches a vertical boundary, wheel input can continue to an outer page scroller.
@@ -192,18 +192,6 @@ Table exposes only ScrollArea settings that cannot break header synchronization 
 | --- | --- | --- | --- |
 | scrollbar | Scrollbar implementation and visibility strategy | `ScrollAreaScrollbar` | `hover` |
 | scrollHideDelay | Delay before hover or scrolling scrollbars hide after interaction, in ms | `number` | `200` |
-
-### TableColumnResizingConfig
-
-```tsx
-<Table enableColumnResizing />
-
-<Table
-  enableColumnResizing={{ storageKey: 'transport-order-list' }}
-/>
-```
-
-Boolean mode keeps widths only in component memory. Object mode stores committed business leaf-column widths under `zby-ui:table:column-widths:${storageKey}`. Pointer resizing writes immediately on release; repeated keyboard adjustments are coalesced and written 200ms after input stops. Restore ignores missing columns, invalid data, and internal helper columns, then reapplies current min/max constraints. Give persisted business columns stable `column.key` values.
 
 ### TableRowHighlight
 
@@ -228,8 +216,8 @@ Boolean mode keeps widths only in component memory. Object mode stores committed
 | Field | Description | Type | Default |
 | --- | --- | --- | --- |
 | width | Optional base width in pixels; when omitted, basic tables preserve AntD auto sizing | `number` | - |
-| minWidth | Minimum committed width in pixels | `number` | `50` |
-| maxWidth | Maximum committed width in pixels | `number` | `Infinity` |
+| minWidth | Minimum resized width in pixels | `number` | `50` |
+| maxWidth | Maximum resized width in pixels | `number` | `Infinity` |
 | resizable | Whether this leaf can resize when global resizing is enabled | `boolean` | `true` |
 
-Column groups do not receive resize handles; sizing operates on visible leaf columns. The filler is not persisted and is never placed after fixed-end columns. When no space remains, the same filler node stays mounted at zero width to keep the header and scrolling layout stable.
+Column groups do not receive resize handles; sizing operates on visible leaf columns. The internal filler is never placed after fixed-end columns. When no space remains, the same filler node stays mounted at zero width to keep the header and scrolling layout stable.

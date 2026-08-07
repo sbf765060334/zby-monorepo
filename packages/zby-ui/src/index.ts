@@ -61,7 +61,6 @@ export { default as Table } from './components/table'
 export type {
   TableColumnGroupType,
   TableColumnResizeOptions,
-  TableColumnResizingConfig,
   TableColumnsType,
   TableColumnType,
   TableColumnWidthChangeInfo,

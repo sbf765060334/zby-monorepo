@@ -3,7 +3,7 @@ category: Components
 group: 数据展示
 title: Table
 subtitle: 表格
-description: 基于 Ant Design 6.5.3 Table 源码 fork，增加高度填充、提交式列宽拖拽、行高亮和纵向虚拟化。
+description: 基于 Ant Design 6.5.3 Table 源码 fork，增加高度填充、实时列宽拖拽、行高亮和纵向虚拟化。
 ---
 
 ## 何时使用
@@ -114,13 +114,13 @@ const columns: TableColumnsType<Order> = [
 />
 ```
 
-拖动期间只移动贯穿表格的虚线 guide，不修改真实列宽；松开指针后一次性提交最终宽度。拖动值始终被限制在 `minWidth` 和 `maxWidth` 之间。拖拽手柄也支持键盘左右键：默认每次 10px，按住 Shift 时每次 1px。
+拖动期间会按动画帧实时更新真实列宽，使表格宽度始终与指针位置同步。拖动值始终被限制在 `minWidth` 和 `maxWidth` 之间。拖拽手柄也支持键盘左右键：默认每次 10px，按住 Shift 时每次 1px。
 
 开启列宽拖拽后，每个业务叶子列都保持真实的像素宽度。拖动只修改当前列，其他业务列不会跟着补偿。业务列总宽小于视口时，Table 用一个不可拖拽的 filler 列表示剩余空间；没有尾部固定列时 filler 位于业务列最后，存在尾部固定列时 filler 位于第一个尾部固定列之前。业务列总宽超过视口时 filler 收缩为 0，表格产生横向滚动。
 
 开启列宽拖拽时，Table 不再为最右侧业务列生成占布局宽度的 gutter。末列手柄使用单元格内侧的透明命中区；`bordered` 模式直接复用表格外边框，零宽 filler 前的独立表头分割线会隐藏。Table 始终保留同一个 filler 节点：存在剩余空间时它承载空白，没有剩余空间时宽度收缩为 0，跨越横向溢出临界点不会替换表头列结构。存在尾部固定列时，filler 仍位于固定列之前，最右侧固定列直接贴合表格边框。
 
-开启 `enableColumnResizing` 时，Table 强制使用 `tableLayout="fixed"`，保证提交宽度、表头、表体、filler 与滚动范围使用同一套数值模型；显式传入 `tableLayout="auto"` 会被忽略，并在开发环境给出警告。未开启时，Table 不进入增强列宽解析、不生成 filler，也不读取持久化列宽，继续使用 AntD 6.5.3 的原生列宽和 `tableLayout` 路径。
+开启 `enableColumnResizing` 时，Table 强制使用 `tableLayout="fixed"`，保证当前列宽、表头、表体、filler 与滚动范围使用同一套数值模型；显式传入 `tableLayout="auto"` 会被忽略，并在开发环境给出警告。未开启时，Table 不进入增强列宽解析、不生成 filler，继续使用 AntD 6.5.3 的原生列宽和 `tableLayout` 路径。
 
 ### 点击当前行，再次点击取消
 
@@ -185,8 +185,8 @@ const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
 | --- | --- | --- | --- |
 | heightMode | 表格高度策略；fill 会填满具有确定高度的父级 | `auto \| fill` | `auto` |
 | scrollAreaProps | 内部 ScrollArea 的安全展示配置 | `TableScrollAreaProps` | - |
-| enableColumnResizing | 是否允许调整列宽；对象形式会按 storageKey 持久化；开启后强制使用 `tableLayout="fixed"` | `boolean \| TableColumnResizingConfig` | `false` |
-| onColumnWidthChange | 指针松开或键盘调整后触发一次 | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
+| enableColumnResizing | 是否允许实时调整列宽；开启后强制使用 `tableLayout="fixed"` | `boolean` | `false` |
+| onColumnWidthChange | 指针拖动或键盘调整改变列宽时触发 | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
 | rowHighlight | 当前行高亮配置；对象存在即启用 | `TableRowHighlight<T>` | - |
 
 `heightMode="fill"` 只决定表格填满父级剩余高度，不隔离纵向滚动。表体没有溢出或已经到达纵向边界时，滚轮可以继续滚动外层页面。
@@ -199,18 +199,6 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 | --- | --- | --- | --- |
 | scrollbar | 滚动条实现与展示策略 | `ScrollAreaScrollbar` | `hover` |
 | scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `200` |
-
-### TableColumnResizingConfig
-
-```tsx
-<Table enableColumnResizing />
-
-<Table
-  enableColumnResizing={{ storageKey: 'transport-order-list' }}
-/>
-```
-
-布尔形式只在组件内存中保存本次调整。对象形式会把已提交的业务叶子列宽度保存到 `zby-ui:table:column-widths:${storageKey}`；鼠标拖拽在松手时立即写入，连续键盘调整会合并并在停止 200ms 后写入。恢复时会忽略不存在的列、无效数据以及内部辅助列，并重新应用当前列的 min/max 限制。建议为需要持久化的业务列提供稳定的 `column.key`。
 
 ### TableRowHighlight
 
@@ -225,7 +213,7 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 | 字段 | 说明 | 类型 |
 | --- | --- | --- |
 | columnKey | 被调整叶子列的 key | `React.Key` |
-| width | 经过 min/max 限制后的提交宽度，单位 px | `number` |
+| width | 经过 min/max 限制后的当前宽度，单位 px | `number` |
 | column | 原始列配置对象 | `TableColumnType<T> \| TableColumnGroupType<T>` |
 
 ## 列扩展字段
@@ -235,8 +223,8 @@ Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`d
 | 字段 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | width | 可选基础列宽，单位 px；省略时基础表格保留 AntD 自动列宽 | `number` | - |
-| minWidth | 最小提交宽度，单位 px | `number` | `50` |
-| maxWidth | 最大提交宽度，单位 px | `number` | `Infinity` |
+| minWidth | 最小拖拽宽度，单位 px | `number` | `50` |
+| maxWidth | 最大拖拽宽度，单位 px | `number` | `Infinity` |
 | resizable | 在全局开启调整后，是否允许当前叶子列调整 | `boolean` | `true` |
 
-列组自身不显示拖拽手柄，拖拽以可见叶子列为单位。filler 不参与持久化，也不会出现在尾部固定列之后；没有剩余空间时仍保留同一个零宽 filler 节点，以稳定表头和滚动布局。
+列组自身不显示拖拽手柄，拖拽以可见叶子列为单位。内部 filler 不会出现在尾部固定列之后；没有剩余空间时仍保留同一个零宽 filler 节点，以稳定表头和滚动布局。

@@ -14,7 +14,6 @@ import {
   getColumnKey,
   resolveColumnWidths,
 } from './useColumnSizing'
-import type { ColumnSizingLeaf } from './useColumnSizing'
 
 interface ResizeHeaderCellProps
   extends React.ThHTMLAttributes<HTMLTableCellElement> {
@@ -32,8 +31,6 @@ interface ResizeStartInfo<RecordType> {
   maxWidth: number
   column: ColumnGroupType<RecordType> | ColumnType<RecordType>
   startClientX: number
-  startBoundaryClientX: number
-  rootRect: DOMRect
 }
 
 interface UseResizableColumnsOptions<RecordType extends object> {
@@ -43,7 +40,6 @@ interface UseResizableColumnsOptions<RecordType extends object> {
   prefixCls: string
   direction?: 'ltr' | 'rtl'
   enabled: boolean
-  storageKey?: string
   useSharedScrollArea: boolean
   selectionWidth: number
   scrollX?: RcTableProps<RecordType>['scroll'] extends infer Scroll
@@ -62,7 +58,6 @@ interface UseResizableColumnsResult<RecordType extends object> {
   tableWidth?: number
   widthsReady: boolean
   hasHorizontalOverflow: boolean
-  resizeGuide: React.ReactNode
 }
 
 const COLUMN_RESIZE_EPSILON = 0.01
@@ -70,109 +65,9 @@ const COLUMN_RESIZE_EPSILON = 0.01
 // and expands that column to at least 1px. A sub-layout-pixel sentinel keeps
 // the stable filler mounted without producing visible end space.
 const COLLAPSED_FILLER_WIDTH = 0.001
-const COLUMN_WIDTH_STORAGE_PREFIX = 'zby-ui:table:column-widths:'
-const COLUMN_WIDTH_STORAGE_VERSION = 1
-const COLUMN_WIDTH_STORAGE_WRITE_DELAY = 200
-
-interface StoredColumnWidths {
-  version: typeof COLUMN_WIDTH_STORAGE_VERSION
-  widths: Record<string, number>
-}
-
-interface PendingColumnWidthStorageWrite<RecordType extends object> {
-  storageKey: string
-  userWidths: ReadonlyMap<React.Key, number>
-  leaves: readonly ColumnSizingLeaf<RecordType>[]
-}
 
 function getNumericWidth(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-function areColumnWidthMapsEqual(
-  first: ReadonlyMap<React.Key, number>,
-  second: ReadonlyMap<React.Key, number>,
-) {
-  if (first.size !== second.size) return false
-
-  for (const [key, width] of first) {
-    if (second.get(key) !== width) return false
-  }
-  return true
-}
-
-function readStoredColumnWidths<RecordType extends object>(
-  storageKey: string,
-  leaves: readonly ColumnSizingLeaf<RecordType>[],
-) {
-  const widths = new Map<React.Key, number>()
-  if (typeof window === 'undefined') return widths
-
-  try {
-    const value = window.localStorage.getItem(
-      `${COLUMN_WIDTH_STORAGE_PREFIX}${storageKey}`,
-    )
-    if (!value) return widths
-
-    const parsed = JSON.parse(value) as Partial<StoredColumnWidths> | null
-    if (
-      parsed?.version !== COLUMN_WIDTH_STORAGE_VERSION ||
-      !parsed.widths ||
-      typeof parsed.widths !== 'object' ||
-      Array.isArray(parsed.widths)
-    ) {
-      return widths
-    }
-
-    const leavesByKey = new Map(
-      leaves.map((leaf) => [String(leaf.key), leaf]),
-    )
-    Object.entries(parsed.widths).forEach(([storedKey, storedWidth]) => {
-      const leaf = leavesByKey.get(storedKey)
-      if (!leaf || !Number.isFinite(storedWidth)) return
-
-      widths.set(
-        leaf.key,
-        clampColumnWidth(storedWidth, leaf.minWidth, leaf.maxWidth),
-      )
-    })
-  } catch {
-    // localStorage can be unavailable or contain malformed JSON.
-  }
-
-  return widths
-}
-
-function writeStoredColumnWidths<RecordType extends object>(
-  storageKey: string,
-  userWidths: ReadonlyMap<React.Key, number>,
-  leaves: readonly ColumnSizingLeaf<RecordType>[],
-) {
-  if (typeof window === 'undefined') return
-
-  const widths = Object.create(null) as Record<string, number>
-  leaves.forEach((leaf) => {
-    const width = userWidths.get(leaf.key)
-    if (width === undefined || !Number.isFinite(width)) return
-
-    widths[String(leaf.key)] = clampColumnWidth(
-      width,
-      leaf.minWidth,
-      leaf.maxWidth,
-    )
-  })
-
-  try {
-    window.localStorage.setItem(
-      `${COLUMN_WIDTH_STORAGE_PREFIX}${storageKey}`,
-      JSON.stringify({
-        version: COLUMN_WIDTH_STORAGE_VERSION,
-        widths,
-      } satisfies StoredColumnWidths),
-    )
-  } catch {
-    // Keep the committed in-memory width when persistence is unavailable.
-  }
 }
 
 function getFillerColumnKey(
@@ -323,13 +218,11 @@ export default function useResizableColumns<RecordType extends object>(
     prefixCls,
     direction = 'ltr',
     enabled,
-    storageKey,
     useSharedScrollArea,
     selectionWidth,
     scrollX,
     onColumnWidthChange,
   } = options
-  const guideRef = React.useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = React.useState(0)
   const [userWidths, setUserWidths] = React.useState(
     () => new Map<React.Key, number>(),
@@ -339,115 +232,6 @@ export default function useResizableColumns<RecordType extends object>(
     () => new Map<React.Key, number>(),
   )
   const shouldObserveWidth = enabled || useSharedScrollArea
-  const normalizedStorageKey = enabled && storageKey ? storageKey : undefined
-  const storageLeaves = React.useMemo(
-    () => normalizedStorageKey
-      ? collectColumnSizingLeaves(columns, new Map())
-      : [],
-    [columns, normalizedStorageKey],
-  )
-  const storageColumnsSignature = React.useMemo(
-    () => normalizedStorageKey
-      ? JSON.stringify(
-          storageLeaves.map((leaf) => [
-            typeof leaf.key,
-            String(leaf.key),
-            leaf.minWidth,
-            leaf.maxWidth,
-          ]),
-        )
-      : '',
-    [normalizedStorageKey, storageLeaves],
-  )
-  const storageLeavesRef = React.useRef(storageLeaves)
-  storageLeavesRef.current = storageLeaves
-  const activeStorageKeyRef = React.useRef<string | undefined>(undefined)
-
-  React.useLayoutEffect(() => {
-    if (!normalizedStorageKey) {
-      if (activeStorageKeyRef.current !== undefined) {
-        const next = new Map<React.Key, number>()
-        if (!areColumnWidthMapsEqual(userWidthsRef.current, next)) {
-          userWidthsRef.current = next
-          setUserWidths(next)
-        }
-      }
-      activeStorageKeyRef.current = undefined
-      return
-    }
-
-    const next = readStoredColumnWidths(
-      normalizedStorageKey,
-      storageLeavesRef.current,
-    )
-    activeStorageKeyRef.current = normalizedStorageKey
-    if (areColumnWidthMapsEqual(userWidthsRef.current, next)) return
-
-    userWidthsRef.current = next
-    setUserWidths(next)
-  }, [normalizedStorageKey, storageColumnsSignature])
-
-  const pendingStorageWriteRef = React.useRef<
-    PendingColumnWidthStorageWrite<RecordType> | null
-  >(null)
-  const storageWriteTimerRef = React.useRef<number | null>(null)
-  const cancelPendingStorageWrite = React.useCallback(() => {
-    if (storageWriteTimerRef.current !== null) {
-      window.clearTimeout(storageWriteTimerRef.current)
-      storageWriteTimerRef.current = null
-    }
-    pendingStorageWriteRef.current = null
-  }, [])
-  const flushPendingStorageWrite = React.useCallback(() => {
-    if (storageWriteTimerRef.current !== null) {
-      window.clearTimeout(storageWriteTimerRef.current)
-      storageWriteTimerRef.current = null
-    }
-    const pendingWrite = pendingStorageWriteRef.current
-    pendingStorageWriteRef.current = null
-    if (!pendingWrite) return
-
-    writeStoredColumnWidths(
-      pendingWrite.storageKey,
-      pendingWrite.userWidths,
-      pendingWrite.leaves,
-    )
-  }, [])
-  const persistColumnWidths = React.useCallback(
-    (next: ReadonlyMap<React.Key, number>, deferred: boolean) => {
-      if (!normalizedStorageKey) return
-
-      if (!deferred) {
-        cancelPendingStorageWrite()
-        writeStoredColumnWidths(normalizedStorageKey, next, storageLeaves)
-        return
-      }
-
-      pendingStorageWriteRef.current = {
-        storageKey: normalizedStorageKey,
-        userWidths: next,
-        leaves: storageLeaves,
-      }
-      if (storageWriteTimerRef.current !== null) {
-        window.clearTimeout(storageWriteTimerRef.current)
-      }
-      storageWriteTimerRef.current = window.setTimeout(
-        flushPendingStorageWrite,
-        COLUMN_WIDTH_STORAGE_WRITE_DELAY,
-      )
-    },
-    [
-      cancelPendingStorageWrite,
-      flushPendingStorageWrite,
-      normalizedStorageKey,
-      storageLeaves,
-    ],
-  )
-
-  React.useEffect(
-    () => () => flushPendingStorageWrite(),
-    [flushPendingStorageWrite],
-  )
 
   React.useLayoutEffect(() => {
     if (!shouldObserveWidth) return undefined
@@ -604,22 +388,24 @@ export default function useResizableColumns<RecordType extends object>(
     () => new Map(leaves.map((leaf) => [leaf.key, leaf.column])),
     [leaves],
   )
+  const originalColumnMapRef = React.useRef(originalColumnMap)
+  originalColumnMapRef.current = originalColumnMap
+  const onColumnWidthChangeRef = React.useRef(onColumnWidthChange)
+  onColumnWidthChangeRef.current = onColumnWidthChange
 
   const commitColumnWidth = React.useCallback(
     (
       key: React.Key,
       width: number,
       column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
-      deferPersistence = false,
     ) => {
       const next = new Map(userWidthsRef.current)
       next.set(key, width)
       userWidthsRef.current = next
       setUserWidths(next)
-      persistColumnWidths(next, deferPersistence)
-      onColumnWidthChange?.({ columnKey: key, width, column })
+      onColumnWidthChangeRef.current?.({ columnKey: key, width, column })
     },
-    [onColumnWidthChange, persistColumnWidths],
+    [],
   )
 
   const cleanupResizeRef = React.useRef<(() => void) | null>(null)
@@ -633,12 +419,9 @@ export default function useResizableColumns<RecordType extends object>(
       const key = cellProps.__zbyColumnKey
       if (key === undefined || !cellProps.__zbyResizable) return
 
-      const root = rootRef.current
-      const guide = guideRef.current
       const headerCell = event.currentTarget.closest('th')
-      const column = originalColumnMap.get(key)
-      if (!root || !guide || !headerCell || !column) return
-      const activeGuide = guide
+      const column = originalColumnMapRef.current.get(key)
+      if (!headerCell || !column) return
       const resizeHandle = event.currentTarget
       const pointerId = event.pointerId
 
@@ -647,11 +430,7 @@ export default function useResizableColumns<RecordType extends object>(
       event.stopPropagation()
       resizeHandle.setPointerCapture?.(pointerId)
 
-      const rootRect = root.getBoundingClientRect()
       const cellRect = headerCell.getBoundingClientRect()
-      const containerRect =
-        root.querySelector(`.${prefixCls}-container`)?.getBoundingClientRect() ??
-        rootRect
       const startInfo: ResizeStartInfo<RecordType> = {
         key,
         width: cellProps.__zbyColumnWidth ?? cellRect.width,
@@ -660,19 +439,47 @@ export default function useResizableColumns<RecordType extends object>(
           cellProps.__zbyColumnMaxWidth ?? Number.POSITIVE_INFINITY,
         column,
         startClientX: event.clientX,
-        startBoundaryClientX:
-          direction === 'rtl' ? cellRect.left : cellRect.right,
-        rootRect,
       }
       let candidateWidth = startInfo.width
+      let lastCommittedWidth = startInfo.width
+      let pendingWidth: number | null = null
+      let resizeFrame: number | null = null
 
-      activeGuide.style.display = 'block'
-      activeGuide.style.left = `${containerRect.left - rootRect.left}px`
-      activeGuide.style.top = `${containerRect.top - rootRect.top}px`
-      activeGuide.style.width = `${containerRect.width}px`
-      activeGuide.style.height = `${containerRect.height}px`
+      const applyPendingWidth = () => {
+        resizeFrame = null
+        if (pendingWidth === null) return
 
-      const updateGuide = (clientX: number) => {
+        const width = pendingWidth
+        pendingWidth = null
+        if (
+          Math.abs(width - lastCommittedWidth) <= COLUMN_RESIZE_EPSILON
+        ) {
+          return
+        }
+
+        lastCommittedWidth = width
+        commitColumnWidth(startInfo.key, width, startInfo.column)
+      }
+
+      const scheduleWidth = () => {
+        pendingWidth = candidateWidth
+        if (
+          Math.abs(candidateWidth - lastCommittedWidth) <=
+          COLUMN_RESIZE_EPSILON
+        ) {
+          pendingWidth = null
+          return
+        }
+        if (resizeFrame !== null) return
+
+        if (typeof window.requestAnimationFrame === 'function') {
+          resizeFrame = window.requestAnimationFrame(applyPendingWidth)
+        } else {
+          applyPendingWidth()
+        }
+      }
+
+      const updateWidth = (clientX: number) => {
         const rawDelta =
           direction === 'rtl'
             ? startInfo.startClientX - clientX
@@ -682,22 +489,33 @@ export default function useResizableColumns<RecordType extends object>(
           startInfo.minWidth,
           startInfo.maxWidth,
         )
-        const physicalDelta =
-          direction === 'rtl'
-            ? -(candidateWidth - startInfo.width)
-            : candidateWidth - startInfo.width
-        const guideX =
-          startInfo.startBoundaryClientX + physicalDelta - containerRect.left
-        activeGuide.style.setProperty(
-          '--zby-table-resize-guide-x',
-          `${guideX}px`,
-        )
+        scheduleWidth()
       }
 
-      updateGuide(event.clientX)
+      const cancelPendingWidth = () => {
+        pendingWidth = null
+        if (
+          resizeFrame !== null &&
+          typeof window.cancelAnimationFrame === 'function'
+        ) {
+          window.cancelAnimationFrame(resizeFrame)
+        }
+        resizeFrame = null
+      }
+
+      const flushPendingWidth = () => {
+        if (
+          resizeFrame !== null &&
+          typeof window.cancelAnimationFrame === 'function'
+        ) {
+          window.cancelAnimationFrame(resizeFrame)
+        }
+        resizeFrame = null
+        applyPendingWidth()
+      }
 
       function cleanup() {
-        activeGuide.style.display = 'none'
+        cancelPendingWidth()
         if (resizeHandle.hasPointerCapture?.(pointerId)) {
           resizeHandle.releasePointerCapture(pointerId)
         }
@@ -709,26 +527,35 @@ export default function useResizableColumns<RecordType extends object>(
       }
 
       function onPointerMove(pointerEvent: PointerEvent) {
-        updateGuide(pointerEvent.clientX)
+        updateWidth(pointerEvent.clientX)
       }
 
-      function onPointerUp() {
+      function onPointerUp(pointerEvent: PointerEvent) {
+        updateWidth(pointerEvent.clientX)
+        flushPendingWidth()
         cleanup()
-        if (
-          Math.abs(candidateWidth - startInfo.width) > COLUMN_RESIZE_EPSILON
-        ) {
-          commitColumnWidth(startInfo.key, candidateWidth, startInfo.column)
-        }
       }
 
       function onPointerCancel() {
         cleanup()
+        if (
+          Math.abs(lastCommittedWidth - startInfo.width) >
+          COLUMN_RESIZE_EPSILON
+        ) {
+          commitColumnWidth(startInfo.key, startInfo.width, startInfo.column)
+        }
       }
 
       function onKeyDown(keyboardEvent: KeyboardEvent) {
         if (keyboardEvent.key !== 'Escape') return
         keyboardEvent.preventDefault()
         cleanup()
+        if (
+          Math.abs(lastCommittedWidth - startInfo.width) >
+          COLUMN_RESIZE_EPSILON
+        ) {
+          commitColumnWidth(startInfo.key, startInfo.width, startInfo.column)
+        }
       }
 
       cleanupResizeRef.current = cleanup
@@ -737,7 +564,7 @@ export default function useResizableColumns<RecordType extends object>(
       document.addEventListener('pointercancel', onPointerCancel)
       document.addEventListener('keydown', onKeyDown)
     },
-    [commitColumnWidth, direction, originalColumnMap, prefixCls, rootRef],
+    [commitColumnWidth, direction],
   )
 
   const resizeByKeyboard = React.useCallback(
@@ -756,7 +583,7 @@ export default function useResizableColumns<RecordType extends object>(
 
       event.preventDefault()
       event.stopPropagation()
-      const column = originalColumnMap.get(key)
+      const column = originalColumnMapRef.current.get(key)
       if (!column) return
 
       const physicalDirection = event.key === 'ArrowRight' ? 1 : -1
@@ -775,10 +602,10 @@ export default function useResizableColumns<RecordType extends object>(
         cellProps.__zbyColumnMaxWidth,
       )
       if (Math.abs(width - currentWidth) > COLUMN_RESIZE_EPSILON) {
-        commitColumnWidth(key, width, column, true)
+        commitColumnWidth(key, width, column)
       }
     },
-    [commitColumnWidth, direction, originalColumnMap],
+    [commitColumnWidth, direction],
   )
 
   const userHeaderCell =
@@ -857,12 +684,5 @@ export default function useResizableColumns<RecordType extends object>(
       ? widthResolution.complete
       : !useSharedScrollArea || widthResolution.complete,
     hasHorizontalOverflow,
-    resizeGuide: enabled ? (
-      <div
-        ref={guideRef}
-        className={`${prefixCls}-zby-resize-guide`}
-        aria-hidden="true"
-      />
-    ) : null,
   }
 }

@@ -685,9 +685,7 @@ export default function TablePlayground() {
               rowKey="id"
               heightMode="fill"
               virtual={fillDemoVirtual}
-              enableColumnResizing={{
-                storageKey: 'table-playground-fill-dynamic-rendering',
-              }}
+              enableColumnResizing
               columns={wideColumns}
               dataSource={fillDemoData}
               pagination={false}

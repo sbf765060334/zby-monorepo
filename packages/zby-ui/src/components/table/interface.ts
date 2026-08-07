@@ -121,17 +121,12 @@ export interface FilterResetProps {
 export interface FilterRestProps extends FilterResetProps {}
 
 export interface TableColumnResizeOptions {
-  /** Minimum committed width in pixels. */
+  /** Minimum resized width in pixels. */
   minWidth?: number;
-  /** Maximum committed width in pixels. */
+  /** Maximum resized width in pixels. */
   maxWidth?: number;
   /** Whether this leaf column can be resized. */
   resizable?: boolean;
-}
-
-export interface TableColumnResizingConfig {
-  /** Persist committed leaf-column widths in localStorage under this logical key. */
-  storageKey: string;
 }
 
 export interface TableScrollAreaProps {

@@ -56,7 +56,6 @@ import type {
   SortOrder,
   TableAction,
   TableCurrentDataSource,
-  TableColumnResizingConfig,
   TableColumnWidthChangeInfo,
   TableHeightMode,
   TableLocale,
@@ -199,7 +198,7 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   virtual?: boolean;
   heightMode?: TableHeightMode;
   scrollAreaProps?: TableScrollAreaProps;
-  enableColumnResizing?: boolean | TableColumnResizingConfig;
+  enableColumnResizing?: boolean;
   onColumnWidthChange?: (info: TableColumnWidthChangeInfo<RecordType>) => void;
   rowHighlight?: TableRowHighlight<RecordType>;
 }
@@ -428,11 +427,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     heightMode === 'fill' ||
     hasExplicitScroll ||
     columnResizingEnabled
-  const columnResizingStorageKey =
-    typeof enableColumnResizing === 'object'
-      ? enableColumnResizing.storageKey
-      : undefined
-
   if (process.env.NODE_ENV !== 'production') {
     warning(
       !(columnResizingEnabled && tableProps.tableLayout === 'auto'),
@@ -451,7 +445,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     tableWidth,
     widthsReady,
     hasHorizontalOverflow,
-    resizeGuide,
   } = useResizableColumns({
     columns: mergedColumns,
     components: mergedComponents,
@@ -459,7 +452,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     prefixCls,
     direction,
     enabled: columnResizingEnabled,
-    storageKey: columnResizingStorageKey,
     useSharedScrollArea,
     selectionWidth,
     scrollX: mergedScroll?.x,
@@ -962,7 +954,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         </HeaderTableContext.Provider>
         {bottomPaginationNode}
       </Spin>
-      {resizeGuide}
     </div>
   )
 }

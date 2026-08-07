@@ -15,28 +15,6 @@ const genZbyStyle: GenerateStyle<TableToken> = (token): CSSObject => {
       position: 'relative',
       minWidth: 0,
 
-      [`${componentCls}-zby-resize-guide`]: {
-        position: 'absolute',
-        zIndex: token.zIndexPopupBase,
-        top: 0,
-        left: 0,
-        display: 'none',
-        width: 0,
-        height: 0,
-        overflow: 'hidden',
-        pointerEvents: 'none',
-
-        '&::after': {
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          left: 0,
-          borderInlineStart: `1px dashed ${token.colorPrimary}`,
-          transform: 'translateX(var(--zby-table-resize-guide-x, 0px))',
-          content: '""',
-        },
-      },
-
       [`${componentCls}-zby-resize-handle`]: {
         position: 'absolute',
         zIndex: 2,

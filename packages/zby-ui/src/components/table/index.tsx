@@ -8,7 +8,6 @@ export type {
   ColumnType,
   TableColumnGroupType,
   TableColumnResizeOptions,
-  TableColumnResizingConfig,
   TableColumnsType,
   TableColumnType,
   TableColumnWidthChangeInfo,
