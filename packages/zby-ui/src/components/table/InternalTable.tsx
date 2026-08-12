@@ -36,6 +36,7 @@ import type { FilterConfig, FilterState } from './hooks/useFilter'
 import useFilter, { getFilterData } from './hooks/useFilter'
 import useLazyKVMap from './hooks/useLazyKVMap'
 import usePagination, { DEFAULT_PAGE_SIZE, getPaginationParam } from './hooks/usePagination'
+import useRowHighlight from './hooks/useRowHighlight'
 import useTableFillLayout from './hooks/useTableFillLayout'
 import useSelection from './hooks/useSelection'
 import type { SortState } from './hooks/useSorter'
@@ -60,6 +61,7 @@ import type {
   TableHeightMode,
   TableLocale,
   TablePaginationConfig,
+  TableRowHighlight,
   TableRowSelection,
 } from './interface'
 import RcTable from './RcTable'
@@ -186,6 +188,7 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   virtual?: boolean;
   heightMode?: TableHeightMode;
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
+  rowHighlight?: TableRowHighlight<RecordType>;
 }
 
 /** Same as `TableProps` but we need record parent render times */
@@ -231,6 +234,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     virtual,
     heightMode = 'content',
     columnResize,
+    rowHighlight,
+    onRow,
   } = props
 
   const warning = devUseWarning('Table')
@@ -260,6 +265,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'columns',
     'heightMode',
     'columnResize',
+    'rowHighlight',
+    'onRow',
   ])
 
   const components = tableProps.components as RcTableProps<RecordType>['components']
@@ -435,6 +442,16 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
     return (record: RecordType) => record?.[rowKey as string]
   }, [rowKey])
+
+  const {
+    getHighlightClassName,
+    onRow: mergedOnRow,
+  } = useRowHighlight({
+    config: rowHighlight,
+    getRowKey,
+    onRow,
+    prefixCls,
+  })
 
   const [getRecordByKey] = useLazyKVMap(rawData, childrenColumnName, getRowKey)
 
@@ -622,6 +639,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
       {
         [`${prefixCls}-row-selected`]: selectedKeySet.has(getRowKey(record, index)),
       },
+      getHighlightClassName(record, index),
       isFunction(rowClassName) ? rowClassName(record, index, indent) : rowClassName,
     )
   };
@@ -823,6 +841,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             )}
             data={pageData}
             rowKey={getRowKey}
+            onRow={mergedOnRow}
             rowClassName={internalRowClassName}
             emptyText={mergedEmptyNode}
             // Internal

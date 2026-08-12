@@ -130,6 +130,118 @@ const columns = [
 ]
 
 describe('Table', () => {
+  it('toggles uncontrolled current-row highlighting and reports the row', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        rowHighlight={{ onChange }}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    fireEvent.click(rows[0])
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
+    expect(rows[0].getAttribute('aria-current')).toBe('true')
+    expect(onChange).toHaveBeenLastCalledWith(1, data[0])
+
+    fireEvent.click(rows[0])
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(false)
+    expect(rows[0].getAttribute('aria-current')).toBeNull()
+    expect(onChange).toHaveBeenLastCalledWith(null, null)
+  })
+
+  it('keeps controlled current-row state authoritative', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        rowHighlight={{ currentRowKey: 1, onChange }}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    fireEvent.click(rows[1])
+
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
+    expect(rows[1].classList.contains('ant-table-row-current')).toBe(false)
+    expect(onChange).toHaveBeenCalledWith(2, data[1])
+  })
+
+  it('runs the user row click first and respects preventDefault', () => {
+    const onChange = vi.fn()
+    const onClick = vi.fn((event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault()
+    })
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        onRow={() => ({ onClick })}
+        rowHighlight={{ onChange }}
+      />,
+    )
+    const firstRow = container.querySelector('.ant-table-tbody .ant-table-row')!
+
+    fireEvent.click(firstRow)
+
+    expect(onClick).toHaveBeenCalledOnce()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
+  })
+
+  it('keeps current-row highlighting independent from rowSelection', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={columns}
+        dataSource={data}
+        rowSelection={{ defaultSelectedRowKeys: [2] }}
+        rowHighlight={{ defaultCurrentRowKey: 1 }}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
+    expect(rows[0].classList.contains('ant-table-row-selected')).toBe(false)
+    expect(rows[1].classList.contains('ant-table-row-selected')).toBe(true)
+    expect(rows[1].classList.contains('ant-table-row-current')).toBe(false)
+  })
+
+  it('keeps current-row highlighting available in virtual tables', () => {
+    const virtualData = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1,
+      name: `Row ${index + 1}`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        virtual
+        scroll={{ x: 280, y: 120 }}
+        columns={columns}
+        dataSource={virtualData}
+        rowHighlight={{ defaultCurrentRowKey: 1 }}
+      />,
+    )
+
+    const firstRow = container.querySelector('.ant-table-tbody-virtual .ant-table-row')!
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(true)
+    expect(firstRow.getAttribute('aria-current')).toBe('true')
+
+    fireEvent.click(firstRow)
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
+  })
+
   it('enhances column title, display text, copyable and multi-line ellipsis', () => {
     const renderText = vi.fn((value: unknown) => `Name: ${String(value)}`)
     const { container } = render(

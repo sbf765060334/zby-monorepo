@@ -14,6 +14,7 @@ export type {
   TableColumnsType,
   TableColumnType,
   TableHeightMode,
+  TableRowHighlight,
 } from './interface'
 export { TABLE_ROW_HOVER_REVEAL_CLASS_NAME, TableCellHoverRelatedClassNames }
 export type { Reference as TableRef } from './RcTableInner'

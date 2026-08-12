@@ -362,6 +362,8 @@ export default function TablePlayground() {
   const { token } = theme.useToken()
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([2])
   const [radioRowKey, setRadioRowKey] = React.useState<React.Key[]>([1])
+  const [controlledCurrentRowKey, setControlledCurrentRowKey] =
+    React.useState<React.Key | null>(2)
   const [lastEvent, setLastEvent] = React.useState('等待表格交互')
   const [virtualEnabled, setVirtualEnabled] = React.useState(true)
   const [fillDemoVirtual, setFillDemoVirtual] = React.useState(false)
@@ -500,6 +502,63 @@ export default function TablePlayground() {
                 onChange: (keys) => {
                   setRadioRowKey(keys)
                   setLastEvent(`radio selection: ${keys.join(', ')}`)
+                },
+              }}
+            />
+          </PlaygroundCase>
+        </PlaygroundGrid>
+      </DeferredPlaygroundSection>
+
+      <DeferredPlaygroundSection
+        title="当前行高亮"
+        description="rowHighlight 对象存在即开启；非受控与受控模式都支持再次点击当前行取消，并与 rowSelection 保持独立。"
+      >
+        <PlaygroundGrid minItemWidth={520}>
+          <PlaygroundCase title="非受控：点击切换 / 再次点击取消">
+            <Table<OrderRecord>
+              rowKey="id"
+              size="small"
+              columns={basicColumns}
+              dataSource={smallData}
+              pagination={false}
+              rowHighlight={{
+                defaultCurrentRowKey: 1,
+                onChange: (key, row) =>
+                  setLastEvent(
+                    key === null ? '非受控高亮已取消' : `非受控高亮：${row?.orderNo}`,
+                  ),
+              }}
+            />
+          </PlaygroundCase>
+
+          <PlaygroundCase title="受控：与 checkbox 选择共存">
+            <Space wrap>
+              <Button size="small" onClick={() => setControlledCurrentRowKey(1)}>
+                高亮第 1 行
+              </Button>
+              <Button size="small" onClick={() => setControlledCurrentRowKey(3)}>
+                高亮第 3 行
+              </Button>
+              <Button size="small" onClick={() => setControlledCurrentRowKey(null)}>
+                清除
+              </Button>
+              <Text type="secondary">
+                currentRowKey:{' '}
+                {controlledCurrentRowKey === null ? 'null' : String(controlledCurrentRowKey)}
+              </Text>
+            </Space>
+            <Table<OrderRecord>
+              rowKey="id"
+              size="small"
+              columns={basicColumns}
+              dataSource={smallData}
+              pagination={false}
+              rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
+              rowHighlight={{
+                currentRowKey: controlledCurrentRowKey,
+                onChange: (key) => {
+                  setControlledCurrentRowKey(key)
+                  setLastEvent(`受控高亮：${key ?? '已取消'}`)
                 },
               }}
             />

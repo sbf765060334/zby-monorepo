@@ -135,6 +135,9 @@ All other props follow AntD 6.5.3 Table.
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | Use content height or fill the parent |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
+| rowHighlight | `TableRowHighlight<T>` | - | Enable ZBY current-row highlighting; click again to clear |
+
+`rowHighlight` is a ZBY extension independent of AntD `rowSelection`. Use `defaultCurrentRowKey` for uncontrolled state or `currentRowKey` for controlled state. `onChange` receives the current key and record, or `(null, null)` when cleared. The application's `onRow().onClick` runs first and can cancel the highlight change with `event.preventDefault()`.
 
 ## Column Extensions
 

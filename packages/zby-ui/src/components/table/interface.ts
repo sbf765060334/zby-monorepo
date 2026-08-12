@@ -241,6 +241,12 @@ export type TableColumnType<RecordType = AnyObject> = ColumnType<RecordType>
 export type TableColumnGroupType<RecordType = AnyObject> = ColumnGroupType<RecordType>
 export type TableColumnsType<RecordType = AnyObject> = ColumnsType<RecordType>
 
+export interface TableRowHighlight<RecordType = AnyObject> {
+  currentRowKey?: React.Key | null;
+  defaultCurrentRowKey?: React.Key | null;
+  onChange?: (currentRowKey: React.Key | null, currentRow: RecordType | null) => void;
+}
+
 export type TableHeightMode = 'content' | 'fill'
 
 export interface SelectionItem {

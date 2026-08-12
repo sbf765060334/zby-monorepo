@@ -136,6 +136,9 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | 内容高度或填满父容器 |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
+| rowHighlight | `TableRowHighlight<T>` | - | 开启 ZBY 当前行高亮；再次点击当前行取消 |
+
+`rowHighlight` 是 ZBY 扩展，与 AntD `rowSelection` 相互独立。非受控模式使用 `defaultCurrentRowKey`，受控模式使用 `currentRowKey`；变化时 `onChange` 收到当前 key 和记录，清除时收到 `(null, null)`。业务 `onRow().onClick` 会先执行，调用 `event.preventDefault()` 可取消本次高亮切换。
 
 ## 列扩展字段
 

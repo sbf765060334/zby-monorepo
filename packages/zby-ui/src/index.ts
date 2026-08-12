@@ -67,4 +67,5 @@ export type {
   TableColumnType,
   TableHeightMode,
   TableProps,
+  TableRowHighlight,
 } from './components/table'

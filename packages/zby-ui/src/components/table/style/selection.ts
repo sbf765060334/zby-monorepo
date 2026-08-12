@@ -19,6 +19,8 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
     tableSelectedRowBg,
     tableSelectedRowHoverBg,
     tableRowHoverBg,
+    colorPrimaryBg,
+    colorPrimaryBgHover,
     tablePaddingHorizontal,
     calc,
   } = token
@@ -37,6 +39,10 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
     pointerEvents: 'auto',
   }
   const tableCellHoverClassNames = TableCellHoverRelatedClassNames
+  const currentRowHoverSelector = [
+    `${componentCls}-row${componentCls}-row-current:hover > ${componentCls}-cell`,
+    `${componentCls}-row${componentCls}-row-current > ${componentCls}-cell-row-hover`,
+  ].join(', ')
 
   return {
     [`${componentCls}-wrapper`]: {
@@ -165,6 +171,14 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
               tableCellHoverOpacityVisibleStyle,
           },
         },
+      },
+
+      [`${componentCls}-row${componentCls}-row-current > ${componentCls}-cell`]: {
+        background: colorPrimaryBg,
+      },
+
+      [currentRowHoverSelector]: {
+        background: colorPrimaryBgHover,
       },
     },
   }
