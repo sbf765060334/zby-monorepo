@@ -20,7 +20,6 @@ import genSorterStyle from './sorter'
 import genStickyStyle from './sticky'
 import genSummaryStyle from './summary'
 import genVirtualStyle from './virtual'
-import genZbyStyle from './zby'
 
 export interface ComponentToken {
   /**
@@ -264,6 +263,7 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
     tableHeaderCellSplitColor,
     tableFooterTextColor,
     tableFooterBg,
+    colorPrimary,
     calc,
   } = token
   const tableBorder = `${unit(lineWidth)} ${lineType} ${tableBorderColor}`
@@ -300,15 +300,62 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           ${componentCls}-tbody > tr > td,
           tfoot > tr > th,
           tfoot > tr > td
-        `]: {
+      `]: {
         position: 'relative',
         padding: `${unit(tablePaddingVertical)} ${unit(tablePaddingHorizontal)}`,
         overflowWrap: 'break-word',
       },
 
+      [`${componentCls}-cell-resizable`]: {
+        paddingInlineEnd: unit(calc(tablePaddingHorizontal).add(8).equal()),
+      },
+
+      [`${componentCls}-cell-resize-handle`]: {
+        position: 'absolute',
+        top: 0,
+        insetInlineEnd: -3,
+        zIndex: 1,
+        width: 6,
+        height: '100%',
+        cursor: 'col-resize',
+        touchAction: 'none',
+        userSelect: 'none',
+
+        '&::after': {
+          position: 'absolute',
+          top: '50%',
+          insetInlineEnd: 2,
+          width: 1,
+          height: '1.6em',
+          backgroundColor: 'transparent',
+          transform: 'translateY(-50%)',
+          transition: `background-color ${motionDurationMid}`,
+          content: '""',
+        },
+
+        '&:hover::after': {
+          backgroundColor: colorPrimary,
+        },
+      },
+
+      [`${componentCls}-cell-resize-handle-active::after`]: {
+        backgroundColor: colorPrimary,
+      },
+
+      [`${componentCls}-cell-resize-filler`]: {
+        padding: '0 !important',
+        pointerEvents: 'none',
+      },
+
       // ============================ Title =============================
       [`${componentCls}-title`]: {
         padding: `${unit(tablePaddingVertical)} ${unit(tablePaddingHorizontal)}`,
+      },
+
+      [`${componentCls}-column-title-tooltip`]: {
+        display: 'inline-block',
+        borderBottom: `${unit(lineWidth)} dashed currentColor`,
+        cursor: 'help',
       },
 
       // ============================ Header ============================
@@ -399,11 +446,59 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
         },
       },
 
+      [`${componentCls}-content-scroll-area, ${componentCls}-body-scroll-area`]: {
+        width: '100%',
+
+        [`${token.antCls}-scroll-area-thumb`]: {
+          background: token.tableScrollThumbBg,
+          borderRadius: token.stickyScrollBarBorderRadius,
+
+          '&:hover': {
+            background: token.tableScrollThumbBgHover,
+          },
+        },
+      },
+
       // ============================ Footer ============================
       [`${componentCls}-footer`]: {
         padding: `${unit(tablePaddingVertical)} ${unit(tablePaddingHorizontal)}`,
         color: tableFooterTextColor,
         background: tableFooterBg,
+      },
+
+      [`&${componentCls}-wrapper-fill`]: {
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+
+        [`> ${token.antCls}-spin-nested-loading`]: {
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          height: '100%',
+        },
+
+        [`> ${token.antCls}-spin-nested-loading > ${token.antCls}-spin-container`]: {
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          height: '100%',
+        },
+
+        [`
+          ${componentCls}${componentCls}-fill,
+          ${componentCls}${componentCls}-fill ${componentCls}-container
+        `]: {
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+          height: '100%',
+        },
       },
     },
   }
@@ -423,7 +518,6 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
     paddingXS,
     colorBorderSecondary,
     borderRadiusLG,
-    controlHeight,
     colorTextPlaceholder,
     fontSize,
     fontSizeSM,
@@ -480,7 +574,7 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
     filterDropdownMenuBg: colorBgContainer,
     filterDropdownBg: colorBgContainer,
     expandIconBg: colorBgContainer,
-    selectionColumnWidth: controlHeight,
+    selectionColumnWidth: 48,
     stickyScrollBarBg: colorTextPlaceholder,
     stickyScrollBarBorderRadius: 100,
     expandIconMarginTop:
@@ -607,7 +701,6 @@ export default genStyleHooks(
       genSizeStyle(tableToken),
       genRtlStyle(tableToken),
       genVirtualStyle(tableToken),
-      genZbyStyle(tableToken),
     ]
   },
   prepareComponentToken,

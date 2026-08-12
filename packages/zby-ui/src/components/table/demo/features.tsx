@@ -30,9 +30,7 @@ export default function TableFeaturesDemo() {
         dataSource={data}
         pagination={false}
         heightMode="fill"
-        enableColumnResizing
-        rowHighlight={{}}
-        onColumnWidthChange={({ width }) => setLastWidth(width)}
+        columnResize={{ onResize: ({ width }) => setLastWidth(width) }}
         footer={() =>
           lastWidth === undefined ? 'Drag a column edge' : `Width: ${lastWidth}px`
         }

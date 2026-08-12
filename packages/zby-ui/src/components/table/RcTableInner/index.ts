@@ -2,6 +2,9 @@ import { EXPAND_COLUMN, INTERNAL_HOOKS } from './constant';
 import { FooterComponents as Summary } from './Footer';
 import type {
   ColumnType,
+  ColumnResizeConfig,
+  ColumnResizeInfo,
+  ColumnResizeWidths,
   ColumnsType,
   DefaultRecordType,
   ExpandableConfig,
@@ -35,6 +38,9 @@ export {
   type VirtualTableProps,
   type Reference,
   type ColumnType,
+  type ColumnResizeConfig,
+  type ColumnResizeInfo,
+  type ColumnResizeWidths,
   type ColumnsType,
   type DefaultRecordType,
   type ExpandableConfig,

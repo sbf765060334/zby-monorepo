@@ -28,6 +28,7 @@ import type { SpinProps } from 'antd/es/spin'
 import Spin from 'antd/es/spin'
 import { useToken } from 'antd/es/theme/internal'
 import renderExpandIcon from './ExpandIcon'
+import useColumnEnhance from './hooks/useColumnEnhance'
 import useColumnTitleProps from './hooks/useColumnTitleProps'
 import useContainerWidth from './hooks/useContainerWidth'
 import useFilledColumns from './hooks/useFilledColumns'
@@ -35,8 +36,7 @@ import type { FilterConfig, FilterState } from './hooks/useFilter'
 import useFilter, { getFilterData } from './hooks/useFilter'
 import useLazyKVMap from './hooks/useLazyKVMap'
 import usePagination, { DEFAULT_PAGE_SIZE, getPaginationParam } from './hooks/usePagination'
-import useSharedTableWidth from './hooks/useSharedTableWidth'
-import useRowHighlight from './hooks/useRowHighlight'
+import useTableFillLayout from './hooks/useTableFillLayout'
 import useSelection from './hooks/useSelection'
 import type { SortState } from './hooks/useSorter'
 import useSorter, { getSortData } from './hooks/useSorter'
@@ -55,17 +55,15 @@ import type {
   SorterTooltipProps,
   SortOrder,
   TableAction,
+  ColumnResizeConfig,
   TableCurrentDataSource,
-  TableColumnWidthChangeInfo,
   TableHeightMode,
   TableLocale,
   TablePaginationConfig,
-  TableRowHighlight,
   TableRowSelection,
-  TableScrollAreaProps,
 } from './interface'
 import RcTable from './RcTable'
-import VirtualBody from './RcTable/VirtualBody'
+import ScrollArea from '../scroll-area'
 import RcVirtualTable from './RcTable/VirtualTable'
 import useStyle from './style'
 import TableMeasureRowContext from './TableMeasureRowContext'
@@ -75,28 +73,18 @@ export type { ColumnsType, TablePaginationConfig }
 
 const EMPTY_LIST: AnyObject[] = []
 
-function getNumericWidth(value: unknown, fallback: number) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
 type HeaderTableContextValue = {
   ariaProps?: React.AriaAttributes;
   component?: React.ElementType;
-  exactWidth?: boolean;
 }
 
 const HeaderTableContext = React.createContext<HeaderTableContextValue>({})
 
 const HeaderTable: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = (props) => {
-  const {
-    ariaProps,
-    component = 'table',
-    exactWidth,
-  } = React.useContext(HeaderTableContext)
+  const { ariaProps, component = 'table' } = React.useContext(HeaderTableContext)
   return React.createElement(component, {
     ...ariaProps,
     ...props,
-    style: exactWidth ? { ...props.style, minWidth: 0 } : props.style,
   })
 }
 
@@ -197,10 +185,7 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   showSorterTooltip?: boolean | SorterTooltipProps;
   virtual?: boolean;
   heightMode?: TableHeightMode;
-  scrollAreaProps?: TableScrollAreaProps;
-  enableColumnResizing?: boolean;
-  onColumnWidthChange?: (info: TableColumnWidthChangeInfo<RecordType>) => void;
-  rowHighlight?: TableRowHighlight<RecordType>;
+  columnResize?: boolean | ColumnResizeConfig<RecordType>;
 }
 
 /** Same as `TableProps` but we need record parent render times */
@@ -244,13 +229,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     locale,
     showSorterTooltip = { target: 'full-header' },
     virtual,
-    heightMode = 'auto',
-    scrollAreaProps,
-    enableColumnResizing = false,
-    onColumnWidthChange,
-    rowHighlight,
-    onRow,
-    onScroll,
+    heightMode = 'content',
+    columnResize,
   } = props
 
   const warning = devUseWarning('Table')
@@ -279,25 +259,24 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'column',
     'columns',
     'heightMode',
-    'scrollAreaProps',
-    'enableColumnResizing',
-    'onColumnWidthChange',
-    'rowHighlight',
-    'onRow',
-    'onScroll',
+    'columnResize',
   ])
 
   const components = tableProps.components as RcTableProps<RecordType>['components']
   const ariaProps = pickAttrs(tableProps, { aria: true }) as React.AriaAttributes
+  const hasAriaProps = Object.keys(ariaProps).length > 0
   const headerTableContext = React.useMemo<HeaderTableContextValue>(
     () => ({
       ariaProps,
       component: components?.header?.table as React.ElementType | undefined,
-      exactWidth: true,
     }),
     [ariaProps, components?.header?.table],
   )
   const mergedComponents = React.useMemo<RcTableProps<RecordType>['components']>(() => {
+    if (!hasAriaProps) {
+      return components
+    }
+
     return {
       ...components,
       header: {
@@ -305,7 +284,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         table: HeaderTable,
       },
     }
-  }, [components])
+  }, [components, hasAriaProps])
 
   const { locale: contextLocale = defaultLocale, table } =
     React.useContext<ConfigConsumerProps>(ConfigContext)
@@ -328,6 +307,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // =========== Merged Props for Semantic ==========
   const mergedProps: TableProps<RecordType> = {
     ...props,
+    heightMode,
     size: mergedSize,
     bordered,
   }
@@ -374,20 +354,13 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const [, token] = useToken()
 
   const mergedRowSelection = React.useMemo(() => {
-    const defaultSelectionWidth = getNumericWidth(
-      token.Table?.selectionColumnWidth,
-      token.controlHeight,
-    )
-
     return isPlainObject(customizeRowSelection)
-      ? { columnWidth: defaultSelectionWidth, ...customizeRowSelection }
+      ? { columnWidth: token.Table?.selectionColumnWidth, ...customizeRowSelection }
       : customizeRowSelection
-  }, [customizeRowSelection, token.Table?.selectionColumnWidth, token.controlHeight])
-  const selectionWidth = mergedRowSelection
-    ? getNumericWidth(mergedRowSelection.columnWidth, token.controlHeight)
-    : 0
+  }, [customizeRowSelection, token.Table?.selectionColumnWidth])
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
+  const [transformEnhanceColumns] = useColumnEnhance<RecordType>(prefixCls)
 
   const mergedExpandable: ExpandableConfig<RecordType> = {
     childrenColumnName: legacyChildrenColumnName,
@@ -416,52 +389,27 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // ============================ Width =============================
   const getContainerWidth = useContainerWidth(prefixCls)
   const mergedScroll = scroll ?? table?.scroll
-  const hasExplicitScroll =
-    mergedScroll?.x !== undefined || mergedScroll?.y !== undefined
-  const columnResizingEnabled = Boolean(enableColumnResizing)
+  const fillEnabled = heightMode === 'fill'
+  const columnResizingEnabled = Boolean(columnResize)
   const mergedTableLayout = columnResizingEnabled
     ? 'fixed'
     : tableProps.tableLayout
-  const useSharedScrollArea =
-    Boolean(virtual) ||
-    heightMode === 'fill' ||
-    hasExplicitScroll ||
-    columnResizingEnabled
   if (process.env.NODE_ENV !== 'production') {
     warning(
       !(columnResizingEnabled && tableProps.tableLayout === 'auto'),
       'usage',
-      '`tableLayout="auto"` is ignored when `enableColumnResizing` is enabled. Column resizing requires `tableLayout="fixed"`.',
+      '`tableLayout="auto"` is ignored when `columnResize` is enabled. Column resizing requires `tableLayout="fixed"`.',
+    )
+    warning(
+      !(fillEnabled && mergedScroll?.y !== undefined),
+      'usage',
+      '`scroll.y` will be ignored when `heightMode="fill"` is enabled.',
     )
   }
 
   // ============================= Refs =============================
   const rootRef = React.useRef<HTMLDivElement>(null)
   const tblRef = React.useRef<RcReference>(null)
-
-  const {
-    columns: sharedColumns,
-    tableWidth,
-    widthsReady,
-    hasHorizontalOverflow,
-  } = useSharedTableWidth({
-    columns: mergedColumns,
-    rootRef,
-    prefixCls,
-    enabled: useSharedScrollArea && !columnResizingEnabled,
-    selectionWidth,
-    scrollX: mergedScroll?.x,
-  })
-  const columnResizeConfig = React.useMemo<RcTableProps<RecordType>['columnResize']>(
-    () => columnResizingEnabled
-      ? {
-          sourceColumns: mergedColumns as RcTableProps<RecordType>['columns'],
-          onColumnWidthChange: (info) =>
-            onColumnWidthChange?.(info as TableColumnWidthChangeInfo<RecordType>),
-        }
-      : undefined,
-    [columnResizingEnabled, mergedColumns, onColumnWidthChange],
-  )
 
   useProxyImperativeHandle(ref, () => ({
     ...tblRef.current!,
@@ -487,16 +435,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
     return (record: RecordType) => record?.[rowKey as string]
   }, [rowKey])
-
-  const {
-    getHighlightClassName,
-    onRow: mergedOnRow,
-  } = useRowHighlight({
-    config: rowHighlight,
-    getRowKey,
-    onRow,
-    prefixCls,
-  })
 
   const [getRecordByKey] = useLazyKVMap(rawData, childrenColumnName, getRowKey)
 
@@ -566,7 +504,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   }
   const [transformSorterColumns, sortStates, sorterTitleProps, getSorters] = useSorter<RecordType>({
     prefixCls,
-    mergedColumns: sharedColumns,
+    mergedColumns,
     // Pass `baseColumns` (pre-responsive) so `defaultSortOrder` and controlled
     // `sortOrder` on a `responsive` column are still honored when the column
     // is hidden at the current breakpoint.
@@ -596,7 +534,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     prefixCls,
     locale: tableLocale,
     dropdownPrefixCls,
-    mergedColumns: sharedColumns,
+    mergedColumns,
     onFilterChange,
     getPopupContainer: getPopupContainer || getContextPopupContainer,
     rootClassName: clsx(rootClassName, rootCls),
@@ -684,7 +622,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
       {
         [`${prefixCls}-row-selected`]: selectedKeySet.has(getRowKey(record, index)),
       },
-      getHighlightClassName(record, index),
       isFunction(rowClassName) ? rowClassName(record, index, indent) : rowClassName,
     )
   };
@@ -714,9 +651,16 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const transformColumns = React.useCallback(
     (innerColumns: ColumnsType<RecordType>): ColumnsType<RecordType> =>
       transformTitleColumns(
-        transformSelectionColumns(transformFilterColumns(transformSorterColumns(innerColumns))),
+        transformSelectionColumns(
+          transformFilterColumns(transformSorterColumns(transformEnhanceColumns(innerColumns))),
+        ),
       ),
-    [transformSorterColumns, transformFilterColumns, transformSelectionColumns],
+    [
+      transformEnhanceColumns,
+      transformSorterColumns,
+      transformFilterColumns,
+      transformSelectionColumns,
+    ],
   )
 
   let topPaginationNode: React.ReactNode
@@ -771,12 +715,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     cssVarCls,
     rootCls,
     `${prefixCls}-wrapper`,
-    `${prefixCls}-wrapper-zby`,
     contextClassName,
     {
       [`${prefixCls}-wrapper-rtl`]: direction === 'rtl',
-      [`${prefixCls}-wrapper-zby-fill`]: heightMode === 'fill',
-      [`${prefixCls}-wrapper-zby-virtual`]: virtual,
+      [`${prefixCls}-wrapper-fill`]: fillEnabled,
     },
     className,
     rootClassName,
@@ -815,103 +757,32 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     }
   }, [token, mergedSize])
 
-  const userBodyComponents =
-    mergedComponents?.body && typeof mergedComponents.body === 'object'
-      ? mergedComponents.body
-      : undefined
-  const bodyRenderer = React.useMemo(() => {
-    const renderer = (
-      bodyData: readonly RecordType[],
-      info: Parameters<typeof VirtualBody<RecordType>>[0]['info'],
-    ) => (
-      <VirtualBody
-        data={bodyData}
-        info={info}
-        virtual={Boolean(virtual)}
-        fill={heightMode === 'fill'}
-        scrollAreaProps={scrollAreaProps}
-        scrollY={mergedScroll?.y}
-        itemHeight={listItemHeight}
-        horizontal={
-          columnResizingEnabled ||
-          mergedScroll?.x !== undefined ||
-          hasHorizontalOverflow
-        }
-        onTableScroll={onScroll}
-      />
-    )
+  const virtualProps: { listItemHeight?: number } = {}
+  if (virtual) {
+    virtualProps.listItemHeight = listItemHeight
+  }
 
-    return Object.assign(renderer, userBodyComponents)
-  }, [
-    columnResizingEnabled,
-    heightMode,
-    hasHorizontalOverflow,
-    listItemHeight,
-    mergedScroll?.x,
-    mergedScroll?.y,
-    onScroll,
-    scrollAreaProps,
-    userBodyComponents,
-    virtual,
-  ])
-  const bodyComponents = React.useMemo(
-    () => useSharedScrollArea && (
-      columnResizingEnabled || (widthsReady && tableWidth !== undefined)
-    )
-      ? {
-          ...mergedComponents,
-          body: bodyRenderer,
-        }
-      : mergedComponents,
-    [
-      bodyRenderer,
-      columnResizingEnabled,
-      mergedComponents,
-      tableWidth,
-      useSharedScrollArea,
-      widthsReady,
-    ],
-  )
-  const effectiveScroll = React.useMemo(
-    () => {
-      if (useSharedScrollArea && columnResizingEnabled) {
-        return {
-          ...mergedScroll,
-          // RcTable calls a function body only in its fixed-header branch.
-          y: mergedScroll?.y ?? (virtual ? 500 : 1),
-        }
-      }
-
-      if (!useSharedScrollArea || !widthsReady || tableWidth === undefined) {
-        return mergedScroll
-      }
-
-      const nextScroll = {
-        ...mergedScroll,
-        // rc-table calls a function body only in its fixed-header branch.
-        // Keep this compatibility value inside enhanced scroll paths.
-        y: mergedScroll?.y ?? (virtual ? 500 : 1),
-      }
-
-      if (
-        mergedScroll?.x !== undefined ||
-        hasHorizontalOverflow
-      ) {
-        nextScroll.x = tableWidth
-      }
-
-      return nextScroll
+  const { mergedScrollY } = useTableFillLayout({
+    enabled: fillEnabled,
+    metrics: {
+      hasFooter: typeof tableProps.footer === 'function',
+      hasSummary: typeof tableProps.summary === 'function',
+      hasTitle: typeof tableProps.title === 'function',
+      paginationEnabled: pagination !== false && Boolean(mergedPagination?.total),
+      paginationPlacement: Array.isArray(mergedPagination?.placement)
+        ? mergedPagination.placement.join(',')
+        : undefined,
+      virtual: Boolean(virtual),
     },
-    [
-      columnResizingEnabled,
-      hasHorizontalOverflow,
-      mergedScroll,
-      tableWidth,
-      useSharedScrollArea,
-      virtual,
-      widthsReady,
-    ],
-  )
+    prefixCls,
+    rootRef,
+    scroll: mergedScroll,
+  })
+
+  const columnResizeScroll = columnResize ? (mergedScroll ?? {}) : mergedScroll
+  const effectiveScroll = fillEnabled
+    ? { ...columnResizeScroll, y: mergedScrollY }
+    : columnResizeScroll
 
   // ========================== Render ==========================
   const TableComponent = virtual ? RcVirtualTable : RcTable
@@ -922,15 +793,19 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
         {topPaginationNode}
         <HeaderTableContext.Provider value={headerTableContext}>
           <TableComponent
+            {...virtualProps}
             {...tableProps}
             tableLayout={mergedTableLayout}
-            components={bodyComponents}
-            columnResize={columnResizeConfig}
+            components={mergedComponents}
+            columnResize={columnResize}
             scroll={effectiveScroll}
+            scrollAreaComponent={
+              ScrollArea as unknown as RcTableProps<RecordType>['scrollAreaComponent']
+            }
             classNames={mergedClassNames as RcTableProps<RecordType>['classNames']}
             styles={mergedStyles as RcTableProps<RecordType>['styles']}
             ref={tblRef}
-            columns={sharedColumns as RcTableProps<RecordType>['columns']}
+            columns={mergedColumns as RcTableProps<RecordType>['columns']}
             direction={direction}
             expandable={mergedExpandable}
             prefixCls={prefixCls}
@@ -940,7 +815,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
                 [`${prefixCls}-small`]: mergedSize === 'small',
                 [`${prefixCls}-bordered`]: bordered,
                 [`${prefixCls}-empty`]: rawData.length === 0,
-                [`${prefixCls}-zby-column-resizing`]: columnResizingEnabled,
+                [`${prefixCls}-fill`]: fillEnabled,
               },
               cssVarCls,
               rootCls,
@@ -948,7 +823,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             )}
             data={pageData}
             rowKey={getRowKey}
-            onRow={mergedOnRow}
             rowClassName={internalRowClassName}
             emptyText={mergedEmptyNode}
             // Internal
@@ -963,7 +837,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
                 </ConfigProvider>
               </TableMeasureRowContext.Provider>
             )}
-            tailor={useSharedScrollArea}
           />
         </HeaderTableContext.Provider>
         {bottomPaginationNode}

@@ -14,6 +14,7 @@ import * as React from 'react'
 import type { AnchorHTMLAttributes } from 'react'
 
 import useControllableValue from '../_util/hooks/useControllableValue'
+import { TableCellHoverRelatedClassNames } from '../_util/tableCellHover'
 import ActionIcon from '../action-icon'
 import type { ActionIconProps } from '../action-icon'
 import ActionTextCopyAction from './ActionTextCopyAction'
@@ -26,7 +27,7 @@ type NamePath = NonNullable<FormItemProps['name']>
 type TextAreaProps = React.ComponentProps<typeof Input.TextArea>
 
 /** 操作区展示策略：跟随 ActionText 自身 hover，或始终展示。 */
-export type ActionTextVisibleOn = 'self-hover' | 'always'
+export type ActionTextVisibleOn = 'self-hover' | 'table-row-hover' | 'always'
 
 /** Typography.Paragraph 省略能力的轻量封装。 */
 export interface ActionTextEllipsisConfig {
@@ -417,6 +418,10 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
           className={clsx(
             `${prefixCls}-actions`,
             actionsVisibleCls,
+            {
+              [TableCellHoverRelatedClassNames.hoverToDisplayInlineFlex]:
+                actionsVisibleOn === 'table-row-hover',
+            },
             mergedClassNames.actions,
           )}
           style={mergedStyles.actions}

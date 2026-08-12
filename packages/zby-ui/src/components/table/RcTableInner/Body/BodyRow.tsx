@@ -207,6 +207,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
             component={column.rowScope ? scopeCellComponent : cellComponent}
             prefixCls={prefixCls}
             key={key}
+            column={column}
             record={record}
             index={index}
             renderIndex={renderIndex}

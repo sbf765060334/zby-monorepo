@@ -20,6 +20,45 @@ import type { DeepNamePath } from './namePathType';
 
 export type Key = React.Key;
 
+export type ColumnResizeKey = string | number;
+
+export type ColumnResizeWidths = Record<ColumnResizeKey, number>;
+
+export interface ColumnResizeInfo<RecordType = any> {
+  key: ColumnResizeKey;
+  width: number;
+  previousWidth: number;
+  delta: number;
+  widths: ColumnResizeWidths;
+  column: ColumnType<RecordType>;
+  nativeEvent: PointerEvent;
+}
+
+export interface ColumnResizeConfig<RecordType = any> {
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  widths?: ColumnResizeWidths;
+  defaultWidths?: ColumnResizeWidths;
+  onWidthsChange?: (
+    widths: ColumnResizeWidths,
+    info: ColumnResizeInfo<RecordType>,
+  ) => void;
+  onResize?: (info: ColumnResizeInfo<RecordType>) => void;
+  onResizeEnd?: (info: ColumnResizeInfo<RecordType>) => void;
+}
+
+export interface InternalColumnResizeMeta {
+  key: ColumnResizeKey;
+  width: number;
+  minWidth?: number;
+  maxWidth?: number;
+  resizable: boolean;
+}
+
+export const INTERNAL_COLUMN_RESIZE_META = 'RC_TABLE_INTERNAL_COLUMN_RESIZE_META';
+export const INTERNAL_COLUMN_RESIZE_FILLER = 'RC_TABLE_INTERNAL_COLUMN_RESIZE_FILLER';
+
 /**
  * Use `start` or `end` instead. `left` or `right` is deprecated.
  */
@@ -115,6 +154,8 @@ interface ColumnSharedType<RecordType> {
   rowScope?: RowScopeType;
   resizable?: boolean;
   maxWidth?: number;
+  [INTERNAL_COLUMN_RESIZE_META]?: InternalColumnResizeMeta;
+  [INTERNAL_COLUMN_RESIZE_FILLER]?: boolean;
 }
 
 export interface ColumnGroupType<RecordType> extends ColumnSharedType<RecordType> {
@@ -144,17 +185,6 @@ export type ColumnsType<RecordType = unknown> = readonly (
   | ColumnGroupType<RecordType>
   | ColumnType<RecordType>
 )[];
-
-export interface ColumnResizeInfo<RecordType = any> {
-  columnKey: React.Key;
-  width: number;
-  column: ColumnGroupType<RecordType> | ColumnType<RecordType>;
-}
-
-export interface ColumnResizeConfig<RecordType = any> {
-  sourceColumns?: ColumnsType<RecordType>;
-  onColumnWidthChange?: (info: ColumnResizeInfo<RecordType>) => void;
-}
 
 export type GetRowKey<RecordType> = (record: RecordType, index?: number) => Key;
 

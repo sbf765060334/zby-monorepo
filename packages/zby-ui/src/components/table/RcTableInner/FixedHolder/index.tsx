@@ -38,6 +38,7 @@ export interface FixedHeaderProps<RecordType> extends HeaderProps<RecordType> {
   stickyClassName?: string;
   scrollX?: number | string | true;
   tableLayout?: TableLayout;
+  columnResize?: boolean;
   onScroll: (info: { currentTarget: HTMLDivElement; scrollLeft?: number }) => void;
   children: (info: HeaderProps<RecordType>) => React.ReactNode;
   colGroup?: React.ReactNode;
@@ -65,6 +66,7 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
     stickyClassName,
     scrollX,
     tableLayout = 'fixed',
+    columnResize,
     onScroll,
     maxContentScroll,
     children,
@@ -81,6 +83,7 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
   const TableComponent = getComponent(['header', 'table'], 'table');
 
   const combinationScrollBarSize = isSticky && !fixHeader ? 0 : scrollbarSize;
+  const shouldAddScrollbarColumn = !noData && Boolean(combinationScrollBarSize);
 
   // Pass wheel to scroll event
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -133,13 +136,13 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
   };
 
   const columnsWithScrollbar = useMemo<ColumnsType<unknown>>(
-    () => (combinationScrollBarSize ? [...columns, ScrollBarColumn] : columns),
-    [combinationScrollBarSize, columns],
+    () => (shouldAddScrollbarColumn ? [...columns, ScrollBarColumn] : columns),
+    [columns, shouldAddScrollbarColumn],
   );
 
   const flattenColumnsWithScrollbar = useMemo(
-    () => (combinationScrollBarSize ? [...flattenColumns, ScrollBarColumn] : flattenColumns),
-    [combinationScrollBarSize, flattenColumns],
+    () => (shouldAddScrollbarColumn ? [...flattenColumns, ScrollBarColumn] : flattenColumns),
+    [flattenColumns, shouldAddScrollbarColumn],
   );
 
   // Calculate the sticky offsets
@@ -152,10 +155,12 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
       // right:
       //   direction === 'rtl' ? right : [...right.map(width => width + combinationScrollBarSize), 0],
       start: start,
-      end: [...end.map(width => width + combinationScrollBarSize), 0],
+      end: shouldAddScrollbarColumn
+        ? [...end.map(width => width + combinationScrollBarSize), 0]
+        : end,
       isSticky,
     };
-  }, [combinationScrollBarSize, stickyOffsets, isSticky]);
+  }, [combinationScrollBarSize, shouldAddScrollbarColumn, stickyOffsets, isSticky]);
 
   const mergedColumnWidth = useColumnWidth(colWidths, columCount);
 
@@ -182,7 +187,7 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
       <TableComponent
         style={{
           tableLayout,
-          minWidth: '100%',
+          minWidth: columnResize ? undefined : '100%',
           // https://github.com/ant-design/ant-design/issues/54894
           width: scrollX,
         }}
@@ -191,8 +196,12 @@ const FixedHolder = React.forwardRef<HTMLDivElement, FixedHeaderProps<any>>((pro
           colGroup
         ) : (
           <ColGroup
-            colWidths={[...mergedColumnWidth, combinationScrollBarSize]}
-            columCount={columCount + 1}
+            colWidths={
+              shouldAddScrollbarColumn
+                ? [...mergedColumnWidth, combinationScrollBarSize]
+                : mergedColumnWidth
+            }
+            columCount={shouldAddScrollbarColumn ? columCount + 1 : columCount}
             columns={flattenColumnsWithScrollbar}
           />
         )}

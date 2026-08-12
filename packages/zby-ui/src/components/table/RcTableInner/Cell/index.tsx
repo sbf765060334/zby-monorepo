@@ -3,9 +3,14 @@ import { clsx } from 'clsx';
 import * as React from 'react';
 import TableContext from '../context/TableContext';
 import devRenderTimes from '../hooks/useRenderTimes';
+import {
+  INTERNAL_COLUMN_RESIZE_FILLER,
+  INTERNAL_COLUMN_RESIZE_META,
+} from '../interface';
 import type {
   AlignType,
   CellEllipsisType,
+  ColumnResizeKey,
   ColumnType,
   CustomizeComponent,
   DataIndex,
@@ -29,6 +34,7 @@ export interface CellProps<RecordType extends DefaultRecordType> {
   render?: ColumnType<RecordType>['render'];
   component?: CustomizeComponent;
   children?: React.ReactNode;
+  column?: ColumnType<RecordType>;
   colSpan?: number;
   rowSpan?: number;
   scope?: ScopeType;
@@ -96,6 +102,7 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     align,
 
     // Value
+    column,
     record,
     render,
     dataIndex,
@@ -128,9 +135,16 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
 
   const cellPrefixCls = `${prefixCls}-cell`;
 
-  const { allColumnsFixedLeft, rowHoverable } = useContext(TableContext, [
+  const {
+    allColumnsFixedLeft,
+    rowHoverable,
+    onColumnResizeDrag,
+    onColumnResizeEnd,
+  } = useContext(TableContext, [
     'allColumnsFixedLeft',
     'rowHoverable',
+    'onColumnResizeDrag',
+    'onColumnResizeEnd',
   ]);
 
   // ====================== Value =======================
@@ -203,6 +217,140 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     additionalProps?.onMouseLeave?.(event);
   });
 
+  const columnResizeMeta =
+    rowType === 'header'
+      ? column?.[INTERNAL_COLUMN_RESIZE_META]
+      : undefined;
+  const columnResizeFiller = column?.[INTERNAL_COLUMN_RESIZE_FILLER];
+  const [resizeActive, setResizeActive] = React.useState(false);
+  const resizeDragRef = React.useRef<{
+    key: ColumnResizeKey;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+  const resizeCleanupRef = React.useRef<(() => void) | null>(null);
+
+  const cleanupResizeListeners = useEvent(() => {
+    resizeCleanupRef.current?.();
+    resizeCleanupRef.current = null;
+  });
+
+  const onResizePointerDown = useEvent((event: React.PointerEvent<HTMLSpanElement>) => {
+    if (!columnResizeMeta?.resizable) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    resizeDragRef.current = {
+      key: columnResizeMeta.key,
+      startX: event.clientX,
+      startWidth: columnResizeMeta.width,
+    };
+    setResizeActive(true);
+
+    const ownerDocument = event.currentTarget.ownerDocument;
+    const onDocumentPointerMove = (nativeEvent: PointerEvent) => {
+      const dragState = resizeDragRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      nativeEvent.preventDefault();
+      onColumnResizeDrag?.(
+        dragState.key,
+        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        nativeEvent,
+      );
+    };
+    const onDocumentPointerUp = (nativeEvent: PointerEvent) => {
+      const dragState = resizeDragRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      nativeEvent.preventDefault();
+      cleanupResizeListeners();
+      resizeDragRef.current = null;
+      setResizeActive(false);
+      onColumnResizeEnd?.(
+        dragState.key,
+        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        nativeEvent,
+      );
+    };
+
+    cleanupResizeListeners();
+    ownerDocument.addEventListener('pointermove', onDocumentPointerMove);
+    ownerDocument.addEventListener('pointerup', onDocumentPointerUp);
+    ownerDocument.addEventListener('pointercancel', onDocumentPointerUp);
+    resizeCleanupRef.current = () => {
+      ownerDocument.removeEventListener('pointermove', onDocumentPointerMove);
+      ownerDocument.removeEventListener('pointerup', onDocumentPointerUp);
+      ownerDocument.removeEventListener('pointercancel', onDocumentPointerUp);
+    };
+  });
+
+  const onResizeMouseDown = useEvent((event: React.MouseEvent<HTMLSpanElement>) => {
+    if (typeof window !== 'undefined' && 'PointerEvent' in window) {
+      return;
+    }
+    if (!columnResizeMeta?.resizable) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    resizeDragRef.current = {
+      key: columnResizeMeta.key,
+      startX: event.clientX,
+      startWidth: columnResizeMeta.width,
+    };
+    setResizeActive(true);
+
+    const ownerDocument = event.currentTarget.ownerDocument;
+    const onDocumentMouseMove = (nativeEvent: MouseEvent) => {
+      const dragState = resizeDragRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      nativeEvent.preventDefault();
+      onColumnResizeDrag?.(
+        dragState.key,
+        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        nativeEvent as unknown as PointerEvent,
+      );
+    };
+    const onDocumentMouseUp = (nativeEvent: MouseEvent) => {
+      const dragState = resizeDragRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      nativeEvent.preventDefault();
+      cleanupResizeListeners();
+      resizeDragRef.current = null;
+      setResizeActive(false);
+      onColumnResizeEnd?.(
+        dragState.key,
+        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        nativeEvent as unknown as PointerEvent,
+      );
+    };
+
+    cleanupResizeListeners();
+    ownerDocument.addEventListener('mousemove', onDocumentMouseMove);
+    ownerDocument.addEventListener('mouseup', onDocumentMouseUp);
+    resizeCleanupRef.current = () => {
+      ownerDocument.removeEventListener('mousemove', onDocumentMouseMove);
+      ownerDocument.removeEventListener('mouseup', onDocumentMouseUp);
+    };
+  });
+
+  React.useEffect(() => () => cleanupResizeListeners(), [cleanupResizeListeners]);
+
   // ====================== Render ======================
   if (mergedColSpan === 0 || mergedRowSpan === 0) {
     return null;
@@ -222,6 +370,9 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     cellPrefixCls,
     className,
     {
+      [`${cellPrefixCls}-resizable`]: columnResizeMeta?.resizable,
+      [`${cellPrefixCls}-resize-filler`]: columnResizeFiller,
+
       // Fixed
       [`${cellPrefixCls}-fix`]: isFixStart || isFixEnd,
       [`${cellPrefixCls}-fix-start`]: isFixStart,
@@ -274,6 +425,19 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     mergedChildNode = <span className={`${cellPrefixCls}-content`}>{mergedChildNode}</span>;
   }
 
+  const resizeHandle =
+    columnResizeMeta?.resizable && mergedColSpan === 1 ? (
+      <span
+        aria-hidden="true"
+        className={clsx(`${cellPrefixCls}-resize-handle`, {
+          [`${cellPrefixCls}-resize-handle-active`]: resizeActive,
+        })}
+        onClick={event => event.stopPropagation()}
+        onMouseDown={onResizeMouseDown}
+        onPointerDown={onResizePointerDown}
+      />
+    ) : null;
+
   return (
     <Component
       {...legacyCellProps}
@@ -292,6 +456,7 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     >
       {appendNode}
       {mergedChildNode}
+      {resizeHandle}
     </Component>
   );
 };

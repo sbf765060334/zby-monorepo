@@ -4,6 +4,9 @@ import type {
   FixedType,
   GetComponentProps,
   GetRowKey,
+  ColumnResizeConfig,
+  ColumnResizeInfo,
+  ColumnResizeWidths,
   ColumnType as RcColumnType,
   RenderedCell as RcRenderedCell,
   Reference,
@@ -11,11 +14,11 @@ import type {
 
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver'
 import type { AnyObject } from 'antd/es/_util/type'
+import type { ActionTextCopyConfig } from '../action-text'
 import type { CheckboxProps } from 'antd/es/checkbox'
 import type { DropdownProps } from 'antd/es/dropdown'
 import type { PaginationProps } from 'antd/es/pagination'
 import type { TooltipProps } from 'antd/es/tooltip'
-import type { ScrollAreaScrollbar } from '../scroll-area'
 import type { INTERNAL_SELECTION_ITEM } from './hooks/useSelection'
 import type { InternalTableProps, TableProps } from './InternalTable'
 
@@ -27,7 +30,13 @@ export type RefInternalTable = <RecordType = AnyObject>(
   props: React.PropsWithChildren<InternalTableProps<RecordType>> & React.RefAttributes<Reference>,
 ) => React.ReactElement
 
-export type { ExpandableConfig, GetRowKey }
+export type {
+  ColumnResizeConfig,
+  ColumnResizeInfo,
+  ColumnResizeWidths,
+  ExpandableConfig,
+  GetRowKey,
+}
 
 export type Key = React.Key
 
@@ -103,6 +112,25 @@ export type ColumnTitle<RecordType = AnyObject> =
   | React.ReactNode
   | ((props: ColumnTitleProps<RecordType>) => React.ReactNode)
 
+export interface TableColumnEllipsisConfig {
+  showTitle?: boolean;
+  rows?: number;
+  tooltip?: boolean | React.ReactNode | TooltipProps;
+}
+
+export type TableColumnTooltip = React.ReactNode | Omit<TooltipProps, 'children'>
+
+export type TableColumnCopyText<RecordType> =
+  | string
+  | number
+  | ((value: unknown, record: RecordType, index: number) => string | number | null | undefined)
+
+export type TableColumnCopyable<RecordType> =
+  | boolean
+  | (Omit<ActionTextCopyConfig, 'text'> & {
+    text?: TableColumnCopyText<RecordType>;
+  })
+
 export type FilterValue = (Key | boolean)[]
 export type FilterKey = (string | number)[] | null
 export type FilterSearchType<RecordType = AnyObject> =
@@ -119,22 +147,6 @@ export interface FilterResetProps {
 
 /** @deprecated Please use `FilterResetProps` instead. */
 export interface FilterRestProps extends FilterResetProps {}
-
-export interface TableColumnResizeOptions {
-  /** Minimum resized width in pixels. */
-  minWidth?: number;
-  /** Maximum resized width in pixels. */
-  maxWidth?: number;
-  /** Whether this leaf column can be resized. */
-  resizable?: boolean;
-}
-
-export interface TableScrollAreaProps {
-  /** Internal scrollbar implementation and visibility strategy. */
-  scrollbar?: ScrollAreaScrollbar;
-  /** Delay before hover/scrolling scrollbars hide, in milliseconds. */
-  scrollHideDelay?: number;
-}
 
 export interface FilterDropdownProps {
   prefixCls: string;
@@ -166,9 +178,12 @@ interface CoverableDropdownProps
 }
 
 export interface ColumnType<RecordType = AnyObject>
-  extends Omit<RcColumnType<RecordType>, 'title'>,
-  TableColumnResizeOptions {
+  extends Omit<RcColumnType<RecordType>, 'title' | 'ellipsis'> {
   title?: ColumnTitle<RecordType>;
+  ellipsis?: boolean | TableColumnEllipsisConfig;
+  tooltip?: TableColumnTooltip;
+  renderText?: (value: unknown, record: RecordType, index: number) => React.ReactNode;
+  copyable?: TableColumnCopyable<RecordType>;
   // Sorter
   sorter?: boolean | CompareFn<RecordType> | ColumnSorter<RecordType>;
   sortOrder?: SortOrder;
@@ -226,19 +241,7 @@ export type TableColumnType<RecordType = AnyObject> = ColumnType<RecordType>
 export type TableColumnGroupType<RecordType = AnyObject> = ColumnGroupType<RecordType>
 export type TableColumnsType<RecordType = AnyObject> = ColumnsType<RecordType>
 
-export interface TableRowHighlight<RecordType = AnyObject> {
-  currentRowKey?: React.Key | null;
-  defaultCurrentRowKey?: React.Key | null;
-  onChange?: (currentRowKey: React.Key | null, currentRow: RecordType | null) => void;
-}
-
-export type TableHeightMode = 'auto' | 'fill'
-
-export interface TableColumnWidthChangeInfo<RecordType = AnyObject> {
-  columnKey: React.Key;
-  width: number;
-  column: ColumnGroupType<RecordType> | ColumnType<RecordType>;
-}
+export type TableHeightMode = 'content' | 'fill'
 
 export interface SelectionItem {
   key: string;

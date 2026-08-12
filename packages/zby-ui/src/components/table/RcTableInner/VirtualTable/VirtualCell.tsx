@@ -120,6 +120,7 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
       component={component}
       prefixCls={rowInfo.prefixCls}
       key={key}
+      column={column}
       record={record}
       index={index}
       renderIndex={renderIndex}

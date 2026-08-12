@@ -1,6 +1,7 @@
 import { unit } from '@ant-design/cssinjs'
 import type { CSSObject } from '@ant-design/cssinjs'
 
+import { TableCellHoverRelatedClassNames } from '../../_util/tableCellHover'
 import type { GenerateStyle } from 'antd/es/theme/internal'
 import type { TableToken } from './index'
 
@@ -21,6 +22,21 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
     tablePaddingHorizontal,
     calc,
   } = token
+  const tableCellHoverHiddenStyle: CSSObject = {
+    display: 'none',
+    pointerEvents: 'none',
+  }
+  const tableCellHoverOpacityHiddenStyle: CSSObject = {
+    opacity: 0,
+    visibility: 'hidden',
+    pointerEvents: 'none',
+  }
+  const tableCellHoverOpacityVisibleStyle: CSSObject = {
+    opacity: 1,
+    visibility: 'visible',
+    pointerEvents: 'auto',
+  }
+  const tableCellHoverClassNames = TableCellHoverRelatedClassNames
 
   return {
     [`${componentCls}-wrapper`]: {
@@ -96,6 +112,16 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
 
       // ============================= Rows =============================
       [`${componentCls}-tbody`]: {
+        [`.${tableCellHoverClassNames.hoverToDisplayBlock}`]: tableCellHoverHiddenStyle,
+        [`.${tableCellHoverClassNames.hoverToDisplayInline}`]: tableCellHoverHiddenStyle,
+        [`.${tableCellHoverClassNames.hoverToDisplayInlineBlock}`]: tableCellHoverHiddenStyle,
+        [`.${tableCellHoverClassNames.hoverToDisplayInlineFlex}`]: tableCellHoverHiddenStyle,
+        [`.${tableCellHoverClassNames.hoverToDisplayFlex}`]: tableCellHoverHiddenStyle,
+        [`.${tableCellHoverClassNames.hoverToOpacity1}`]: tableCellHoverOpacityHiddenStyle,
+
+        [`.${tableCellHoverClassNames.hoverToOpacity1}:focus-within`]:
+          tableCellHoverOpacityVisibleStyle,
+
         [`${componentCls}-row`]: {
           [`&${componentCls}-row-selected`]: {
             [`> ${componentCls}-cell`]: {
@@ -109,6 +135,34 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
 
           [`> ${componentCls}-cell-row-hover`]: {
             background: tableRowHoverBg,
+
+            [`.${tableCellHoverClassNames.hoverToDisplayBlock}`]: {
+              display: 'block',
+              pointerEvents: 'auto',
+            },
+
+            [`.${tableCellHoverClassNames.hoverToDisplayInline}`]: {
+              display: 'inline',
+              pointerEvents: 'auto',
+            },
+
+            [`.${tableCellHoverClassNames.hoverToDisplayInlineBlock}`]: {
+              display: 'inline-block',
+              pointerEvents: 'auto',
+            },
+
+            [`.${tableCellHoverClassNames.hoverToDisplayInlineFlex}`]: {
+              display: 'inline-flex',
+              pointerEvents: 'auto',
+            },
+
+            [`.${tableCellHoverClassNames.hoverToDisplayFlex}`]: {
+              display: 'flex',
+              pointerEvents: 'auto',
+            },
+
+            [`.${tableCellHoverClassNames.hoverToOpacity1}`]:
+              tableCellHoverOpacityVisibleStyle,
           },
         },
       },

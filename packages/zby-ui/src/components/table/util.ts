@@ -10,6 +10,11 @@ import type {
   TablePaginationPosition,
 } from './interface'
 
+export {
+  TABLE_ROW_HOVER_REVEAL_CLASS_NAME,
+  TableCellHoverRelatedClassNames,
+} from '../_util/tableCellHover'
+
 export const getColumnKey = <RecordType extends AnyObject = AnyObject>(
   column: ColumnType<RecordType>,
   defaultKey: string,

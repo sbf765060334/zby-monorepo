@@ -1,6 +1,7 @@
 import { createContext, createImmutable } from '@rc-component/context';
 import type {
   ColumnsType,
+  ColumnResizeKey,
   ColumnType,
   Direction,
   ExpandableConfig,
@@ -39,8 +40,6 @@ export interface TableContextProps<RecordType = any> {
   fixHeader: boolean;
   fixColumn: boolean;
   horizonScroll: boolean;
-  columnResizeEnabled: boolean;
-  hasHorizontalOverflow: boolean;
   scrollInfo: ScrollInfoType;
 
   // Body
@@ -64,6 +63,16 @@ export interface TableContextProps<RecordType = any> {
   columns: ColumnsType<RecordType>;
   flattenColumns: readonly ColumnType<RecordType>[];
   onColumnResize: (columnKey: React.Key, width: number) => void;
+  onColumnResizeDrag?: (
+    columnKey: ColumnResizeKey,
+    width: number,
+    nativeEvent: PointerEvent,
+  ) => void;
+  onColumnResizeEnd?: (
+    columnKey: ColumnResizeKey,
+    width: number,
+    nativeEvent: PointerEvent,
+  ) => void;
   colWidths: number[];
 
   // Row

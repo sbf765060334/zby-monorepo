@@ -32,6 +32,7 @@ const VirtualTable = <RecordType,>(
     listItemHeight,
     components,
     onScroll,
+    columnResize,
   } = props;
 
   let { x: scrollX, y: scrollY } = scroll || {};
@@ -39,7 +40,7 @@ const VirtualTable = <RecordType,>(
   // Fill scrollX
   if (typeof scrollX !== 'number') {
     if (process.env.NODE_ENV !== 'production') {
-      warning(!scrollX, '`scroll.x` in virtual table must be number.');
+      warning(Boolean(columnResize) || !scrollX, '`scroll.x` in virtual table must be number.');
     }
 
     scrollX = 1;

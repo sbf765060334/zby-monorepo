@@ -39,7 +39,7 @@ import {
 import * as React from 'react';
 import Body from './Body';
 import ColGroup from './ColGroup';
-import { EXPAND_COLUMN, INTERNAL_HOOKS } from './constant';
+import { EXPAND_COLUMN, INTERNAL_HOOKS, TABLE_FIXED_Z_INDEX } from './constant';
 import TableContext, { makeImmutable, type ScrollInfoType } from './context/TableContext';
 import type { FixedHeaderProps } from './FixedHolder';
 import FixedHolder from './FixedHolder';
@@ -47,7 +47,7 @@ import Footer, { FooterComponents } from './Footer';
 import type { SummaryProps } from './Footer/Summary';
 import Summary from './Footer/Summary';
 import Header from './Header/Header';
-import useColumnResize from './hooks/useColumnResize';
+import { useColumnResize } from './hooks/useColumnResize';
 import useColumns from './hooks/useColumns';
 import useExpand from './hooks/useExpand';
 import useFixedInfo from './hooks/useFixedInfo';
@@ -59,6 +59,7 @@ import type {
   ColumnsType,
   ColumnType,
   ColumnResizeConfig,
+  ColumnResizeKey,
   CustomizeScrollBody,
   DefaultRecordType,
   Direction,
@@ -92,6 +93,28 @@ const EMPTY_DATA = [];
 
 // Used for customize scroll
 const EMPTY_SCROLL_TARGET = {};
+
+type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both';
+type ScrollAreaComponentProps = {
+  children?: React.ReactNode;
+  className?: string;
+  direction?: ScrollAreaDirection;
+  styles?: {
+    horizontalTrack?: React.CSSProperties;
+    verticalTrack?: React.CSSProperties;
+  };
+  viewportRef?: React.Ref<HTMLDivElement>;
+  viewportProps?: React.HTMLAttributes<HTMLDivElement>;
+};
+
+function getScrollAreaDirection(
+  horizontal: boolean,
+  vertical: boolean,
+): ScrollAreaDirection {
+  if (horizontal && vertical) return 'both';
+  if (horizontal) return 'horizontal';
+  return 'vertical';
+}
 
 export type SemanticName = 'section' | 'title' | 'footer' | 'content';
 export type ComponentsSemantic = 'wrapper' | 'cell' | 'row';
@@ -130,6 +153,8 @@ export interface TableProps<RecordType = any> extends Omit<
   footer?: PanelRender<RecordType>;
   summary?: (data: readonly RecordType[]) => React.ReactNode;
   caption?: React.ReactNode;
+  /** @private Injected by the AntD Table wrapper to keep this fork independently buildable. */
+  scrollAreaComponent?: React.ComponentType<ScrollAreaComponentProps>;
 
   // Customize
   id?: string;
@@ -233,6 +258,7 @@ const Table = <RecordType extends DefaultRecordType>(
     footer,
     summary,
     caption,
+    scrollAreaComponent: ScrollArea,
 
     // Customize
     id,
@@ -331,8 +357,6 @@ const Table = <RecordType extends DefaultRecordType>(
 
     return bodyWidth || containerWidth || fallbackWidth;
   }, []);
-  const columnResizeEnabled = Boolean(columnResize);
-  const columnResizeConfig = typeof columnResize === 'object' ? columnResize : undefined;
 
   const [rawColumns, rawFlattenColumns, flattenScrollX] = useColumns(
     {
@@ -348,42 +372,36 @@ const Table = <RecordType extends DefaultRecordType>(
       expandIconColumnIndex: expandableConfig.expandIconColumnIndex,
       direction,
       scrollWidth:
-        columnResizeEnabled || !(useInternalHooks && tailor && typeof scrollX === 'number')
+        columnResize || !(useInternalHooks && tailor && typeof scrollX === 'number')
           ? undefined
           : scrollX,
       clientWidth: componentWidth,
     },
     useInternalHooks ? transformColumns : null,
   );
+  const rawColumnsKey = getColumnsKey(rawFlattenColumns);
   const columnResizeState = useColumnResize({
+    columnResize,
     columns: rawColumns,
-    sourceColumns: columnResizeConfig?.sourceColumns,
-    components,
-    prefixCls,
-    direction,
-    enabled: columnResizeEnabled,
+    flattenColumns: rawFlattenColumns,
+    columnsKey: rawColumnsKey,
     viewportWidth: resizeViewportWidth || componentWidth,
-    config: columnResizeConfig,
+    measureRootRef: fullTableRef,
   });
-  const columns = columnResizeEnabled ? columnResizeState.columns : rawColumns;
-  const flattenColumns = columnResizeEnabled
-    ? columnResizeState.flattenColumns
-    : rawFlattenColumns;
-  const mergedComponents = columnResizeEnabled ? columnResizeState.components : components;
+  const columns = columnResizeState.columns;
+  const flattenColumns = columnResizeState.flattenColumns;
+  const columnResizeEnabled = columnResizeState.enabled;
   const mergedScrollX = columnResizeEnabled
-    ? (columnResizeState.scrollX ?? flattenScrollX ?? scrollX)
+    ? columnResizeState.scrollX
     : (flattenScrollX ?? scrollX);
 
   // ==================== Customize =====================
   const getComponent = React.useCallback<GetComponent>(
-    (path, defaultComponent) => getValue(mergedComponents, path) || defaultComponent,
-    [mergedComponents],
+    (path, defaultComponent) => getValue(components, path) || defaultComponent,
+    [components],
   );
 
-  const customizeScrollBody =
-    !columnResizeEnabled || columnResizeState.widthsReady
-      ? (getComponent(['body']) as CustomizeScrollBody<RecordType>)
-      : undefined;
+  const customizeScrollBody = getComponent(['body']) as CustomizeScrollBody<RecordType>;
 
   const columnContext = React.useMemo(
     () => ({ columns, flattenColumns }),
@@ -431,13 +449,9 @@ const Table = <RecordType extends DefaultRecordType>(
   // Convert map to number width
   const colsKeys = getColumnsKey(flattenColumns);
   const pureColWidths = colsKeys.map(columnKey => colsWidths.get(columnKey));
-  const resizeColWidths = React.useMemo(
-    () => columnResizeState.widthsReady ? columnResizeState.colWidths : undefined,
-    [columnResizeState.colWidths, columnResizeState.widthsReady],
-  );
   const colWidths = React.useMemo(
-    () => (columnResizeEnabled && resizeColWidths ? resizeColWidths : pureColWidths),
-    [columnResizeEnabled, resizeColWidths, pureColWidths.join('_')],
+    () => (columnResizeEnabled ? columnResizeState.colWidths! : pureColWidths),
+    [columnResizeEnabled, columnResizeState.colWidths, pureColWidths.join('_')],
   );
   const stickyOffsets = useStickyOffsets(colWidths, flattenColumns);
   const fixHeader = scroll && validateValue(scroll.y);
@@ -488,9 +502,22 @@ const Table = <RecordType extends DefaultRecordType>(
     }
     scrollTableStyle = {
       width: mergedScrollX === true ? 'auto' : mergedScrollX,
-      minWidth: '100%',
+      minWidth: columnResizeEnabled ? undefined : '100%',
     };
   }
+
+  const scrollAreaDirection = getScrollAreaDirection(
+    Boolean(horizonScroll || columnResizeEnabled),
+    Boolean(fixHeader),
+  );
+  const useScrollArea = Boolean(ScrollArea && (horizonScroll || fixHeader));
+  const scrollAreaStyles = React.useMemo(() => {
+    const trackZIndex = flattenColumns.length * 2 + TABLE_FIXED_Z_INDEX + 2;
+    return {
+      horizontalTrack: { zIndex: trackZIndex },
+      verticalTrack: { zIndex: trackZIndex },
+    };
+  }, [flattenColumns.length]);
 
   const onColumnResize = React.useCallback((columnKey: React.Key, width: number) => {
     updateColsWidths(widths => {
@@ -642,6 +669,19 @@ const Table = <RecordType extends DefaultRecordType>(
       onFullTableResize();
     }
   }, [columnResizeEnabled, horizonScroll, visualHorizontalScroll]);
+  useLayoutEffect(() => {
+    if (!visualHorizontalScroll) {
+      setShadowStart(false);
+      setShadowEnd(false);
+      if (scrollBodyRef.current instanceof HTMLElement) {
+        scrollBodyRef.current.scrollLeft = 0;
+        onInternalScroll({
+          currentTarget: scrollBodyRef.current,
+          scrollLeft: 0,
+        });
+      }
+    }
+  }, [visualHorizontalScroll]);
 
   // Sync scroll bar when init or `horizonScroll`, `data` and `columns.length` changed
   const mounted = React.useRef(false);
@@ -786,32 +826,51 @@ const Table = <RecordType extends DefaultRecordType>(
         return 0;
       }) as number[];
     } else {
-      bodyContent = (
-        <div
+      const bodyViewportStyle = {
+        ...scrollXStyle,
+        ...scrollYStyle,
+      };
+      const bodyTableNode = (
+        <TableComponent
           style={{
-            ...scrollXStyle,
-            ...scrollYStyle,
+            ...scrollTableStyle,
+            tableLayout: mergedTableLayout,
           }}
+          {...ariaProps}
+        >
+          {captionElement}
+          {bodyColGroup}
+          {bodyTable}
+          {!fixFooter && summaryNode && (
+            <Footer stickyOffsets={stickyOffsets} flattenColumns={flattenColumns}>
+              {summaryNode}
+            </Footer>
+          )}
+        </TableComponent>
+      );
+
+      bodyContent = useScrollArea ? (
+        <ScrollArea
+          className={`${prefixCls}-body-scroll-area`}
+          direction={scrollAreaDirection}
+          styles={scrollAreaStyles}
+          viewportRef={scrollBodyRef}
+          viewportProps={{
+            className: `${prefixCls}-body`,
+            onScroll: onBodyScroll,
+            style: bodyViewportStyle,
+          }}
+        >
+          {bodyTableNode}
+        </ScrollArea>
+      ) : (
+        <div
+          style={bodyViewportStyle}
           onScroll={onBodyScroll}
           ref={scrollBodyRef}
           className={`${prefixCls}-body`}
         >
-          <TableComponent
-            style={{
-              ...scrollTableStyle,
-              tableLayout: mergedTableLayout,
-            }}
-            {...ariaProps}
-          >
-            {captionElement}
-            {bodyColGroup}
-            {bodyTable}
-            {!fixFooter && summaryNode && (
-              <Footer stickyOffsets={stickyOffsets} flattenColumns={flattenColumns}>
-                {summaryNode}
-              </Footer>
-            )}
-          </TableComponent>
+          {bodyTableNode}
         </div>
       );
     }
@@ -838,6 +897,7 @@ const Table = <RecordType extends DefaultRecordType>(
       stickyClassName,
       scrollX: mergedScrollX,
       tableLayout: mergedTableLayout,
+      columnResize: columnResizeEnabled,
       onScroll: onInternalScroll,
     };
 
@@ -886,27 +946,49 @@ const Table = <RecordType extends DefaultRecordType>(
     );
   } else {
     // >>>>>> Unique table
-    groupTableNode = (
+    const contentViewportStyle = {
+      ...scrollXStyle,
+      ...scrollYStyle,
+      ...styles?.content,
+    };
+    const tableNode = (
+      <TableComponent
+        style={{ ...scrollTableStyle, tableLayout: mergedTableLayout }}
+        {...ariaProps}
+      >
+        {captionElement}
+        {bodyColGroup}
+        {showHeader !== false && <Header {...headerProps} {...columnContext} />}
+        {bodyTable}
+        {summaryNode && (
+          <Footer stickyOffsets={stickyOffsets} flattenColumns={flattenColumns}>
+            {summaryNode}
+          </Footer>
+        )}
+      </TableComponent>
+    );
+    groupTableNode = useScrollArea ? (
+      <ScrollArea
+        className={`${prefixCls}-content-scroll-area`}
+        direction={scrollAreaDirection}
+        styles={scrollAreaStyles}
+        viewportRef={scrollBodyRef}
+        viewportProps={{
+          className: clsx(`${prefixCls}-content`, classNames?.content),
+          onScroll: onInternalScroll,
+          style: contentViewportStyle,
+        }}
+      >
+        {tableNode}
+      </ScrollArea>
+    ) : (
       <div
-        style={{ ...scrollXStyle, ...scrollYStyle, ...styles?.content }}
+        style={contentViewportStyle}
         className={clsx(`${prefixCls}-content`, classNames?.content)}
         onScroll={onInternalScroll}
         ref={scrollBodyRef}
       >
-        <TableComponent
-          style={{ ...scrollTableStyle, tableLayout: mergedTableLayout }}
-          {...ariaProps}
-        >
-          {captionElement}
-          {bodyColGroup}
-          {showHeader !== false && <Header {...headerProps} {...columnContext} />}
-          {bodyTable}
-          {summaryNode && (
-            <Footer stickyOffsets={stickyOffsets} flattenColumns={flattenColumns}>
-              {summaryNode}
-            </Footer>
-          )}
-        </TableComponent>
+        {tableNode}
       </div>
     );
   }
@@ -992,8 +1074,6 @@ const Table = <RecordType extends DefaultRecordType>(
       fixHeader,
       fixColumn,
       horizonScroll,
-      columnResizeEnabled,
-      hasHorizontalOverflow: visualHorizontalScroll,
 
       // Body
       tableLayout: mergedTableLayout,
@@ -1014,6 +1094,16 @@ const Table = <RecordType extends DefaultRecordType>(
       columns,
       flattenColumns,
       onColumnResize,
+      onColumnResizeDrag: (
+        columnKey: ColumnResizeKey,
+        width: number,
+        nativeEvent: PointerEvent,
+      ) => columnResizeState.onColumnResize(columnKey, width, nativeEvent, false),
+      onColumnResizeEnd: (
+        columnKey: ColumnResizeKey,
+        width: number,
+        nativeEvent: PointerEvent,
+      ) => columnResizeState.onColumnResize(columnKey, width, nativeEvent, true),
       colWidths,
 
       // Row
@@ -1051,8 +1141,6 @@ const Table = <RecordType extends DefaultRecordType>(
       fixHeader,
       fixColumn,
       horizonScroll,
-      columnResizeEnabled,
-      visualHorizontalScroll,
 
       // Body
       mergedTableLayout,

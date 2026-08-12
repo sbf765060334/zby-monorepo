@@ -3,67 +3,46 @@ category: Components
 group: 数据展示
 title: Table
 subtitle: 表格
-description: 基于 Ant Design 6.5.3 Table 源码 fork，增加高度填充、实时列宽拖拽、行高亮和纵向虚拟化。
+description: 以 Ant Design 6.5.3 和 rc-table 1.10.4 为底座，提供 Shuzhi Table 的扩展语义。
 ---
 
-## 何时使用
+## 实现基线
 
-Table 保留 antd 6.5.3 Table 的列渲染、排序、筛选、分页、展开、选择和固定列等上层能力，并补充以下数据密集场景：
+Table 保留 Ant Design 6.5.3 与 `@rc-component/table@1.10.4` 的上游行为和修复，并迁移 Shuzhi 的列增强、列宽拖拽、高度填充及虚拟 `rowSpan` 语义。
 
-- 表格需要填满页面剩余高度，数据较少时也要保持完整的表头、表体和分页布局；
-- 用户需要拖动表头调整列宽，并通过 `minWidth`、`maxWidth` 约束可调范围；
-- 开启列宽拖拽后，业务列保持固定像素宽度，剩余空间由明确的 filler 表示；
-- 追查数据时，需要点击一行标记为当前行，再次点击同一行取消；
-- 大数据表需要纵向虚拟化，同时保留可见滚动条、fill 布局和普通横向滚动。
+- 普通滚动表格按 Shuzhi 的挂载条件使用 ZBY ScrollArea。
+- 虚拟表格保留 rc-table 1.10.4 的 VirtualList viewport、滚动条、`scrollTo` 与行测量模型。
+- 不进行横向列虚拟化。
+- 未开启扩展能力时，列布局与滚动行为继续使用 AntD 6.5.3 基线。
 
-本次实现不包含 ActionText，也不进行横向列虚拟化。显式滚动、fill、虚拟模式或列宽拖拽复用组件内部的同一个原生滚动 viewport，滚动条视觉由 zby ScrollArea 统一提供；未配置滚动的基础表格保留 AntD 上游自动布局路径。`scrollAreaProps` 只暴露支持的可见策略和隐藏延迟，不透传任意内部 ScrollArea 属性。
-
-## 怎么使用
-
-### 基本用法与自定义单元格
+## 列增强
 
 ```tsx
 import { Table } from '@zby/ui'
 import type { TableColumnsType } from '@zby/ui'
-import { Tag } from 'antd'
-
-interface Order {
-  id: number
-  orderNo: string
-  status: 'pending' | 'done'
-  amount: number
-}
 
 const columns: TableColumnsType<Order> = [
-  { title: '订单号', dataIndex: 'orderNo', width: 180 },
   {
-    title: '状态',
-    dataIndex: 'status',
-    width: 120,
-    render: (status) => <Tag color={status === 'done' ? 'success' : 'warning'}>{status}</Tag>,
-  },
-  {
-    title: '金额',
-    dataIndex: 'amount',
-    width: 140,
-    align: 'right',
-    render: (amount) => `¥ ${amount.toLocaleString()}`,
-    onCell: (record) => ({ title: record.orderNo }),
+    title: '订单号',
+    dataIndex: 'orderNo',
+    tooltip: '业务系统中的唯一订单标识',
+    renderText: (value) => `单号：${value}`,
+    copyable: true,
+    ellipsis: { rows: 2 },
   },
 ]
-
-export default () => (
-  <Table<Order>
-    rowKey="id"
-    columns={columns}
-    dataSource={data}
-  />
-)
 ```
 
-列仍支持 antd 的 `render`、`onCell`、`shouldCellUpdate`、`ellipsis`、排序和筛选等能力。Table 不额外定义格式化协议，业务可以直接返回任意 React 节点。
+未提供 `render` 时，Table 会按 Shuzhi 语义处理：
 
-### 填满父容器
+- `tooltip`：为表头增加 Tooltip；
+- `renderText`：转换显示文本；
+- `copyable`：使用 ActionText 提供复制操作，操作在表格行 hover 时显示；
+- `ellipsis.rows` 与 `ellipsis.tooltip`：使用 ActionText 的多行省略和提示。
+
+显式 `render` 始终优先，存在 `render` 时不会执行 `renderText`，也不会自动包裹 ActionText。
+
+## 高度填充
 
 ```tsx
 <div style={{ height: 480, minHeight: 0 }}>
@@ -77,154 +56,97 @@ export default () => (
 </div>
 ```
 
-`heightMode="fill"` 会让 Table、antd wrapper、loading container、表体和分页共同参与纵向 flex 布局。表体吸收剩余高度，分页保持在容器底部；只有几行数据时不会插入伪数据行，而是保留真实空白表体区域。
+`heightMode` 为 `content | fill`，默认 `content`。在 `fill` 模式下，Table 观察自身容器、表头、标题、页脚、固定汇总和分页高度，自动计算 body 的 `scroll.y`。传入的 `scroll.y` 会被忽略并在开发环境给出警告。
 
-父级必须提供可计算的高度，并在嵌套 flex/grid 布局中按需设置 `minHeight: 0`。否则浏览器无法确定“剩余高度”，组件也无法产生内部滚动区域。
+父容器必须具有可计算高度；嵌套 flex/grid 容器通常还需要 `minHeight: 0`。
 
-### 固定列宽拖拽
+## 列宽拖拽
 
 ```tsx
-const columns: TableColumnsType<Order> = [
-  {
-    key: 'orderNo',
-    title: '订单号',
-    dataIndex: 'orderNo',
-    width: 180,
-    minWidth: 140,
-    maxWidth: 260,
-  },
-  {
-    key: 'customer',
-    title: '客户',
-    dataIndex: 'customer',
-    width: 160,
-    minWidth: 120,
-    maxWidth: 360,
-  },
-]
+import type { ColumnResizeWidths } from '@zby/ui'
+
+const [widths, setWidths] = useState<ColumnResizeWidths>({
+  orderNo: 180,
+  customer: 160,
+})
 
 <Table<Order>
   rowKey="id"
-  enableColumnResizing
-  columns={columns}
-  dataSource={data}
-  onColumnWidthChange={({ columnKey, width }) => {
-    console.log(columnKey, width)
+  columnResize={{
+    widths,
+    onWidthsChange: setWidths,
+    onResizeEnd: (info) => console.log(info.key, info.width),
   }}
-/>
-```
-
-拖动期间会按动画帧实时更新真实列宽，使表格宽度始终与指针位置同步。拖动值始终被限制在 `minWidth` 和 `maxWidth` 之间。拖拽手柄也支持键盘左右键：默认每次 10px，按住 Shift 时每次 1px。
-
-开启列宽拖拽后，每个业务叶子列都使用整数像素宽度。未声明宽度的普通列默认使用 `160px`，拖动只修改当前列，其他业务列不会跟着补偿。业务列总宽比视口至少小 `2px` 时，Table 用一个不可拖拽的 filler 列表示剩余空间；没有尾部固定列时 filler 位于业务列最后，存在尾部固定列时 filler 位于第一个尾部固定列之前。宽度差在 `±1px` 内时视为恰好适配，业务列总宽比视口至少大 `2px` 时表格产生横向滚动。
-
-开启列宽拖拽时，Table 不再为最右侧业务列生成占布局宽度的 gutter。末列手柄使用单元格内侧的透明命中区。filler 只在确有剩余空间时挂载，复用 Table 的标准表头分割线且不生成拖拽手柄；进入适配或溢出状态后 filler 会从列结构中移除。存在尾部固定列时，固定区域起始边界由顶层 sticky 单元格绘制，不依赖可能被覆盖的 filler 边框。
-
-开启 `enableColumnResizing` 时，Table 强制使用 `tableLayout="fixed"`，并在进入布局前统一将业务列宽归一为整数像素，保证表头、表体、filler 与滚动范围使用同一套数值模型；显式传入 `tableLayout="auto"` 会被忽略，并在开发环境给出警告。未开启时，Table 不进入增强列宽解析、不生成 filler，继续使用 AntD 6.5.3 的原生列宽和 `tableLayout` 路径。
-
-### 点击当前行，再次点击取消
-
-```tsx
-<Table<Order>
-  rowKey="id"
-  columns={columns}
-  dataSource={data}
-  rowHighlight={{
-    defaultCurrentRowKey: 2,
-    onChange: (key, row) => console.log(key, row),
-  }}
-/>
-```
-
-`rowHighlight` 参考 antd `rowSelection` 的配置对象模式：对象存在即启用，不需要额外的布尔总开关。点击当前行会清除高亮，并以 `(null, null)` 调用 `onChange`。
-
-受控模式使用 `currentRowKey`：
-
-```tsx
-const [currentRowKey, setCurrentRowKey] = useState<React.Key | null>(null)
-
-<Table<Order>
-  rowKey="id"
-  rowHighlight={{
-    currentRowKey,
-    onChange: (key) => setCurrentRowKey(key),
-  }}
-  rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }}
-  columns={columns}
+  columns={[
+    { key: 'orderNo', dataIndex: 'orderNo', width: 180, minWidth: 140 },
+    { key: 'customer', dataIndex: 'customer', width: 160, maxWidth: 360 },
+  ]}
   dataSource={data}
 />
 ```
 
-当前行高亮与 `rowSelection` 是两套独立状态，可以同时使用。业务 `onRow().onClick` 会先执行；如果该回调调用 `event.preventDefault()`，本次高亮切换会被取消。
+`columnResize` 为 `boolean | ColumnResizeConfig<T>`。开启后：
 
-### 纵向虚拟化
+- 默认列宽为 160px，默认最小宽度为 80px；
+- 数字和 `px` 字符串会归一为整数像素；
+- selection 与 expand 列固定使用 48px，且不可拖拽；
+- 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；
+- `resizable={false}` 禁止单列拖拽；
+- 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；
+- 业务列总宽小于 viewport 时插入 filler；存在 fixed-end 列时 filler 位于第一个 fixed-end 叶子列之前；
+- 业务列溢出时移除 filler 并启用横向滚动。
 
-```tsx
-<div style={{ height: 560, minHeight: 0 }}>
-  <Table<Order>
-    rowKey="id"
-    heightMode="fill"
-    virtual
-    scroll={{ x: 1280 }}
-    columns={wideColumns}
-    dataSource={largeData}
-    pagination={false}
-  />
-</div>
-```
+### ColumnResizeConfig
 
-虚拟模式只渲染可视区附近的行，并对实际行高进行测量。它与非虚拟模式使用同一个滚动 viewport 和同一套滚动条，不挂载 VirtualList 自己的滚动条。
-
-横向滚动保留，但它是浏览器在同一 viewport 上执行的普通 `scrollLeft`，不会虚拟化列。原生列宽路径下，`scroll.x` 建议传入与宽表目标宽度一致的数字；开启列宽拖拽后，是否溢出由已提交的业务列总宽决定，数字 `scroll.x` 不会拉宽 filler。非 fill 虚拟表建议提供 `scroll.y`；未提供时默认使用 500px 的内部高度。
-
-## Table 新增 Props
-
-除下表字段外，其余属性继承 antd 6.5.3 `TableProps`。
-
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| heightMode | 表格高度策略；fill 会填满具有确定高度的父级 | `auto \| fill` | `auto` |
-| scrollAreaProps | 内部 ScrollArea 的安全展示配置 | `TableScrollAreaProps` | - |
-| enableColumnResizing | 是否允许实时调整列宽；开启后强制使用 `tableLayout="fixed"` | `boolean` | `false` |
-| onColumnWidthChange | 指针拖动或键盘调整改变列宽时触发 | `(info: TableColumnWidthChangeInfo<T>) => void` | - |
-| rowHighlight | 当前行高亮配置；对象存在即启用 | `TableRowHighlight<T>` | - |
-
-`heightMode="fill"` 只决定表格填满父级剩余高度，不隔离纵向滚动。表体没有溢出或已经到达纵向边界时，滚轮可以继续滚动外层页面。
-
-### TableScrollAreaProps
-
-Table 只开放不会破坏表头同步和虚拟滚动的 ScrollArea 配置。`direction`、viewport ref、`onScroll` 和内容尺寸仍由 Table 内部管理。该配置在 Table 挂载共享 ScrollArea 时生效，包括 `heightMode="fill"`、虚拟表格以及设置了 `scroll.x`/`scroll.y` 的表格。
-
-| 字段 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| scrollbar | 滚动条实现与展示策略 | `ScrollAreaScrollbar` | `hover` |
-| scrollHideDelay | hover 或 scrolling 滚动条停止交互后的隐藏延迟，单位 ms | `number` | `200` |
-
-### TableRowHighlight
-
-| 字段 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| currentRowKey | 受控的当前行 key；`null` 表示没有高亮行 | `React.Key \| null` | - |
-| defaultCurrentRowKey | 非受控模式的初始当前行 key | `React.Key \| null` | `null` |
-| onChange | 当前行改变或清除时触发 | `(key: React.Key \| null, row: T \| null) => void` | - |
-
-### TableColumnWidthChangeInfo
-
-| 字段 | 说明 | 类型 |
+| 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| columnKey | 被调整叶子列的 key | `React.Key` |
-| width | 经过 min/max 限制后的当前宽度，单位 px | `number` |
-| column | 原始列配置对象 | `TableColumnType<T> \| TableColumnGroupType<T>` |
+| defaultWidth | `number` | 未声明列宽时的默认宽度 |
+| minWidth | `number` | 全局最小拖拽宽度 |
+| maxWidth | `number` | 全局最大拖拽宽度 |
+| widths | `ColumnResizeWidths` | 受控宽度映射 |
+| defaultWidths | `ColumnResizeWidths` | 非受控初始宽度映射 |
+| onWidthsChange | `(widths, info) => void` | 宽度映射变化 |
+| onResize | `(info) => void` | 拖动期间触发 |
+| onResizeEnd | `(info) => void` | 拖动结束触发 |
+
+`ColumnResizeInfo<T>` 包含 `key`、`width`、`previousWidth`、`delta`、`widths`、`column` 和 `nativeEvent`。
+
+## 虚拟表格
+
+```tsx
+<Table<Order>
+  rowKey="id"
+  virtual
+  scroll={{ x: 1280, y: 480 }}
+  columns={columns}
+  dataSource={largeData}
+  pagination={false}
+/>
+```
+
+虚拟模式使用 rc-table 1.10.4 的 VirtualList，只渲染可视区附近的行并测量实际行高。Shuzhi 的补偿逻辑会在合并起始行滚出可视区时继续渲染 `rowSpan` origin，也会在跨度超出数据尾部时按现有数据范围计算高度。
+
+`heightMode="fill"` 与 `virtual` 可以组合，测得的剩余高度会传给 VirtualList。非 fill 虚拟表格应提供数值 `scroll.y`。
+
+## 新增 Table Props
+
+其余属性遵循 AntD 6.5.3 Table。
+
+| 属性 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| heightMode | `content | fill` | `content` | 内容高度或填满父容器 |
+| columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
 
 ## 列扩展字段
 
-`TableColumnType` 和 `TableColumnGroupType` 在 antd 列配置上增加以下字段：
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| tooltip | `ReactNode | TooltipProps` | 表头提示 |
+| renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
+| copyable | `boolean | object` | 无显式 render 时提供复制操作 |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 原生单行或 ActionText 多行省略 |
+| minWidth | `number` | 普通 auto 布局最小宽度；resize 模式下为拖拽下限 |
+| maxWidth | `number` | resize 模式下的拖拽上限 |
+| resizable | `boolean` | 是否允许当前叶子列拖拽 |
 
-| 字段 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| width | 可选基础列宽，单位 px；省略时基础表格保留 AntD 自动列宽 | `number` | - |
-| minWidth | 最小拖拽宽度，单位 px | `number` | `50` |
-| maxWidth | 最大拖拽宽度，单位 px | `number` | `Infinity` |
-| resizable | 在全局开启调整后，是否允许当前叶子列调整 | `boolean` | `true` |
-
-列组自身不显示拖拽手柄，拖拽以可见叶子列为单位。内部 filler 不会出现在尾部固定列之后，并且只在剩余空间大于 `1px` 时存在。
+公开类型包括 `ColumnResizeConfig`、`ColumnResizeInfo` 和 `ColumnResizeWidths`。

@@ -14,6 +14,7 @@ import {
 import type { RefTable } from './interface'
 import type { TableProps } from './InternalTable'
 import InternalTable from './InternalTable'
+import { TABLE_ROW_HOVER_REVEAL_CLASS_NAME, TableCellHoverRelatedClassNames } from './util'
 
 const Table = <RecordType extends AnyObject = AnyObject>(
   props: TableProps<RecordType>,
@@ -34,6 +35,8 @@ const ForwardTable = React.forwardRef(Table) as unknown as RefTable & {
   Column: typeof Column;
   ColumnGroup: typeof ColumnGroup;
   Summary: typeof Summary;
+  cellHoverRelatedClassNames: typeof TableCellHoverRelatedClassNames;
+  rowHoverRevealClassName: typeof TABLE_ROW_HOVER_REVEAL_CLASS_NAME;
 }
 
 ForwardTable.SELECTION_COLUMN = SELECTION_COLUMN
@@ -44,6 +47,8 @@ ForwardTable.SELECTION_NONE = SELECTION_NONE
 ForwardTable.Column = Column
 ForwardTable.ColumnGroup = ColumnGroup
 ForwardTable.Summary = Summary
+ForwardTable.cellHoverRelatedClassNames = TableCellHoverRelatedClassNames
+ForwardTable.rowHoverRevealClassName = TABLE_ROW_HOVER_REVEAL_CLASS_NAME
 
 if (process.env.NODE_ENV !== 'production') {
   ForwardTable.displayName = 'Table'

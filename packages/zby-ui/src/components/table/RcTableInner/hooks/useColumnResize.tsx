@@ -1,610 +1,559 @@
-import * as React from 'react'
-
+import { useEvent, useLayoutEffect, warning } from '@rc-component/util';
+import * as React from 'react';
 import type {
-  ColumnResizeConfig,
-  ColumnGroupType,
   ColumnsType,
+  ColumnResizeConfig,
+  ColumnResizeInfo,
+  ColumnResizeKey,
+  ColumnResizeWidths,
   ColumnType,
-  Direction,
-  TableComponents,
-} from '../interface'
-import type { TableProps } from '../Table'
-import { INTERNAL_COL_DEFINE } from '../utils/legacyUtil'
-import { flatColumns } from './useColumns'
-import {
-  clampColumnWidth,
-  collectColumnSizingLeaves,
-  getColumnKey,
-  resolveColumnLayout,
-  resolveColumnWidths,
-} from './useColumnSizing'
+} from '../interface';
+import { INTERNAL_COLUMN_RESIZE_FILLER, INTERNAL_COLUMN_RESIZE_META } from '../interface';
+import { INTERNAL_COL_DEFINE } from '../utils/legacyUtil';
 
-interface ResizeHeaderCellProps
-  extends React.ThHTMLAttributes<HTMLTableCellElement> {
-  __zbyColumnKey?: React.Key
-  __zbyColumnWidth?: number
-  __zbyColumnMinWidth?: number
-  __zbyColumnMaxWidth?: number
-  __zbyResizable?: boolean
+const DEFAULT_COLUMN_WIDTH = 160;
+const DEFAULT_MIN_WIDTH = 80;
+const DEFAULT_EXPAND_WIDTH = 48;
+const FILLER_COLUMN_KEY = '__RC_TABLE_COLUMN_RESIZE_FILLER__';
+const SYNTHETIC_KEY_PATTERN = /^(?:key(?:-\d+)+|RC_TABLE_KEY(?:_next)*)$/;
+
+function normalizeResizeConfig<RecordType>(
+  columnResize: boolean | ColumnResizeConfig<RecordType> | undefined,
+): ColumnResizeConfig<RecordType> | null {
+  if (!columnResize) {
+    return null;
+  }
+
+  return columnResize === true ? {} : columnResize;
 }
 
-interface ResizeStartInfo<RecordType> {
-  key: React.Key
-  width: number
-  minWidth: number
-  maxWidth: number
-  column: ColumnGroupType<RecordType> | ColumnType<RecordType>
-  startClientX: number
+function getFiniteNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-interface UseColumnResizeOptions<RecordType extends object> {
-  columns: ColumnsType<RecordType>
-  sourceColumns?: ColumnsType<RecordType>
-  components?: TableComponents<RecordType>
-  prefixCls: string
-  direction?: Direction
-  enabled: boolean
-  viewportWidth: number
-  config?: ColumnResizeConfig<RecordType>
+function parsePixelWidth(value: unknown) {
+  const numberValue = getFiniteNumber(value);
+  if (numberValue !== undefined) {
+    return numberValue;
+  }
+
+  if (typeof value === 'string') {
+    const matched = value.trim().match(/^(\d+(?:\.\d+)?)px$/);
+    if (matched) {
+      return Number(matched[1]);
+    }
+  }
+
+  return undefined;
 }
 
-export interface UseColumnResizeResult<RecordType extends object> {
-  columns: ColumnsType<RecordType>
-  flattenColumns: readonly ColumnType<RecordType>[]
-  components: TableProps<RecordType>['components']
-  scrollX?: number
-  colWidths?: number[]
-  fillerWidth: number
-  widthsReady: boolean
-  hasHorizontalOverflow: boolean
-}
-
-const COLUMN_RESIZE_EPSILON = 0.01
-
-function getNumericWidth(value: unknown, fallback: number) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-function isInternalColumn<RecordType extends object>(
-  column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
+function areMeasuredWidthsEqual(
+  left: Record<number, number>,
+  right: Record<number, number>,
 ) {
-  return Boolean(
-    (column as ColumnType<RecordType> & Record<string, unknown>)[INTERNAL_COL_DEFINE],
-  )
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+
+  return leftKeys.length === rightKeys.length && leftKeys.every((key) => left[Number(key)] === right[Number(key)]);
 }
 
-function getFillerColumnKey(
-  leaves: readonly { key: React.Key }[],
-  prefixCls: string,
+function stringifyDataIndex(dataIndex: ColumnType<any>['dataIndex']) {
+  if (typeof dataIndex === 'string' || typeof dataIndex === 'number') {
+    return String(dataIndex);
+  }
+
+  if (
+    Array.isArray(dataIndex) &&
+    dataIndex.every((item) => typeof item === 'string' || typeof item === 'number')
+  ) {
+    return dataIndex.join('.');
+  }
+
+  return undefined;
+}
+
+function getResizeKeyInfo<RecordType>(
+  column: ColumnType<RecordType>,
+  fallbackKey: React.Key,
+): { key: ColumnResizeKey; stable: boolean } {
+  const dataIndexKey = stringifyDataIndex(column.dataIndex);
+  const columnKey = column.key;
+
+  if (
+    dataIndexKey &&
+    (columnKey === undefined || columnKey === null || SYNTHETIC_KEY_PATTERN.test(String(columnKey)))
+  ) {
+    return { key: dataIndexKey, stable: true };
+  }
+
+  if (
+    (typeof columnKey === 'string' || typeof columnKey === 'number') &&
+    !SYNTHETIC_KEY_PATTERN.test(String(columnKey))
+  ) {
+    return { key: columnKey, stable: true };
+  }
+
+  if (dataIndexKey) {
+    return { key: dataIndexKey, stable: true };
+  }
+
+  const rawKey = fallbackKey;
+
+  return { key: typeof rawKey === 'number' ? rawKey : String(rawKey), stable: false };
+}
+
+function getInternalColumnType<RecordType>(column: ColumnType<RecordType>) {
+  return (column as Record<string, any>)[INTERNAL_COL_DEFINE]?.columnType as string | undefined;
+}
+
+function isSelectionColumn<RecordType>(column: ColumnType<RecordType>) {
+  return typeof column.className === 'string' && column.className.includes('-selection-column');
+}
+
+function isExpandableColumn<RecordType>(column: ColumnType<RecordType>) {
+  return getInternalColumnType(column) === 'EXPAND_COLUMN';
+}
+
+function clampWidth(width: number, minWidth?: number, maxWidth?: number) {
+  let nextWidth = Math.max(width, minWidth ?? DEFAULT_MIN_WIDTH);
+
+  if (typeof maxWidth === 'number' && Number.isFinite(maxWidth) && maxWidth > 0) {
+    nextWidth = Math.min(nextWidth, maxWidth);
+  }
+
+  return Math.round(nextWidth);
+}
+
+function createWidthSignature(widths: ColumnResizeWidths | undefined) {
+  return Object.entries(widths ?? {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, width]) => `${key}:${width}`)
+    .join('|');
+}
+
+function areWidthsEqual(left: ColumnResizeWidths, right: ColumnResizeWidths) {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+
+  return leftKeys.length === rightKeys.length && leftKeys.every((key) => left[key] === right[key]);
+}
+
+function mergeDefaultWidths(
+  defaultWidths: ColumnResizeWidths | undefined,
+  currentWidths: ColumnResizeWidths,
+  resizedKeys: Set<string>,
 ) {
-  const existingKeys = new Set(leaves.map((leaf) => String(leaf.key)))
-  const baseKey = `${prefixCls}-zby-filler`
-  let key = baseKey
-  let index = 0
+  const nextWidths: ColumnResizeWidths = {};
 
-  while (existingKeys.has(key)) {
-    index += 1
-    key = `${baseKey}-${index}`
-  }
+  Object.entries(defaultWidths ?? {}).forEach(([key, width]) => {
+    nextWidths[key] =
+      resizedKeys.has(key) && currentWidths[key] !== undefined ? currentWidths[key] : width;
+  });
 
-  return key
+  Object.entries(currentWidths).forEach(([key, width]) => {
+    if (resizedKeys.has(key) && nextWidths[key] === undefined) {
+      nextWidths[key] = width;
+    }
+  });
+
+  return areWidthsEqual(currentWidths, nextWidths) ? currentWidths : nextWidths;
 }
 
-function containsFixedEndLeaf<RecordType extends object>(
-  column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
-  inheritedFixed?: ColumnType<RecordType>['fixed'],
-): boolean {
-  if (column.hidden) return false
-
-  const fixed = column.fixed ?? inheritedFixed
-  if ('children' in column && column.children?.length) {
-    return column.children.some((child) =>
-      containsFixedEndLeaf(child, fixed),
-    )
-  }
-
-  return fixed === 'end' || fixed === 'right'
+function isFixedEndColumn<RecordType>(column: ColumnType<RecordType>) {
+  return column.fixed === 'end' || column.fixed === 'right';
 }
 
-function insertFillerColumn<RecordType extends object>(
+function cloneColumnsWithResizedLeaves<RecordType>(
   columns: ColumnsType<RecordType>,
-  width: number,
-  key: React.Key,
-  prefixCls: string,
-): ColumnsType<RecordType> {
-  const className = `${prefixCls}-zby-filler-cell`
-  const fillerColumn: ColumnType<RecordType> = {
-    key,
-    title: null,
-    width,
-    resizable: false,
-    className,
-    render: () => null,
-    onHeaderCell: () => ({
-      'aria-hidden': true,
-      style: { width },
-    }),
-    onCell: () => ({
-      'aria-hidden': true,
-    }),
-  }
+  flattenColumns: readonly ColumnType<RecordType>[],
+  fillerColumn?: ColumnType<RecordType>,
+  fillerLeafIndex?: number,
+) {
+  let leafIndex = 0;
+  let fillerInserted = false;
 
-  const fixedEndIndex = columns.findIndex((column) =>
-    containsFixedEndLeaf(column),
-  )
-  if (fixedEndIndex < 0) return [...columns, fillerColumn]
-
-  return [
-    ...columns.slice(0, fixedEndIndex),
-    fillerColumn,
-    ...columns.slice(fixedEndIndex),
-  ]
-}
-
-function applyResolvedColumns<RecordType extends object>(
-  columns: ColumnsType<RecordType>,
-  widths: ReadonlyMap<React.Key, number>,
-  enableColumnResizing: boolean,
-  path: readonly number[] = [],
-): ColumnsType<RecordType> {
-  return columns.map((column, index) => {
-    const currentPath = [...path, index]
-    const key = getColumnKey(column, currentPath)
-
+  function cloneColumn(column: ColumnsType<RecordType>[number]): ColumnsType<RecordType>[number] {
     if ('children' in column && column.children?.length) {
       return {
         ...column,
-        key,
-        children: applyResolvedColumns(
-          column.children,
-          widths,
-          enableColumnResizing,
-          currentPath,
-        ),
+        children: cloneColumns(column.children),
+      };
+    }
+
+    const resizedColumn = flattenColumns[leafIndex];
+    leafIndex += 1;
+
+    return (resizedColumn ?? column) as ColumnsType<RecordType>[number];
+  }
+
+  function cloneColumns(sourceColumns: ColumnsType<RecordType>): ColumnsType<RecordType> {
+    const clonedColumns: ColumnsType<RecordType>[number][] = [];
+
+    sourceColumns.forEach((column) => {
+      if (!('children' in column && column.children?.length)) {
+        if (fillerColumn && !fillerInserted && leafIndex === fillerLeafIndex) {
+          clonedColumns.push(fillerColumn);
+          fillerInserted = true;
+        }
       }
-    }
 
-    const leafColumn = column as ColumnType<RecordType>
-    const width = widths.get(key)
-    const userOnHeaderCell = leafColumn.onHeaderCell
-    const internalColumn = isInternalColumn(leafColumn)
-    const minWidth = internalColumn ? 0 : getNumericWidth(leafColumn.minWidth, 50)
-    const maxWidth = internalColumn
-      ? Number.POSITIVE_INFINITY
-      : getNumericWidth(leafColumn.maxWidth, Number.POSITIVE_INFINITY)
+      clonedColumns.push(cloneColumn(column));
+    });
 
-    return {
-      ...leafColumn,
-      key,
-      width,
-      onHeaderCell: (resolvedColumn: ColumnType<RecordType>) => {
-        const userProps =
-          (userOnHeaderCell as
-            | ((column: unknown) => React.HTMLAttributes<HTMLElement>)
-            | undefined)?.(resolvedColumn) ?? {}
+    return clonedColumns;
+  }
 
-        return {
-          ...userProps,
-          style: {
-            ...userProps.style,
-            ...(width !== undefined ? { width } : {}),
-          },
-          ...(internalColumn
-            ? { 'data-zby-internal-column-key': String(key) }
-            : { 'data-zby-column-key': String(key) }),
-          ...(enableColumnResizing
-            ? {
-                __zbyColumnKey: key,
-                __zbyColumnWidth: width,
-                __zbyColumnMinWidth: minWidth,
-                __zbyColumnMaxWidth: maxWidth,
-                __zbyResizable: !internalColumn && leafColumn.resizable !== false,
-              }
-            : {}),
-        } as React.ThHTMLAttributes<HTMLTableCellElement>
-      },
-    }
-  }) as ColumnsType<RecordType>
+  const nextColumns = cloneColumns(columns);
+
+  if (fillerColumn && !fillerInserted) {
+    return [...nextColumns, fillerColumn];
+  }
+
+  return nextColumns;
 }
 
-export default function useColumnResize<RecordType extends object>(
-  options: UseColumnResizeOptions<RecordType>,
-): UseColumnResizeResult<RecordType> {
-  const {
-    columns,
-    sourceColumns,
-    components,
-    prefixCls,
-    direction = 'ltr',
-    enabled,
-    viewportWidth,
-    config,
-  } = options
-  const [userWidths, setUserWidths] = React.useState(
-    () => new Map<React.Key, number>(),
-  )
-  const userWidthsRef = React.useRef(userWidths)
-  const leaves = React.useMemo(
-    () => enabled
-      ? collectColumnSizingLeaves(columns, userWidths)
-      : [],
-    [columns, enabled, userWidths],
-  )
-  const widthTarget = Math.max(0, viewportWidth)
-  const widthResolution = React.useMemo(
-    () => resolveColumnWidths(leaves, widthTarget),
-    [leaves, widthTarget],
-  )
+export function useColumnResize<RecordType>({
+  columnResize,
+  columns,
+  flattenColumns,
+  columnsKey,
+  viewportWidth,
+  measureRootRef,
+}: {
+  columnResize?: boolean | ColumnResizeConfig<RecordType>;
+  columns: ColumnsType<RecordType>;
+  flattenColumns: readonly ColumnType<RecordType>[];
+  columnsKey: React.Key[];
+  viewportWidth?: number;
+  measureRootRef?: React.RefObject<HTMLElement | null>;
+}) {
+  const resizeConfig = normalizeResizeConfig(columnResize);
+  const enabled = Boolean(resizeConfig);
+  const controlledWidths = resizeConfig?.widths;
+  const defaultWidths = resizeConfig?.defaultWidths;
+  const defaultWidthsSignature = createWidthSignature(defaultWidths);
+  const controlledWidthsSignature = createWidthSignature(controlledWidths);
+  const measurableWidthsSignature = flattenColumns
+    .map((column, index) => {
+      const width = column.width;
+      return typeof width === 'string' &&
+        parsePixelWidth(width) === undefined &&
+        (isSelectionColumn(column) || isExpandableColumn(column))
+        ? `${index}:${width}`
+        : '';
+    })
+    .join('|');
+  const resizedKeysRef = React.useRef<Set<string>>(new Set());
+  const [measuredWidths, setMeasuredWidths] = React.useState<Record<number, number>>({});
+  const [innerWidths, setInnerWidths] = React.useState<ColumnResizeWidths>(() =>
+    enabled && !controlledWidths ? (defaultWidths ?? {}) : {},
+  );
 
-  const fillerColumnKey = React.useMemo(
-    () => getFillerColumnKey(leaves, prefixCls),
-    [leaves, prefixCls],
-  )
-  const layoutState = React.useMemo(
-    () => resolveColumnLayout(widthResolution.totalWidth, widthTarget),
-    [widthResolution.totalWidth, widthTarget],
-  )
-  const fillerWidth = widthResolution.complete
-    ? layoutState.fillerWidth
-    : 0
-  const resolvedColumns = React.useMemo(
-    () => {
-      if (!enabled) return columns
+  React.useEffect(() => {
+    if (!enabled || controlledWidths) {
+      resizedKeysRef.current.clear();
+      return;
+    }
 
-      const businessColumns = applyResolvedColumns(
-        columns,
-        widthResolution.widths,
-        enabled,
-      )
-      return widthResolution.complete && fillerWidth > 0
-        ? insertFillerColumn(
-            businessColumns,
-            fillerWidth,
-            fillerColumnKey,
-            prefixCls,
-          )
-        : businessColumns
-    },
-    [
-      columns,
-      enabled,
-      fillerWidth,
-      fillerColumnKey,
-      prefixCls,
-      widthResolution.complete,
-      widthResolution.widths,
-    ],
-  )
-  const scrollX = widthResolution.complete
-    ? layoutState.scrollX
-    : undefined
-  const hasHorizontalOverflow = Boolean(
-    widthResolution.complete && layoutState.hasHorizontalOverflow,
-  )
-  const resolvedFlattenColumns = React.useMemo(
-    () => flatColumns(resolvedColumns),
-    [resolvedColumns],
-  )
-  const resolvedColWidths = React.useMemo(
-    () => widthResolution.complete
-      ? resolvedFlattenColumns.map((column) => column.width as number)
-      : undefined,
-    [resolvedFlattenColumns, widthResolution.complete],
-  )
-  const originalColumnMap = React.useMemo(
-    () => {
-      const map = new Map<
-        React.Key,
-        ColumnGroupType<RecordType> | ColumnType<RecordType>
-      >()
-      if (sourceColumns) {
-        collectColumnSizingLeaves(sourceColumns, new Map()).forEach((leaf) => {
-          map.set(leaf.key, leaf.column)
-        })
+    setInnerWidths((currentWidths) =>
+      mergeDefaultWidths(defaultWidths, currentWidths, resizedKeysRef.current),
+    );
+  }, [controlledWidths, defaultWidthsSignature, enabled]);
+
+  useLayoutEffect(() => {
+    if (!enabled || !measurableWidthsSignature) {
+      setMeasuredWidths((current) =>
+        Object.keys(current).length ? {} : current,
+      );
+      return;
+    }
+
+    const measureRoot = measureRootRef?.current;
+    if (!measureRoot) {
+      return;
+    }
+
+    const nextMeasuredWidths: Record<number, number> = {};
+    flattenColumns.forEach((column, index) => {
+      const width = column.width;
+      if (
+        typeof width !== 'string' ||
+        parsePixelWidth(width) !== undefined ||
+        (!isSelectionColumn(column) && !isExpandableColumn(column))
+      ) {
+        return;
       }
-      leaves.forEach((leaf) => {
-        if (!map.has(leaf.key)) map.set(leaf.key, leaf.column)
-      })
-      return map
-    },
-    [leaves, sourceColumns],
-  )
-  const originalColumnMapRef = React.useRef(originalColumnMap)
-  originalColumnMapRef.current = originalColumnMap
-  const onColumnWidthChangeRef = React.useRef(config?.onColumnWidthChange)
-  onColumnWidthChangeRef.current = config?.onColumnWidthChange
 
-  const commitColumnWidth = React.useCallback(
-    (
-      key: React.Key,
-      width: number,
-      column: ColumnGroupType<RecordType> | ColumnType<RecordType>,
-    ) => {
-      const next = new Map(userWidthsRef.current)
-      next.set(key, width)
-      userWidthsRef.current = next
-      setUserWidths(next)
-      onColumnWidthChangeRef.current?.({ columnKey: key, width, column })
+      const measureElement = document.createElement('div');
+      measureElement.dataset.tableColumnWidthMeasure = '';
+      Object.assign(measureElement.style, {
+        height: '0',
+        overflow: 'hidden',
+        position: 'absolute',
+        visibility: 'hidden',
+        width,
+      });
+      measureRoot.appendChild(measureElement);
+      const measuredWidth = measureElement.getBoundingClientRect().width || measureElement.offsetWidth;
+      measureElement.remove();
+
+      if (Number.isFinite(measuredWidth) && measuredWidth > 0) {
+        nextMeasuredWidths[index] = measuredWidth;
+      }
+    });
+
+    setMeasuredWidths((current) =>
+      areMeasuredWidthsEqual(current, nextMeasuredWidths) ? current : nextMeasuredWidths,
+    );
+  }, [enabled, measurableWidthsSignature, measureRootRef, viewportWidth]);
+
+  const sourceWidths = controlledWidths ?? innerWidths;
+  const defaultWidth = getFiniteNumber(resizeConfig?.defaultWidth) ?? DEFAULT_COLUMN_WIDTH;
+  const globalMinWidth = getFiniteNumber(resizeConfig?.minWidth) ?? DEFAULT_MIN_WIDTH;
+  const globalMaxWidth = getFiniteNumber(resizeConfig?.maxWidth);
+
+  const resizeState = React.useMemo(() => {
+    if (!enabled) {
+      return null;
+    }
+
+    const widthMap: ColumnResizeWidths = {};
+    let totalWidth = 0;
+
+    const resizedFlattenColumns = flattenColumns.map((column, index) => {
+      const { key, stable } = getResizeKeyInfo(column, columnsKey[index] ?? index);
+      const isExpand = isExpandableColumn(column);
+      const isSelection = isSelectionColumn(column);
+      const isSystemColumn = isExpand || isSelection;
+      const minWidth = getFiniteNumber(column.minWidth) ?? globalMinWidth;
+      const maxWidth = getFiniteNumber(column.maxWidth) ?? globalMaxWidth;
+      const rawColumnWidth = parsePixelWidth(column.width) ?? measuredWidths[index];
+      const fallbackWidth = isExpand || isSelection ? DEFAULT_EXPAND_WIDTH : defaultWidth;
+      const configuredWidth =
+        getFiniteNumber(sourceWidths[key]) ??
+        getFiniteNumber(defaultWidths?.[key]) ??
+        rawColumnWidth ??
+        fallbackWidth;
+      const width = isSystemColumn
+        ? Math.round(configuredWidth)
+        : clampWidth(configuredWidth, minWidth, maxWidth);
+      const resizable = stable && column.resizable !== false && !isExpand && !isSelection;
+
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        !isSystemColumn &&
+        column.width !== undefined &&
+        rawColumnWidth === undefined
+      ) {
+        warning(
+          false,
+          '`columns[].width` should be a number or pixel string when `columnResize` is enabled.',
+        );
+      }
+
+      totalWidth += width;
+      widthMap[key] = width;
+
+      return {
+        ...column,
+        width,
+        [INTERNAL_COLUMN_RESIZE_META]: {
+          key,
+          width,
+          minWidth,
+          maxWidth,
+          resizable,
+        },
+      } as ColumnType<RecordType>;
+    });
+    const measuredViewportWidth = getFiniteNumber(viewportWidth);
+    const remainingWidth = measuredViewportWidth ? measuredViewportWidth - totalWidth : 0;
+    const fillerWidth = remainingWidth > 1 ? Math.round(remainingWidth) : 0;
+    const hasHorizontalOverflow = measuredViewportWidth
+      ? totalWidth - measuredViewportWidth > 1
+      : false;
+    const fillerColumn =
+      fillerWidth > 0
+        ? ({
+            key: FILLER_COLUMN_KEY,
+            title: null,
+            width: fillerWidth,
+            minWidth: fillerWidth,
+            resizable: false,
+            render: () => null,
+            [INTERNAL_COLUMN_RESIZE_FILLER]: true,
+          } as ColumnType<RecordType>)
+        : undefined;
+    const fillerLeafIndex = fillerColumn
+      ? resizedFlattenColumns.findIndex(isFixedEndColumn)
+      : undefined;
+    const normalizedFillerLeafIndex =
+      typeof fillerLeafIndex === 'number' && fillerLeafIndex >= 0
+        ? fillerLeafIndex
+        : resizedFlattenColumns.length;
+    const flattenColumnsWithFiller = fillerColumn
+      ? [
+          ...resizedFlattenColumns.slice(0, normalizedFillerLeafIndex),
+          fillerColumn,
+          ...resizedFlattenColumns.slice(normalizedFillerLeafIndex),
+        ]
+      : resizedFlattenColumns;
+    const layoutWidth = fillerWidth > 0 ? totalWidth + fillerWidth : totalWidth;
+
+    return {
+      columns: cloneColumnsWithResizedLeaves(
+        columns,
+        resizedFlattenColumns,
+        fillerColumn,
+        normalizedFillerLeafIndex,
+      ),
+      flattenColumns: flattenColumnsWithFiller,
+      widths: widthMap,
+      scrollX: layoutWidth,
+      realScrollX: totalWidth,
+      fillerWidth,
+      hasHorizontalOverflow,
+      colWidths: flattenColumnsWithFiller.map((column) => column.width as number),
+    };
+  }, [
+    columns,
+    columnsKey,
+    controlledWidthsSignature,
+    defaultWidth,
+    defaultWidths,
+    defaultWidthsSignature,
+    enabled,
+    flattenColumns,
+    globalMaxWidth,
+    globalMinWidth,
+    measuredWidths,
+    sourceWidths,
+    viewportWidth,
+  ]);
+
+  const widthsRef = React.useRef<ColumnResizeWidths>({});
+  const columnsRef = React.useRef<readonly ColumnType<RecordType>[]>([]);
+  const resizeFrameRef = React.useRef<number | null>(null);
+  const pendingResizeRef = React.useRef<{
+    key: ColumnResizeKey;
+    width: number;
+    nativeEvent: PointerEvent;
+  } | null>(null);
+
+  React.useEffect(() => {
+    widthsRef.current = resizeState?.widths ?? {};
+    columnsRef.current = resizeState?.flattenColumns ?? flattenColumns;
+  }, [flattenColumns, resizeState]);
+
+  const applyWidth = useEvent(
+    (key: ColumnResizeKey, width: number, nativeEvent: PointerEvent, triggerResizeEnd: boolean) => {
+      const currentWidths = widthsRef.current;
+      const currentColumn = columnsRef.current.find(
+        (column) => column[INTERNAL_COLUMN_RESIZE_META]?.key === key,
+      );
+      const resizeMeta = currentColumn?.[INTERNAL_COLUMN_RESIZE_META];
+
+      if (!currentColumn || !resizeMeta) {
+        return;
+      }
+
+      const previousWidth = currentWidths[key] ?? resizeMeta.width;
+      const nextWidth = clampWidth(width, resizeMeta.minWidth, resizeMeta.maxWidth);
+      const nextWidths = {
+        ...currentWidths,
+        [key]: nextWidth,
+      };
+      const info: ColumnResizeInfo<RecordType> = {
+        key,
+        width: nextWidth,
+        previousWidth,
+        delta: nextWidth - previousWidth,
+        widths: nextWidths,
+        column: currentColumn,
+        nativeEvent,
+      };
+
+      widthsRef.current = nextWidths;
+      resizedKeysRef.current.add(String(key));
+
+      if (!controlledWidths) {
+        setInnerWidths(nextWidths);
+      }
+
+      if (nextWidth !== previousWidth) {
+        resizeConfig?.onWidthsChange?.(nextWidths, info);
+        resizeConfig?.onResize?.(info);
+      }
+
+      if (triggerResizeEnd) {
+        resizeConfig?.onResizeEnd?.(info);
+      }
+    },
+  );
+
+  const flushPendingResize = useEvent(() => {
+    resizeFrameRef.current = null;
+    const pendingResize = pendingResizeRef.current;
+    pendingResizeRef.current = null;
+
+    if (!pendingResize) {
+      return;
+    }
+
+    applyWidth(pendingResize.key, pendingResize.width, pendingResize.nativeEvent, false);
+  });
+
+  React.useEffect(
+    () => () => {
+      if (
+        resizeFrameRef.current !== null &&
+        typeof window !== 'undefined' &&
+        typeof window.cancelAnimationFrame === 'function'
+      ) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+      }
     },
     [],
-  )
+  );
 
-  const cleanupResizeRef = React.useRef<(() => void) | null>(null)
-  React.useEffect(() => () => cleanupResizeRef.current?.(), [])
-
-  const startResize = React.useCallback(
-    (
-      event: React.PointerEvent<HTMLElement>,
-      cellProps: ResizeHeaderCellProps,
-    ) => {
-      const key = cellProps.__zbyColumnKey
-      if (key === undefined || !cellProps.__zbyResizable) return
-
-      const headerCell = event.currentTarget.closest('th')
-      const column = originalColumnMapRef.current.get(key)
-      if (!headerCell || !column) return
-      const resizeHandle = event.currentTarget
-      const pointerId = event.pointerId
-
-      cleanupResizeRef.current?.()
-      event.preventDefault()
-      event.stopPropagation()
-      resizeHandle.setPointerCapture?.(pointerId)
-
-      const cellRect = headerCell.getBoundingClientRect()
-      const startInfo: ResizeStartInfo<RecordType> = {
-        key,
-        width: cellProps.__zbyColumnWidth ?? cellRect.width,
-        minWidth: cellProps.__zbyColumnMinWidth ?? 50,
-        maxWidth:
-          cellProps.__zbyColumnMaxWidth ?? Number.POSITIVE_INFINITY,
-        column,
-        startClientX: event.clientX,
-      }
-      let candidateWidth = startInfo.width
-      let lastCommittedWidth = startInfo.width
-      let pendingWidth: number | null = null
-      let resizeFrame: number | null = null
-
-      const applyPendingWidth = () => {
-        resizeFrame = null
-        if (pendingWidth === null) return
-
-        const width = pendingWidth
-        pendingWidth = null
+  const updateWidth = useEvent(
+    (key: ColumnResizeKey, width: number, nativeEvent: PointerEvent, triggerResizeEnd: boolean) => {
+      if (triggerResizeEnd) {
         if (
-          Math.abs(width - lastCommittedWidth) <= COLUMN_RESIZE_EPSILON
-        ) {
-          return
-        }
-
-        lastCommittedWidth = width
-        commitColumnWidth(startInfo.key, width, startInfo.column)
-      }
-
-      const scheduleWidth = () => {
-        pendingWidth = candidateWidth
-        if (
-          Math.abs(candidateWidth - lastCommittedWidth) <=
-          COLUMN_RESIZE_EPSILON
-        ) {
-          pendingWidth = null
-          return
-        }
-        if (resizeFrame !== null) return
-
-        if (typeof window.requestAnimationFrame === 'function') {
-          resizeFrame = window.requestAnimationFrame(applyPendingWidth)
-        } else {
-          applyPendingWidth()
-        }
-      }
-
-      const updateWidth = (clientX: number) => {
-        const rawDelta =
-          direction === 'rtl'
-            ? startInfo.startClientX - clientX
-            : clientX - startInfo.startClientX
-        candidateWidth = clampColumnWidth(
-          startInfo.width + rawDelta,
-          startInfo.minWidth,
-          startInfo.maxWidth,
-        )
-        scheduleWidth()
-      }
-
-      const cancelPendingWidth = () => {
-        pendingWidth = null
-        if (
-          resizeFrame !== null &&
+          resizeFrameRef.current !== null &&
+          typeof window !== 'undefined' &&
           typeof window.cancelAnimationFrame === 'function'
         ) {
-          window.cancelAnimationFrame(resizeFrame)
+          window.cancelAnimationFrame(resizeFrameRef.current);
+          resizeFrameRef.current = null;
         }
-        resizeFrame = null
+
+        pendingResizeRef.current = null;
+        applyWidth(key, width, nativeEvent, true);
+        return;
       }
 
-      const flushPendingWidth = () => {
-        if (
-          resizeFrame !== null &&
-          typeof window.cancelAnimationFrame === 'function'
-        ) {
-          window.cancelAnimationFrame(resizeFrame)
-        }
-        resizeFrame = null
-        applyPendingWidth()
+      if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+        applyWidth(key, width, nativeEvent, false);
+        return;
       }
 
-      function cleanup() {
-        cancelPendingWidth()
-        if (resizeHandle.hasPointerCapture?.(pointerId)) {
-          resizeHandle.releasePointerCapture(pointerId)
-        }
-        document.removeEventListener('pointermove', onPointerMove)
-        document.removeEventListener('pointerup', onPointerUp)
-        document.removeEventListener('pointercancel', onPointerCancel)
-        document.removeEventListener('keydown', onKeyDown)
-        cleanupResizeRef.current = null
-      }
+      pendingResizeRef.current = { key, width, nativeEvent };
 
-      function onPointerMove(pointerEvent: PointerEvent) {
-        updateWidth(pointerEvent.clientX)
-      }
-
-      function onPointerUp(pointerEvent: PointerEvent) {
-        updateWidth(pointerEvent.clientX)
-        flushPendingWidth()
-        cleanup()
-      }
-
-      function onPointerCancel() {
-        cleanup()
-        if (
-          Math.abs(lastCommittedWidth - startInfo.width) >
-          COLUMN_RESIZE_EPSILON
-        ) {
-          commitColumnWidth(startInfo.key, startInfo.width, startInfo.column)
-        }
-      }
-
-      function onKeyDown(keyboardEvent: KeyboardEvent) {
-        if (keyboardEvent.key !== 'Escape') return
-        keyboardEvent.preventDefault()
-        cleanup()
-        if (
-          Math.abs(lastCommittedWidth - startInfo.width) >
-          COLUMN_RESIZE_EPSILON
-        ) {
-          commitColumnWidth(startInfo.key, startInfo.width, startInfo.column)
-        }
-      }
-
-      cleanupResizeRef.current = cleanup
-      document.addEventListener('pointermove', onPointerMove)
-      document.addEventListener('pointerup', onPointerUp)
-      document.addEventListener('pointercancel', onPointerCancel)
-      document.addEventListener('keydown', onKeyDown)
-    },
-    [commitColumnWidth, direction],
-  )
-
-  const resizeByKeyboard = React.useCallback(
-    (
-      event: React.KeyboardEvent<HTMLElement>,
-      cellProps: ResizeHeaderCellProps,
-    ) => {
-      const key = cellProps.__zbyColumnKey
-      if (
-        key === undefined ||
-        !cellProps.__zbyResizable ||
-        (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
-      ) {
-        return
-      }
-
-      event.preventDefault()
-      event.stopPropagation()
-      const column = originalColumnMapRef.current.get(key)
-      if (!column) return
-
-      const physicalDirection = event.key === 'ArrowRight' ? 1 : -1
-      const logicalDirection =
-        direction === 'rtl' ? -physicalDirection : physicalDirection
-      const step = event.shiftKey ? 1 : 10
-      const headerCellWidth = event.currentTarget
-        .closest('th')
-        ?.getBoundingClientRect()
-        .width
-      const currentWidth = cellProps.__zbyColumnWidth ?? headerCellWidth ?? 0
-      const width = clampColumnWidth(
-        currentWidth +
-        logicalDirection * step,
-        cellProps.__zbyColumnMinWidth,
-        cellProps.__zbyColumnMaxWidth,
-      )
-      if (Math.abs(width - currentWidth) > COLUMN_RESIZE_EPSILON) {
-        commitColumnWidth(key, width, column)
+      if (resizeFrameRef.current === null) {
+        resizeFrameRef.current = window.requestAnimationFrame(flushPendingResize);
       }
     },
-    [commitColumnWidth, direction],
-  )
-
-  const userHeaderCell =
-    typeof components?.header === 'object'
-      ? components.header.cell
-      : undefined
-  const ResizeHeaderCell = React.useMemo(
-    () =>
-      React.forwardRef<HTMLElement, ResizeHeaderCellProps>(
-        (headerCellProps, headerCellRef) => {
-          const {
-            __zbyColumnKey,
-            __zbyColumnWidth,
-            __zbyColumnMinWidth,
-            __zbyColumnMaxWidth,
-            __zbyResizable,
-            children,
-            ...restHeaderCellProps
-          } = headerCellProps
-          const resizeProps = {
-            __zbyColumnKey,
-            __zbyColumnWidth,
-            __zbyColumnMinWidth,
-            __zbyColumnMaxWidth,
-            __zbyResizable,
-          }
-          const CellComponent = userHeaderCell ?? 'th'
-
-          return React.createElement(
-            CellComponent,
-            {
-              ...restHeaderCellProps,
-              ref: headerCellRef,
-            },
-            children,
-            __zbyResizable
-              ? React.createElement('span', {
-                  role: 'separator',
-                  'aria-label': 'Resize column',
-                  'aria-orientation': 'vertical',
-                  'aria-valuenow': __zbyColumnWidth === undefined
-                    ? undefined
-                    : Math.round(__zbyColumnWidth),
-                  tabIndex: 0,
-                  className: `${prefixCls}-zby-resize-handle`,
-                  onPointerDown: (event: React.PointerEvent<HTMLElement>) =>
-                    startResize(event, resizeProps),
-                  onKeyDown: (event: React.KeyboardEvent<HTMLElement>) =>
-                    resizeByKeyboard(event, resizeProps),
-                })
-              : null,
-          )
-        },
-      ),
-    [prefixCls, resizeByKeyboard, startResize, userHeaderCell],
-  )
-
-  const mergedComponents = React.useMemo(
-    () => enabled
-      ? {
-          ...components,
-          header: {
-            ...(typeof components?.header === 'object' ? components.header : {}),
-            cell: ResizeHeaderCell,
-          },
-        }
-      : components,
-    [ResizeHeaderCell, components, enabled],
-  )
+  );
 
   return {
-    columns: resolvedColumns,
-    flattenColumns: resolvedFlattenColumns,
-    components: mergedComponents,
-    scrollX,
-    colWidths: resolvedColWidths,
-    fillerWidth,
-    widthsReady: !enabled || widthResolution.complete,
-    hasHorizontalOverflow,
-  }
+    enabled,
+    columns: resizeState?.columns ?? columns,
+    flattenColumns: resizeState?.flattenColumns ?? flattenColumns,
+    scrollX: resizeState?.scrollX,
+    realScrollX: resizeState?.realScrollX,
+    hasHorizontalOverflow: resizeState?.hasHorizontalOverflow ?? false,
+    colWidths: resizeState?.colWidths,
+    onColumnResize: updateWidth,
+  };
 }
