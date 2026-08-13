@@ -39,7 +39,7 @@ import {
 import * as React from 'react';
 import Body from './Body';
 import ColGroup from './ColGroup';
-import { EXPAND_COLUMN, INTERNAL_HOOKS, TABLE_FIXED_Z_INDEX } from './constant';
+import { EXPAND_COLUMN, INTERNAL_HOOKS } from './constant';
 import TableContext, { makeImmutable, type ScrollInfoType } from './context/TableContext';
 import type { FixedHeaderProps } from './FixedHolder';
 import FixedHolder from './FixedHolder';
@@ -94,28 +94,6 @@ const EMPTY_DATA = [];
 // Used for customize scroll
 const EMPTY_SCROLL_TARGET = {};
 
-type ScrollAreaDirection = 'vertical' | 'horizontal' | 'both';
-type ScrollAreaComponentProps = {
-  children?: React.ReactNode;
-  className?: string;
-  direction?: ScrollAreaDirection;
-  styles?: {
-    horizontalTrack?: React.CSSProperties;
-    verticalTrack?: React.CSSProperties;
-  };
-  viewportRef?: React.Ref<HTMLDivElement>;
-  viewportProps?: React.HTMLAttributes<HTMLDivElement>;
-};
-
-function getScrollAreaDirection(
-  horizontal: boolean,
-  vertical: boolean,
-): ScrollAreaDirection {
-  if (horizontal && vertical) return 'both';
-  if (horizontal) return 'horizontal';
-  return 'vertical';
-}
-
 export type SemanticName = 'section' | 'title' | 'footer' | 'content';
 export type ComponentsSemantic = 'wrapper' | 'cell' | 'row';
 
@@ -153,8 +131,6 @@ export interface TableProps<RecordType = any> extends Omit<
   footer?: PanelRender<RecordType>;
   summary?: (data: readonly RecordType[]) => React.ReactNode;
   caption?: React.ReactNode;
-  /** @private Injected by the AntD Table wrapper to keep this fork independently buildable. */
-  scrollAreaComponent?: React.ComponentType<ScrollAreaComponentProps>;
 
   // Customize
   id?: string;
@@ -258,7 +234,6 @@ const Table = <RecordType extends DefaultRecordType>(
     footer,
     summary,
     caption,
-    scrollAreaComponent: ScrollArea,
 
     // Customize
     id,
@@ -490,9 +465,9 @@ const Table = <RecordType extends DefaultRecordType>(
     };
   }
 
-  if (horizonScroll || columnResizeEnabled) {
+  if (horizonScroll) {
     scrollXStyle = {
-      overflowX: columnResizeEnabled && !visualHorizontalScroll ? 'hidden' : 'auto',
+      overflowX: 'auto',
     };
     // When no vertical scrollbar, should hide it
     // https://github.com/ant-design/ant-design/pull/20705
@@ -502,22 +477,9 @@ const Table = <RecordType extends DefaultRecordType>(
     }
     scrollTableStyle = {
       width: mergedScrollX === true ? 'auto' : mergedScrollX,
-      minWidth: columnResizeEnabled ? undefined : '100%',
+      minWidth: '100%',
     };
   }
-
-  const scrollAreaDirection = getScrollAreaDirection(
-    Boolean(horizonScroll || columnResizeEnabled),
-    Boolean(fixHeader),
-  );
-  const useScrollArea = Boolean(ScrollArea && (horizonScroll || fixHeader));
-  const scrollAreaStyles = React.useMemo(() => {
-    const trackZIndex = flattenColumns.length * 2 + TABLE_FIXED_Z_INDEX + 2;
-    return {
-      horizontalTrack: { zIndex: trackZIndex },
-      verticalTrack: { zIndex: trackZIndex },
-    };
-  }, [flattenColumns.length]);
 
   const onColumnResize = React.useCallback((columnKey: React.Key, width: number) => {
     updateColsWidths(widths => {
@@ -849,21 +811,7 @@ const Table = <RecordType extends DefaultRecordType>(
         </TableComponent>
       );
 
-      bodyContent = useScrollArea ? (
-        <ScrollArea
-          className={`${prefixCls}-body-scroll-area`}
-          direction={scrollAreaDirection}
-          styles={scrollAreaStyles}
-          viewportRef={scrollBodyRef}
-          viewportProps={{
-            className: `${prefixCls}-body`,
-            onScroll: onBodyScroll,
-            style: bodyViewportStyle,
-          }}
-        >
-          {bodyTableNode}
-        </ScrollArea>
-      ) : (
+      bodyContent = (
         <div
           style={bodyViewportStyle}
           onScroll={onBodyScroll}
@@ -967,21 +915,7 @@ const Table = <RecordType extends DefaultRecordType>(
         )}
       </TableComponent>
     );
-    groupTableNode = useScrollArea ? (
-      <ScrollArea
-        className={`${prefixCls}-content-scroll-area`}
-        direction={scrollAreaDirection}
-        styles={scrollAreaStyles}
-        viewportRef={scrollBodyRef}
-        viewportProps={{
-          className: clsx(`${prefixCls}-content`, classNames?.content),
-          onScroll: onInternalScroll,
-          style: contentViewportStyle,
-        }}
-      >
-        {tableNode}
-      </ScrollArea>
-    ) : (
+    groupTableNode = (
       <div
         style={contentViewportStyle}
         className={clsx(`${prefixCls}-content`, classNames?.content)}
@@ -1043,7 +977,7 @@ const Table = <RecordType extends DefaultRecordType>(
     </div>
   );
 
-  if (horizonScroll || columnResizeEnabled) {
+  if (horizonScroll) {
     fullTable = (
       <ResizeObserver onResize={({ offsetWidth }) => onFullTableResize(offsetWidth)}>
         {fullTable}

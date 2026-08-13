@@ -10,7 +10,7 @@ description: 以 Ant Design 6.5.3 和 rc-table 1.10.4 为底座，提供 Shuzhi 
 
 Table 保留 Ant Design 6.5.3 与 `@rc-component/table@1.10.4` 的上游行为和修复，并迁移 Shuzhi 的列增强、列宽拖拽、高度填充及虚拟 `rowSpan` 语义。
 
-- 普通滚动表格按 Shuzhi 的挂载条件使用 ZBY ScrollArea。
+- 普通滚动表格使用 AntD 6.5.3/rc-table 1.10.4 原生滚动容器。
 - 虚拟表格保留 rc-table 1.10.4 的 VirtualList viewport、滚动条、`scrollTo` 与行测量模型。
 - 不进行横向列虚拟化。
 - 未开启扩展能力时，列布局与滚动行为继续使用 AntD 6.5.3 基线。
@@ -136,9 +136,9 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | 内容高度或填满父容器 |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
-| rowHighlight | `TableRowHighlight<T>` | - | 开启 ZBY 当前行高亮；再次点击当前行取消 |
+| rowHighlight | `boolean | TableRowHighlight<T>` | `false` | 开启 ZBY 当前行高亮；再次点击当前行取消 |
 
-`rowHighlight` 是 ZBY 扩展，与 AntD `rowSelection` 相互独立。非受控模式使用 `defaultCurrentRowKey`，受控模式使用 `currentRowKey`；变化时 `onChange` 收到当前 key 和记录，清除时收到 `(null, null)`。业务 `onRow().onClick` 会先执行，调用 `event.preventDefault()` 可取消本次高亮切换。
+`rowHighlight` 是 ZBY 扩展，与 AntD `rowSelection` 相互独立。传入 `true` 时启用非受控高亮；传入对象时为受控模式，必须提供 `currentRowKey`，变化时 `onChange` 收到当前 key 和记录，清除时收到 `(null, null)`。业务 `onRow().onClick` 会先执行，调用 `event.preventDefault()` 可取消本次高亮切换。
 
 ## 列扩展字段
 

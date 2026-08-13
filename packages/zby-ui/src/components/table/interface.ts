@@ -242,8 +242,7 @@ export type TableColumnGroupType<RecordType = AnyObject> = ColumnGroupType<Recor
 export type TableColumnsType<RecordType = AnyObject> = ColumnsType<RecordType>
 
 export interface TableRowHighlight<RecordType = AnyObject> {
-  currentRowKey?: React.Key | null;
-  defaultCurrentRowKey?: React.Key | null;
+  currentRowKey: React.Key | null;
   onChange?: (currentRowKey: React.Key | null, currentRow: RecordType | null) => void;
 }
 

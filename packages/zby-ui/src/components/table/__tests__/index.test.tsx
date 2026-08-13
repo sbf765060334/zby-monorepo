@@ -76,11 +76,7 @@ beforeAll(() => {
       }
     }
 
-    const width =
-      this.classList.contains('ant-table') ||
-      this.classList.contains('ant-scroll-area-viewport')
-        ? 600
-        : 150
+    const width = this.classList.contains('ant-table') ? 600 : 150
     return {
       x: 0,
       y: 0,
@@ -130,15 +126,14 @@ const columns = [
 ]
 
 describe('Table', () => {
-  it('toggles uncontrolled current-row highlighting and reports the row', () => {
-    const onChange = vi.fn()
+  it('enables uncontrolled current-row highlighting with a boolean', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
         pagination={false}
         columns={columns}
         dataSource={data}
-        rowHighlight={{ onChange }}
+        rowHighlight
       />,
     )
     const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
@@ -146,12 +141,9 @@ describe('Table', () => {
     fireEvent.click(rows[0])
     expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
     expect(rows[0].getAttribute('aria-current')).toBe('true')
-    expect(onChange).toHaveBeenLastCalledWith(1, data[0])
-
     fireEvent.click(rows[0])
     expect(rows[0].classList.contains('ant-table-row-current')).toBe(false)
     expect(rows[0].getAttribute('aria-current')).toBeNull()
-    expect(onChange).toHaveBeenLastCalledWith(null, null)
   })
 
   it('keeps controlled current-row state authoritative', () => {
@@ -175,7 +167,6 @@ describe('Table', () => {
   })
 
   it('runs the user row click first and respects preventDefault', () => {
-    const onChange = vi.fn()
     const onClick = vi.fn((event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault()
     })
@@ -186,7 +177,7 @@ describe('Table', () => {
         columns={columns}
         dataSource={data}
         onRow={() => ({ onClick })}
-        rowHighlight={{ onChange }}
+        rowHighlight
       />,
     )
     const firstRow = container.querySelector('.ant-table-tbody .ant-table-row')!
@@ -194,7 +185,6 @@ describe('Table', () => {
     fireEvent.click(firstRow)
 
     expect(onClick).toHaveBeenCalledOnce()
-    expect(onChange).not.toHaveBeenCalled()
     expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
   })
 
@@ -206,10 +196,12 @@ describe('Table', () => {
         columns={columns}
         dataSource={data}
         rowSelection={{ defaultSelectedRowKeys: [2] }}
-        rowHighlight={{ defaultCurrentRowKey: 1 }}
+        rowHighlight
       />,
     )
     const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+
+    fireEvent.click(rows[0])
 
     expect(rows[0].classList.contains('ant-table-row-current')).toBe(true)
     expect(rows[0].classList.contains('ant-table-row-selected')).toBe(false)
@@ -230,11 +222,12 @@ describe('Table', () => {
         scroll={{ x: 280, y: 120 }}
         columns={columns}
         dataSource={virtualData}
-        rowHighlight={{ defaultCurrentRowKey: 1 }}
+        rowHighlight
       />,
     )
 
     const firstRow = container.querySelector('.ant-table-tbody-virtual .ant-table-row')!
+    fireEvent.click(firstRow)
     expect(firstRow.classList.contains('ant-table-row-current')).toBe(true)
     expect(firstRow.getAttribute('aria-current')).toBe('true')
 
@@ -357,7 +350,7 @@ describe('Table', () => {
     expect(headerTable?.querySelector<HTMLElement>('col')?.style.width).toBe('64px')
     expect(bodyTable?.querySelector<HTMLElement>('col')?.style.width).toBe('64px')
     expect(headerTable?.style.minWidth).toBe('')
-    expect(bodyTable?.style.minWidth).toBe('')
+    expect(bodyTable?.style.minWidth).toBe('100%')
     expect(container.querySelector('.ant-table-selection-column')).not.toBeNull()
   })
 
@@ -497,7 +490,7 @@ describe('Table', () => {
     ).toBe('')
     expect(
       resized.container.querySelector<HTMLElement>('.ant-table-body table')?.style.minWidth,
-    ).toBe('')
+    ).toBe('100%')
     resized.unmount()
 
     const empty = render(
@@ -687,7 +680,7 @@ describe('Table', () => {
     ).toBe('264px')
   })
 
-  it('uses ZBY ScrollArea for Shuzhi non-virtual scrolling semantics', () => {
+  it('uses the AntD 6.5.3 native body for non-virtual scrolling', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -698,38 +691,41 @@ describe('Table', () => {
       />,
     )
 
-    const scrollArea = container.querySelector(
-      '.ant-table-body-scroll-area.ant-scroll-area',
-    )
-    const viewport = container.querySelector<HTMLElement>('.ant-table-body')!
+    const body = container.querySelector<HTMLElement>('.ant-table-body')!
 
-    expect(scrollArea).not.toBeNull()
-    expect(viewport.classList.contains('ant-scroll-area-viewport')).toBe(true)
+    expect(container.querySelector('.ant-table-body-scroll-area')).toBeNull()
+    expect(container.querySelector('.ant-scroll-area')).toBeNull()
+    expect(body.parentElement?.classList.contains('ant-table-container')).toBe(true)
+    expect(body.style.overflowX).toBe('auto')
+    expect(body.style.overflowY).toBe('scroll')
+    expect(body.style.maxHeight).toBe('120px')
   })
 
-  it('keeps bordered cell dividers and radius through the ZBY ScrollArea wrappers', () => {
+  it('keeps column resize and row highlight on the native AntD content node', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
         bordered
         pagination={false}
         columnResize
+        rowHighlight
         columns={columns}
         dataSource={data}
       />,
     )
 
-    const scrollArea = container.querySelector<HTMLElement>(
-      '.ant-table-content-scroll-area',
-    )!
-    const viewport = scrollArea.querySelector<HTMLElement>('.ant-table-content')!
-    const bodyCell = scrollArea.querySelector<HTMLElement>('.ant-table-tbody td')!
+    const content = container.querySelector<HTMLElement>('.ant-table-content')!
+    const bodyCell = content.querySelector<HTMLElement>('.ant-table-tbody td')!
+    const highlightedRow = content.querySelector<HTMLElement>('[data-row-key="1"]')!
 
-    expect(viewport.querySelector('.ant-scroll-area-content')).not.toBeNull()
-    expect(bodyCell.closest('.ant-scroll-area-content')).not.toBeNull()
+    expect(container.querySelector('.ant-table-content-scroll-area')).toBeNull()
+    expect(content.parentElement?.classList.contains('ant-table-container')).toBe(true)
+    expect(content.style.overflowX).toBe('auto')
+    expect(content.querySelector('table')?.style.minWidth).toBe('100%')
     expect(bodyCell.classList.contains('ant-table-cell')).toBe(true)
-    expect(scrollArea.classList.contains('ant-scroll-area')).toBe(true)
-    expect(viewport.classList.contains('ant-scroll-area-viewport')).toBe(true)
+    expect(container.querySelector('.ant-table-cell-resize-handle')).not.toBeNull()
+    fireEvent.click(highlightedRow)
+    expect(highlightedRow.classList.contains('ant-table-row-current')).toBe(true)
   })
 
   it('keeps virtual tables on rc-table 1.10.4 VirtualList semantics', () => {

@@ -10,7 +10,8 @@ The local `Table.tsx`, `InternalTable.tsx`, `Column.ts`, `ColumnGroup.ts`,
 `ExpandIcon.tsx`, `TableMeasureRowContext.ts`, `interface.ts`, `util.ts`,
 `RcTable/`, `hooks/`, and `style/` started from that upstream source. Local
 changes add fill layout, live column resizing, current-row
-highlighting, and a shared ScrollArea-backed vertical virtual body.
+highlighting, and virtual `rowSpan` support. Normal and virtual scrolling retain
+the Ant Design 6.5.3 and rc-table 1.10.4 native scroll implementations.
 
 Copyright (c) 2015-present Ant UED, https://xtech.antfin.com/
 

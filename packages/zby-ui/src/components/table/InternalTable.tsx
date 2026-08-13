@@ -65,7 +65,6 @@ import type {
   TableRowSelection,
 } from './interface'
 import RcTable from './RcTable'
-import ScrollArea from '../scroll-area'
 import RcVirtualTable from './RcTable/VirtualTable'
 import useStyle from './style'
 import TableMeasureRowContext from './TableMeasureRowContext'
@@ -188,7 +187,7 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   virtual?: boolean;
   heightMode?: TableHeightMode;
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
-  rowHighlight?: TableRowHighlight<RecordType>;
+  rowHighlight?: boolean | TableRowHighlight<RecordType>;
 }
 
 /** Same as `TableProps` but we need record parent render times */
@@ -817,9 +816,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             components={mergedComponents}
             columnResize={columnResize}
             scroll={effectiveScroll}
-            scrollAreaComponent={
-              ScrollArea as unknown as RcTableProps<RecordType>['scrollAreaComponent']
-            }
             classNames={mergedClassNames as RcTableProps<RecordType>['classNames']}
             styles={mergedStyles as RcTableProps<RecordType>['styles']}
             ref={tblRef}

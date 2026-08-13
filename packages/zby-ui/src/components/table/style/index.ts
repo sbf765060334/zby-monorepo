@@ -446,19 +446,6 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
         },
       },
 
-      [`${componentCls}-content-scroll-area, ${componentCls}-body-scroll-area`]: {
-        width: '100%',
-
-        [`${token.antCls}-scroll-area-thumb`]: {
-          background: token.tableScrollThumbBg,
-          borderRadius: token.stickyScrollBarBorderRadius,
-
-          '&:hover': {
-            background: token.tableScrollThumbBgHover,
-          },
-        },
-      },
-
       // ============================ Footer ============================
       [`${componentCls}-footer`]: {
         padding: `${unit(tablePaddingVertical)} ${unit(tablePaddingHorizontal)}`,

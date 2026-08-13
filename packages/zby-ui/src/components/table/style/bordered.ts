@@ -19,13 +19,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
   } = token
   const tableBorder = `${unit(lineWidth)} ${lineType} ${tableBorderColor}`
   const [varName, varRef] = genCssVar(antCls, 'table')
-  const scrollAreaContentCls = `${antCls}-scroll-area-content`
-  const scrollAreaTableSelector = `
-    > ${componentCls}-content-scroll-area > ${componentCls}-content > ${scrollAreaContentCls} > table,
-    > ${componentCls}-content-scroll-area > ${componentCls}-content > * > ${scrollAreaContentCls} > table,
-    > ${componentCls}-body-scroll-area > ${componentCls}-body > ${scrollAreaContentCls} > table,
-    > ${componentCls}-body-scroll-area > ${componentCls}-body > * > ${scrollAreaContentCls} > table
-  `
 
   const getSizeBorderStyle = (
     size: 'small' | 'medium',
@@ -36,24 +29,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
       [`> ${componentCls}-container`]: {
         [`> ${componentCls}-content, > ${componentCls}-body`]: {
           '> table > tbody > tr > th, > table > tbody > tr > td': {
-            [`> ${componentCls}-expanded-row-fixed`]: {
-              margin: `${unit(calc(paddingVertical).mul(-1).equal())}
-              ${unit(calc(calc(paddingHorizontal).add(lineWidth)).mul(-1).equal())}`,
-            },
-          },
-        },
-
-        [`> ${componentCls}-content-scroll-area, > ${componentCls}-body-scroll-area`]: {
-          [`
-            ${componentCls}-content > ${scrollAreaContentCls} > table > tbody > tr > th,
-            ${componentCls}-content > ${scrollAreaContentCls} > table > tbody > tr > td,
-            ${componentCls}-content > * > ${scrollAreaContentCls} > table > tbody > tr > th,
-            ${componentCls}-content > * > ${scrollAreaContentCls} > table > tbody > tr > td,
-            ${componentCls}-body > ${scrollAreaContentCls} > table > tbody > tr > th,
-            ${componentCls}-body > ${scrollAreaContentCls} > table > tbody > tr > td,
-            ${componentCls}-body > * > ${scrollAreaContentCls} > table > tbody > tr > th,
-            ${componentCls}-body > * > ${scrollAreaContentCls} > table > tbody > tr > td
-          `]: {
             [`> ${componentCls}-expanded-row-fixed`]: {
               margin: `${unit(calc(paddingVertical).mul(-1).equal())}
               ${unit(calc(calc(paddingHorizontal).add(lineWidth)).mul(-1).equal())}`,
@@ -135,51 +110,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
               },
             },
 
-          [`
-            > ${componentCls}-content-scroll-area > ${componentCls}-content > ${scrollAreaContentCls},
-            > ${componentCls}-content-scroll-area > ${componentCls}-content > * > ${scrollAreaContentCls},
-            > ${componentCls}-body-scroll-area > ${componentCls}-body > ${scrollAreaContentCls},
-            > ${componentCls}-body-scroll-area > ${componentCls}-body > * > ${scrollAreaContentCls}
-          `]: {
-            '> table': {
-              '> thead > tr > th, > thead > tr > td, > tbody > tr > th, > tbody > tr > td, > tfoot > tr > th, > tfoot > tr > td':
-                {
-                  borderInlineEnd: tableBorder,
-                },
-
-              '> thead': {
-                '> tr:not(:last-child) > th': {
-                  borderBottom: tableBorder,
-                },
-
-                '> tr > th::before': {
-                  backgroundColor: 'transparent !important',
-                },
-              },
-
-              '> thead > tr, > tbody > tr, > tfoot > tr': {
-                [`> ${componentCls}-cell-fix-end-shadow::after`]: {
-                  borderInlineEnd: tableBorder,
-                },
-              },
-
-              '> tbody > tr > th, > tbody > tr > td': {
-                [`> ${componentCls}-expanded-row-fixed`]: {
-                  margin: `${unit(calc(tablePaddingVertical).mul(-1).equal())} ${unit(
-                    calc(calc(tablePaddingHorizontal).add(lineWidth)).mul(-1).equal(),
-                  )}`,
-                  '&::after': {
-                    position: 'absolute',
-                    top: 0,
-                    insetInlineEnd: lineWidth,
-                    bottom: 0,
-                    borderInlineEnd: tableBorder,
-                    content: '""',
-                  },
-                },
-              },
-            },
-          },
         },
 
         // ============================ Scroll ============================
@@ -192,21 +122,6 @@ const genBorderedStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
               `]: {
                 '> th, > td': {
                   borderInlineEnd: 0,
-                },
-              },
-            },
-          },
-
-          [`> ${componentCls}-container`]: {
-            [scrollAreaTableSelector]: {
-              '> tbody': {
-                [`
-                  > tr${componentCls}-expanded-row,
-                  > tr${componentCls}-placeholder
-                `]: {
-                  '> th, > td': {
-                    borderInlineEnd: 0,
-                  },
                 },
               },
             },

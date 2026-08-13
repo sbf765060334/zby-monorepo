@@ -9,7 +9,7 @@ description: Ant Design 6.5.3 and rc-table 1.10.4 with Shuzhi Table extension se
 
 Table preserves the upstream behavior and fixes from Ant Design 6.5.3 and `@rc-component/table@1.10.4`, then adds Shuzhi column enhancement, column resizing, fill height, and virtual `rowSpan` semantics.
 
-- Normal scroll tables mount ZBY ScrollArea under the same conditions as Shuzhi.
+- Normal scroll tables use the native AntD 6.5.3/rc-table 1.10.4 scroll container.
 - Virtual tables retain the rc-table 1.10.4 VirtualList viewport, scrollbar, `scrollTo`, and row measurement model.
 - Columns are not virtualized horizontally.
 - Without an extension enabled, layout and scrolling stay on the AntD 6.5.3 path.
@@ -135,9 +135,9 @@ All other props follow AntD 6.5.3 Table.
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | Use content height or fill the parent |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
-| rowHighlight | `TableRowHighlight<T>` | - | Enable ZBY current-row highlighting; click again to clear |
+| rowHighlight | `boolean | TableRowHighlight<T>` | `false` | Enable ZBY current-row highlighting; click again to clear |
 
-`rowHighlight` is a ZBY extension independent of AntD `rowSelection`. Use `defaultCurrentRowKey` for uncontrolled state or `currentRowKey` for controlled state. `onChange` receives the current key and record, or `(null, null)` when cleared. The application's `onRow().onClick` runs first and can cancel the highlight change with `event.preventDefault()`.
+`rowHighlight` is a ZBY extension independent of AntD `rowSelection`. Pass `true` for uncontrolled highlighting. Passing an object selects controlled mode and requires `currentRowKey`; `onChange` receives the current key and record, or `(null, null)` when cleared. The application's `onRow().onClick` runs first and can cancel the highlight change with `event.preventDefault()`.
 
 ## Column Extensions
 
