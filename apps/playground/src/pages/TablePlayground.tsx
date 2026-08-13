@@ -1,6 +1,6 @@
 import { Table } from '@zby/ui'
 import type { TableColumnsType } from '@zby/ui'
-import { Button, Space, Tag, Typography } from 'antd'
+import { Button, Space, Table as AntTable, Tag, Typography } from 'antd'
 import * as React from 'react'
 
 import {
@@ -43,6 +43,7 @@ function createOrderRecord(id: number): OrderRecord {
 }
 
 const normalData = Array.from({ length: 18 }, (_, index) => createOrderRecord(index + 1))
+const fillData = normalData.slice(0, 3)
 const virtualData = Array.from({ length: 3000 }, (_, index) => createOrderRecord(index + 1))
 
 function StatusTag({ status }: { status: OrderRecord['status'] }) {
@@ -229,7 +230,7 @@ export default function TablePlayground() {
           <TableScenario
             title="普通渲染 / Fill"
             bordered={bordered}
-            dataSource={normalData}
+            dataSource={fillData}
             fill
             highlightEnabled={highlightEnabled}
             virtual={false}
@@ -255,7 +256,7 @@ export default function TablePlayground() {
           <TableScenario
             title="虚拟渲染 / Fill"
             bordered={bordered}
-            dataSource={virtualData}
+            dataSource={fillData}
             fill
             highlightEnabled={highlightEnabled}
             virtual
@@ -263,6 +264,17 @@ export default function TablePlayground() {
           />
         </PlaygroundGrid>
       </PlaygroundSection>
+
+      <div data-antd-zero-height-diagnostic>
+        <AntTable<OrderRecord>
+          rowKey="id"
+          virtual
+          columns={columns}
+          dataSource={virtualData.slice(0, 100)}
+          pagination={false}
+          scroll={{ x: 1290, y: 0 }}
+        />
+      </div>
     </PlaygroundPage>
   )
 }
