@@ -76,6 +76,31 @@ export function App() {
 
 `ReactRouterProLayout` already installs `RouterCoreProvider` and `RouterCoreReactRouterAdapter`. Do not install either provider again around it.
 
+## Lazy Route Loading
+
+Use `createLazyRouteComponent` to create a preloadable `React.lazy` page, then pass the component reference directly to `element`:
+
+```tsx
+import {
+  createLazyRouteComponent,
+  type ProLayoutRoute,
+} from '@zby/pro/pro-layout'
+
+const OrderListPage = createLazyRouteComponent(
+  () => import('./pages/OrderListPage'),
+)
+
+const routes: ProLayoutRoute[] = [
+  {
+    path: '/orders',
+    title: 'Order list',
+    element: OrderListPage,
+  },
+]
+```
+
+Do not use `element: <OrderListPage />`. Menus and tabs read the static `preload()` method from the component reference. Preloading and rendering share the same in-flight or fulfilled module request. A failed speculative preload is removed so a later navigation can retry. Navigation remains immediate; page-level `Suspense` handles any unfinished request.
+
 ## Header Extensions
 
 Search, locale, and theme are independent features. Import the ones required by the application and place them in `header.extra`. They share the same sizing and interaction style, but ProLayout does not inject them automatically.
@@ -194,6 +219,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | showBreadcrumb | Show the global breadcrumb below the tab bar | `boolean` | `true` |
 | setPage | Called when the current page title changes; receives an empty string for no match | `(pageName: string) => void` | - |
 | onPageError | Called after a page render error with the original error, React component stack, and current pathname | `ProLayoutPageErrorHandler` | - |
+| pageLoading | Suspense fallback for lazy pages; `false` renders no fallback | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
 | beforeUnload | Request a browser prompt before leaving or refreshing | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | Minimum content width; numbers are treated as pixels | `number \| string` | - |
 | noBar | Hide the sider and tab bar and let content fill the viewport | `boolean` | `false` |
@@ -239,6 +265,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | auth | Permission code passed to the `hasAuth` function configured in `createRouterCore` | `string` | - |
 | supportMultipleTabs | Create a separate tab for each real pathname of a dynamic route | `boolean` | `false` |
 | element | Page component, component with static `preload`, or React Element | `ProLayoutRouteComponent` | - |
+| preload | Route-level preloader; takes priority over `element.preload` | `() => void \| Promise<void>` | - |
 | icon | Icon component used by menus and breadcrumbs | `ComponentType<ProLayoutRouteIconProps>` | - |
 | tooltipProps | Menu Tooltip configuration | `TooltipProps` | - |
 | _blank | Open through a native link | `boolean` | `false` |
@@ -246,6 +273,21 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | ignore | Hide this branch from ProLayout's visible menu tree and search | `boolean` | `false` |
 | prompt | Show an unavailable message; a string supplies custom text | `true \| string` | - |
 | tag | Menu status tag | `string \| { text: string; color?: TagProps['color'] }` | - |
+
+### createLazyRouteComponent
+
+`createLazyRouteComponent(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element` with `preload(): Promise<void>`. It deduplicates in-flight requests and reuses successful results. A direct preload call receives a rejection, while menu and tab preloads go through `preloadRoute`, which isolates failures so navigation remains available.
+
+### ProLayoutPageLoading
+
+| Property | Description | Type | Default |
+| --- | --- | --- | --- |
+| delay | Delay in milliseconds before the default Spin appears | `number` | `300` |
+| description | Description rendered by the default Spin | `SpinProps['description']` | - |
+| indicator | Custom indicator rendered by the default Spin | `SpinProps['indicator']` | - |
+| render | Completely replaces the default fallback and receives the concrete pathname | `(info: { pathname: string }) => ReactNode` | - |
+
+When `render` is configured, ProLayout does not wrap it in the default Spin. With `pageLoading={false}`, Suspense renders `null` while waiting.
 
 ### ProLayoutSystemItem
 

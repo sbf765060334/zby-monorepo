@@ -13,6 +13,7 @@ import type { RouterPage } from '@zby/router-core'
 import type { CSSProperties, ElementType } from 'react'
 import type {
   ProLayoutPageErrorHandler,
+  ProLayoutPageLoading,
   ProLayoutRoute,
   ProLayoutRouteComponent,
 } from '../types'
@@ -24,6 +25,7 @@ export interface KeepAlivePageProps {
   page: RouterPage<ProLayoutRoute>
   active: boolean
   onPageError?: ProLayoutPageErrorHandler
+  pageLoading?: false | ProLayoutPageLoading
   onScrollStateChange?: (scrolled: boolean) => void
   className?: string
   style?: CSSProperties
@@ -57,6 +59,7 @@ function KeepAlivePage(props: KeepAlivePageProps) {
     active,
     className,
     onPageError,
+    pageLoading,
     onScrollStateChange,
     page,
     prefixCls,
@@ -119,7 +122,17 @@ function KeepAlivePage(props: KeepAlivePageProps) {
             ? (error, info) => onPageError(error, info, { pathname: page.pathname })
             : undefined}
         >
-          <Suspense fallback={<PageLoading prefixCls={prefixCls} />}>
+          <Suspense
+            fallback={pageLoading === false
+              ? null
+              : (
+                  <PageLoading
+                    prefixCls={prefixCls}
+                    pathname={page.pathname}
+                    config={pageLoading}
+                  />
+                )}
+          >
             <StableRouteElement element={page.route.element} />
           </Suspense>
         </PageErrorBoundary>
@@ -128,10 +141,18 @@ function KeepAlivePage(props: KeepAlivePageProps) {
   )
 }
 
-function PageLoading(props: { prefixCls: string }) {
+function PageLoading(props: {
+  prefixCls: string
+  pathname: string
+  config?: ProLayoutPageLoading
+}) {
+  const { config, pathname, prefixCls } = props
+  if (config?.render)
+    return <>{config.render({ pathname })}</>
+
   return (
     <div
-      className={`${props.prefixCls}-page-loading`}
+      className={`${prefixCls}-page-loading`}
       style={{
         display: 'flex',
         width: '100%',
@@ -140,7 +161,11 @@ function PageLoading(props: { prefixCls: string }) {
         justifyContent: 'center',
       }}
     >
-      <Spin delay={300} />
+      <Spin
+        delay={config?.delay ?? 300}
+        description={config?.description}
+        indicator={config?.indicator}
+      />
     </div>
   )
 }

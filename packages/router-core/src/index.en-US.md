@@ -144,7 +144,8 @@ Do not call `createRouterCore` directly on every component render. If module-lev
 | `auth` | `string` | no | none | Permission code passed to `hasAuth`. |
 | `supportMultipleTabs` | `boolean` | no | `false` | Creates one tab per concrete dynamic pathname when true; otherwise shares the pattern tab. |
 | `element` | `unknown` | no | none | Marker used by the default `isPageRoute`; the core neither renders nor interprets it. |
-| additional fields | `unknown` | no | none | Business metadata such as icon, tag, or preload is retained for UI and utilities. |
+| `preload` | `() => void \| Promise<void>` | no | none | Route-level resource preloader; `preloadRoute` gives it priority. |
+| additional fields | `unknown` | no | none | Business metadata such as icon or tag is retained for UI and utilities. |
 
 Additional metadata is preserved in the route snapshot for the UI layer. `preloadRoute` also recognizes a function-valued `route.preload` or a `route.element` with a `preload` method. The core recursively snapshots routes during creation; mutating the original route objects later does not update an existing instance.
 

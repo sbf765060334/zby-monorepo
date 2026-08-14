@@ -1,5 +1,6 @@
+import { Tabs } from 'antd'
+
 import {
-  PlaygroundGrid,
   PlaygroundPage,
   PlaygroundSection,
 } from '../../components/ComponentPlayground'
@@ -17,6 +18,13 @@ import UncontrolledHighlightExample from './examples/UncontrolledHighlightExampl
 import VirtualFillTableExample from './examples/VirtualFillTableExample'
 import VirtualRowSpanExample from './examples/VirtualRowSpanExample'
 import VirtualTableExample from './examples/VirtualTableExample'
+import type { CSSProperties, ReactNode } from 'react'
+
+const deferredExampleStyle: CSSProperties = {
+  minWidth: 0,
+  contentVisibility: 'auto',
+  containIntrinsicSize: 'auto 520px',
+}
 
 export default function TablePlayground() {
   return (
@@ -28,39 +36,72 @@ export default function TablePlayground() {
         title="渲染与布局"
         description="对比普通、Fill、虚拟和虚拟 Fill 四种核心模式。"
       >
-        <PlaygroundGrid minItemWidth={520}>
-          <BasicTableExample />
-          <FillTableExample />
-          <VirtualTableExample />
-          <VirtualFillTableExample />
-        </PlaygroundGrid>
+        <ExampleTabs
+          items={[
+            { key: 'basic', label: '普通渲染', children: <BasicTableExample /> },
+            { key: 'fill', label: '普通 Fill', children: <FillTableExample /> },
+            { key: 'virtual', label: '虚拟渲染', children: <VirtualTableExample /> },
+            { key: 'virtual-fill', label: '虚拟 Fill', children: <VirtualFillTableExample /> },
+          ]}
+        />
       </PlaygroundSection>
 
       <PlaygroundSection
         title="ZBY 扩展能力"
         description="列宽拖拽、当前行高亮、列增强和虚拟 rowSpan 均为局部独立示例。"
       >
-        <PlaygroundGrid minItemWidth={520}>
-          <ColumnResizeExample />
-          <UncontrolledHighlightExample />
-          <ControlledHighlightExample />
-          <ColumnEnhancementExample />
-          <VirtualRowSpanExample />
-        </PlaygroundGrid>
+        <ExampleTabs
+          items={[
+            { key: 'resize', label: '列宽拖拽', children: <ColumnResizeExample /> },
+            {
+              key: 'highlight-uncontrolled',
+              label: '非受控高亮',
+              children: <UncontrolledHighlightExample />,
+            },
+            {
+              key: 'highlight-controlled',
+              label: '受控高亮',
+              children: <ControlledHighlightExample />,
+            },
+            { key: 'column', label: '列增强', children: <ColumnEnhancementExample /> },
+            { key: 'row-span', label: '虚拟 rowSpan', children: <VirtualRowSpanExample /> },
+          ]}
+        />
       </PlaygroundSection>
 
       <PlaygroundSection
         title="AntD 基线能力"
         description="以下实例继续使用 AntD 6.5.3 的原生语义。"
       >
-        <PlaygroundGrid minItemWidth={520}>
-          <BorderedTableExample />
-          <RowSelectionExample />
-          <FixedColumnsExample />
-          <SortFilterExample />
-          <ExpandableRowsExample />
-        </PlaygroundGrid>
+        <ExampleTabs
+          items={[
+            { key: 'bordered', label: '边框', children: <BorderedTableExample /> },
+            { key: 'selection', label: '行选择', children: <RowSelectionExample /> },
+            { key: 'fixed', label: '固定列', children: <FixedColumnsExample /> },
+            { key: 'sort-filter', label: '排序筛选', children: <SortFilterExample /> },
+            { key: 'expandable', label: '展开行', children: <ExpandableRowsExample /> },
+          ]}
+        />
       </PlaygroundSection>
     </PlaygroundPage>
+  )
+}
+
+interface ExampleTabItem {
+  key: string
+  label: ReactNode
+  children: ReactNode
+}
+
+function ExampleTabs(props: { items: ExampleTabItem[] }) {
+  return (
+    <Tabs
+      destroyOnHidden
+      items={props.items.map(({ children, key, label }) => ({
+        key,
+        label,
+        children: <div style={deferredExampleStyle}>{children}</div>,
+      }))}
+    />
   )
 }

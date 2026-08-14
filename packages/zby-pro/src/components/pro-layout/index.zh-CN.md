@@ -77,6 +77,31 @@ export function App() {
 
 `ReactRouterProLayout` 内部已经装配 `RouterCoreProvider` 和 `RouterCoreReactRouterAdapter`。不要在外层重复装配这两个 Provider。
 
+## 路由懒加载
+
+使用 `createLazyRouteComponent` 创建可预加载的 `React.lazy` 页面，并把组件引用直接传给 `element`：
+
+```tsx
+import {
+  createLazyRouteComponent,
+  type ProLayoutRoute,
+} from '@zby/pro/pro-layout'
+
+const OrderListPage = createLazyRouteComponent(
+  () => import('./pages/OrderListPage'),
+)
+
+const routes: ProLayoutRoute[] = [
+  {
+    path: '/orders',
+    title: '订单列表',
+    element: OrderListPage,
+  },
+]
+```
+
+不要写成 `element: <OrderListPage />`。菜单和页签会从组件引用读取静态 `preload()`；预先加载和真实渲染共享同一个进行中或已成功的模块请求。推测性预加载失败后会清理失败缓存，后续导航可以重试。导航本身不会等待预加载完成，未完成的请求由页面级 `Suspense` 承接。
+
 ## 顶部扩展
 
 搜索、语言和主题都是独立功能，由业务按需导入后放入 `header.extra`。三者会使用相同尺寸和交互风格，但 ProLayout 不会自动注入它们。
@@ -195,6 +220,7 @@ export function OrderPage() {
 | showBreadcrumb | 是否在页签栏下方显示全局面包屑 | `boolean` | `true` |
 | setPage | 当前页面标题变化后的通知；无匹配页面时传入空字符串 | `(pageName: string) => void` | - |
 | onPageError | 页面渲染异常后的通知；接收原始异常、React 组件栈和当前 pathname | `ProLayoutPageErrorHandler` | - |
+| pageLoading | 页面懒加载的 Suspense 占位；`false` 表示不渲染占位 | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
 | beforeUnload | 离开或刷新页面前是否触发浏览器提示 | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | 内容区域最小宽度；数字按像素处理 | `number \| string` | - |
 | noBar | 隐藏左侧菜单和顶部页签栏，让内容占满视口 | `boolean` | `false` |
@@ -240,6 +266,7 @@ export function OrderPage() {
 | auth | 交给 `createRouterCore` 的 `hasAuth` 判断的权限码 | `string` | - |
 | supportMultipleTabs | 动态路由的真实 pathname 是否分别创建页签 | `boolean` | `false` |
 | element | 页面组件、带静态 `preload` 的组件或 React Element | `ProLayoutRouteComponent` | - |
+| preload | 路由级预加载函数；存在时优先于 `element.preload` | `() => void \| Promise<void>` | - |
 | icon | 菜单和面包屑图标组件 | `ComponentType<ProLayoutRouteIconProps>` | - |
 | tooltipProps | 菜单 Tooltip 配置 | `TooltipProps` | - |
 | _blank | 是否使用原生链接打开 | `boolean` | `false` |
@@ -247,6 +274,21 @@ export function OrderPage() {
 | ignore | 从 ProLayout 可见菜单树和搜索中隐藏该分支 | `boolean` | `false` |
 | prompt | 显示“暂未开放”提示；字符串作为自定义文案 | `true \| string` | - |
 | tag | 菜单状态标签 | `string \| { text: string; color?: TagProps['color'] }` | - |
+
+### createLazyRouteComponent
+
+`createLazyRouteComponent(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件，并带有 `preload(): Promise<void>`。同一组件会去重进行中的请求并复用成功结果；预加载失败会向直接调用方返回 rejection，但菜单、页签通过 `preloadRoute` 触发时会隔离错误，不会阻止正常导航。
+
+### ProLayoutPageLoading
+
+| 属性 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| delay | 默认 Spin 延迟显示的毫秒数 | `number` | `300` |
+| description | 默认 Spin 的说明内容 | `SpinProps['description']` | - |
+| indicator | 默认 Spin 的自定义指示符 | `SpinProps['indicator']` | - |
+| render | 完全替换默认占位，接收当前真实 pathname | `(info: { pathname: string }) => ReactNode` | - |
+
+配置 `render` 时不会再包裹默认 Spin；配置 `pageLoading={false}` 时，Suspense 等待期间渲染 `null`。
 
 ### ProLayoutSystemItem
 

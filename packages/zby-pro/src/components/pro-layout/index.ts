@@ -1,4 +1,10 @@
 export { default, ReactRouterProLayout } from './ReactRouterProLayout'
+export { createLazyRouteComponent } from './createLazyRouteComponent'
+export type {
+  ProLayoutLazyRouteComponent,
+  ProLayoutLazyRouteLoader,
+  ProLayoutLazyRouteModule,
+} from './createLazyRouteComponent'
 export { default as ProLayoutContentContainer } from './content-container'
 export type {
   ProLayoutContentContainerItemBodyPadding,
@@ -44,6 +50,7 @@ export type {
   ProLayoutHeaderLogo,
   ProLayoutPageErrorContext,
   ProLayoutPageErrorHandler,
+  ProLayoutPageLoading,
   ProLayoutProps,
   ProLayoutRoute,
   ProLayoutRouteComponent,

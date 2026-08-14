@@ -1,5 +1,5 @@
 import type { RouterCore, RouterRoute, RouterRuntimeOptions } from '@zby/router-core'
-import type { TagProps, TooltipProps } from 'antd'
+import type { SpinProps, TagProps, TooltipProps } from 'antd'
 import type {
   ComponentType,
   CSSProperties,
@@ -118,6 +118,18 @@ export type ProLayoutPageErrorHandler = (
   context: ProLayoutPageErrorContext,
 ) => void
 
+/** 路由页面进入 Suspense 时使用的加载占位配置。 */
+export interface ProLayoutPageLoading {
+  /** 延迟显示默认 Spin 的毫秒数；默认为 300。 */
+  delay?: number
+  /** 默认 Spin 的说明内容。 */
+  description?: SpinProps['description']
+  /** 默认 Spin 的自定义加载指示符。 */
+  indicator?: SpinProps['indicator']
+  /** 完全替换默认加载占位；接收当前页面的真实 pathname。 */
+  render?: (info: { pathname: string }) => ReactNode
+}
+
 /** 不包含任何 router-core 固定配置的纯 UI 属性。 */
 export interface ProLayoutProps {
   /** 应用标题；当前页面存在标题时，浏览器标题显示为“页面标题 - 应用标题”。 */
@@ -130,6 +142,8 @@ export interface ProLayoutProps {
   setPage?: (pageName: string) => void
   /** 页面渲染异常后的通知回调；原始异常只交给宿主，不显示给最终用户。 */
   onPageError?: ProLayoutPageErrorHandler
+  /** 页面懒加载占位配置；false 表示 Suspense 等待期间不渲染占位。 */
+  pageLoading?: false | ProLayoutPageLoading
   /** 离开或刷新页面前是否提示；函数返回 true 时阻止直接离开。 */
   beforeUnload?: boolean | (() => boolean)
   /** 布局根容器的最小宽度；数字按像素处理，用于避免内容区域被过度压缩。 */

@@ -1,18 +1,22 @@
 import { ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
-import type { ProLayoutRoute } from '@zby/pro'
-import ActionIconPlayground from './pages/ActionIconPlayground'
-import ActionRevealPlayground from './pages/ActionRevealPlayground'
-import ActionTextPlayground from './pages/ActionTextPlayground'
-import DemoPage from './pages/DemoPage'
-import ErrorPage from './pages/ErrorPage'
-import InputNumberRangePlayground from './pages/InputNumberRangePlayground'
-import ScrollAreaPlayground from './pages/ScrollAreaPlayground'
-import TablePlayground from './pages/TablePlayground'
+import { createLazyRouteComponent, type ProLayoutRoute } from '@zby/pro'
+
+const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/ActionIconPlayground'))
+const ActionRevealPlayground = createLazyRouteComponent(() => import('./pages/ActionRevealPlayground'))
+const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/ActionTextPlayground'))
+const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
+const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
+const InputNumberRangePlayground = createLazyRouteComponent(
+  () => import('./pages/InputNumberRangePlayground'),
+)
+const ScrollAreaPlayground = createLazyRouteComponent(() => import('./pages/ScrollAreaPlayground'))
+const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
+const EmptyPage = () => null
 
 const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
   path,
   title,
-  element: <DemoPage />,
+  element: DemoPage,
 })
 
 export const appRouters: ProLayoutRoute[ ] = [
@@ -20,7 +24,7 @@ export const appRouters: ProLayoutRoute[ ] = [
     path: '/dashboard',
     title: '首页',
     icon: HomeOutlined,
-    element: <DemoPage />,
+    element: DemoPage,
   },
   {
     path: '/workbench',
@@ -31,25 +35,25 @@ export const appRouters: ProLayoutRoute[ ] = [
         path: '/records/:id',
         title: '记录详情',
         supportMultipleTabs: true,
-        element: <DemoPage />,
+        element: DemoPage,
       },
       {
         path: '/workbench/dirty',
         title: '关闭拦截',
         tag: { text: 'Hook', color: 'warning' },
-        element: <DemoPage />,
+        element: DemoPage,
       },
       {
         path: '/workbench/content-container',
         title: '内容区布局',
         tag: { text: 'New', color: 'success' },
-        element: <DemoPage />,
+        element: DemoPage,
       },
       {
         path: '/workbench/hidden',
         title: '隐藏菜单',
         ignore: true,
-        element: <div />,
+        element: EmptyPage,
       },
       {
         path: '/workbench/wip',
@@ -97,7 +101,7 @@ export const appRouters: ProLayoutRoute[ ] = [
                 path: '/workbench/material/assets/voices',
                 title: '语音素材',
                 tag: { text: 'New', color: 'success' },
-                element: <DemoPage />,
+                element: DemoPage,
               },
               createMenuPage('/workbench/material/assets/images', '图片素材图片素材图片素材'),
               createMenuPage('/workbench/material/assets/videos', '视频素材'),
@@ -249,14 +253,14 @@ export const appRouters: ProLayoutRoute[ ] = [
       {
         path: '/reports/overview',
         title: '报表总览',
-        element: <DemoPage />,
+        element: DemoPage,
       },
       {
         path: '/reports/live',
         title: '实时监控',
         tag: { text: 'Beta', color: 'processing' },
         tooltipProps: { title: '该页不会进入 keepAlive 缓存' },
-        element: <DemoPage />,
+        element: DemoPage,
       },
     ],
   },
@@ -272,32 +276,32 @@ export const appRouters: ProLayoutRoute[ ] = [
           {
             path: '/demo/ui/action-icon',
             title: '动作图标',
-            element: <ActionIconPlayground />,
+            element: ActionIconPlayground,
           },
           {
             path: '/demo/ui/action-reveal',
             title: '动作展开',
-            element: <ActionRevealPlayground />,
+            element: ActionRevealPlayground,
           },
           {
             path: '/demo/ui/action-text',
             title: '动作文本',
-            element: <ActionTextPlayground />,
+            element: ActionTextPlayground,
           },
           {
             path: '/demo/ui/input-range-input',
             title: '数字范围',
-            element: <InputNumberRangePlayground />,
+            element: InputNumberRangePlayground,
           },
           {
             path: '/demo/ui/scroll-area',
             title: '滚动组件',
-            element: <ScrollAreaPlayground />,
+            element: ScrollAreaPlayground,
           },
           {
             path: '/demo/ui/table',
             title: '表格',
-            element: <TablePlayground />,
+            element: TablePlayground,
           },
         ],
       },
@@ -308,7 +312,7 @@ export const appRouters: ProLayoutRoute[ ] = [
           {
             path: '/demo/error/404',
             title: '404页面',
-            element: <ErrorPage />,
+            element: ErrorPage,
           },
         ],
       },

@@ -7,6 +7,7 @@ export type {
   ZbyThemeTransitionOrigin,
 } from '@zby/hooks'
 export {
+  createLazyRouteComponent,
   ProLocaleSwitch,
   ProLayoutContentContainer,
   ProRouteSearch,
@@ -37,7 +38,11 @@ export type {
   ProLayoutContentContainerProps,
   ProLayoutContextValue,
   ProLayoutHeaderConfig,
+  ProLayoutLazyRouteComponent,
+  ProLayoutLazyRouteLoader,
+  ProLayoutLazyRouteModule,
   ProLayoutMetrics,
+  ProLayoutPageLoading,
   ProLayoutProps,
   ProLayoutSelectorEqualityFn,
   ProLayoutRoute,

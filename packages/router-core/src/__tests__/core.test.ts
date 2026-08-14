@@ -206,6 +206,7 @@ describe('route registry', () => {
     expect(directPreload).not.toHaveBeenCalled()
     await Promise.resolve()
     expect(directPreload).toHaveBeenCalledOnce()
+    expect(elementPreload).not.toHaveBeenCalled()
 
     expect(preloadRoute({
       path: '/element-preload',

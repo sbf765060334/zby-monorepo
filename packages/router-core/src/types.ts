@@ -33,6 +33,8 @@ export interface RouterRoute {
   supportMultipleTabs?: boolean
   /** 默认页面判定只检查该字段是否存在，core 不解释其具体类型。 */
   element?: unknown
+  /** 提前加载页面资源；预加载失败由调用方隔离，不改变正常导航语义。 */
+  preload?: () => void | Promise<void>
   /** 允许平台上层附加 icon、tag 等元数据，而不让 core 依赖具体 UI 库。 */
   [key: string]: unknown
 }

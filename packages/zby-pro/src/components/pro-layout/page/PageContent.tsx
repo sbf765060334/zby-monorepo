@@ -5,7 +5,11 @@ import { memo, useEffect, useMemo } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
-import type { ProLayoutPageErrorHandler, ProLayoutRoute } from '../types'
+import type {
+  ProLayoutPageErrorHandler,
+  ProLayoutPageLoading,
+  ProLayoutRoute,
+} from '../types'
 import ExceptionPage from './ExceptionPage'
 import KeepAlivePage from './KeepAlivePage'
 
@@ -13,6 +17,7 @@ import KeepAlivePage from './KeepAlivePage'
 export interface PageContentProps {
   prefixCls: string
   onPageError?: ProLayoutPageErrorHandler
+  pageLoading?: false | ProLayoutPageLoading
   onScrollStateChange?: (scrolled: boolean) => void
   pageClassName?: string
   pageStyle?: CSSProperties
@@ -20,7 +25,14 @@ export interface PageContentProps {
 
 /** 根据 core 保留的页面实例渲染 KeepAlive 页面，并处理当前地址的 403/404。 */
 function PageContent(props: PageContentProps) {
-  const { onPageError, onScrollStateChange, pageClassName, pageStyle, prefixCls } = props
+  const {
+    onPageError,
+    onScrollStateChange,
+    pageClassName,
+    pageLoading,
+    pageStyle,
+    prefixCls,
+  } = props
   const router = useRouterCore<ProLayoutRoute>()
   const pages = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pages,
@@ -63,6 +75,7 @@ function PageContent(props: PageContentProps) {
           page={page}
           active={isPage && page.key === activePage}
           onPageError={onPageError}
+          pageLoading={pageLoading}
           onScrollStateChange={onScrollStateChange}
           className={clsx(`${prefixCls}-page-body`, pageClassName)}
           style={pageStyle}

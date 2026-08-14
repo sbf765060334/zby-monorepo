@@ -30,6 +30,7 @@ function ProLayout(props: ProLayoutProps) {
     minimumContentWidth,
     noBar = false,
     onPageError,
+    pageLoading,
     prefixCls = DEFAULT_PREFIX_CLS,
     rootClassName,
     setPage,
@@ -154,6 +155,7 @@ function ProLayout(props: ProLayoutProps) {
             <PageContent
               prefixCls={prefixCls}
               onPageError={onPageError}
+              pageLoading={pageLoading}
               onScrollStateChange={setPageScrolled}
               pageClassName={classNames?.page}
               pageStyle={styles?.page}

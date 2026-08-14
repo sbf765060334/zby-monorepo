@@ -144,7 +144,8 @@ export function App() {
 | `auth` | `string` | 否 | 无 | 交给 `hasAuth` 判断的权限码。 |
 | `supportMultipleTabs` | `boolean` | 否 | `false` | `true` 时动态路由的每个真实 pathname 创建独立页签；否则共用 pattern 页签。 |
 | `element` | `unknown` | 否 | 无 | 默认 `isPageRoute` 用来识别页面的标记，Core 不渲染也不解释它。 |
-| 其它字段 | `unknown` | 否 | 无 | icon、tag、preload 等业务元数据会被快照保留，供 UI 和工具使用。 |
+| `preload` | `() => void \| Promise<void>` | 否 | 无 | 路由级资源预加载入口；`preloadRoute` 会优先调用它。 |
+| 其它字段 | `unknown` | 否 | 无 | icon、tag 等业务元数据会被快照保留，供 UI 和工具使用。 |
 
 额外元数据会保留在路由快照中供 UI 使用。`preloadRoute` 会额外识别函数形式的 `route.preload`，或带 `preload` 方法的 `route.element`。Core 创建时会递归复制路由树，后续修改原始路由对象不会更新已有实例。
 
