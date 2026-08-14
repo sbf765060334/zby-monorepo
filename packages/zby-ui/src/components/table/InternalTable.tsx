@@ -58,7 +58,6 @@ import type {
   TableAction,
   ColumnResizeConfig,
   TableCurrentDataSource,
-  TableHeightMode,
   TableLocale,
   TablePaginationConfig,
   TableRowHighlight,
@@ -185,9 +184,7 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   sortDirections?: SortOrder[];
   showSorterTooltip?: boolean | SorterTooltipProps;
   virtual?: boolean;
-  heightMode?: TableHeightMode;
-  /** Whether fill layout measurement should run. Inactive layouts keep their last measured height. */
-  layoutActive?: boolean;
+  height?: React.CSSProperties['height'];
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
   rowHighlight?: boolean | TableRowHighlight<RecordType>;
 }
@@ -233,8 +230,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     locale,
     showSorterTooltip = { target: 'full-header' },
     virtual,
-    heightMode = 'content',
-    layoutActive = true,
+    height,
     columnResize,
     rowHighlight,
     onRow,
@@ -265,8 +261,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'style',
     'column',
     'columns',
-    'heightMode',
-    'layoutActive',
+    'height',
     'columnResize',
     'rowHighlight',
     'onRow',
@@ -317,8 +312,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // =========== Merged Props for Semantic ==========
   const mergedProps: TableProps<RecordType> = {
     ...props,
-    heightMode,
-    layoutActive,
+    height,
     size: mergedSize,
     bordered,
   }
@@ -354,6 +348,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
       },
     },
   )
+  const mergedRootStyle = React.useMemo(
+    () => height === undefined ? mergedStyles.root : { ...mergedStyles.root, height },
+    [height, mergedStyles.root],
+  )
 
   const tableLocale: TableLocale = { ...contextLocale.Table, ...locale }
   const [globalLocale] = useLocale('global', defaultLocale.global)
@@ -363,12 +361,23 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const dropdownPrefixCls = getPrefixCls('dropdown', customizeDropdownPrefixCls)
 
   const [, token] = useToken()
+  const columnResizingEnabled = Boolean(columnResize)
 
   const mergedRowSelection = React.useMemo(() => {
     return isPlainObject(customizeRowSelection)
-      ? { columnWidth: token.Table?.selectionColumnWidth, ...customizeRowSelection }
+      ? {
+          columnWidth:
+            token.Table?.selectionColumnWidth ??
+            (columnResizingEnabled ? token.controlHeight : undefined),
+          ...customizeRowSelection,
+        }
       : customizeRowSelection
-  }, [customizeRowSelection, token.Table?.selectionColumnWidth])
+  }, [
+    columnResizingEnabled,
+    customizeRowSelection,
+    token.Table?.selectionColumnWidth,
+    token.controlHeight,
+  ])
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
   const [transformEnhanceColumns] = useColumnEnhance<RecordType>(prefixCls)
@@ -400,8 +409,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // ============================ Width =============================
   const getContainerWidth = useContainerWidth(prefixCls)
   const mergedScroll = scroll ?? table?.scroll
-  const fillEnabled = heightMode === 'fill'
-  const columnResizingEnabled = Boolean(columnResize)
+  const fillEnabled = height !== undefined
   const mergedTableLayout = columnResizingEnabled
     ? 'fixed'
     : tableProps.tableLayout
@@ -414,7 +422,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     warning(
       !(fillEnabled && mergedScroll?.y !== undefined),
       'usage',
-      '`scroll.y` will be ignored when `heightMode="fill"` is enabled.',
+      '`scroll.y` will be ignored when `height` is provided.',
     )
   }
 
@@ -786,7 +794,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   const { mergedScrollY } = useTableFillLayout({
     enabled: fillEnabled,
-    layoutActive,
     metrics: {
       hasFooter: typeof tableProps.footer === 'function',
       hasSummary: typeof tableProps.summary === 'function',
@@ -811,7 +818,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const TableComponent = virtual ? RcVirtualTable : RcTable
 
   return (
-    <div ref={rootRef} className={wrappercls} style={mergedStyles.root}>
+    <div ref={rootRef} className={wrappercls} style={mergedRootStyle}>
       <Spin spinning={false} {...spinProps}>
         {topPaginationNode}
         <HeaderTableContext.Provider value={headerTableContext}>

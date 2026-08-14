@@ -505,6 +505,7 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
     paddingXS,
     colorBorderSecondary,
     borderRadiusLG,
+    controlHeight,
     colorTextPlaceholder,
     fontSize,
     fontSizeSM,
@@ -561,7 +562,7 @@ export const prepareComponentToken: GetDefaultToken<'Table'> = (token) => {
     filterDropdownMenuBg: colorBgContainer,
     filterDropdownBg: colorBgContainer,
     expandIconBg: colorBgContainer,
-    selectionColumnWidth: 48,
+    selectionColumnWidth: controlHeight,
     stickyScrollBarBg: colorTextPlaceholder,
     stickyScrollBarBorderRadius: 100,
     expandIconMarginTop:

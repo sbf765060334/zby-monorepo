@@ -1,4 +1,3 @@
-import { useRouterPageSelector } from '@zby/router-core/react'
 import { Table } from '@zby/ui'
 
 import { PlaygroundCase } from '../../../components/ComponentPlayground'
@@ -7,8 +6,6 @@ import { fillData } from '../data'
 import type { OrderRecord } from '../data'
 
 export default function FillTableExample() {
-  const layoutActive = useRouterPageSelector((state) => state.active)
-
   return (
     <PlaygroundCase
       title="普通 Fill"
@@ -18,8 +15,7 @@ export default function FillTableExample() {
         <Table<OrderRecord>
           rowKey="id"
           size="small"
-          heightMode="fill"
-          layoutActive={layoutActive}
+          height="100%"
           columnResize
           columns={contentColumns}
           dataSource={fillData}

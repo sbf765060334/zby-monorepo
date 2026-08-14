@@ -246,8 +246,6 @@ export interface TableRowHighlight<RecordType = AnyObject> {
   onChange?: (currentRowKey: React.Key | null, currentRow: RecordType | null) => void;
 }
 
-export type TableHeightMode = 'content' | 'fill'
-
 export interface SelectionItem {
   key: string;
   text: React.ReactNode;

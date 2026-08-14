@@ -29,7 +29,7 @@ export default function TableFeaturesDemo() {
         columns={columns}
         dataSource={data}
         pagination={false}
-        heightMode="fill"
+        height="100%"
         columnResize={{ onResize: ({ width }) => setLastWidth(width) }}
         footer={() =>
           lastWidth === undefined ? 'Drag a column edge' : `Width: ${lastWidth}px`

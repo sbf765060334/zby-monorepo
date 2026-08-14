@@ -47,7 +47,7 @@ An explicit `render` always wins. In that case `renderText` is not called and Ta
 <div style={{ height: 480, minHeight: 0 }}>
   <Table<Order>
     rowKey="id"
-    heightMode="fill"
+    height="100%"
     columns={columns}
     dataSource={data}
     pagination={{ pageSize: 20 }}
@@ -55,9 +55,9 @@ An explicit `render` always wins. In that case `renderText` is not called and Ta
 </div>
 ```
 
-`heightMode` is `content | fill` and defaults to `content`. Fill mode observes the root, header, title, footer, fixed summary, and pagination, then derives body `scroll.y` from the remaining height. A supplied `scroll.y` is ignored and produces a development warning.
+`height` accepts the same numeric and string values as CSS `height`, including `480`, `100%`, `50vh`, and `calc(100vh - 64px)`. When provided, Table applies the value to its root and observes the actual root, header, title, footer, fixed summary, and pagination heights to derive body `scroll.y`. A supplied `scroll.y` is ignored and produces a development warning. Without `height`, native AntD height and `scroll.y` behavior is preserved.
 
-The parent must provide a calculable height. Nested flex or grid layouts commonly also require `minHeight: 0`.
+Percentage values and expressions based on percentages require a calculable parent height. Nested flex or grid layouts commonly also require `minHeight: 0`.
 
 ## Column Resizing
 
@@ -88,7 +88,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 - The default column width is 160px and the default minimum is 80px.
 - Numbers and `px` strings are normalized to integer pixels.
-- Selection and expand columns are fixed at 48px and cannot be resized.
+- The selection column follows `rowSelection.columnWidth` or the Table token and defaults to `controlHeight`. The expand column falls back to 48px without an explicit width. Neither can be resized.
 - Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle.
 - `resizable={false}` disables an individual leaf.
 - Dragging changes only the active leaf and reports through `onResize`, `onWidthsChange`, and `onResizeEnd`.
@@ -125,9 +125,9 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 Virtual mode uses rc-table 1.10.4 VirtualList, rendering rows around the viewport and measuring their actual heights. Shuzhi compensation keeps a `rowSpan` origin rendered after it leaves the normal visible range and clamps spans that extend beyond the data tail.
 
-`heightMode="fill"` can be combined with `virtual`; the measured remaining height is passed to VirtualList. A non-fill virtual table should provide numeric `scroll.y`.
+`height` can be combined with `virtual`; the measured remaining height is passed to VirtualList as numeric `scroll.y`. A virtual table without `height` should provide numeric `scroll.y` as required by AntD.
 
-When a fill table is inside KeepAlive, Tabs, or another container that hides its layout, pass the container activity state through `layoutActive`. While `false`, Table pauses fill measurement and keeps the last valid height; switching back to `true` schedules a fresh measurement. The default is `true`.
+Table does not interpret KeepAlive, Tabs, or other application activity state and does not cache the last valid height. When an ancestor uses `display: none`, the browser reports an actual height of zero and Table derives a zero body height. Applications that need to preserve virtual scrolling must choose a layout-preserving hiding strategy, or omit `height` and control a stable `scroll.y` themselves.
 
 ## Additional Table Props
 
@@ -135,8 +135,7 @@ All other props follow AntD 6.5.3 Table.
 
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
-| heightMode | `content | fill` | `content` | Use content height or fill the parent |
-| layoutActive | `boolean` | `true` | Control fill layout measurement and freeze the last valid height while inactive |
+| height | `React.CSSProperties['height']` | - | Total Table height; derives body height and ignores `scroll.y` when provided |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | Enable ZBY current-row highlighting; click again to clear |
 

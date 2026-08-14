@@ -295,6 +295,26 @@ describe('Table', () => {
     expect(onChange.mock.calls[0][0]).toEqual([1])
   })
 
+  it('uses the AntD control height for selection width with columnResize', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        rowSelection={{}}
+        columnResize
+        scroll={{ y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const headerTable = container.querySelector<HTMLElement>('.ant-table-header table')
+    const bodyTable = container.querySelector<HTMLElement>('.ant-table-body table')
+
+    expect(headerTable?.querySelector<HTMLElement>('col')?.style.width).toBe('32px')
+    expect(bodyTable?.querySelector<HTMLElement>('col')?.style.width).toBe('32px')
+  })
+
   it('preserves AntD string selection widths and explicit rowSelection overrides', () => {
     const { container, rerender } = render(
       <ConfigProvider theme={{ components: { Table: { selectionColumnWidth: '4rem' } } }}>
@@ -508,14 +528,15 @@ describe('Table', () => {
     clientWidth.mockRestore()
   })
 
-  it('passes the default content heightMode to semantic callbacks', () => {
-    const classNames = vi.fn(({ props }: { props: { heightMode?: string } }) => ({
-      root: `height-mode-${props.heightMode}`,
+  it('passes height to semantic callbacks and applies it to the root', () => {
+    const classNames = vi.fn(({ props }: { props: { height?: React.CSSProperties['height'] } }) => ({
+      root: props.height === undefined ? 'natural-height' : 'explicit-height',
     }))
     const { container } = render(
       <Table<RowData>
         rowKey="id"
         pagination={false}
+        height="calc(100% - 24px)"
         classNames={classNames}
         columns={columns}
         dataSource={data}
@@ -523,9 +544,13 @@ describe('Table', () => {
     )
 
     expect(classNames).toHaveBeenCalledWith(
-      expect.objectContaining({ props: expect.objectContaining({ heightMode: 'content' }) }),
+      expect.objectContaining({
+        props: expect.objectContaining({ height: 'calc(100% - 24px)' }),
+      }),
     )
-    expect(container.querySelector('.height-mode-content')).not.toBeNull()
+    expect(container.querySelector<HTMLElement>('.explicit-height')?.style.height).toBe(
+      'calc(100% - 24px)',
+    )
   })
 
   it('keeps controlled Shuzhi widths authoritative', () => {
@@ -613,7 +638,7 @@ describe('Table', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
-        heightMode="fill"
+        height={480}
         columns={columns}
         dataSource={data}
         pagination={{ pageSize: 1 }}
@@ -640,6 +665,7 @@ describe('Table', () => {
 
     const body = container.querySelector<HTMLElement>('.ant-table-body')
     expect(wrapper?.classList.contains('ant-table-wrapper-fill')).toBe(true)
+    expect((wrapper as HTMLElement | null)?.style.height).toBe('480px')
     expect(container.querySelector('.ant-table')?.classList.contains('ant-table-fill')).toBe(true)
     expect(body?.style.height).toBe('352px')
   })
@@ -653,7 +679,7 @@ describe('Table', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
-        heightMode="fill"
+        height="100%"
         virtual
         columns={columns}
         dataSource={virtualData}
@@ -663,6 +689,7 @@ describe('Table', () => {
     )
 
     const wrapper = container.querySelector('.ant-table-wrapper')
+    expect((wrapper as HTMLElement | null)?.style.height).toBe('100%')
     setElementSize(wrapper, 'clientHeight', 320)
 
     flushResizeObservers()
@@ -680,17 +707,16 @@ describe('Table', () => {
     ).toBe('264px')
   })
 
-  it('freezes the last fill height while layout measurement is inactive', () => {
+  it('reflects a collapsed root height without an activity guard', () => {
     vi.useFakeTimers()
     const virtualData = Array.from({ length: 100 }, (_, index) => ({
       id: index,
       name: `Row ${index}`,
     }))
-    const { container, rerender } = render(
+    const { container } = render(
       <Table<RowData>
         rowKey="id"
-        heightMode="fill"
-        layoutActive
+        height={320}
         virtual
         columns={columns}
         dataSource={virtualData}
@@ -716,44 +742,9 @@ describe('Table', () => {
 
     setElementSize(wrapper, 'clientHeight', 0)
     flushResizeObservers()
-    rerender(
-      <Table<RowData>
-        rowKey="id"
-        heightMode="fill"
-        layoutActive={false}
-        virtual
-        columns={columns}
-        dataSource={virtualData}
-        pagination={false}
-        scroll={{ x: 600 }}
-      />,
-    )
     act(() => vi.runOnlyPendingTimers())
 
-    expect(holder.style.height).toBe('264px')
-    expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(
-      virtualData.length,
-    )
-
-    setElementSize(wrapper, 'clientHeight', 400)
-    rerender(
-      <Table<RowData>
-        rowKey="id"
-        heightMode="fill"
-        layoutActive
-        virtual
-        columns={columns}
-        dataSource={virtualData}
-        pagination={false}
-        scroll={{ x: 600 }}
-      />,
-    )
-    act(() => vi.runOnlyPendingTimers())
-
-    expect(holder.style.height).toBe('344px')
-    expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(
-      virtualData.length,
-    )
+    expect(holder.style.height).toBe('0px')
   })
 
   it('uses the AntD 6.5.3 native body for non-virtual scrolling', () => {

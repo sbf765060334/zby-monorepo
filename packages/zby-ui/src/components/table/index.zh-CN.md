@@ -48,7 +48,7 @@ const columns: TableColumnsType<Order> = [
 <div style={{ height: 480, minHeight: 0 }}>
   <Table<Order>
     rowKey="id"
-    heightMode="fill"
+    height="100%"
     columns={columns}
     dataSource={data}
     pagination={{ pageSize: 20 }}
@@ -56,9 +56,9 @@ const columns: TableColumnsType<Order> = [
 </div>
 ```
 
-`heightMode` 为 `content | fill`，默认 `content`。在 `fill` 模式下，Table 观察自身容器、表头、标题、页脚、固定汇总和分页高度，自动计算 body 的 `scroll.y`。传入的 `scroll.y` 会被忽略并在开发环境给出警告。
+`height` 接受与 CSS `height` 相同的数字或字符串值，例如 `480`、`100%`、`50vh` 和 `calc(100vh - 64px)`。传入后，Table 将该值应用到根节点，并观察根节点、表头、标题、页脚、固定汇总和分页的实际高度，自动计算 body 的 `scroll.y`。同时传入的 `scroll.y` 会被忽略并在开发环境给出警告。不传 `height` 时完全保留 AntD 原生高度与 `scroll.y` 语义。
 
-父容器必须具有可计算高度；嵌套 flex/grid 容器通常还需要 `minHeight: 0`。
+百分比及依赖百分比的表达式要求父容器具有可计算高度；嵌套 flex/grid 容器通常还需要 `minHeight: 0`。
 
 ## 列宽拖拽
 
@@ -89,7 +89,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 - 默认列宽为 160px，默认最小宽度为 80px；
 - 数字和 `px` 字符串会归一为整数像素；
-- selection 与 expand 列固定使用 48px，且不可拖拽；
+- selection 列遵循 `rowSelection.columnWidth` 或 Table token，默认使用 `controlHeight`；expand 列缺少明确宽度时使用 48px 兜底；两者均不可拖拽；
 - 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；
 - `resizable={false}` 禁止单列拖拽；
 - 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；
@@ -126,9 +126,9 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 虚拟模式使用 rc-table 1.10.4 的 VirtualList，只渲染可视区附近的行并测量实际行高。Shuzhi 的补偿逻辑会在合并起始行滚出可视区时继续渲染 `rowSpan` origin，也会在跨度超出数据尾部时按现有数据范围计算高度。
 
-`heightMode="fill"` 与 `virtual` 可以组合，测得的剩余高度会传给 VirtualList。非 fill 虚拟表格应提供数值 `scroll.y`。
+`height` 与 `virtual` 可以组合，测得的剩余高度会作为数值 `scroll.y` 传给 VirtualList。不传 `height` 的虚拟表格应遵循 AntD 语义提供数值 `scroll.y`。
 
-当 fill 表格位于 KeepAlive、Tabs 或其他会隐藏布局的容器中时，可以将容器的激活状态传给 `layoutActive`。值为 `false` 时 Table 暂停 fill 测量并保留最后一次有效高度；恢复为 `true` 后重新测量。默认值为 `true`。
+Table 不识别 KeepAlive、Tabs 或其他业务激活状态，也不会缓存最后一次有效高度。祖先节点使用 `display: none` 时，浏览器测得的实际高度为 0，Table 会同步将 body 高度计算为 0；需要保持虚拟滚动高度时，应由业务层调整隐藏策略，或不传 `height` 并控制稳定的 `scroll.y`。
 
 ## 新增 Table Props
 
@@ -136,8 +136,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| heightMode | `content | fill` | `content` | 内容高度或填满父容器 |
-| layoutActive | `boolean` | `true` | 控制 fill 布局测量；失活时冻结最后有效高度 |
+| height | `React.CSSProperties['height']` | - | Table 总高度；传入后自动计算 body 高度并忽略 `scroll.y` |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | 开启 ZBY 当前行高亮；再次点击当前行取消 |
 

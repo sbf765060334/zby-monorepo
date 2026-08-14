@@ -13,7 +13,6 @@ export type {
   TableColumnGroupType,
   TableColumnsType,
   TableColumnType,
-  TableHeightMode,
   TableRowHighlight,
 } from './interface'
 export { TABLE_ROW_HOVER_REVEAL_CLASS_NAME, TableCellHoverRelatedClassNames }

@@ -7,25 +7,24 @@ import { virtualData } from '../data'
 import type { OrderRecord } from '../data'
 
 export default function VirtualFillTableExample() {
-  const layoutActive = useRouterPageSelector((state) => state.active)
+  const pageActive = useRouterPageSelector((state) => state.active)
 
   return (
     <PlaygroundCase
       title="虚拟 Fill"
-      description="3,000 行数据；页签失活时冻结最后有效高度，恢复后重新测量。"
+      description="3,000 行数据；激活时填满容器，失活时由业务保持稳定的虚拟滚动高度。"
     >
       <div style={{ height: 420, minHeight: 0, overflow: 'hidden' }}>
         <Table<OrderRecord>
           rowKey="id"
           size="small"
           virtual
-          heightMode="fill"
-          layoutActive={layoutActive}
+          height={pageActive ? '100%' : undefined}
           columnResize
           columns={contentColumns}
           dataSource={virtualData}
           pagination={false}
-          scroll={{ x: 1290 }}
+          scroll={{ x: 1290, y: pageActive ? undefined : 360 }}
         />
       </div>
     </PlaygroundCase>

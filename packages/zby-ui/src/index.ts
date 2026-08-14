@@ -59,13 +59,14 @@ export type {
 } from './components/scroll-area'
 export { default as Table } from './components/table'
 export type {
+  ColumnProps as TableColumnProps,
   TableColumnGroupType,
   ColumnResizeConfig,
   ColumnResizeInfo,
   ColumnResizeWidths,
   TableColumnsType,
   TableColumnType,
-  TableHeightMode,
+  TablePaginationConfig,
   TableProps,
   TableRowHighlight,
 } from './components/table'
