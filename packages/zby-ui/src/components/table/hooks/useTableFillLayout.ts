@@ -13,6 +13,7 @@ type TableFillMetrics = {
 
 type UseTableFillLayoutOptions = {
   enabled: boolean
+  layoutActive: boolean
   metrics: TableFillMetrics
   prefixCls: string
   rootRef: React.RefObject<HTMLDivElement | null>
@@ -117,6 +118,7 @@ function getOuterBlockSize(node: HTMLElement) {
 
 export default function useTableFillLayout({
   enabled,
+  layoutActive,
   metrics,
   prefixCls,
   rootRef,
@@ -127,6 +129,8 @@ export default function useTableFillLayout({
   const observerRef = React.useRef<ResizeObserver | null>(null)
   const observedNodesRef = React.useRef<Set<HTMLElement>>(new Set())
   const previousBodyRef = React.useRef<HTMLElement | null>(null)
+  const layoutActiveRef = React.useRef(layoutActive)
+  layoutActiveRef.current = layoutActive
 
   const clearObservedNodes = React.useCallback(() => {
     const observer = observerRef.current
@@ -169,6 +173,8 @@ export default function useTableFillLayout({
 
   const measure = React.useCallback(
     (root: HTMLDivElement) => {
+      if (!layoutActiveRef.current) return
+
       const bodyNode = getOwnedBody(root, prefixCls)
       const nonBodyNodes = getOwnedNonBodyNodes(root, prefixCls, bodyNode)
       const occupiedHeight = nonBodyNodes.reduce(
@@ -195,12 +201,16 @@ export default function useTableFillLayout({
   )
 
   const scheduleMeasure = React.useCallback(() => {
+    if (!layoutActiveRef.current) return
+
     if (frameRef.current !== null) {
       cancelMeasureFrame(frameRef.current)
     }
 
     frameRef.current = requestMeasureFrame(() => {
       frameRef.current = null
+      if (!layoutActiveRef.current) return
+
       const root = rootRef.current
       if (root) {
         measure(root)
@@ -226,8 +236,10 @@ export default function useTableFillLayout({
       observerRef.current = new ResizeObserver(scheduleMeasure)
     }
 
-    refreshObservedNodes(root)
-    scheduleMeasure()
+    if (layoutActiveRef.current) {
+      refreshObservedNodes(root)
+      scheduleMeasure()
+    }
 
     return () => {
       clearObservedNodes()
@@ -255,7 +267,16 @@ export default function useTableFillLayout({
   ])
 
   React.useLayoutEffect(() => {
-    if (!enabled || !observerRef.current) return
+    if (!enabled) return
+
+    if (!layoutActive) {
+      if (frameRef.current !== null) {
+        cancelMeasureFrame(frameRef.current)
+        frameRef.current = null
+      }
+      clearObservedNodes()
+      return
+    }
 
     const root = rootRef.current
     if (root && refreshObservedNodes(root)) {

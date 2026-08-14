@@ -127,6 +127,8 @@ Virtual mode uses rc-table 1.10.4 VirtualList, rendering rows around the viewpor
 
 `heightMode="fill"` can be combined with `virtual`; the measured remaining height is passed to VirtualList. A non-fill virtual table should provide numeric `scroll.y`.
 
+When a fill table is inside KeepAlive, Tabs, or another container that hides its layout, pass the container activity state through `layoutActive`. While `false`, Table pauses fill measurement and keeps the last valid height; switching back to `true` schedules a fresh measurement. The default is `true`.
+
 ## Additional Table Props
 
 All other props follow AntD 6.5.3 Table.
@@ -134,6 +136,7 @@ All other props follow AntD 6.5.3 Table.
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | Use content height or fill the parent |
+| layoutActive | `boolean` | `true` | Control fill layout measurement and freeze the last valid height while inactive |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | Enable ZBY current-row highlighting; click again to clear |
 

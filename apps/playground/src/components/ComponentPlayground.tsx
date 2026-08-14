@@ -103,6 +103,7 @@ export function PlaygroundCase(props: PlaygroundCaseProps) {
     <article
       style={{
         display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr)',
         gap: 12,
         alignContent: 'start',
         minWidth: 0,

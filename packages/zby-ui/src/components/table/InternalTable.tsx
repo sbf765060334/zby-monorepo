@@ -186,6 +186,8 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   showSorterTooltip?: boolean | SorterTooltipProps;
   virtual?: boolean;
   heightMode?: TableHeightMode;
+  /** Whether fill layout measurement should run. Inactive layouts keep their last measured height. */
+  layoutActive?: boolean;
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
   rowHighlight?: boolean | TableRowHighlight<RecordType>;
 }
@@ -232,6 +234,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     showSorterTooltip = { target: 'full-header' },
     virtual,
     heightMode = 'content',
+    layoutActive = true,
     columnResize,
     rowHighlight,
     onRow,
@@ -263,6 +266,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'column',
     'columns',
     'heightMode',
+    'layoutActive',
     'columnResize',
     'rowHighlight',
     'onRow',
@@ -314,6 +318,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   const mergedProps: TableProps<RecordType> = {
     ...props,
     heightMode,
+    layoutActive,
     size: mergedSize,
     bordered,
   }
@@ -781,6 +786,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   const { mergedScrollY } = useTableFillLayout({
     enabled: fillEnabled,
+    layoutActive,
     metrics: {
       hasFooter: typeof tableProps.footer === 'function',
       hasSummary: typeof tableProps.summary === 'function',

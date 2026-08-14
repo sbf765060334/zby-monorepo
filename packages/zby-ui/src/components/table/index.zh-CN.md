@@ -128,6 +128,8 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 `heightMode="fill"` 与 `virtual` 可以组合，测得的剩余高度会传给 VirtualList。非 fill 虚拟表格应提供数值 `scroll.y`。
 
+当 fill 表格位于 KeepAlive、Tabs 或其他会隐藏布局的容器中时，可以将容器的激活状态传给 `layoutActive`。值为 `false` 时 Table 暂停 fill 测量并保留最后一次有效高度；恢复为 `true` 后重新测量。默认值为 `true`。
+
 ## 新增 Table Props
 
 其余属性遵循 AntD 6.5.3 Table。
@@ -135,6 +137,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | heightMode | `content | fill` | `content` | 内容高度或填满父容器 |
+| layoutActive | `boolean` | `true` | 控制 fill 布局测量；失活时冻结最后有效高度 |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | 开启 ZBY 当前行高亮；再次点击当前行取消 |
 

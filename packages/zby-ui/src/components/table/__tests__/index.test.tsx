@@ -680,6 +680,82 @@ describe('Table', () => {
     ).toBe('264px')
   })
 
+  it('freezes the last fill height while layout measurement is inactive', () => {
+    vi.useFakeTimers()
+    const virtualData = Array.from({ length: 100 }, (_, index) => ({
+      id: index,
+      name: `Row ${index}`,
+    }))
+    const { container, rerender } = render(
+      <Table<RowData>
+        rowKey="id"
+        heightMode="fill"
+        layoutActive
+        virtual
+        columns={columns}
+        dataSource={virtualData}
+        pagination={false}
+        scroll={{ x: 600 }}
+      />,
+    )
+
+    const wrapper = container.querySelector('.ant-table-wrapper')
+    setElementSize(wrapper, 'clientHeight', 320)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const header = container.querySelector('.ant-table-header')
+    setElementSize(header, 'offsetHeight', 56)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const holder = container.querySelector<HTMLElement>(
+      '.ant-table-tbody-virtual-holder',
+    )!
+    expect(holder.style.height).toBe('264px')
+
+    setElementSize(wrapper, 'clientHeight', 0)
+    flushResizeObservers()
+    rerender(
+      <Table<RowData>
+        rowKey="id"
+        heightMode="fill"
+        layoutActive={false}
+        virtual
+        columns={columns}
+        dataSource={virtualData}
+        pagination={false}
+        scroll={{ x: 600 }}
+      />,
+    )
+    act(() => vi.runOnlyPendingTimers())
+
+    expect(holder.style.height).toBe('264px')
+    expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(
+      virtualData.length,
+    )
+
+    setElementSize(wrapper, 'clientHeight', 400)
+    rerender(
+      <Table<RowData>
+        rowKey="id"
+        heightMode="fill"
+        layoutActive
+        virtual
+        columns={columns}
+        dataSource={virtualData}
+        pagination={false}
+        scroll={{ x: 600 }}
+      />,
+    )
+    act(() => vi.runOnlyPendingTimers())
+
+    expect(holder.style.height).toBe('344px')
+    expect(container.querySelectorAll('.ant-table-row').length).toBeLessThan(
+      virtualData.length,
+    )
+  })
+
   it('uses the AntD 6.5.3 native body for non-virtual scrolling', () => {
     const { container } = render(
       <Table<RowData>
