@@ -1,8 +1,8 @@
 import { RouterCoreProvider } from '@zby/router-core/react'
-import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { memo } from 'react'
 
 import ProLayout from './ProLayout'
+import NavigationProgressController from './navigation-progress/NavigationProgress'
 import type { ReactRouterProLayoutProps } from './types'
 
 /**
@@ -20,9 +20,9 @@ export function ReactRouterProLayout(props: ReactRouterProLayoutProps) {
       onStorageError={onStorageError}
       onTabClose={onTabClose}
     >
-      <RouterCoreReactRouterAdapter>
+      <NavigationProgressController>
         <ProLayout {...layoutProps} />
-      </RouterCoreReactRouterAdapter>
+      </NavigationProgressController>
     </RouterCoreProvider>
   )
 }

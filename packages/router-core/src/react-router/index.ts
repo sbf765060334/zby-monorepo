@@ -9,4 +9,7 @@ export {
   RouterCoreReactRouterAdapter,
   useRouterCoreCreateHref,
 } from './RouterCoreReactRouterAdapter'
-export type { RouterCoreReactRouterAdapterProps } from './RouterCoreReactRouterAdapter'
+export type {
+  RouterCoreLocationSyncScheduler,
+  RouterCoreReactRouterAdapterProps,
+} from './RouterCoreReactRouterAdapter'

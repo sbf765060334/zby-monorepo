@@ -6,7 +6,7 @@
  */
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
   BrowserRouter,
   MemoryRouter,
@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRouterCore } from '../../createRouterCore'
 import { RouterCoreProvider } from '../../react'
-import type { RouterRoute, RouterStorageAdapter } from '../../types'
+import type { RouterLocation, RouterRoute, RouterStorageAdapter } from '../../types'
 import {
   RouterCoreReactRouterAdapter,
   useRouterCoreCreateHref,
@@ -38,6 +38,41 @@ afterEach(() => {
 
 /** 这一组验证 Core 命令和 React Router 地址能形成完整的双向同步。 */
 describe('RouterCoreReactRouterAdapter', () => {
+  it('commits through a custom scheduler and cleans up a replaced callback', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const commits: Array<() => void> = []
+    const cleanups: Array<ReturnType<typeof vi.fn>> = []
+    const scheduleSyncLocation = vi.fn((_location: RouterLocation, commit: () => void) => {
+      commits.push(commit)
+      const cleanup = vi.fn()
+      cleanups.push(cleanup)
+      return cleanup
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/home']}>
+        <RouterCoreProvider router={router}>
+          <RouterCoreReactRouterAdapter scheduleSyncLocation={scheduleSyncLocation}>
+            <NavigationProbe router={router} />
+          </RouterCoreReactRouterAdapter>
+        </RouterCoreProvider>
+      </MemoryRouter>,
+    )
+
+    expect(scheduleSyncLocation).toHaveBeenCalledOnce()
+    expect(router.getState().currentPathname).not.toBe('/home')
+    const staleCommit = commits.shift()
+
+    fireEvent.click(screen.getByRole('button', { name: 'jump' }))
+    await waitFor(() => expect(scheduleSyncLocation).toHaveBeenCalledTimes(2))
+    expect(cleanups[0]).toHaveBeenCalledOnce()
+    act(() => staleCommit?.())
+    expect(router.getState().currentPathname).not.toBe('/home')
+
+    act(() => commits.shift()?.())
+    await waitFor(() => expect(router.getState().currentPathname).toBe('/project/42'))
+  })
+
   /** StrictMode 首屏根路径重定向应只提交一次，并最终等待 `/home` 落定。 */
   it('settles an initial root redirect after BrowserRouter starts listening', async () => {
     window.history.replaceState(null, '', '/')

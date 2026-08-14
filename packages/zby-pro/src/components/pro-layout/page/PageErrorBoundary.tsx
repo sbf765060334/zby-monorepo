@@ -10,6 +10,7 @@ import ExceptionPage from './ExceptionPage'
 interface PageErrorBoundaryProps {
   children: ReactNode
   prefixCls: string
+  pageCommitReporter?: ReactNode
   /** 只有边界已经报错时，任一 key 变化才允许重新尝试渲染业务页面。 */
   resetKeys: unknown[]
   /** 原始异常只交给宿主上报，不进入用户可见的 fallback。 */
@@ -26,7 +27,11 @@ export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
   return (
     <ErrorBoundary
       fallbackRender={(fallbackProps) => (
-        <PageErrorFallback {...fallbackProps} prefixCls={props.prefixCls} />
+        <PageErrorFallback
+          {...fallbackProps}
+          prefixCls={props.prefixCls}
+          pageCommitReporter={props.pageCommitReporter}
+        />
       )}
       resetKeys={props.resetKeys}
       onError={props.onError}
@@ -37,31 +42,37 @@ export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
 }
 
 /** 用户只看到稳定的恢复操作，原始异常和组件栈不会进入 DOM。 */
-function PageErrorFallback(props: FallbackProps & { prefixCls: string }) {
+function PageErrorFallback(props: FallbackProps & {
+  pageCommitReporter?: ReactNode
+  prefixCls: string
+}) {
   const intl = useIntl()
 
   return (
-    <ExceptionPage
-      prefixCls={props.prefixCls}
-      role="alert"
-      status="500"
-      title={intl.getMessage(
-        'zby.pro.layout.pageError.title',
-        '页面加载失败',
-      )}
-      description={intl.getMessage(
-        'zby.pro.layout.pageError.description',
-        '请重试；如果问题持续存在，请联系管理员。',
-      )}
-      extra={(
-        <Button
-          type="primary"
-          icon={<ReloadOutlined aria-hidden="true" />}
-          onClick={() => props.resetErrorBoundary()}
-        >
-          {intl.getMessage('zby.pro.layout.pageError.retry', '重试')}
-        </Button>
-      )}
-    />
+    <>
+      {props.pageCommitReporter}
+      <ExceptionPage
+        prefixCls={props.prefixCls}
+        role="alert"
+        status="500"
+        title={intl.getMessage(
+          'zby.pro.layout.pageError.title',
+          '页面加载失败',
+        )}
+        description={intl.getMessage(
+          'zby.pro.layout.pageError.description',
+          '请重试；如果问题持续存在，请联系管理员。',
+        )}
+        extra={(
+          <Button
+            type="primary"
+            icon={<ReloadOutlined aria-hidden="true" />}
+            onClick={() => props.resetErrorBoundary()}
+          >
+            {intl.getMessage('zby.pro.layout.pageError.retry', '重试')}
+          </Button>
+        )}
+      />
+    </>
   )
 }

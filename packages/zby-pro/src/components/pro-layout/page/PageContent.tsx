@@ -12,6 +12,7 @@ import type {
 } from '../types'
 import ExceptionPage from './ExceptionPage'
 import KeepAlivePage from './KeepAlivePage'
+import { PageCommitReporter } from '../navigation-progress/NavigationProgress'
 
 /** 页面渲染域对 ProLayout 暴露的组合属性。 */
 export interface PageContentProps {
@@ -86,6 +87,7 @@ function PageContent(props: PageContentProps) {
           prefixCls={prefixCls}
           className={pageClassName}
           onScrollStateChange={onScrollStateChange}
+          pathname={pathname}
           status={pathname === '/' || fullLeaf ? '403' : '404'}
           style={pageStyle}
         />
@@ -98,11 +100,12 @@ function ExceptionContent(props: {
   prefixCls: string
   className?: string
   onScrollStateChange?: (scrolled: boolean) => void
+  pathname: string
   status: '403' | '404'
   style?: CSSProperties
 }) {
   const intl = useIntl()
-  const { onScrollStateChange, status } = props
+  const { onScrollStateChange, pathname, status } = props
   const description = status === '403'
     ? intl.getMessage(
         'zby.pro.layout.exception.forbidden',
@@ -125,6 +128,7 @@ function ExceptionContent(props: {
         : undefined}
       style={{ width: '100%', height: '100%', overflow: 'auto', ...props.style }}
     >
+      <PageCommitReporter pathname={pathname} />
       <ExceptionPage
         prefixCls={props.prefixCls}
         status={status}
