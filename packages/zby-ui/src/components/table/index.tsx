@@ -10,6 +10,8 @@ export type {
   ColumnResizeWidths,
   ColumnsType,
   ColumnType,
+  TableColumnCopyable,
+  TableColumnCopyText,
   TableColumnGroupType,
   TableColumnsType,
   TableColumnType,

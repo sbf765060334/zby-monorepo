@@ -147,10 +147,72 @@ All other props follow AntD 6.5.3 Table.
 | --- | --- | --- |
 | tooltip | `ReactNode | TooltipProps` | Header title tooltip |
 | renderText | `(value, record, index) => ReactNode` | Transform text when no explicit render exists |
-| copyable | `boolean | object` | Add a copy action when no explicit render exists |
+| copyable | `TableColumnCopyable<T>` | Add a copy action when no explicit render exists; see below |
 | ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Native single-line or ActionText multi-line ellipsis |
 | minWidth | `number` | Auto-layout minimum; resize lower bound in resize mode |
 | maxWidth | `number` | Resize upper bound |
 | resizable | `boolean` | Whether the current leaf is resizable |
 
-Public resize types are `ColumnResizeConfig`, `ColumnResizeInfo`, and `ColumnResizeWidths`.
+### copyable
+
+```ts
+type TableColumnCopyText<RecordType> =
+  | string
+  | number
+  | ((
+      value: unknown,
+      record: RecordType,
+      index: number,
+    ) => string | number | null | undefined)
+
+type TableColumnCopyable<RecordType> =
+  | boolean
+  | {
+      text?: TableColumnCopyText<RecordType>
+      onCopy?: (event?: React.MouseEvent<HTMLButtonElement>) => void
+      icon?: React.ReactNode
+      tooltips?: string | readonly [string?, string?] | false
+      format?: 'text/plain' | 'text/html'
+      tabIndex?: number
+    }
+```
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| text | `string | number | (value, record, index) => string | number | null | undefined` | Displayed cell text | Copy content; the function receives the raw value, current record, and row index during cell rendering |
+| onCopy | `(event?) => void` | - | Called after the browser successfully writes to the clipboard |
+| icon | `ReactNode` | Built-in copy and success icons | One icon, or two icons representing the states before and after copying |
+| tooltips | `string | [before?, after?] | false` | Built-in before/after messages | One message, two messages for before and after copying, or `false` to disable messages |
+| format | `'text/plain' | 'text/html'` | `'text/plain'` | Clipboard data format |
+| tabIndex | `number` | - | Keyboard Tab order for the copy button |
+
+```tsx
+const columns: TableColumnsType<Order> = [
+  {
+    title: 'Order',
+    dataIndex: 'orderNo',
+    // Copy the displayed text after renderText has transformed it
+    copyable: true,
+  },
+  {
+    title: 'Fixed content',
+    dataIndex: 'status',
+    copyable: { text: 'Approved' },
+  },
+  {
+    title: 'Amount',
+    dataIndex: 'amount',
+    copyable: {
+      text: (value, record, index) => `${index + 1}-${record.currency} ${value}`,
+      tooltips: ['Copy amount', 'Copied'],
+      onCopy: () => console.log('Amount copied'),
+    },
+  },
+]
+```
+
+With `copyable={true}`, the default copy content is the displayed value after `renderText` processing. Object form without `text` uses the same default. The `value` received by a `text` function is the raw cell value addressed by `dataIndex`, not the `renderText` result. Returning `null` or `undefined` falls back to ActionText's default content extraction.
+
+When a column provides an explicit `render`, Table does not wrap its result in ActionText and `copyable` has no effect. Use `ActionText` directly when a custom render result needs a copy action.
+
+Public types include `TableColumnCopyable`, `TableColumnCopyText`, `ColumnResizeConfig`, `ColumnResizeInfo`, and `ColumnResizeWidths`.

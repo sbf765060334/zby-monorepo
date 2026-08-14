@@ -64,6 +64,8 @@ export type {
   ColumnResizeConfig,
   ColumnResizeInfo,
   ColumnResizeWidths,
+  TableColumnCopyable,
+  TableColumnCopyText,
   TableColumnsType,
   TableColumnType,
   TablePaginationConfig,

@@ -148,10 +148,72 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态，也不会缓存�
 | --- | --- | --- |
 | tooltip | `ReactNode | TooltipProps` | 表头提示 |
 | renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
-| copyable | `boolean | object` | 无显式 render 时提供复制操作 |
+| copyable | `TableColumnCopyable<T>` | 无显式 render 时提供复制操作，详见下文 |
 | ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 原生单行或 ActionText 多行省略 |
 | minWidth | `number` | 普通 auto 布局最小宽度；resize 模式下为拖拽下限 |
 | maxWidth | `number` | resize 模式下的拖拽上限 |
 | resizable | `boolean` | 是否允许当前叶子列拖拽 |
 
-公开类型包括 `ColumnResizeConfig`、`ColumnResizeInfo` 和 `ColumnResizeWidths`。
+### copyable
+
+```ts
+type TableColumnCopyText<RecordType> =
+  | string
+  | number
+  | ((
+      value: unknown,
+      record: RecordType,
+      index: number,
+    ) => string | number | null | undefined)
+
+type TableColumnCopyable<RecordType> =
+  | boolean
+  | {
+      text?: TableColumnCopyText<RecordType>
+      onCopy?: (event?: React.MouseEvent<HTMLButtonElement>) => void
+      icon?: React.ReactNode
+      tooltips?: string | readonly [string?, string?] | false
+      format?: 'text/plain' | 'text/html'
+      tabIndex?: number
+    }
+```
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| text | `string | number | (value, record, index) => string | number | null | undefined` | 单元格显示文本 | 指定复制内容；函数在单元格渲染时接收原始值、当前行记录和行索引 |
+| onCopy | `(event?) => void` | - | 浏览器成功写入剪贴板后触发 |
+| icon | `ReactNode` | 内置复制图标和成功图标 | 单个图标，或依次表示复制前、复制后的两个图标 |
+| tooltips | `string | [before?, after?] | false` | 内置复制前、复制后提示 | 单个提示，或复制前、复制后的两个提示；`false` 关闭提示 |
+| format | `'text/plain' | 'text/html'` | `'text/plain'` | 写入剪贴板的数据格式 |
+| tabIndex | `number` | - | 复制按钮的键盘 Tab 顺序 |
+
+```tsx
+const columns: TableColumnsType<Order> = [
+  {
+    title: '订单号',
+    dataIndex: 'orderNo',
+    // 复制当前单元格经过 renderText 处理后的显示文本
+    copyable: true,
+  },
+  {
+    title: '固定内容',
+    dataIndex: 'status',
+    copyable: { text: '已审核' },
+  },
+  {
+    title: '金额',
+    dataIndex: 'amount',
+    copyable: {
+      text: (value, record, index) => `${index + 1}-${record.currency} ${value}`,
+      tooltips: ['复制金额', '已复制'],
+      onCopy: () => console.log('金额已复制'),
+    },
+  },
+]
+```
+
+`copyable={true}` 默认复制 `renderText` 处理后的显示内容。对象形式未提供 `text` 时也使用该默认内容。`text` 函数中的 `value` 是 `dataIndex` 对应的原始单元格值，而不是 `renderText` 的结果；返回 `null` 或 `undefined` 时回退到 ActionText 的默认内容提取逻辑。
+
+显式提供列 `render` 时，Table 不会自动包裹 ActionText，因此 `copyable` 不生效。如需在自定义渲染结果中提供复制操作，请直接使用 `ActionText`。
+
+公开类型包括 `TableColumnCopyable`、`TableColumnCopyText`、`ColumnResizeConfig`、`ColumnResizeInfo` 和 `ColumnResizeWidths`。
