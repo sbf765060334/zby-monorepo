@@ -24,14 +24,17 @@ import type {
   RouterRoute,
   RouterRuntimeOptions,
 } from './types'
-import { buildUrl } from './urlState'
+import { buildUrl, parseUrl } from './urlState'
 import type { RouterUrlCache } from './urlState'
 
 export interface CloseTabTransaction {
   /** 守卫完成后、提交删除前再次确认外部条件仍成立。 */
   canCommit?: () => boolean
-  /** 删除成功后由组合命令接管导航；返回值会成为 closeTab 的最终结果。 */
-  navigateAfterClose?: () => boolean
+  /** 组合命令提供的最终导航；活动页签会等该 pathname 被宿主确认后再删除。 */
+  navigation?: {
+    getPathname: () => string
+    execute: () => boolean
+  }
 }
 
 /** 创建页签控制器所需的同一 RouterCore 实例内部依赖。 */
@@ -83,6 +86,12 @@ export function createRouterTabs<Route extends RouterRoute>(
   >()
   // 防止用户连续点击关闭时，同一个页签并发执行两套异步守卫和清理事务。
   const closingTabKeys = new Set<string>()
+  // 活动页签必须等宿主确认目标 pathname 后再删除，避免导航被阻止时丢失当前页面。
+  let pendingTabClose: {
+    tabKey: string
+    closedPathname: string
+    confirmationPathname: string
+  } | null = null
 
   /** 确保 pathname 对应的页签存在，并按需要创建或刷新页面实例。 */
   function ensureTabState(pathname: string, ensurePage: boolean) {
@@ -276,7 +285,70 @@ export function createRouterTabs<Route extends RouterRoute>(
     }
   }
 
-  /** 执行关闭守卫、提交删除、清理资源、导航和通知组成的完整页签关闭事务。 */
+  /** 请求宿主切换关闭后的地址；真正删除活动页签由 location 确认流程完成。 */
+  function requestCloseNavigation(target: string) {
+    const host = getHost()
+    if (!host)
+      return false
+
+    // 同步宿主可能在 navigate 内立即回传 location，因此状态必须先进入 navigating。
+    setState((state) => state.navigationStatus === 'navigating'
+      ? state
+      : { ...state, navigationStatus: 'navigating' })
+    host.navigate(target)
+    return true
+  }
+
+  /** 删除页签及其页面、持久化身份和私有资源，但不猜测下一个活动页面。 */
+  function commitTabClose(tabKey: string) {
+    const state = getState()
+    if (!state.tabs.some((tab) => tab.key === tabKey))
+      return false
+
+    const fixedSet = state.fixedSet.includes(tabKey)
+      ? state.fixedSet.filter((key) => key !== tabKey)
+      : state.fixedSet
+    if (!areStringArraysEqual(fixedSet, state.fixedSet))
+      persistFixedTabs(fixedSet)
+
+    const descriptions = { ...state.pathnameDescriptionMap }
+    Object.keys(descriptions).forEach((pathname) => {
+      if (registry.getTabKey(pathname) === tabKey)
+        delete descriptions[pathname]
+    })
+    setState({
+      tabs: state.tabs.filter((tab) => tab.key !== tabKey),
+      pages: state.pages.filter((page) => page.key !== tabKey),
+      fixedSet,
+      activeTabKey: state.activeTabKey === tabKey ? null : state.activeTabKey,
+      activePage: state.activePage === tabKey ? null : state.activePage,
+      pathnameDescriptionMap: descriptions,
+    })
+
+    beforeCloseMap.delete(tabKey)
+    pageLocationListenerMap.delete(tabKey)
+    cache.clear(tabKey)
+    return true
+  }
+
+  /** 只在宿主回传了本次关闭请求的目标 pathname 时提交删除，并返回延后通知。 */
+  function confirmPendingTabClose(pathname: string) {
+    const pending = pendingTabClose
+    if (!pending || pathname === pending.closedPathname)
+      return
+
+    pendingTabClose = null
+    if (pathname !== pending.confirmationPathname)
+      return
+
+    if (!commitTabClose(pending.tabKey))
+      return
+
+    // Core 完成目标 pathname 的页面激活和 location 发布后再执行关闭通知。
+    return () => notifyTabClose(pending.tabKey, { pathname: pending.closedPathname })
+  }
+
+  /** 执行关闭守卫；活动页签以宿主 location 确认为删除事务的提交点。 */
   async function closeTab(
     tabKey: string,
     closeOptions?: RouterCloseOptions,
@@ -311,62 +383,55 @@ export function createRouterTabs<Route extends RouterRoute>(
           ? nextTabs[Math.max(0, closedIndex - 1)] || nextTabs[closedIndex] || null
           : null
       const closedPathname = cache.getParamsPath(tabKey) || tabKey
-      const fixedSet = state.fixedSet.includes(tabKey)
-        ? state.fixedSet.filter((key) => key !== tabKey)
-        : state.fixedSet
-      if (!areStringArraysEqual(fixedSet, state.fixedSet))
-        persistFixedTabs(fixedSet)
-
-      const pages = state.pages.filter((page) => page.key !== tabKey)
-      // 同一共享动态页签可能对应多个真实 pathname 描述，关闭时要一起清掉。
-      const descriptions = { ...state.pathnameDescriptionMap }
-      Object.keys(descriptions).forEach((pathname) => {
-        if (registry.getTabKey(pathname) === tabKey)
-          delete descriptions[pathname]
-      })
-      setState({
-        tabs: nextTabs,
-        pages,
-        fixedSet,
-        activeTabKey: nextActive
-          ? nextActive.key
-          : state.activeTabKey === tabKey
-            ? null
-            : state.activeTabKey,
-        activePage: nextActive
-          ? pages.some((page) => page.key === nextActive.key)
-            ? nextActive.key
-            : null
-          : state.activePage === tabKey
-            ? null
-            : state.activePage,
-        pathnameDescriptionMap: descriptions,
-      })
-
-      // Store 提交后再清理不可观察资源，确保后续命令不会拿到已经关闭页面的旧能力。
-      beforeCloseMap.delete(tabKey)
-      pageLocationListenerMap.delete(tabKey)
-      cache.clear(tabKey)
-
-      // 组合命令可以接管关闭后的唯一导航；普通关闭则回到相邻页或根路径。
-      let result = true
-      if (transaction?.navigateAfterClose) {
-        result = transaction.navigateAfterClose()
-      } else {
-        if (nextActive) {
-          getHost()?.navigate(
-            buildUrl({
+      const navigation = transaction?.navigation ?? (nextActive
+        ? (() => {
+            const target = buildUrl({
               pathname: cache.getParamsPath(nextActive.key) || nextActive.key,
               searchParams: cache.getSearch(nextActive.key),
               hash: cache.getHash(nextActive.key),
-            }),
-          )
-        } else if (getState().activeTabKey === null) {
-          getHost()?.navigate('/')
+            })
+            return {
+              getPathname: () => parseUrl(target).pathname,
+              execute: () => requestCloseNavigation(target),
+            }
+          })()
+        : state.activeTabKey === tabKey
+          ? {
+              getPathname: () => '/',
+              execute: () => requestCloseNavigation('/'),
+            }
+          : undefined)
+
+      if (state.activeTabKey === tabKey) {
+        if (!navigation)
+          return false
+
+        const confirmationPathname = navigation.getPathname()
+        // 相同 pathname 不会产生新的宿主确认，不能把页面留在永久 pending 状态。
+        if (confirmationPathname === closedPathname)
+          return false
+
+        const pending = { tabKey, closedPathname, confirmationPathname }
+        pendingTabClose = pending
+        try {
+          const result = navigation.execute()
+          if (!result && pendingTabClose === pending)
+            pendingTabClose = null
+          return result
+        } catch (error) {
+          if (pendingTabClose === pending)
+            pendingTabClose = null
+          setState((current) => current.navigationStatus === 'settled'
+            ? current
+            : { ...current, navigationStatus: 'settled' })
+          throw error
         }
       }
 
-      // 通知放在导航之后，避免回调解绑宿主时阻断本次必要导航。
+      if (!commitTabClose(tabKey))
+        return false
+      const result = navigation?.execute() ?? true
+      // 非活动页签可以立即删除；组合导航仍先执行，再允许回调解绑宿主。
       notifyTabClose(tabKey, { pathname: closedPathname })
       return result
     } finally {
@@ -482,6 +547,7 @@ export function createRouterTabs<Route extends RouterRoute>(
 
   // 只暴露 createRouterCore 真正需要的页签命令，三个内部 Map/Set 保持实例私有。
   return {
+    confirmPendingTabClose,
     ensureTabState,
     reorderTabs,
     setTabLabel,

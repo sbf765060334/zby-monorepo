@@ -219,13 +219,15 @@ export function App() {
 | `setPathnameDescription(map)` | `Record<string, string>` | `void` | 增量合并真实地址的描述文本，相同值不会重复发布状态。 |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
-| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 执行全部关闭守卫后清理页签、页面和 URL 缓存。 |
-| `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 关闭旧页并只产生一次最终新地址导航，适合保存成功后的详情页替换。 |
+| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 执行全部关闭守卫；非活动页签立即清理，活动页签在宿主确认回退地址后清理。 |
+| `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航，并在地址确认后关闭活动旧页，适合保存成功后的详情页替换。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。 |
 
-`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。
+`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。
+
+`closeTab` 返回 `true` 表示关闭请求已被接受。非活动页签会在返回前完成清理；关闭活动页签时，当前页会保留到回退 pathname 被宿主确认。宿主不可用、导航同步失败或目标地址未被确认时不会提前删除当前页。
 
 ### Core 方法依赖类型
 

@@ -1,10 +1,11 @@
-import { ReloadOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Button } from 'antd'
 import { ErrorBoundary } from 'react-error-boundary'
 
 import type { ReactNode } from 'react'
-import type { FallbackProps, OnErrorCallback } from 'react-error-boundary'
+import type {
+  ErrorBoundaryProps,
+  OnErrorCallback,
+} from 'react-error-boundary'
 import ExceptionPage from './ExceptionPage'
 
 interface PageErrorBoundaryProps {
@@ -14,6 +15,8 @@ interface PageErrorBoundaryProps {
   resetKeys: unknown[]
   /** 原始异常只交给宿主上报，不进入用户可见的 fallback。 */
   onError?: OnErrorCallback
+  /** 页面边界真正 reset 前，允许可恢复资源清理自身的失败缓存。 */
+  onReset?: ErrorBoundaryProps['onReset']
 }
 
 /**
@@ -25,19 +28,20 @@ interface PageErrorBoundaryProps {
 export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
   return (
     <ErrorBoundary
-      fallbackRender={(fallbackProps) => (
-        <PageErrorFallback {...fallbackProps} prefixCls={props.prefixCls} />
+      fallbackRender={() => (
+        <PageErrorFallback prefixCls={props.prefixCls} />
       )}
       resetKeys={props.resetKeys}
       onError={props.onError}
+      onReset={props.onReset}
     >
       {props.children}
     </ErrorBoundary>
   )
 }
 
-/** 用户只看到稳定的恢复操作，原始异常和组件栈不会进入 DOM。 */
-function PageErrorFallback(props: FallbackProps & { prefixCls: string }) {
+/** 用户只看到稳定的错误提示，原始异常和组件栈不会进入 DOM。 */
+function PageErrorFallback(props: { prefixCls: string }) {
   const intl = useIntl()
 
   return (
@@ -51,16 +55,7 @@ function PageErrorFallback(props: FallbackProps & { prefixCls: string }) {
       )}
       description={intl.getMessage(
         'zby.pro.layout.pageError.description',
-        '请重试；如果问题持续存在，请联系管理员。',
-      )}
-      extra={(
-        <Button
-          type="primary"
-          icon={<ReloadOutlined aria-hidden="true" />}
-          onClick={() => props.resetErrorBoundary()}
-        >
-          {intl.getMessage('zby.pro.layout.pageError.retry', '重试')}
-        </Button>
+        '页面暂时无法显示，请联系管理员。',
       )}
     />
   )

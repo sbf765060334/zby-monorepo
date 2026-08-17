@@ -219,7 +219,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | showBreadcrumb | Show the global breadcrumb below the tab bar | `boolean` | `true` |
 | setPage | Called when the current page title changes; receives an empty string for no match | `(pageName: string) => void` | - |
 | onPageError | Called after a page render error with the original error, React component stack, and current pathname | `ProLayoutPageErrorHandler` | - |
-| pageLoading | Suspense fallback for lazy pages; `false` renders no fallback | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
+| pageLoading | Suspense fallback for lazy pages; `false` only hides the central fallback | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
 | beforeUnload | Request a browser prompt before leaving or refreshing | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | Minimum content width; numbers are treated as pixels | `number \| string` | - |
 | noBar | Hide the sider and tab bar and let content fill the viewport | `boolean` | `false` |
@@ -287,7 +287,9 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | indicator | Custom indicator rendered by the default Spin | `SpinProps['indicator']` | - |
 | render | Completely replaces the default fallback and receives the concrete pathname | `(info: { pathname: string }) => ReactNode` | - |
 
-When `render` is configured, ProLayout does not wrap it in the default Spin. With `pageLoading={false}`, Suspense renders `null` while waiting.
+When an active page remains in Suspense for more than 150ms, ProLayout shows the top page-loading progress bar. It finishes when the page commits, fails, is left, or becomes inactive. Restoring an already loaded KeepAlive page does not show it, and pending inactive cache entries do not keep it running.
+
+When `render` is configured, ProLayout does not wrap it in the default Spin. With `pageLoading={false}`, Suspense renders `null` in the central content area while the top page-loading progress still follows the rules above.
 
 ### ProLayoutSystemItem
 

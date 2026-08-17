@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ZbyIntlProvider } from '@zby/intl'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -35,34 +35,14 @@ describe('PageErrorBoundary', () => {
 
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toContain('页面加载失败')
-    expect(alert.textContent).toContain('请重试；如果问题持续存在，请联系管理员。')
+    expect(alert.textContent).toContain('页面暂时无法显示，请联系管理员。')
+    expect(screen.queryByRole('button')).toBeNull()
     expect(document.body.textContent).not.toContain('internal-token')
     expect(document.body.textContent).not.toContain('secret-value')
 
     await waitFor(() => expect(onError).toHaveBeenCalledOnce())
     expect(onError.mock.calls[0][0]).toBe(error)
     expect(onError.mock.calls[0][1].componentStack).toContain('BrokenPage')
-  })
-
-  it('允许用户在错误原因消失后手动重试', async () => {
-    let shouldThrow = true
-    function RecoverablePage() {
-      if (shouldThrow)
-        throw new Error('temporary render error')
-      return <div>recovered page</div>
-    }
-
-    renderBoundary(
-      <RecoverablePage />,
-      ['/recoverable', RecoverablePage],
-      undefined,
-      'en-US',
-    )
-    await screen.findByText('Page failed to load')
-
-    shouldThrow = false
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(await screen.findByText('recovered page')).toBeTruthy()
   })
 
   it('错误态响应 resetKeys 变化，健康态变化不重建业务组件', async () => {

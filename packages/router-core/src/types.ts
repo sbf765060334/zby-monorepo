@@ -352,7 +352,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
    * Adapter 不需要也不应分别触发内部 bootstrap 或 pathname 状态确认流程。
    */
   syncLocation: (location: RouterLocation) => void
-  /** 执行完整平台导航；会处理目录、权限、页签和 URL Cache。 */
+  /** 请求完整平台导航；页签和页面只在宿主通过 syncLocation 确认后激活。 */
   jumpTo: (
     url:
       | string
@@ -384,9 +384,9 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   toggleFixed: (tabKey: string) => boolean
   /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */
   toggleFavoriteRoute: (path: string) => boolean
-  /** 运行关闭守卫并清理页签、页面、Cache 和相关资源。 */
+  /** 运行关闭守卫；活动页签在回退 location 确认后清理，非活动页签立即清理。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
-  /** 将“关闭旧页签 + 打开新地址”作为只产生一次最终导航的组合命令。 */
+  /** 请求新地址，并在其确认后关闭活动旧页签；整个过程只产生一次最终导航。 */
   closeThisTabOpenNewOne: (
     data: { oldPath: string, newPath: string },
     options?: RouterCloseOptions,

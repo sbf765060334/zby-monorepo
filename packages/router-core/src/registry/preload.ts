@@ -6,14 +6,29 @@
  */
 import type { RouterRoute } from '../types'
 
+const pendingPreloads = new WeakMap<object, Promise<void>>()
+
+/** 同一个入口只合并进行中的调用；完成或失败后仍允许下一次重新预加载。 */
+function startPreload(key: object, preload: () => void | Promise<void>) {
+  if (pendingPreloads.has(key))
+    return
+
+  const pending = Promise.resolve()
+    .then(preload)
+    .catch(() => undefined)
+  pendingPreloads.set(key, pending)
+  void pending.then(() => {
+    if (pendingPreloads.get(key) === pending)
+      pendingPreloads.delete(key)
+  })
+}
+
 /** 触发路由资源预加载，并隔离同步 throw 与异步 rejection。 */
 export function preloadRoute(route?: RouterRoute | null): void {
   // 路由对象自己声明 preload 时优先使用，这是最直接也最明确的预加载入口。
   const directPreload = route?.preload
   if (typeof directPreload === 'function') {
-    void Promise.resolve()
-      .then(() => directPreload())
-      .catch(() => undefined)
+    startPreload(directPreload, directPreload)
     return
   }
 
@@ -26,8 +41,6 @@ export function preloadRoute(route?: RouterRoute | null): void {
     typeof element.preload === 'function'
   ) {
     const elementPreload = element.preload
-    void Promise.resolve()
-      .then(() => elementPreload.call(element))
-      .catch(() => undefined)
+    startPreload(element, () => elementPreload.call(element))
   }
 }

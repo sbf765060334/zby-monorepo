@@ -17,6 +17,8 @@ import type {
   ProLayoutRoute,
   ProLayoutRouteComponent,
 } from '../types'
+import { resetLazyRouteComponent } from '../createLazyRouteComponent'
+import { PageLoadingProgressFallback } from '../page-loading-progress'
 import PageErrorBoundary from './PageErrorBoundary'
 
 /** 单个 KeepAlive 页面容器的组合属性。 */
@@ -118,20 +120,25 @@ function KeepAlivePage(props: KeepAlivePageProps) {
         <PageErrorBoundary
           prefixCls={prefixCls}
           resetKeys={resetKeys}
+          onReset={() => resetLazyRouteComponent(page.route.element)}
           onError={onPageError
             ? (error, info) => onPageError(error, info, { pathname: page.pathname })
             : undefined}
         >
           <Suspense
-            fallback={pageLoading === false
-              ? null
-              : (
-                  <PageLoading
-                    prefixCls={prefixCls}
-                    pathname={page.pathname}
-                    config={pageLoading}
-                  />
-                )}
+            fallback={(
+              <PageLoadingProgressFallback active={active}>
+                {pageLoading === false
+                  ? null
+                  : (
+                      <PageLoading
+                        prefixCls={prefixCls}
+                        pathname={page.pathname}
+                        config={pageLoading}
+                      />
+                    )}
+              </PageLoadingProgressFallback>
+            )}
           >
             <StableRouteElement element={page.route.element} />
           </Suspense>

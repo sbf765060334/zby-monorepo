@@ -199,6 +199,7 @@ export function createRouterCore<Route extends RouterRoute>(
     addBeforeCloseHook,
     clearBeforeCloseHook,
     closeTab,
+    confirmPendingTabClose,
     ensureTabState,
     publishPageLocation,
     reorderTabs,
@@ -320,6 +321,7 @@ export function createRouterCore<Route extends RouterRoute>(
   function syncLocation(location: RouterLocation) {
     const pathname = location.pathname || '/'
     const pathnameChanged = getState().currentPathname !== pathname
+    let notifyConfirmedTabClose: (() => void) | undefined
     const normalizedSearch = normalizeSearchParams(location.search)
     const locationPayload: RouterLocationEventPayload = {
       pathname,
@@ -340,6 +342,8 @@ export function createRouterCore<Route extends RouterRoute>(
         currentRoutes,
         currentSelectedPath: currentRoutes.map((item) => item.realPath),
       }))
+      // currentPathname 先采用宿主事实；随后清理旧页，最后由 syncByPathname 激活目标。
+      notifyConfirmedTabClose = confirmPendingTabClose(pathname)
     }
 
     const tabKey = registry.getTabKey(pathname)
@@ -379,6 +383,7 @@ export function createRouterCore<Route extends RouterRoute>(
     // 补发当前快照。
     if (tabKey)
       publishPageLocation(tabKey, locationPayload)
+    notifyConfirmedTabClose?.()
   }
 
   /** 根据确认后的 pathname 创建授权页面，或进入 403/404 的非活动页面状态。 */
@@ -445,7 +450,7 @@ export function createRouterCore<Route extends RouterRoute>(
     }
   }
 
-  /** 执行已经验证的导航计划；返回 false 表示宿主已解绑或页面状态无法建立。 */
+  /** 执行已经验证的导航计划；返回 false 表示宿主已经解绑。 */
   function executeNavigationPlan(
     plan: RouterNavigationPlan,
     options: ExecuteNavigationPlanOptions = {},
@@ -479,51 +484,30 @@ export function createRouterCore<Route extends RouterRoute>(
         setNavigationStatus('navigating')
     }
 
-    if (!plan.authorized) {
-      // 地址仍可改变以展示 403，但绝不能补建新的受限页面实例。导航计划已经把动态
-      // pattern 恢复为具体路径；这里使用本次计划地址，避免同页签的旧 Cache 参数覆盖
-      // 调用方明确传入的新 pathname。
-      const activeTabKey = getState().tabs.some((tab) => tab.key === plan.tabKey)
-        ? plan.tabKey
-        : null
-      setInactiveState(activeTabKey)
-      commitNavigate(
-        buildUrl({
-          pathname: plan.pathname,
-          searchParams: resolveSearch(
-            plan.searchParams,
-            cache.getSearch(plan.tabKey),
-          ),
-          hash: resolveHash(plan.hash, cache.getHash(plan.tabKey)),
-        }),
-      )
-      return true
-    }
-
-    const shouldActivateCachedPage =
-      keepAlive !== false && getState().pages.some((page) => page.key === plan.tabKey)
-    if (!ensureTabState(plan.pathname, shouldActivateCachedPage))
-      return false
-
-    // 共享动态页签恢复最后真实 pathname；未指定 search/hash 时恢复对应缓存。
-    commitNavigate(
-      buildUrl({
-        pathname: cache.getParamsPath(plan.tabKey) || plan.pathname,
-        searchParams: resolveSearch(
-          plan.searchParams,
-          cache.getSearch(plan.tabKey),
-        ),
-        hash: resolveHash(plan.hash, cache.getHash(plan.tabKey)),
-      }),
-    )
+    commitNavigate(buildNavigationTarget(plan))
     return true
+  }
+
+  /** 生成交给宿主的最终 URL，但不提前创建或激活任何页签和页面。 */
+  function buildNavigationTarget(plan: RouterNavigationPlan) {
+    return buildUrl({
+      // 无权限地址保留调用方的具体 pathname；授权共享页签可以恢复最后真实参数。
+      pathname: plan.authorized
+        ? cache.getParamsPath(plan.tabKey) || plan.pathname
+        : plan.pathname,
+      searchParams: resolveSearch(
+        plan.searchParams,
+        cache.getSearch(plan.tabKey),
+      ),
+      hash: resolveHash(plan.hash, cache.getHash(plan.tabKey)),
+    })
   }
 
   /**
    * 执行完整平台导航。
    *
    * 字符串被视为完整目标 URL；结构化参数中 undefined 表示恢复页签缓存，null/空串
-   * 表示显式清空。目录、权限、共享页签与 KeepAlive 都在调用宿主前完成处理。
+   * 表示显式清空。这里仅解析目录、权限和缓存 URL；活动状态等待 syncLocation 确认。
    */
   function jumpTo(input: RouterNavigationInput) {
     if (!runtime.host)
@@ -599,7 +583,10 @@ export function createRouterCore<Route extends RouterRoute>(
       return closeTab(oldTabKey, closeOptions, {
         // 守卫可能触发组件卸载；宿主已变化时保留旧页，避免状态与地址脱节。
         canCommit: () => runtime.host === host,
-        navigateAfterClose: () => executeNavigationPlan(target),
+        navigation: {
+          getPathname: () => parseUrl(buildNavigationTarget(target)).pathname,
+          execute: () => executeNavigationPlan(target),
+        },
       })
     }
     return executeNavigationPlan(target)

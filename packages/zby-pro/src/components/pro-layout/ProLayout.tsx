@@ -7,8 +7,8 @@ import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
-import NavigationProgress from './navigation-progress'
 import { Breadcrumb, PageContent } from './page'
+import PageLoadingProgressProvider from './page-loading-progress'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
 import type { ProLayoutProps, ProLayoutRoute } from './types'
@@ -90,7 +90,6 @@ function ProLayout(props: ProLayoutProps) {
 
   return (
     <ProLayoutProvider value={layoutContextValue}>
-      <NavigationProgress />
       <Layout
         className={clsx(prefixCls, hashId, classNames?.root, rootClassName, className)}
         style={{
@@ -152,14 +151,16 @@ function ProLayout(props: ProLayoutProps) {
                 style={styles?.breadcrumb}
               />
             ) : null}
-            <PageContent
-              prefixCls={prefixCls}
-              onPageError={onPageError}
-              pageLoading={pageLoading}
-              onScrollStateChange={setPageScrolled}
-              pageClassName={classNames?.page}
-              pageStyle={styles?.page}
-            />
+            <PageLoadingProgressProvider>
+              <PageContent
+                prefixCls={prefixCls}
+                onPageError={onPageError}
+                pageLoading={pageLoading}
+                onScrollStateChange={setPageScrolled}
+                pageClassName={classNames?.page}
+                pageStyle={styles?.page}
+              />
+            </PageLoadingProgressProvider>
           </Layout.Content>
         </Layout>
       </Layout>

@@ -217,7 +217,57 @@ describe('route registry', () => {
     expect(elementPreload).toHaveBeenCalledOnce()
     await Promise.resolve()
   })
+
+  it.each(['route', 'element'] as const)(
+    'deduplicates an in-flight %s preload but allows later attempts',
+    async (source) => {
+      let resolvePreload!: () => void
+      const preload = vi.fn(
+        () => new Promise<void>((resolve) => {
+          resolvePreload = resolve
+        }),
+      )
+      const element = Object.assign(() => undefined, { preload })
+      const route: RouterRoute = source === 'route'
+        ? { path: '/preload', title: 'Preload', preload }
+        : { path: '/preload', title: 'Preload', element }
+
+      preloadRoute(route)
+      preloadRoute(route)
+      await Promise.resolve()
+      expect(preload).toHaveBeenCalledOnce()
+
+      resolvePreload()
+      await flushMicrotasks()
+      preloadRoute(route)
+      await Promise.resolve()
+      expect(preload).toHaveBeenCalledTimes(2)
+    },
+  )
+
+  it('allows a custom preload to run again after failure', async () => {
+    const preload = vi.fn(async () => {
+      throw new Error('preload failed')
+    })
+    const route: RouterRoute = {
+      path: '/failed-preload',
+      title: 'Failed preload',
+      preload,
+    }
+
+    preloadRoute(route)
+    await flushMicrotasks()
+    preloadRoute(route)
+    await Promise.resolve()
+
+    expect(preload).toHaveBeenCalledTimes(2)
+  })
 })
+
+async function flushMicrotasks() {
+  for (let index = 0; index < 5; index += 1)
+    await Promise.resolve()
+}
 
 /** 这一组从公开命令观察完整 Core，覆盖导航、页签、缓存、回调和存储协作。 */
 describe('createRouterCore', () => {
@@ -315,8 +365,13 @@ describe('createRouterCore', () => {
     router.jumpTo({ pathname: '/dashboard' })
     expect(navigate).toHaveBeenLastCalledWith('/dashboard')
     expect(router.getState().navigationStatus).toBe('navigating')
+    expect(router.getState().currentPathname).toBe('/project/42')
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+    expect(router.getState().activePage).toBe('/project/:id')
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     expect(router.getState().navigationStatus).toBe('settled')
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    expect(router.getState().activePage).toBe('/dashboard')
 
     router.smartNavigate({ searchParams: 'page=2', hash: 'table' })
     expect(navigate).toHaveBeenLastCalledWith(
@@ -330,6 +385,32 @@ describe('createRouterCore', () => {
       '/project/42?tab=detail#summary',
     )
     expect(router.getState().navigationStatus).toBe('navigating')
+    // project 已被 KeepAlive 缓存，但宿主确认前仍保持 dashboard 活动。
+    expect(router.getState().currentPathname).toBe('/dashboard')
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    expect(router.getState().activePage).toBe('/dashboard')
+  })
+
+  /** 同步宿主在 navigate 内回传 location 时，最终状态不能被外层 navigating 覆盖。 */
+  it('settles immediately when the host confirms navigation synchronously', () => {
+    let confirmNavigation: () => void = () => undefined
+    const navigate = vi.fn(() => confirmNavigation())
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    confirmNavigation = () => router.syncLocation({
+      pathname: '/settings/profile',
+      search: '',
+      hash: '',
+    })
+
+    router.jumpTo('/settings/profile')
+
+    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    expect(router.getState().currentPathname).toBe('/settings/profile')
+    expect(router.getState().activeTabKey).toBe('/settings/profile')
+    expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().navigationStatus).toBe('settled')
   })
 
   /** 只改 hash 不应把全局导航状态切成 navigating。 */
@@ -549,7 +630,7 @@ describe('createRouterCore', () => {
   })
 
   /** 可以导航到受限地址展示 403，但不能为无权限路由创建页面实例。 */
-  it('tracks pathname navigation without activating an unauthorized route', () => {
+  it('keeps the confirmed page active until an unauthorized location arrives', () => {
     const navigate = vi.fn()
     const router = createRouterCore({
       routes,
@@ -557,6 +638,8 @@ describe('createRouterCore', () => {
       storageAdapter: false,
     })
     router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
 
     const subscriber = vi.fn()
     const unsubscribe = router.subscribe(subscriber)
@@ -564,10 +647,16 @@ describe('createRouterCore', () => {
 
     expect(navigate).toHaveBeenCalledWith('/admin')
     expect(router.getState().navigationStatus).toBe('navigating')
+    expect(router.getState().currentPathname).toBe('/dashboard')
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    expect(router.getState().activePage).toBe('/dashboard')
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(subscriber).toHaveBeenCalledOnce()
+
+    router.syncLocation({ pathname: '/admin', search: '', hash: '' })
+    expect(router.getState().navigationStatus).toBe('settled')
     expect(router.getState().activeTabKey).toBeNull()
     expect(router.getState().activePage).toBeNull()
-    expect(router.getState().tabs).toEqual([])
-    expect(subscriber).toHaveBeenCalledOnce()
     unsubscribe()
   })
 
@@ -994,9 +1083,84 @@ describe('createRouterCore', () => {
     ).toBe(true)
   })
 
+  /** 关闭活动页发起的回退导航也必须等待宿主 location 确认后才 settled。 */
+  it('tracks close-tab navigation until the host confirms its location', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/dashboard')
+    expect(router.getState().navigationStatus).toBe('navigating')
+    expect(router.getState().activeTabKey).toBe('/settings/profile')
+    expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    expect(router.getState().activePage).toBe('/dashboard')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+  })
+
+  /** 没有可用宿主或宿主同步抛错时，活动页签不能被提前删除且必须允许重试。 */
+  it('keeps the active tab when close navigation cannot be completed', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    expect(await router.closeTab('/settings/profile')).toBe(false)
+    expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    const error = new Error('host navigation failed')
+    router.bindHost({
+      navigate: () => {
+        throw error
+      },
+    })
+    await expect(router.closeTab('/settings/profile')).rejects.toBe(error)
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    router.bindHost({ navigate: vi.fn() })
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+  })
+
+  /** 同步宿主在 closeTab 的 navigate 内确认目标时，也要完成删除并落到 settled。 */
+  it('commits an active-tab close confirmed synchronously by the host', async () => {
+    let confirmNavigation: () => void = () => undefined
+    const navigate = vi.fn(() => confirmNavigation())
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    confirmNavigation = () => router.syncLocation({
+      pathname: '/dashboard',
+      search: '',
+      hash: '',
+    })
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+
+    expect(router.getState().currentPathname).toBe('/dashboard')
+    expect(router.getState().activePage).toBe('/dashboard')
+    expect(router.getState().navigationStatus).toBe('settled')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+  })
+
   /** 守卫抛错要保留页签，同时释放并发锁让用户可以再次关闭。 */
   it('keeps the tab and releases the closing lock when a close guard throws', async () => {
+    const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
 
@@ -1011,6 +1175,8 @@ describe('createRouterCore', () => {
 
     router.clearBeforeCloseHook('/settings/profile', guard)
     expect(await router.closeTab('/settings/profile')).toBe(true)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
   })
 
   /** 组合命令关闭旧页后只导航一次新地址，不先跳到相邻页。 */
@@ -1031,6 +1197,12 @@ describe('createRouterCore', () => {
 
     expect(navigate).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary')
+    expect(router.getState().activePage).toBe('/settings/profile')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    router.syncLocation({ pathname: '/project/42', search: '?tab=detail', hash: '#summary' })
+    expect(router.getState().activePage).toBe('/project/:id')
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
   })
 
   /** 新地址无法解析时必须在删除旧页签前失败，保持状态与浏览器一致。 */
@@ -1079,6 +1251,8 @@ describe('createRouterCore', () => {
 
     expect(navigate).toHaveBeenCalledOnce()
     expect(navigate).toHaveBeenCalledWith('/project/42')
+    expect(events).toEqual(['navigate'])
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
     expect(events).toEqual(['navigate', 'onTabClose'])
   })
 
@@ -1132,6 +1306,7 @@ describe('createRouterCore', () => {
       ).toBe(true)
       expect(navigate).toHaveBeenCalledOnce()
       expect(navigate).toHaveBeenCalledWith('/project/42')
+      router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
       expect(consoleError).toHaveBeenCalledWith(
         '[RouterCore] onTabClose callback failed.',
         error,
@@ -1166,6 +1341,7 @@ describe('createRouterCore', () => {
       ).toBe(true)
       expect(navigate).toHaveBeenCalledOnce()
       expect(navigate).toHaveBeenCalledWith('/project/42')
+      router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
       await vi.waitFor(() => {
         expect(consoleError).toHaveBeenCalledWith(
           '[RouterCore] onTabClose callback failed.',

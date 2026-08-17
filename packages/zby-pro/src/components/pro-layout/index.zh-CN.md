@@ -220,7 +220,7 @@ export function OrderPage() {
 | showBreadcrumb | 是否在页签栏下方显示全局面包屑 | `boolean` | `true` |
 | setPage | 当前页面标题变化后的通知；无匹配页面时传入空字符串 | `(pageName: string) => void` | - |
 | onPageError | 页面渲染异常后的通知；接收原始异常、React 组件栈和当前 pathname | `ProLayoutPageErrorHandler` | - |
-| pageLoading | 页面懒加载的 Suspense 占位；`false` 表示不渲染占位 | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
+| pageLoading | 页面懒加载的 Suspense 占位；`false` 只关闭中央占位 | `false \| ProLayoutPageLoading` | `{ delay: 300 }` |
 | beforeUnload | 离开或刷新页面前是否触发浏览器提示 | `boolean \| (() => boolean)` | - |
 | minimumContentWidth | 内容区域最小宽度；数字按像素处理 | `number \| string` | - |
 | noBar | 隐藏左侧菜单和顶部页签栏，让内容占满视口 | `boolean` | `false` |
@@ -288,7 +288,9 @@ export function OrderPage() {
 | indicator | 默认 Spin 的自定义指示符 | `SpinProps['indicator']` | - |
 | render | 完全替换默认占位，接收当前真实 pathname | `(info: { pathname: string }) => ReactNode` | - |
 
-配置 `render` 时不会再包裹默认 Spin；配置 `pageLoading={false}` 时，Suspense 等待期间渲染 `null`。
+活动页面进入 Suspense 且等待超过 150ms 时，ProLayout 会显示顶部页面加载进度；页面成功提交、加载失败、切走或失活时结束。KeepAlive 缓存页恢复且未再次进入 Suspense 时不会显示，非活动缓存页的等待也不会保持进度条。
+
+配置 `render` 时不会再包裹默认 Spin；配置 `pageLoading={false}` 时，Suspense 等待期间中央区域渲染 `null`，顶部页面加载进度仍按上述规则工作。
 
 ### ProLayoutSystemItem
 

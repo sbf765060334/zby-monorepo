@@ -64,8 +64,7 @@ const enUS = {
         },
         pageError: {
           title: 'Page failed to load',
-          description: 'Try again. If the problem persists, contact an administrator.',
-          retry: 'Try again',
+          description: 'This page is temporarily unavailable. Contact an administrator.',
         },
       },
     },

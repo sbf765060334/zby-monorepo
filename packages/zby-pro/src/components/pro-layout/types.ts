@@ -142,7 +142,7 @@ export interface ProLayoutProps {
   setPage?: (pageName: string) => void
   /** 页面渲染异常后的通知回调；原始异常只交给宿主，不显示给最终用户。 */
   onPageError?: ProLayoutPageErrorHandler
-  /** 页面懒加载占位配置；false 表示 Suspense 等待期间不渲染占位。 */
+  /** 页面懒加载占位配置；false 只关闭中央占位，不关闭顶部页面加载进度。 */
   pageLoading?: false | ProLayoutPageLoading
   /** 离开或刷新页面前是否提示；函数返回 true 时阻止直接离开。 */
   beforeUnload?: boolean | (() => boolean)
