@@ -8,18 +8,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useHref, useLocation, useNavigate } from 'react-router-dom'
 
 import type { ReactNode } from 'react'
-import type { RouterHost, RouterLocation, RouterNavigate } from '../types'
+import type { RouterHost, RouterNavigate } from '../types'
 import { useRouterCore } from '../react/RouterCoreProvider'
-
-/**
- * Schedules the point at which a host-confirmed location enters RouterCore.
- * The scheduler must not change the location or call RouterCore directly; it
- * only decides when to invoke the supplied commit callback.
- */
-export type RouterCoreLocationSyncScheduler = (
-  location: RouterLocation,
-  commit: () => void,
-) => void | (() => void)
 
 /** React Router 与当前 RouterCore 实例之间的适配边界参数。 */
 export interface RouterCoreReactRouterAdapterProps {
@@ -29,11 +19,6 @@ export interface RouterCoreReactRouterAdapterProps {
    * Adapter 只建立宿主连接，不创建 RouterCore，也不生成额外 DOM。
    */
   children: ReactNode
-  /**
-   * Optional generic scheduling hook for the final location-to-Core handoff.
-   * When omitted, the adapter preserves immediate synchronization semantics.
-   */
-  scheduleSyncLocation?: RouterCoreLocationSyncScheduler
 }
 
 /**
@@ -47,14 +32,13 @@ export interface RouterCoreReactRouterAdapterProps {
 export function RouterCoreReactRouterAdapter(
   props: RouterCoreReactRouterAdapterProps,
 ) {
-  const { children, scheduleSyncLocation } = props
+  const { children } = props
   const router = useRouterCore()
   const location = useLocation()
   const reactRouterNavigate = useNavigate()
   const navigateRef = useRef(reactRouterNavigate)
   const redirectRequestKeyRef = useRef(0)
   const handledRedirectRequestKeyRef = useRef(0)
-  const scheduleSyncLocationRef = useRef(scheduleSyncLocation)
   const [redirectRequest, setRedirectRequest] = useState<{
     key: number
     target: Parameters<RouterNavigate>[0]
@@ -66,10 +50,6 @@ export function RouterCoreReactRouterAdapter(
     // 是 Adapter 生命周期而不是单次地址快照，因此只更新底层函数，不重新解绑 Host。
     navigateRef.current = reactRouterNavigate
   }, [reactRouterNavigate])
-
-  useLayoutEffect(() => {
-    scheduleSyncLocationRef.current = scheduleSyncLocation
-  }, [scheduleSyncLocation])
 
   // Host 对象在 Adapter 生命周期内保持同一引用，pathname 变化不会触发解绑再绑定。
   const host = useMemo<RouterHost>(() => {
@@ -107,27 +87,11 @@ export function RouterCoreReactRouterAdapter(
   useLayoutEffect(() => {
     // 地址必须以 React Router 最终确认的 location 为准。Core 命令只负责请求导航，
     // 浏览器前进后退、外部跳转和命令导航都会在这里汇合成同一条状态同步链路。
-    const nextLocation: RouterLocation = {
+    router.syncLocation({
       pathname: location.pathname,
       search: location.search,
       hash: location.hash,
-    }
-    let active = true
-    const commit = () => {
-      if (!active)
-        return
-
-      router.syncLocation(nextLocation)
-    }
-    const cleanup = scheduleSyncLocationRef.current?.(nextLocation, commit)
-
-    if (!scheduleSyncLocationRef.current)
-      commit()
-
-    return () => {
-      active = false
-      cleanup?.()
-    }
+    })
   }, [location.hash, location.pathname, location.search, router])
 
   useEffect(() => {

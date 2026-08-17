@@ -451,7 +451,6 @@ function Pages() {
 | Prop | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | 是 | 同时位于 React Router 和 `RouterCoreProvider` 内部的业务子树。Adapter 不生成额外 DOM。 |
-| `scheduleSyncLocation` | `RouterCoreLocationSyncScheduler` | 否 | 控制已确认 location 何时提交到 Core。未传入时立即调用 `syncLocation`；传入后由调度器调用第二个参数 `commit`，并可返回清理函数取消尚未提交的回调。 |
 
 ### `useRouterCoreCreateHref`
 
@@ -463,8 +462,6 @@ function Pages() {
 2. 将最终确认的 pathname、search 和 hash 交给 `syncLocation`。
 3. 在 effect 中执行根路径和目录重定向，避免早于 React Router 的 history 监听。
 4. Adapter 卸载时解绑宿主；未提交的重定向会在新宿主挂载后重试。
-
-`scheduleSyncLocation` 只负责调度，不应修改 location 或直接调用 RouterCore。它适合由上层 UI 在提交前安排进度条、动画或其它渲染协调逻辑；调度器必须在确认可以提交时调用 `commit`。如果 location 在提交前再次变化，Adapter 会调用上一次返回的清理函数，并且不会执行已取消的提交。
 
 `useRouterCoreCreateHref` 返回用于原生链接的渲染期函数，并保留 BrowserRouter basename 和 HashRouter 前缀：
 

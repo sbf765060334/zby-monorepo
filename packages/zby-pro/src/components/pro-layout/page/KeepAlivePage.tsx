@@ -18,7 +18,6 @@ import type {
   ProLayoutRouteComponent,
 } from '../types'
 import PageErrorBoundary from './PageErrorBoundary'
-import { PageCommitReporter } from '../navigation-progress/NavigationProgress'
 
 /** 单个 KeepAlive 页面容器的组合属性。 */
 export interface KeepAlivePageProps {
@@ -69,9 +68,6 @@ function KeepAlivePage(props: KeepAlivePageProps) {
   const scrolledElementsRef = useRef(new Set<HTMLElement>())
   const lastReportedScrolledRef = useRef(false)
   const resetKeys = useMemo(() => [page.pathname, page.route.element], [page])
-  const pageCommitReporter = (
-    <PageCommitReporter active={active} pathname={page.pathname} />
-  )
 
   useEffect(() => {
     if (!active)
@@ -122,7 +118,6 @@ function KeepAlivePage(props: KeepAlivePageProps) {
         <PageErrorBoundary
           prefixCls={prefixCls}
           resetKeys={resetKeys}
-          pageCommitReporter={pageCommitReporter}
           onError={onPageError
             ? (error, info) => onPageError(error, info, { pathname: page.pathname })
             : undefined}
@@ -138,7 +133,6 @@ function KeepAlivePage(props: KeepAlivePageProps) {
                   />
                 )}
           >
-            {pageCommitReporter}
             <StableRouteElement element={page.route.element} />
           </Suspense>
         </PageErrorBoundary>

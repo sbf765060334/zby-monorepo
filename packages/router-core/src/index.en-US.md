@@ -451,7 +451,6 @@ function Pages() {
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `children` | `ReactNode` | yes | Business subtree inside both React Router and `RouterCoreProvider`. The adapter adds no DOM. |
-| `scheduleSyncLocation` | `RouterCoreLocationSyncScheduler` | no | Controls when a confirmed location is committed to Core. Without it, `syncLocation` runs immediately. With it, the scheduler must call the provided `commit` callback and may return cleanup for a pending callback. |
 
 ### `useRouterCoreCreateHref`
 
@@ -463,8 +462,6 @@ This Hook has no arguments and returns `(path: string) => string`. An applicatio
 2. Sends every confirmed pathname, search, and hash to `syncLocation`.
 3. Performs root and directory redirects in an effect, after React Router installs its history listener.
 4. Unbinds the host on unmount; an uncommitted redirect is retried when a new host binds.
-
-`scheduleSyncLocation` is a generic scheduling hook. It must not mutate the location or call RouterCore directly; it only decides when to invoke `commit`. A higher-level UI can use it to coordinate progress indicators, transitions, or rendering. When the location changes before a commit, the adapter invokes the previous cleanup and ignores the cancelled commit.
 
 `useRouterCoreCreateHref` returns a render-time function for native links. It preserves BrowserRouter basenames and HashRouter prefixes:
 
