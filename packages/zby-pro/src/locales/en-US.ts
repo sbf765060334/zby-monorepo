@@ -1,6 +1,33 @@
 const enUS = {
   zby: {
     pro: {
+      viewManagement: {
+        viewRequired: 'Please enter a view name',
+        viewDuplicated: 'The view name already exists',
+        maxCustomViews: 'You can create up to {{count}} custom views',
+        loadErrorRetry: 'Failed to load views. Click to retry',
+        save: 'Save',
+        saveAs: 'Save as',
+        reset: 'Reset',
+        saveAsViewTitle: 'Save as a new view',
+        createViewTitle: 'Create view',
+        create: 'Create',
+        cancel: 'Cancel',
+        createViewPlaceholder: 'Enter a view name',
+        viewManagementTitle: 'Manage views',
+        confirm: 'OK',
+        systemView: 'System',
+        editView: 'Edit view',
+        deleteView: 'Delete view',
+        deleteViewConfirm: 'Delete “{{name}}”?',
+        systemViews: 'System views',
+        customViews: 'Custom views',
+        loadingViews: 'Loading views',
+        loadViewsError: 'Failed to load views',
+        selectView: 'Select a view',
+        createView: 'Create view',
+        searchView: 'Search views',
+      },
       layout: {
         title: 'Console',
         logout: 'Sign out',

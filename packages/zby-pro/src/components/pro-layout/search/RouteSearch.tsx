@@ -1,7 +1,7 @@
 import { CloseCircleFilled, CloseOutlined, SearchOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { useRouterCore } from '@zby/router-core/react'
-import { Button, Empty, Modal } from 'antd'
+import { Empty, Modal } from 'antd'
 import { clsx } from 'clsx'
 import { Command } from 'cmdk'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
@@ -197,7 +197,7 @@ function RouteSearch(props: ProRouteSearchProps) {
     setQuery('')
   }
 
-  /** 通过右侧放大镜打开搜索。 */
+  /** 通过搜索触发器打开搜索。 */
   const showSearch = () => {
     setOpen(true)
   }
@@ -234,15 +234,16 @@ function RouteSearch(props: ProRouteSearchProps) {
   return (
     <>
       {/* 业务将该触发器与语言、主题组件并列放入 header.extra。 */}
-      <Button
-        type="text"
-        size="small"
-        icon={<SearchOutlined />}
+      <button
+        type="button"
         className={clsx(`${prefixCls}-search-trigger`, hashId, className)}
         aria-label={triggerTitle}
         title={triggerTitle}
         onClick={showSearch}
-      />
+      >
+        <SearchOutlined aria-hidden="true" />
+        <span className={`${prefixCls}-search-trigger-hint`}>CTRL + K</span>
+      </button>
       {/* Modal 只负责标题和外壳，视口高度约束交给 body 内部包装层。 */}
       <Modal
         open={open}

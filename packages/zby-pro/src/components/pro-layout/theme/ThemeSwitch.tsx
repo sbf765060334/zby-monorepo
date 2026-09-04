@@ -72,6 +72,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
 
   // 动画回调只接收实际 light/dark，ref 用来暂存同时包含 auto 和 density 的完整偏好。
   const pendingPreferenceRef = useRef<ProThemePreference | null>(null)
+  const themeTriggerRef = useRef<HTMLButtonElement>(null)
   const themeTransitionOriginRef = useRef<{ x: number, y: number } | undefined>(undefined)
 
   // 明暗和密度是两组选项，各自在当前选项右侧显示主题色圆点。
@@ -128,6 +129,20 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
     [],
   )
 
+  const getThemeTriggerCenter = useCallback(() => {
+    const trigger = themeTriggerRef.current
+    if (!trigger)
+      return themeTransitionOriginRef.current
+
+    const rect = trigger.getBoundingClientRect()
+    const origin = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    }
+    themeTransitionOriginRef.current = origin
+    return origin
+  }, [])
+
   const selectMode = useCallback((mode: ProThemeMode) => {
     const nextValue = { ...value, mode }
     const nextAppearance = resolveThemeAppearance(mode)
@@ -139,8 +154,8 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
     }
 
     pendingPreferenceRef.current = nextValue
-    handleThemeModeChange(nextAppearance, themeTransitionOriginRef.current)
-  }, [appearance, handleThemeModeChange, onChange, value])
+    handleThemeModeChange(nextAppearance, getThemeTriggerCenter())
+  }, [appearance, getThemeTriggerCenter, handleThemeModeChange, onChange, value])
 
   // key 前缀用于区分明暗模式和布局密度，二者互不覆盖。
   const items: NonNullable<MenuProps['items']> = [
@@ -218,6 +233,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
         icon={<ThemeIcon />}
         aria-label={title}
         title={title}
+        ref={themeTriggerRef}
         onFocus={recordThemeTriggerCenter}
         onPointerEnter={recordThemeTriggerCenter}
       />

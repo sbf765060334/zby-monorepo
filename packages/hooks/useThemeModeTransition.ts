@@ -103,6 +103,8 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void) => ViewTransitionLike
 }
 
+let transitionAnimationId = 0
+
 /**
  * 基于浏览器 View Transition API 实现主题切换时的圆形扩散（ripple）动画。
  *
@@ -111,7 +113,7 @@ type ViewTransitionDocument = Document & {
  * 1. 调用 `document.startViewTransition(callback)` 后，浏览器会先对当前 DOM 拍「旧快照」
  * 2. 执行 callback 更新 DOM（此处通过 flushSync 同步更新 React 树）
  * 3. 浏览器再对更新后的 DOM 拍「新快照」
- * 4. 在 ready 阶段，对指定 view-transition-name 的 old/new 伪元素
+ * 4. 对指定 view-transition-name 的 old/new 伪元素
  *    施加 clip-path 从圆心向外（或向内）的圆形遮罩动画
  * 5. 动画结束后清理临时注入的 style 标签
  *
@@ -176,22 +178,37 @@ export function useThemeModeTransition({
 
       // ── 4. 计算圆形 clip-path 动画参数 ──
 
-      // 圆心：优先使用调用方显式坐标，其次使用用户点击坐标，否则取视口几何中心
-      const { x, y } = origin ?? themeSwitchPointRef.current ?? {
+      // 先按视口坐标确定圆心，再转换到具名过渡元素自身的局部坐标。
+      const viewportOrigin = origin ?? themeSwitchPointRef.current ?? {
         x: window.innerWidth / 2,
         y: window.innerHeight / 2,
       }
+      const transitionTarget = findViewTransitionTarget(viewTransitionName)
+      const transitionTargetRect = transitionTarget?.getBoundingClientRect()
+      const targetLeft = transitionTargetRect?.left ?? 0
+      const targetTop = transitionTargetRect?.top ?? 0
+      const targetWidth = transitionTargetRect?.width || window.innerWidth
+      const targetHeight = transitionTargetRect?.height || window.innerHeight
 
-      // 终点半径：圆心到视口四个角中最远点的距离，确保圆能完全覆盖整个屏幕
-      // Math.max(x, innerWidth - x) 得到圆心到左右边缘的较大水平距离
-      // Math.max(y, innerHeight - y) 得到圆心到上下边缘的较大垂直距离
+      // View Transition 快照层在 Chromium 中按设备像素绘制，而 getBoundingClientRect
+      // 返回的是 CSS 像素。将局部坐标和目标尺寸统一转换到快照层坐标系，避免高 DPR
+      // 屏幕上圆心相对触发按钮向左上偏移（例如 DPR=1.5 时偏移约 1.5 倍）。
+      const pixelRatio = window.devicePixelRatio || 1
+      const x = (viewportOrigin.x - targetLeft) * pixelRatio
+      const y = (viewportOrigin.y - targetTop) * pixelRatio
+      const snapshotWidth = targetWidth * pixelRatio
+      const snapshotHeight = targetHeight * pixelRatio
+
+      // 终点半径：圆心到具名过渡元素四个角中最远点的距离，确保能覆盖整个目标区域。
+      // Math.max(x, snapshotWidth - x) 得到圆心到左右边缘的较大水平距离
+      // Math.max(y, snapshotHeight - y) 得到圆心到上下边缘的较大垂直距离
       // Math.hypot 计算该矩形的对角线长度，即覆盖全屏所需最小半径
       const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y),
+        Math.max(x, snapshotWidth - x),
+        Math.max(y, snapshotHeight - y),
       )
 
-      // clip-path 关键帧：从半径 0 的圆 → 半径 endRadius 的圆，圆心固定在 (x, y)
+      // clip-path 关键帧：从半径 0 的圆 → 半径 endRadius 的圆，圆心固定在目标元素内的 (x, y)
       const clipPath = [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`]
 
       // 区分切换方向，决定动画施加在哪一层快照以及 z-index 叠放顺序
@@ -218,14 +235,32 @@ export function useThemeModeTransition({
       //
       // ::view-transition-old/new { animation: none; mix-blend-mode: normal }
       //   禁用浏览器对 View Transition 伪元素的默认 cross-fade 动画，
-      //   改由下方 Web Animations API 的 clip-path 完全接管视觉效果。
+      //   改由下方 CSS @keyframes 的 clip-path 完全接管视觉效果。
       //
       // ::view-transition-old/new(${viewTransitionName}) { z-index }
       //   根据切换方向动态调整 old/new 层的叠放顺序：
       //   - 进入暗色：new 在上（999），圆形扩散的暗色新快照可见
       //   - 进入亮色：old 在上（999），圆形收缩的暗色旧快照可见
+      //
+      // 采用 CSS @keyframes 驱动 clip-path，而不是依赖 Web Animations API 的
+      // pseudoElement 选项。后者在部分支持 View Transition 的浏览器/运行环境中
+      // 不稳定，会导致默认动画被关闭后主题瞬间切换。
+      const animationName = `zby-theme-transition-${enteringDark ? 'reveal' : 'hide'}-${++transitionAnimationId}`
+      const animationClipPath = enteringDark ? clipPath : [...clipPath].reverse()
+      const animatedTarget = enteringDark
+        ? `::view-transition-new(${viewTransitionName})`
+        : `::view-transition-old(${viewTransitionName})`
       const styleElement = document.createElement('style')
       styleElement.textContent = `
+        @keyframes ${animationName} {
+          from {
+            clip-path: ${animationClipPath[0]};
+          }
+          to {
+            clip-path: ${animationClipPath[1]};
+          }
+        }
+
         ::view-transition {
           background: ${background};
         }
@@ -258,10 +293,13 @@ export function useThemeModeTransition({
         ::view-transition-new(${viewTransitionName}) {
           z-index: ${enteringDark ? 999 : 1};
         }
+
+        ${animatedTarget} {
+          animation: ${animationName} 520ms cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
       `
       document.head.appendChild(styleElement)
 
-      let themeTransitionAnimation: Animation | undefined
       let transition: ViewTransitionLike
 
       // startViewTransition 的实现并不一定在调用主题回调前失败：Polyfill、测试桩或非标准实现
@@ -314,45 +352,12 @@ export function useThemeModeTransition({
         return
       }
 
-      // ── 7. ready：快照已就绪，开始自定义 clip-path 动画 ──
+      // ── 7. finished：过渡结束，清理资源 ──
       //
-      // 使用 Web Animations API（document.documentElement.animate）而非 CSS @keyframes，
-      // 因为需要动态圆心坐标，且目标伪元素为 View Transition 生成的
-      // ::view-transition-old(name) / ::view-transition-new(name)。
-      //
-      // 动画方向：
-      // - 进入暗色（enteringDark=true）：对新快照 (::view-transition-new) 做 0→全屏 圆形扩散，
-      //   暗色从点击处向外「覆盖」亮色
-      // - 进入亮色（enteringDark=false）：对旧快照 (::view-transition-old) 做 全屏→0 圆形收缩，
-      //   暗色从外向内「褪去」露出亮色
-      //
-      // 上方注入的 z-index 规则配合此逻辑：
-      // - 进入暗色时 new 层 z-index:999 在上，扩散的新暗色可见
-      // - 进入亮色时 old 层 z-index:999 在上，收缩的旧暗色可见
-      void transition.ready
-        .then(() => {
-          themeTransitionAnimation = document.documentElement.animate(
-            {
-              clipPath: enteringDark ? clipPath : [...clipPath].reverse(),
-            },
-            {
-              duration: 520,
-              easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // Material Design 标准缓动曲线
-              fill: 'forwards', // 动画结束后保持最终帧，避免回弹
-              pseudoElement: `::view-transition-${enteringDark ? 'new' : 'old'}(${viewTransitionName})`,
-            } as KeyframeAnimationOptions,
-          )
-        })
-        .catch(() => undefined)
-
-      // ── 8. finished：过渡结束，清理资源 ──
-      //
-      // - cancel() 释放 Web Animation 占用的资源
       // - remove() 移除临时 style 标签，防止多次切换后 head 中 style 堆积
       // 使用 finally 确保无论过渡成功或中断都会执行清理
       void transition.finished
         .finally(() => {
-          themeTransitionAnimation?.cancel()
           styleElement.remove()
         })
         .catch(() => undefined)
@@ -364,4 +369,29 @@ export function useThemeModeTransition({
     recordThemeSwitchPoint,
     handleThemeModeChange,
   }
+}
+
+/** 查找声明了指定 view-transition-name 的元素，用于把视口坐标转换为局部坐标。 */
+function findViewTransitionTarget(viewTransitionName: string): HTMLElement | undefined {
+  const matchesViewTransitionName = (element: HTMLElement) => {
+    const style = element.style as CSSStyleDeclaration & { viewTransitionName?: string }
+    return style.getPropertyValue('view-transition-name') === viewTransitionName ||
+      style.viewTransitionName === viewTransitionName
+  }
+
+  const inlineTarget = Array.from(document.querySelectorAll<HTMLElement>('[style]')).find(
+    matchesViewTransitionName,
+  )
+  if (inlineTarget)
+    return inlineTarget
+
+  // CSS-in-JS 或测试环境可能不会把 view-transition-name 暴露在 style 属性上，
+  // 此时用计算样式兜底，避免退回视口坐标。
+  return Array.from(document.querySelectorAll<HTMLElement>('*')).find((element) => {
+    try {
+      return getComputedStyle(element).getPropertyValue('view-transition-name') === viewTransitionName
+    } catch {
+      return false
+    }
+  })
 }

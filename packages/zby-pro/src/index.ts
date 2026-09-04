@@ -1,4 +1,19 @@
 export { zbyProEnUS, zbyProLocales, zbyProZhCN } from './locales'
+export {
+  createIndexedDBProViewManagementAdapter,
+  createRemoteProViewManagementAdapter,
+} from './components/pro-view-management'
+export { default as ProViewManagement } from './components/pro-view-management'
+export type {
+  ProViewManagementAdapter,
+  ProViewManagementCreateValidationPayload,
+  ProViewManagementProps,
+  ProViewManagementRemoteAdapterConfig,
+  ProViewManagementRenameValidationPayload,
+  ProViewManagementScope,
+  ProViewManagementStorageState,
+  ProViewManagementView,
+} from './components/pro-view-management'
 export { useThemeModeTransition } from '@zby/hooks'
 export type {
   UseThemeModeTransitionOptions,

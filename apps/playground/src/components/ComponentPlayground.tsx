@@ -8,10 +8,11 @@ export interface PlaygroundPageProps {
   title: string
   description: React.ReactNode
   children: React.ReactNode
+  packageName?: string
 }
 
 export function PlaygroundPage(props: PlaygroundPageProps) {
-  const { title, description, children } = props
+  const { title, description, children, packageName = '@zby/ui' } = props
 
   return (
     <ProLayoutContentContainer mode="stack">
@@ -23,7 +24,7 @@ export function PlaygroundPage(props: PlaygroundPageProps) {
                 {title}
               </Title>
               <Tag color="blue" variant="filled">
-                @zby/ui
+                {packageName}
               </Tag>
             </Space>
             <Text type="secondary">{description}</Text>

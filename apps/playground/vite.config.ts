@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@zby/hooks': sourcePath('../../packages/hooks/index.ts'),
       '@zby/intl': sourcePath('../../packages/zby-intl/src/index.ts'),
       '@zby/router-core/react-router': sourcePath('../../packages/router-core/src/react-router/index.ts'),
       '@zby/router-core/react': sourcePath('../../packages/router-core/src/react/index.ts'),

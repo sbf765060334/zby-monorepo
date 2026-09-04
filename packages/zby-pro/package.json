@@ -22,6 +22,11 @@
       "import": "./dist/pro-layout/index.mjs",
       "require": "./dist/pro-layout/index.cjs"
     },
+    "./pro-view-management": {
+      "types": "./dist/pro-view-management/index.d.mts",
+      "import": "./dist/pro-view-management/index.mjs",
+      "require": "./dist/pro-view-management/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -41,9 +46,11 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@rc-component/util": "1.12.0",
     "@zby/hooks": "workspace:*",
     "@zby/intl": "workspace:*",
     "@zby/router-core": "workspace:*",
+    "@zby/ui": "workspace:*",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
     "nprogress": "0.2.0",

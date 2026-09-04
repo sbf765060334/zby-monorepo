@@ -19,10 +19,15 @@ beforeEach(() => {
     configurable: true,
     value: vi.fn(() => ({ matches: false })),
   })
+  Object.defineProperty(window, 'devicePixelRatio', {
+    configurable: true,
+    value: 1,
+  })
 })
 
 afterEach(() => {
   cleanup()
+  document.body.replaceChildren()
   Reflect.deleteProperty(document, 'startViewTransition')
   vi.restoreAllMocks()
 })
@@ -83,6 +88,80 @@ describe('useThemeModeTransition', () => {
 
     expect(() => result.current.handleThemeModeChange('dark')).toThrow(callbackError)
     expect(onThemeModeChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('converts an explicit viewport origin to the named target local coordinates', () => {
+    const onThemeModeChange = vi.fn()
+    const transitionTarget = document.createElement('div')
+    transitionTarget.style.viewTransitionName = 'test-theme'
+    vi.spyOn(transitionTarget, 'getBoundingClientRect').mockReturnValue({
+      x: 100,
+      y: 40,
+      left: 100,
+      top: 40,
+      right: 900,
+      bottom: 640,
+      width: 800,
+      height: 600,
+      toJSON: () => ({}),
+    })
+    document.body.appendChild(transitionTarget)
+    installStartViewTransition((callback) => {
+      callback()
+      return {
+        ready: Promise.resolve(),
+        finished: Promise.resolve(),
+      }
+    })
+
+    const { result } = renderThemeTransitionHook(onThemeModeChange)
+    result.current.handleThemeModeChange('dark', { x: 250, y: 140 })
+
+    const transitionStyles = Array.from(document.querySelectorAll('style')).filter((style) =>
+      style.textContent?.includes('::view-transition-new(test-theme)'),
+    )
+    const transitionStyle = transitionStyles[transitionStyles.length - 1]
+    expect(transitionStyle?.textContent).toContain('circle(0px at 150px 100px)')
+    expect(transitionStyle?.textContent).toMatch(
+      /animation: zby-theme-transition-reveal-\d+ 520ms/,
+    )
+  })
+
+  it('scales snapshot coordinates and radius by the device pixel ratio', () => {
+    const onThemeModeChange = vi.fn()
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: 1.5,
+    })
+    const transitionTarget = document.createElement('div')
+    transitionTarget.style.viewTransitionName = 'test-theme'
+    vi.spyOn(transitionTarget, 'getBoundingClientRect').mockReturnValue({
+      x: 100,
+      y: 40,
+      left: 100,
+      top: 40,
+      right: 900,
+      bottom: 640,
+      width: 800,
+      height: 600,
+      toJSON: () => ({}),
+    })
+    document.body.appendChild(transitionTarget)
+    installStartViewTransition((callback) => {
+      callback()
+      return createViewTransition()
+    })
+
+    const { result } = renderThemeTransitionHook(onThemeModeChange)
+    result.current.handleThemeModeChange('dark', { x: 250, y: 140 })
+
+    const transitionStyles = Array.from(document.querySelectorAll('style')).filter((style) =>
+      style.textContent?.includes('::view-transition-new(test-theme)'),
+    )
+    const transitionStyle = transitionStyles[transitionStyles.length - 1]
+    expect(transitionStyle?.textContent).toContain('circle(0px at 225px 150px)')
+    const expectedRadius = Math.hypot(650 * 1.5, 500 * 1.5)
+    expect(transitionStyle?.textContent).toContain(`circle(${expectedRadius}px at 225px 150px)`)
   })
 })
 

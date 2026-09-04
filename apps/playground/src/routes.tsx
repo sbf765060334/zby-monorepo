@@ -1,4 +1,4 @@
-import { ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import { createLazyRouteComponent, type ProLayoutRoute } from '@zby/pro'
 
 const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/ActionIconPlayground'))
@@ -8,6 +8,9 @@ const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
   () => import('./pages/InputNumberRangePlayground'),
+)
+const ProViewManagementPlayground = createLazyRouteComponent(
+  () => import('./pages/ProViewManagementPlayground'),
 )
 const ScrollAreaPlayground = createLazyRouteComponent(() => import('./pages/ScrollAreaPlayground'))
 const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
@@ -302,6 +305,12 @@ export const appRouters: ProLayoutRoute[ ] = [
             path: '/demo/ui/table',
             title: '表格',
             element: TablePlayground,
+          },
+          {
+            path: '/demo/ui/pro-view-management',
+            title: '视图管理',
+            icon: AppstoreOutlined,
+            element: ProViewManagementPlayground,
           },
         ],
       },

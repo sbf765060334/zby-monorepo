@@ -185,26 +185,20 @@ describe('ProThemeSwitch', () => {
   })
 
   it('悬停打开主题菜单时固定从主题按钮中心开始过渡', async () => {
-    const animate = vi.fn(() => ({ cancel: vi.fn() }))
     const startViewTransition = vi.fn((callback: () => void) => {
       callback()
       return {
         ready: Promise.resolve(),
-        finished: Promise.resolve(),
+        finished: new Promise(() => {}),
       }
     })
     Object.defineProperty(document, 'startViewTransition', {
       configurable: true,
       value: startViewTransition,
     })
-    Object.defineProperty(document.documentElement, 'animate', {
-      configurable: true,
-      value: animate,
-    })
-
     renderThemeFixture({ mode: 'light', density: 'default' })
     const themeTrigger = screen.getByRole('button', { name: '主题设置' })
-    vi.spyOn(themeTrigger, 'getBoundingClientRect').mockReturnValue({
+    const triggerRect = vi.spyOn(themeTrigger, 'getBoundingClientRect').mockReturnValue({
       x: 940,
       y: 8,
       left: 940,
@@ -216,18 +210,35 @@ describe('ProThemeSwitch', () => {
       toJSON: () => ({}),
     })
     fireEvent.pointerEnter(themeTrigger, { clientX: 942, clientY: 10 })
+    triggerRect.mockReturnValue({
+      x: 900,
+      y: 6,
+      left: 900,
+      top: 6,
+      right: 940,
+      bottom: 38,
+      width: 40,
+      height: 32,
+      toJSON: () => ({}),
+    })
     await openThemeMenu()
     fireEvent.click(screen.getAllByRole('menuitem')[2])
 
-    await waitFor(() => expect(animate).toHaveBeenCalled())
-    expect(animate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        clipPath: expect.arrayContaining(['circle(0px at 960px 24px)']),
-      }),
-      expect.objectContaining({
-        pseudoElement: '::view-transition-new(zby-pro-layout-theme)',
-      }),
+    const transitionStyle = await waitFor(() => {
+      const styles = Array.from(document.querySelectorAll('style')).filter((item) =>
+        item.textContent?.includes('::view-transition-new(zby-pro-layout-theme)') &&
+        item.textContent.includes('@keyframes zby-theme-transition-reveal-'),
+      )
+      const style = styles[styles.length - 1]
+      expect(style).toBeTruthy()
+      return style
+    })
+    expect(transitionStyle?.textContent).toContain('circle(0px at 920px 22px)')
+    expect(transitionStyle?.textContent).toMatch(
+      /animation: zby-theme-transition-reveal-\d+ 520ms/,
     )
+
+    transitionStyle?.remove()
   })
 })
 
