@@ -58,6 +58,7 @@ const zhCN = {
         paginationTotal: '第 {{start}}-{{end}} 条/总共 {{total}} 条',
         actionColumn: '操作',
         more: '更多',
+        moreActions: '更多操作',
         batchActions: '批量操作（已选 {{count}} 个）',
         booleanTrue: '是',
         booleanFalse: '否',

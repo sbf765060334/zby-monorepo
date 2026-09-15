@@ -1,19 +1,30 @@
 import * as React from 'react'
-import { DownOutlined } from '@ant-design/icons'
-import { Button, Dropdown, Popconfirm, Space, Tooltip } from 'antd'
-import type { MenuProps } from 'antd'
+import { EllipsisOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
+import { Button, Dropdown, Popconfirm, Space, Tooltip } from 'antd'
+import type { MenuProps, TooltipProps } from 'antd'
+import { clsx } from 'clsx'
 
 import type { ProTableActionInfo, ProTableActionItem, ProTableActionsProps, ProTableActionTooltip } from '../interface'
 
-function isTooltipProps(tooltip: ProTableActionTooltip): tooltip is Omit<React.ComponentProps<typeof Tooltip>, 'children'> {
-  return typeof tooltip === 'object' && tooltip !== null && !Array.isArray(tooltip) && !React.isValidElement(tooltip)
+const DEFAULT_MORE_ICON = <EllipsisOutlined />
+
+function isTooltipProps(tooltip: ProTableActionTooltip): tooltip is Omit<TooltipProps, 'children'> {
+  return (
+    typeof tooltip === 'object' &&
+    tooltip !== null &&
+    !Array.isArray(tooltip) &&
+    !React.isValidElement(tooltip)
+  )
 }
 
 function renderTooltip(node: React.ReactElement, tooltip: ProTableActionTooltip | undefined) {
   if (!tooltip) return node
-  const props = isTooltipProps(tooltip) ? tooltip : { title: tooltip }
-  return <Tooltip {...props}>{node}</Tooltip>
+  const tooltipProps: Omit<TooltipProps, 'children'> = isTooltipProps(tooltip)
+    ? tooltip
+    : { title: tooltip }
+  if (!tooltipProps.title && !tooltipProps.overlay) return node
+  return <Tooltip {...tooltipProps}>{node}</Tooltip>
 }
 
 export function ProTableActions<RecordType>({
@@ -21,6 +32,7 @@ export function ProTableActions<RecordType>({
   record,
   index,
   visibleCount = 0,
+  moreText,
   moreButtonProps,
   dropdownProps,
   className,
@@ -28,7 +40,7 @@ export function ProTableActions<RecordType>({
   prefixCls = 'zby-pro-table',
 }: ProTableActionsProps<RecordType>) {
   const intl = useIntl()
-  const moreLabel = intl.getMessage('zby.pro.table.more', '更多')
+  const moreHint = intl.getMessage('zby.pro.table.moreActions', '更多操作')
   const items = actions.filter((item): item is ProTableActionItem<RecordType> => Boolean(item && !item.hidden))
   const visible = items.slice(0, Math.max(0, visibleCount))
   const overflow = items.slice(Math.max(0, visibleCount))
@@ -43,31 +55,38 @@ export function ProTableActions<RecordType>({
     danger: item.danger,
     onClick: () => run(item),
   }))
+  const moreButton = (
+    <Button
+      {...moreButtonProps}
+      type={moreButtonProps?.type ?? 'link'}
+      size={moreButtonProps?.size ?? 'small'}
+      className={clsx(`${prefixCls}-actions-more`, moreButtonProps?.className)}
+      icon={moreButtonProps?.icon ?? (moreText === undefined ? DEFAULT_MORE_ICON : undefined)}
+      title={moreButtonProps?.title ?? (moreText === undefined ? moreHint : undefined)}
+      aria-label={
+        moreButtonProps?.['aria-label'] ??
+        (moreText === undefined ? moreHint : undefined)
+      }
+    >
+      {moreText}
+    </Button>
+  )
 
   return (
     <Space className={className ?? `${prefixCls}-actions`} size={4} style={style}>
       {visible.map((item) => {
         const { key, label, hidden: _hidden, tooltip: _tooltip, popconfirm, onClick, ...buttonProps } = item
         const button = <Button {...buttonProps} type={buttonProps.type ?? 'link'} size={buttonProps.size ?? 'small'} onClick={popconfirm ? undefined : () => run(item)}>{label}</Button>
-        const content = item.popconfirm ? (
-          <Popconfirm {...item.popconfirm} onConfirm={() => void (item.popconfirm?.onConfirm?.(info(item)) ?? onClick?.(info(item)))}>
+        const content = popconfirm ? (
+          <Popconfirm {...popconfirm} onConfirm={() => void (popconfirm.onConfirm?.(info(item)) ?? onClick?.(info(item)))}>
             {button}
           </Popconfirm>
         ) : button
-        return <React.Fragment key={String(key)}>{renderTooltip(content as React.ReactElement, item.tooltip)}</React.Fragment>
+        return <React.Fragment key={String(key)}>{renderTooltip(content, item.tooltip)}</React.Fragment>
       })}
       {overflow.length > 0 && (
         <Dropdown {...dropdownProps} menu={{ items: menuItems }} trigger={dropdownProps?.trigger ?? ['click']}>
-          <Button
-            {...moreButtonProps}
-            type={moreButtonProps?.type ?? 'link'}
-            size={moreButtonProps?.size ?? 'small'}
-            className={moreButtonProps?.className ?? `${prefixCls}-actions-more`}
-            icon={<DownOutlined />}
-            iconPlacement="end"
-          >
-            {moreLabel}
-          </Button>
+          {moreButton}
         </Dropdown>
       )}
     </Space>

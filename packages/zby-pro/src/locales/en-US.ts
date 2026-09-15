@@ -58,6 +58,7 @@ const enUS = {
         paginationTotal: '{{start}}-{{end}} of {{total}} items',
         actionColumn: 'Actions',
         more: 'More',
+        moreActions: 'More actions',
         batchActions: 'Batch actions ({{count}} selected)',
         booleanTrue: 'Yes',
         booleanFalse: 'No',

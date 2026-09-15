@@ -63,7 +63,7 @@ function wait(ms: number) {
 }
 
 const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async (query) => {
-  await wait(280)
+  await wait(3000)
 
   const rows = ALL_ROWS.slice()
   if (query.sortBy && query.sortOrder) {
@@ -78,7 +78,7 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
   }
 
   const page = query.page || 1
-  const pageSize = query.pageSize || 10
+  const pageSize = query.pageSize || 5
   const start = (page - 1) * pageSize
 
   return {
@@ -206,7 +206,7 @@ export default function ProTablePlayground() {
         columnResize
         fullscreen
         rowSelection={{}}
-        scroll={{ x: 1680 }}
+        rowHighlight
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,
@@ -231,7 +231,6 @@ export default function ProTablePlayground() {
           ],
         }}
         actionColumn={{
-          width: 148,
           actions: ({ record }) => [
             {
               key: 'view',

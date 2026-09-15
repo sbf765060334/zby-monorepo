@@ -40,7 +40,8 @@ export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   record?: RecordType
   index?: number
   visibleCount?: number
-  moreButtonProps?: Omit<ButtonProps, 'children' | 'onClick' | 'icon' | 'iconPlacement'>
+  moreText?: ReactNode
+  moreButtonProps?: Omit<ButtonProps, 'children' | 'onClick'>
   dropdownProps?: Omit<DropdownProps, 'children' | 'menu'>
   className?: string
   style?: CSSProperties
