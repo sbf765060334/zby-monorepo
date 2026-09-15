@@ -22,7 +22,7 @@ import type {
 } from 'react'
 import * as React from 'react'
 
-type SortableListRenderContext = {
+export type SortableListRenderContext = {
   dragging: boolean
   dragHandleProps: HTMLAttributes<HTMLElement>
   rowRef: Ref<HTMLDivElement>
@@ -30,7 +30,7 @@ type SortableListRenderContext = {
   style: CSSProperties
 }
 
-type SortableListProps<Item> = {
+export type SortableListProps<Item> = {
   items: Item[]
   getKey: (item: Item) => string
   disabled?: boolean

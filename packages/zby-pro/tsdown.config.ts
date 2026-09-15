@@ -5,6 +5,7 @@ export default defineConfig({
     index: './src/index.ts',
     'locales/index': './src/locales/index.ts',
     'pro-layout/index': './src/components/pro-layout/index.ts',
+    'pro-sortable-list/index': './src/components/pro-sortable-list/index.ts',
     'pro-view-management/index': './src/components/pro-view-management/index.ts',
   },
   format: ['esm', 'cjs'],

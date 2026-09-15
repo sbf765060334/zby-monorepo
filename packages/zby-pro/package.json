@@ -22,6 +22,11 @@
       "import": "./dist/pro-layout/index.mjs",
       "require": "./dist/pro-layout/index.cjs"
     },
+    "./pro-sortable-list": {
+      "types": "./dist/pro-sortable-list/index.d.mts",
+      "import": "./dist/pro-sortable-list/index.mjs",
+      "require": "./dist/pro-sortable-list/index.cjs"
+    },
     "./pro-view-management": {
       "types": "./dist/pro-view-management/index.d.mts",
       "import": "./dist/pro-view-management/index.mjs",

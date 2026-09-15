@@ -2,8 +2,8 @@ import { useIntl } from '@zby/intl'
 import { Modal } from 'antd'
 import * as React from 'react'
 
+import { SortableList } from '../pro-sortable-list'
 import type { ProViewManagementView } from './interface'
-import { SortableList } from './SortableList'
 import { ViewManagementRow } from './ViewManagementRow'
 
 type ViewManagementModalProps<TSnapshot> = {

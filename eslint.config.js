@@ -90,6 +90,12 @@ export default antfu(
     rules: {
       ...reactHooks.configs.recommended.rules,
       curly: 'off',
+      // React Compiler (react-hooks v7) rules. Existing code uses render-phase
+      // refs as instance/identity cache and effect-synced UI flags; keep those
+      // patterns instead of rewriting to compiler-strict style.
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/exhaustive-deps': 'off',
     },
   },
   {
@@ -98,8 +104,6 @@ export default antfu(
     files: ['packages/zby-ui/src/components/table/**/*.{ts,tsx}'],
     rules: {
       'node/prefer-global/process': 'off',
-      'react-hooks/exhaustive-deps': 'off',
-      'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'ts/no-non-null-asserted-optional-chain': 'off',
     },

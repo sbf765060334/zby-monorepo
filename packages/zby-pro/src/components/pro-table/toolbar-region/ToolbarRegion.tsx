@@ -1,0 +1,194 @@
+import React, { memo, useCallback, useMemo } from 'react'
+import { FullscreenExitOutlined, FullscreenOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
+import { ActionIcon } from '@zby/ui'
+import { Tooltip } from 'antd'
+import { clsx } from 'clsx'
+
+import type { ProTableController, ProTableProps } from '../interface'
+import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
+import type { ProTableViewStore } from '../store'
+import { ProTableToolbarActions } from '../toolbar-actions'
+
+const RELOAD_ICON = <ReloadOutlined />
+const SETTING_ICON = <SettingOutlined />
+const FULLSCREEN_ICON = <FullscreenOutlined />
+const FULLSCREEN_EXIT_ICON = <FullscreenExitOutlined />
+
+type ToolbarConfigValue<RecordType, Query extends Record<string, unknown>, Summary> = Exclude<
+  ProTableProps<RecordType, Query, Summary>['toolbar'],
+  false | undefined
+>
+
+type ToolbarRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+  controller: ProTableController<RecordType, Query, Summary>
+  toolbar: ToolbarConfigValue<RecordType, Query, Summary>
+  columnsState: ProTableProps<RecordType, Query, Summary>['columnsState']
+  fullscreenEnabled: boolean
+  viewStore: ProTableViewStore
+  prefixCls: string
+  className?: string
+  style?: React.CSSProperties
+}
+
+function resolveNode<NodeContext, Value>(
+  candidate: Value | ((context: NodeContext) => Value) | undefined,
+  context: NodeContext,
+) {
+  return typeof candidate === 'function'
+    ? (candidate as (context: NodeContext) => Value)(context)
+    : candidate
+}
+
+const ToolbarRefreshButton = memo(
+  ({
+    controller,
+    loading,
+  }: {
+    controller: ProTableController<any, any, any>
+    loading: boolean
+  }) => {
+    const intl = useIntl()
+    const handleReload = useCallback(() => {
+      void controller.reload()
+    }, [controller])
+    const label = intl.getMessage('zby.pro.table.refresh', '刷新')
+
+    return (
+      <Tooltip title={label}>
+        <ActionIcon
+          disabled={loading}
+          icon={RELOAD_ICON}
+          aria-label={label}
+          onClick={handleReload}
+        />
+      </Tooltip>
+    )
+  },
+)
+
+ToolbarRefreshButton.displayName = 'ProTableToolbarRefreshButton'
+
+const ToolbarColumnsStateButton = memo(({ viewStore }: { viewStore: ProTableViewStore }) => {
+  const intl = useIntl()
+  const columnsModalOpen = useViewStoreSelector(viewStore, (state) => state.columnsModalOpen)
+  const handleOpenColumnsModal = useCallback(() => {
+    viewStore.getState().setColumnsModalOpen(true)
+  }, [viewStore])
+  const label = intl.getMessage('zby.pro.table.columnSetting', '列设置')
+
+  return (
+    <Tooltip title={label}>
+      <ActionIcon
+        icon={SETTING_ICON}
+        aria-label={label}
+        selected={columnsModalOpen}
+        onClick={handleOpenColumnsModal}
+      />
+    </Tooltip>
+  )
+})
+
+ToolbarColumnsStateButton.displayName = 'ProTableToolbarColumnsStateButton'
+
+const ToolbarFullscreenButton = memo(({ viewStore }: { viewStore: ProTableViewStore }) => {
+  const intl = useIntl()
+  const fullscreenActive = useViewStoreSelector(viewStore, (state) => state.fullscreenActive)
+  const handleToggleFullscreen = useCallback(() => {
+    viewStore.getState().setFullscreenActive(!viewStore.getState().fullscreenActive)
+  }, [viewStore])
+  const fullscreenLabel = fullscreenActive
+    ? intl.getMessage('zby.pro.table.exitFullScreen', '退出全屏')
+    : intl.getMessage('zby.pro.table.fullScreen', '全屏')
+
+  return (
+    <Tooltip title={fullscreenLabel}>
+      <ActionIcon
+        icon={fullscreenActive ? FULLSCREEN_EXIT_ICON : FULLSCREEN_ICON}
+        aria-label={fullscreenLabel}
+        selected={fullscreenActive}
+        onClick={handleToggleFullscreen}
+      />
+    </Tooltip>
+  )
+})
+
+ToolbarFullscreenButton.displayName = 'ProTableToolbarFullscreenButton'
+
+function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
+  controller,
+  toolbar,
+  columnsState,
+  fullscreenEnabled,
+  viewStore,
+  prefixCls,
+  className,
+  style,
+}: ToolbarRegionProps<RecordType, Query, Summary>) {
+  const toolbarState = useControllerSelector(
+    controller,
+    (state) => ({
+      loading: state.loading,
+      selectedRowKeys: state.selectedRowKeys,
+    }),
+    shallow,
+  )
+  const actions = useMemo(
+    () => ({
+      controller,
+      loading: toolbarState.loading,
+      selectedRowKeys: toolbarState.selectedRowKeys,
+    }),
+    [controller, toolbarState.loading, toolbarState.selectedRowKeys],
+  )
+
+  const actionItems = resolveNode(toolbar.actionItems, actions)
+  const customActions = resolveNode(toolbar.actions, actions)
+  const selectedRows = controller.getSelectedRows()
+  const left =
+    actionItems || customActions ? (
+      <>
+        {actionItems ? (
+          <ProTableToolbarActions
+            actions={actionItems}
+            controller={controller}
+            loading={toolbarState.loading}
+            selectedRowKeys={toolbarState.selectedRowKeys}
+            selectedRows={selectedRows}
+          />
+        ) : null}
+        {customActions}
+      </>
+    ) : null
+  const right = resolveNode(toolbar.extra, actions)
+  const showRefresh = toolbar.showRefresh !== false
+  const showColumnsState = toolbar.showColumnsState !== false && Boolean(columnsState)
+  const showFullscreen = fullscreenEnabled && toolbar.showFullscreen !== false
+
+  if (!left && !right && !showRefresh && !showColumnsState && !showFullscreen) {
+    return null
+  }
+
+  return (
+    <div className={clsx(`${prefixCls}-toolbar`, className)} style={style}>
+      <div className={`${prefixCls}-toolbar-actions`}>{left}</div>
+      <div className={`${prefixCls}-toolbar-extra`}>
+        {right}
+        {showRefresh && (
+          <ToolbarRefreshButton controller={controller} loading={toolbarState.loading} />
+        )}
+        {showColumnsState && <ToolbarColumnsStateButton viewStore={viewStore} />}
+        {showFullscreen && <ToolbarFullscreenButton viewStore={viewStore} />}
+      </div>
+    </div>
+  )
+}
+
+const MemoToolbarRegion = memo(ToolbarRegionInner) as typeof ToolbarRegionInner & {
+  displayName?: string
+}
+
+MemoToolbarRegion.displayName = 'ProTableToolbarRegion'
+
+export const ToolbarRegion = MemoToolbarRegion
+export default ToolbarRegion

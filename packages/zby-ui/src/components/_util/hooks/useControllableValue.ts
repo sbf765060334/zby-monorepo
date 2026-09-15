@@ -28,9 +28,8 @@ const hasOwnProperty = (target: Record<string, any>, key: string) =>
 /*
  * 该 hook 将 ref 作为受控值与非受控值共享的同步存储：render 必须立即写入最新受控值，
  * 返回值也必须在同一次 render 中读取该值。这里的读写是受控状态合并算法本身的一部分，
- * 不用于访问 DOM，也不依赖 Effect 时序，因此仅在本函数范围内关闭 refs 规则。
+ * 不用于访问 DOM，也不依赖 Effect 时序。
  */
-/* eslint-disable react-hooks/refs */
 
 /**
  * 从同一个 props 对象中读取受控值、非受控默认值和状态变化回调。
@@ -128,5 +127,3 @@ export default function useControllableValue<T = any>(
 
   return [stateRef.current, setValue] as const
 }
-
-/* eslint-enable react-hooks/refs */

@@ -1,0 +1,102 @@
+import type { ProTableSearchField, ProTableViewSnapshot, ProTableViewSorter, ProTableColumnPreference } from '../interface'
+import type { ProTableColumnDefinition } from './columns'
+import { resolveColumnPreferences, cloneColumnPreferences } from './field-config'
+import { isSearchValueEqual, pickSearchQuery } from './search'
+
+function isValidSorterOrder(order: unknown): order is ProTableViewSorter['order'] {
+  return order === 'ascend' || order === 'descend'
+}
+
+function normalizeViewSorter(
+  sorter: ProTableViewSnapshot<any>['sorter'],
+  columnDefinitions: ProTableColumnDefinition[],
+): ProTableViewSorter | null {
+  if (!sorter || typeof sorter.field !== 'string' || !isValidSorterOrder(sorter.order)) {
+    return null
+  }
+  if (!columnDefinitions.some((definition) => definition.key === sorter.field)) {
+    return null
+  }
+  return {
+    field: sorter.field,
+    order: sorter.order,
+  }
+}
+
+export function buildViewSnapshot<Query extends Record<string, unknown>>(
+  query: Partial<Query>,
+  searchFields: ProTableSearchField<Query, any, any>[],
+  columnDefinitions: ProTableColumnDefinition[],
+  columnPreferences: ProTableColumnPreference[],
+  sorter?: ProTableViewSorter | null,
+) {
+  return {
+    query: pickSearchQuery(query, searchFields),
+    columnPreferences: cloneColumnPreferences(
+      resolveColumnPreferences(columnDefinitions, {
+        current: columnPreferences,
+      }),
+    ),
+    sorter: normalizeViewSorter(sorter, columnDefinitions),
+  } satisfies ProTableViewSnapshot<Query>
+}
+
+export function normalizeViewSnapshot<Query extends Record<string, unknown>>(
+  snapshot: ProTableViewSnapshot<Query> | null | undefined,
+  searchFields: ProTableSearchField<Query, any, any>[],
+  columnDefinitions: ProTableColumnDefinition[],
+  newColumnPolicy?: 'prepend' | 'append' | 'default-order',
+) {
+  return {
+    query: pickSearchQuery(snapshot?.query ?? {}, searchFields),
+    columnPreferences: resolveColumnPreferences(columnDefinitions, {
+      current: snapshot?.columnPreferences,
+      policy: newColumnPolicy,
+    }),
+    sorter: normalizeViewSorter(snapshot?.sorter, columnDefinitions),
+  } satisfies ProTableViewSnapshot<Query>
+}
+
+function isFieldPreferenceEqual(left: ProTableColumnPreference, right: ProTableColumnPreference) {
+  return (
+    left.key === right.key &&
+    left.visible === right.visible &&
+    left.order === right.order &&
+    (left.pin ?? null) === (right.pin ?? null) &&
+    left.width === right.width
+  )
+}
+
+export function isViewSnapshotEqual<Query extends Record<string, unknown>>(
+  left: ProTableViewSnapshot<Query>,
+  right: ProTableViewSnapshot<Query>,
+) {
+  if ((left.sorter?.field ?? null) !== (right.sorter?.field ?? null)) {
+    return false
+  }
+  if ((left.sorter?.order ?? null) !== (right.sorter?.order ?? null)) {
+    return false
+  }
+  if (left.columnPreferences.length !== right.columnPreferences.length) {
+    return false
+  }
+  if (
+    left.columnPreferences.some(
+      (item, index) => !isFieldPreferenceEqual(item, right.columnPreferences[index]),
+    )
+  ) {
+    return false
+  }
+  const queryKeys = new Set([...Object.keys(left.query ?? {}), ...Object.keys(right.query ?? {})])
+  for (const key of queryKeys) {
+    if (
+      !isSearchValueEqual(
+        (left.query as Record<string, unknown>)[key],
+        (right.query as Record<string, unknown>)[key],
+      )
+    ) {
+      return false
+    }
+  }
+  return true
+}

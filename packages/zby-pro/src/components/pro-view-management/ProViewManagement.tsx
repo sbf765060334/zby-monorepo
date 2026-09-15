@@ -114,7 +114,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
       }),
       // IntlShape keeps its identity when i18next changes language, so locale is
       // intentionally included to refresh the validation messages.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       [intl, locale],
     )
   const adapter = React.useMemo(
@@ -375,7 +374,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
   React.useEffect(() => {
     if (retryingLoad && !loadErrorProp) {
       // This mirrors the externally controlled retry state after the parent clears the error.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRetryingLoad(false)
     }
   }, [loadErrorProp, retryingLoad])
@@ -387,7 +385,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
         currentSnapshot !== pendingApply.baseSnapshot)
     ) {
       // Clear the dirty-suppression marker once the applied snapshot has changed.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingApply(null)
     }
   }, [activeView?.id, currentSnapshot, pendingApply])
@@ -397,7 +394,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
 
     if (initialStorageState) {
       // Preloaded state is intentionally pushed into the local state machine once on mount/update.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       applyLoadedStorageState(initialStorageState, { applyActiveView: false })
       return () => {
         cancelled = true

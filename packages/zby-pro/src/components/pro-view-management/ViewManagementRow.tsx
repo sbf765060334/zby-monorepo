@@ -56,7 +56,6 @@ export function ViewManagementRow<TSnapshot>({
   React.useEffect(() => {
     if (editing) {
       // Reset the editor whenever the row enters edit mode or its source name changes.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditingName(view.name)
       form.resetFields()
       form.setFieldsValue({ name: view.name })

@@ -154,7 +154,6 @@ const ActionTextEditPopover: React.FC<ActionTextEditPopoverProps> = (props) => {
 
   React.useEffect(() => {
     // 关闭后清理上一次异步提交的 loading，保证下次打开状态干净。
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!mergedOpen) setConfirmLoading(false)
   }, [mergedOpen])
 
