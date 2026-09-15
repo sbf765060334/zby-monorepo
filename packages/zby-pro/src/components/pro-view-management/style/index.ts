@@ -26,7 +26,7 @@ const genProViewManagementStyle = (
     marginSM,
     marginXS,
     paddingSM,
-    paddingContentHorizontal,
+    paddingXS,
     paddingContentVerticalSM,
   } = token
 
@@ -87,35 +87,24 @@ const genProViewManagementStyle = (
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: marginXS,
+        boxSizing: 'border-box',
+        width: '100%',
+        minWidth: 0,
         flexShrink: 0,
-        padding: `${unit(paddingContentVerticalSM)} ${unit(
-          paddingContentHorizontal,
-        )}`,
+        padding: `${unit(paddingContentVerticalSM)} ${unit(paddingXS)}`,
         borderTop: `${unit(lineWidth)} ${lineType} ${colorSplit}`,
+
+        [`${antCls}-btn`]: {
+          flex: '1 1 0',
+          minWidth: 0,
+          justifyContent: 'center',
+          paddingInline: unit(paddingXS),
+          overflow: 'hidden',
+        },
       },
 
       [`${componentCls}-actions`]: {
         flexShrink: 0,
-      },
-
-      [`&${componentCls}-manager-modal ${antCls}-modal`]: {
-        height: 'calc(100vh - 200px)',
-        maxHeight: 'calc(100vh - 200px)',
-
-        [`${antCls}-modal-container`]: {
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          maxHeight: '100%',
-        },
-
-        [`${antCls}-modal-body`]: {
-          display: 'flex',
-          flex: 1,
-          flexDirection: 'column',
-          minHeight: 0,
-          overflow: 'hidden',
-        },
       },
 
       [`${componentCls}-manager-list`]: {
@@ -192,13 +181,6 @@ const genProViewManagementStyle = (
 
       [`${componentCls}-manager-row-actions`]: {
         flexShrink: 0,
-      },
-
-      [`@media (max-width: ${token.screenSMMax}px)`]: {
-        [`&${componentCls}-manager-modal ${antCls}-modal`]: {
-          height: 'calc(100vh - 16px)',
-          maxHeight: 'calc(100vh - 16px)',
-        },
       },
     },
   }

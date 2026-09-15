@@ -1,7 +1,7 @@
 import { useIntl } from '@zby/intl'
-import { Modal } from 'antd'
 import * as React from 'react'
 
+import { ProModal } from '../pro-modal'
 import { SortableList } from '../pro-sortable-list'
 import type { ProViewManagementView } from './interface'
 import { ViewManagementRow } from './ViewManagementRow'
@@ -43,7 +43,7 @@ export function ViewManagementModal<TSnapshot>({
   const intl = useIntl()
 
   return (
-    <Modal
+    <ProModal
       open={open}
       title={intl.getMessage(
         'zby.pro.viewManagement.viewManagementTitle',
@@ -51,6 +51,7 @@ export function ViewManagementModal<TSnapshot>({
       )}
       width={420}
       rootClassName={rootClassName}
+      bodyHeightMode="height"
       okText={intl.getMessage('zby.pro.viewManagement.confirm', '确定')}
       cancelText={intl.getMessage('zby.pro.viewManagement.cancel', '取消')}
       onCancel={onCancel}
@@ -96,6 +97,6 @@ export function ViewManagementModal<TSnapshot>({
           )}
         />
       </div>
-    </Modal>
+    </ProModal>
   )
 }

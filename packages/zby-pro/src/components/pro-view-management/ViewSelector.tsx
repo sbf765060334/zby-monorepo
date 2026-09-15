@@ -264,6 +264,7 @@ export function ViewSelector<TSnapshot>({
           <div className={`${prefixCls}-selector-footer`}>
             <Button
               type="text"
+              autoInsertSpace={false}
               disabled={footerActionsDisabled}
               icon={<PlusOutlined />}
               onClick={handleCreate}
@@ -275,6 +276,7 @@ export function ViewSelector<TSnapshot>({
             </Button>
             <Button
               type="text"
+              autoInsertSpace={false}
               disabled={footerActionsDisabled}
               icon={<SettingOutlined />}
               onClick={handleManage}
