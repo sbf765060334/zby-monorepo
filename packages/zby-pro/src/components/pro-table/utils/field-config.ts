@@ -146,6 +146,68 @@ export function updateColumnPreference(
   }))
 }
 
+function pinWeight(item: ProTableColumnPreference) {
+  return item.pin === 'left' ? 0 : item.pin === 'right' ? 2 : 1
+}
+
+function normalizePreferenceOrder(items: ProTableColumnPreference[]) {
+  return items.map((item, index) => ({ ...item, order: index }))
+}
+
+export function sortVisibleColumnPreferences(items: ProTableColumnPreference[]) {
+  return items
+    .filter((item) => item.visible)
+    .slice()
+    .sort((left, right) => {
+      const delta = pinWeight(left) - pinWeight(right)
+      return delta === 0 ? left.order - right.order : delta
+    })
+}
+
+export function replaceVisibleColumnOrder(
+  items: ProTableColumnPreference[],
+  orderedVisibleKeys: string[],
+) {
+  const orderMap = new Map(orderedVisibleKeys.map((key, index) => [key, index]))
+  const visibleCount = orderedVisibleKeys.length
+
+  return normalizePreferenceOrder(
+    items
+      .map((item) => ({
+        ...item,
+        order: item.visible ? (orderMap.get(item.key) ?? item.order) : visibleCount + item.order,
+      }))
+      .sort((left, right) => left.order - right.order),
+  )
+}
+
+export function moveVisibleColumnToTop(items: ProTableColumnPreference[], key: string) {
+  const selected = sortVisibleColumnPreferences(items)
+  const leftFixedKeys = selected.filter((item) => item.pin === 'left').map((item) => item.key)
+  const rightFixedKeys = selected.filter((item) => item.pin === 'right').map((item) => item.key)
+  const restKeys = selected.filter((item) => !item.pin && item.key !== key).map((item) => item.key)
+  return replaceVisibleColumnOrder(items, leftFixedKeys.concat(key, restKeys, rightFixedKeys))
+}
+
+export function applyVisibleColumnPin(
+  items: ProTableColumnPreference[],
+  key: string,
+  pin: 'left' | 'right' | null,
+) {
+  const next = updateColumnPreference(items, key, { pin })
+  const selected = sortVisibleColumnPreferences(next)
+  return replaceVisibleColumnOrder(
+    next,
+    selected
+      .filter((item) => item.pin === 'left')
+      .map((item) => item.key)
+      .concat(
+        selected.filter((item) => !item.pin).map((item) => item.key),
+        selected.filter((item) => item.pin === 'right').map((item) => item.key),
+      ),
+  )
+}
+
 export function reorderColumnPreferences(
   items: ProTableColumnPreference[],
   key: string,

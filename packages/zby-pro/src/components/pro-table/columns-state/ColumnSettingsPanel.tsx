@@ -15,7 +15,13 @@ import { clsx } from 'clsx'
 import { SortableList } from '../../pro-sortable-list'
 import type { ProTableColumnPreference } from '../interface'
 import type { ProTableColumnDefinition } from '../utils/columns'
-import { updateColumnPreference } from '../utils/field-config'
+import {
+  applyVisibleColumnPin,
+  moveVisibleColumnToTop,
+  replaceVisibleColumnOrder,
+  sortVisibleColumnPreferences,
+  updateColumnPreference,
+} from '../utils/field-config'
 
 type ColumnSettingsPanelProps = {
   definitions: ProTableColumnDefinition[]
@@ -53,41 +59,6 @@ type SelectedColumnRowProps = {
 
 function normalizePreferenceOrder(items: ProTableColumnPreference[]) {
   return items.map((item, index) => ({ ...item, order: index }))
-}
-
-function sortSelectedPreferences(items: ProTableColumnPreference[]) {
-  return items
-    .filter((item) => item.visible)
-    .slice()
-    .sort((left, right) => {
-      const weight = (item: ProTableColumnPreference) =>
-        item.pin === 'left' ? 0 : item.pin === 'right' ? 2 : 1
-      const leftWeight = weight(left)
-      const rightWeight = weight(right)
-      return leftWeight === rightWeight ? left.order - right.order : leftWeight - rightWeight
-    })
-}
-
-function replaceVisibleOrder(items: ProTableColumnPreference[], orderedVisibleKeys: string[]) {
-  const orderMap = new Map(orderedVisibleKeys.map((key, index) => [key, index]))
-  const visibleCount = orderedVisibleKeys.length
-
-  return normalizePreferenceOrder(
-    items
-      .map((item) => ({
-        ...item,
-        order: item.visible ? (orderMap.get(item.key) ?? item.order) : visibleCount + item.order,
-      }))
-      .sort((left, right) => left.order - right.order),
-  )
-}
-
-function moveVisibleToTop(items: ProTableColumnPreference[], key: string) {
-  const selected = sortSelectedPreferences(items)
-  const leftFixedKeys = selected.filter((item) => item.pin === 'left').map((item) => item.key)
-  const rightFixedKeys = selected.filter((item) => item.pin === 'right').map((item) => item.key)
-  const restKeys = selected.filter((item) => !item.pin && item.key !== key).map((item) => item.key)
-  return replaceVisibleOrder(items, leftFixedKeys.concat(key, restKeys, rightFixedKeys))
 }
 
 function getColumnLabelText(definition: ProTableColumnDefinition) {
@@ -230,7 +201,7 @@ export function ColumnSettingsPanel({
   )
   const visibleCount = value.filter((item) => item.visible).length
   const fixedCount = value.filter((item) => item.visible && item.pin).length
-  const selectedItems = React.useMemo(() => sortSelectedPreferences(value), [value])
+  const selectedItems = React.useMemo(() => sortVisibleColumnPreferences(value), [value])
   const leftFixedSelectedItems = selectedItems.filter((item) => item.pin === 'left')
   const rightFixedSelectedItems = selectedItems.filter((item) => item.pin === 'right')
   const sortableSelectedItems = selectedItems.filter((item) => !item.pin)
@@ -264,6 +235,14 @@ export function ColumnSettingsPanel({
     onChange(updateColumnPreference(value, key, { visible: checked }))
   }
 
+  const commitRowPatch = (key: string, patch: Partial<ProTableColumnPreference>) => {
+    if (Object.prototype.hasOwnProperty.call(patch, 'pin')) {
+      onChange(applyVisibleColumnPin(value, key, patch.pin ?? null))
+      return
+    }
+    onChange(updateColumnPreference(value, key, patch))
+  }
+
   const toggleAll = (checked: boolean) => {
     const editableKeys = filteredDefinitions
       .filter((item) => item.capabilities?.visibility !== false)
@@ -289,7 +268,7 @@ export function ColumnSettingsPanel({
 
   const reorderSortableItems = (orderedKeys: string[]) => {
     onChange(
-      replaceVisibleOrder(
+      replaceVisibleColumnOrder(
         value,
         leftFixedSelectedItems
           .map((item) => item.key)
@@ -399,8 +378,8 @@ export function ColumnSettingsPanel({
                   preference={preference}
                   prefixCls={prefixCls}
                   sortable={false}
-                  onChange={(patch) => onChange(updateColumnPreference(value, preference.key, patch))}
-                  onMoveTop={() => onChange(moveVisibleToTop(value, preference.key))}
+                  onChange={(patch) => commitRowPatch(preference.key, patch)}
+                  onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
                   onRemove={() =>
                     onChange(updateColumnPreference(value, preference.key, { visible: false }))
                   }
@@ -428,10 +407,8 @@ export function ColumnSettingsPanel({
                     rowRef={rowRef}
                     sortable={sortable}
                     style={style}
-                    onChange={(patch) =>
-                      onChange(updateColumnPreference(value, preference.key, patch))
-                    }
-                    onMoveTop={() => onChange(moveVisibleToTop(value, preference.key))}
+                    onChange={(patch) => commitRowPatch(preference.key, patch)}
+                    onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
                     onRemove={() =>
                       onChange(updateColumnPreference(value, preference.key, { visible: false }))
                     }
@@ -452,8 +429,8 @@ export function ColumnSettingsPanel({
                   preference={preference}
                   prefixCls={prefixCls}
                   sortable={false}
-                  onChange={(patch) => onChange(updateColumnPreference(value, preference.key, patch))}
-                  onMoveTop={() => onChange(moveVisibleToTop(value, preference.key))}
+                  onChange={(patch) => commitRowPatch(preference.key, patch)}
+                  onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
                   onRemove={() =>
                     onChange(updateColumnPreference(value, preference.key, { visible: false }))
                   }

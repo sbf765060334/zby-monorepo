@@ -237,8 +237,21 @@ export function normalizeTableColumns<RecordType>(
   return (columns ?? []).map((column) => normalizeColumn(column, messages))
 }
 
-function preferenceWeight(item: ProTableColumnPreference) {
-  return item.pin === 'left' ? 0 : item.pin === 'right' ? 2 : 1
+function peelTrailingLockedColumns<RecordType>(
+  original: ProTableColumnType<RecordType>[] | undefined,
+  rendered: TableColumnsType<RecordType>,
+) {
+  const trailing: TableColumnsType<RecordType> = []
+  const head = rendered.slice()
+  const source = original ?? []
+
+  for (let index = source.length - 1; index >= 0; index -= 1) {
+    if (source[index]?.fieldConfig !== false) break
+    const column = head.pop()
+    if (column) trailing.unshift(column)
+  }
+
+  return { head, trailing }
 }
 
 export function applyColumnPreferences<RecordType>(
@@ -251,34 +264,45 @@ export function applyColumnPreferences<RecordType>(
   const preferenceMap = new Map(preferences.map((item) => [item.key, item]))
   const sourceMap = new Map(flattenColumnLeaves(columns).map((column) => [column.__proTableKey, column]))
 
-  const applyLevel = (items: ProTableColumnType<RecordType>[] | undefined): TableColumnsType<RecordType> => {
-    const configurableColumns = (items ?? [])
+  const buildPreferredColumn = (preference: ProTableColumnPreference) => {
+    const definition = definitionMap.get(preference.key)
+    const column = sourceMap.get(preference.key)
+    if (!definition || !column) return null
+    return {
+      ...normalizeColumn(column, messages),
+      fixed: preference.pin ?? undefined,
+      title: definition.meta?.title ?? column.title,
+    } as TableColumnsType<RecordType>[number]
+  }
+
+  const applyLevel = (items: ProTableColumnType<RecordType>[] | undefined) => {
+    const hoistedLeft: ProTableColumnPreference[] = []
+    const hoistedRight: ProTableColumnPreference[] = []
+    const unpinnedColumns = (items ?? [])
       .filter((column) => !Array.isArray(column.children) && column.fieldConfig !== false)
       .map((column) => {
         const key = extractColumnKey(column)
         const preference = key ? preferenceMap.get(key) : undefined
-        return key && preference?.visible && definitionMap.has(key) ? preference : null
+        return key && preference?.visible && !preference.pin && definitionMap.has(key)
+          ? preference
+          : null
       })
       .filter((item): item is ProTableColumnPreference => Boolean(item))
-      .sort((left, right) => preferenceWeight(left) - preferenceWeight(right) || left.order - right.order)
-      .map((preference) => {
-        const definition = definitionMap.get(preference.key)
-        const column = sourceMap.get(preference.key)
-        if (!definition || !column) return null
-        return {
-          ...normalizeColumn(column, messages),
-          fixed: preference.pin ?? undefined,
-          title: definition.meta?.title ?? column.title,
-        } as TableColumnsType<RecordType>[number]
-      })
+      .sort((left, right) => left.order - right.order)
+      .map(buildPreferredColumn)
       .filter((column): column is TableColumnsType<RecordType>[number] => Boolean(column))
 
-    let configurableIndex = 0
-    return (items ?? []).reduce<TableColumnsType<RecordType>>((result, column) => {
+    let unpinnedIndex = 0
+    const nextColumns = (items ?? []).reduce<TableColumnsType<RecordType>>((result, column) => {
       if (Array.isArray(column.children)) {
-        const nextChildren = applyLevel(column.children)
-        if (nextChildren.length > 0) {
-          result.push({ ...normalizeColumn(column, messages), children: nextChildren } as TableColumnsType<RecordType>[number])
+        const nested = applyLevel(column.children)
+        hoistedLeft.push(...nested.hoistedLeft)
+        hoistedRight.push(...nested.hoistedRight)
+        if (nested.columns.length > 0) {
+          result.push({
+            ...normalizeColumn(column, messages),
+            children: nested.columns,
+          } as TableColumnsType<RecordType>[number])
         }
         return result
       }
@@ -291,12 +315,38 @@ export function applyColumnPreferences<RecordType>(
         result.push(normalizeColumn(column, messages))
         return result
       }
-      const nextColumn = configurableColumns[configurableIndex]
-      configurableIndex += 1
+      const preference = preferenceMap.get(key)
+      if (preference?.pin === 'left') {
+        if (preference.visible) hoistedLeft.push(preference)
+        return result
+      }
+      if (preference?.pin === 'right') {
+        if (preference.visible) hoistedRight.push(preference)
+        return result
+      }
+      const nextColumn = unpinnedColumns[unpinnedIndex]
+      unpinnedIndex += 1
       if (nextColumn) result.push(nextColumn)
       return result
     }, [])
+
+    return {
+      columns: nextColumns,
+      hoistedLeft,
+      hoistedRight,
+    }
   }
 
-  return applyLevel(columns)
+  const applied = applyLevel(columns)
+  const leftColumns = applied.hoistedLeft
+    .sort((left, right) => left.order - right.order)
+    .map(buildPreferredColumn)
+    .filter((column): column is TableColumnsType<RecordType>[number] => Boolean(column))
+  const rightColumns = applied.hoistedRight
+    .sort((left, right) => left.order - right.order)
+    .map(buildPreferredColumn)
+    .filter((column): column is TableColumnsType<RecordType>[number] => Boolean(column))
+  const { head, trailing } = peelTrailingLockedColumns(columns, applied.columns)
+
+  return [...leftColumns, ...head, ...rightColumns, ...trailing]
 }
