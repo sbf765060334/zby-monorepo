@@ -14,21 +14,17 @@ export default function useLocaleSwitchStyles(prefixCls: string) {
       path: ['zby-pro', 'locale-switch', prefixCls],
     },
     () => ({
+      // ActionIcon 默认色是 colorIcon，hover 会变成主色；顶栏入口沿用原来 text Button 的正文色。
       [`.${prefixCls}-locale-trigger`]: {
-        width: 32,
-        minWidth: 32,
-        height: 32,
-        padding: 0,
-        borderRadius: styleToken.borderRadiusSM,
-        background: 'transparent',
-        color: styleToken.colorText,
-        fontSize: styleToken.fontSizeLG,
-        '&:hover': {
-          background: styleToken.colorFillSecondary,
+        '&&': {
           color: styleToken.colorText,
-        },
-        '&.ant-btn:not(:disabled):focus-visible': {
-          outline: 'none',
+          '&:not(:disabled):hover, &:not(:disabled):active': {
+            background: styleToken.colorFillSecondary,
+            color: styleToken.colorText,
+          },
+          '&:not(:disabled):focus-visible': {
+            outline: 'none',
+          },
         },
       },
     }),

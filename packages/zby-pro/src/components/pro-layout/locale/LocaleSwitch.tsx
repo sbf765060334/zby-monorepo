@@ -1,6 +1,7 @@
 import { GlobalOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Button, Dropdown, theme as antdTheme } from 'antd'
+import { ActionIcon } from '@zby/ui'
+import { Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
 
 import type { MenuProps } from 'antd'
@@ -88,8 +89,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
         },
       }}
     >
-      <Button
-        type="text"
+      <ActionIcon
         size="small"
         className={clsx(`${prefixCls}-locale-trigger`, hashId, className)}
         icon={<GlobalOutlined />}

@@ -7,7 +7,8 @@ import {
 } from '@ant-design/icons'
 import { useThemeModeTransition } from '@zby/hooks'
 import { useIntl } from '@zby/intl'
-import { Button, Dropdown, theme as antdTheme } from 'antd'
+import { ActionIcon } from '@zby/ui'
+import { Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
 import { useCallback, useRef } from 'react'
 
@@ -226,8 +227,7 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
         },
       }}
     >
-      <Button
-        type="text"
+      <ActionIcon
         size="small"
         className={clsx(`${prefixCls}-theme-trigger`, hashId, className)}
         icon={<ThemeIcon />}

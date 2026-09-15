@@ -2,7 +2,6 @@ import React, { memo, useCallback, useMemo } from 'react'
 import { FullscreenExitOutlined, FullscreenOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Tooltip } from 'antd'
 import { clsx } from 'clsx'
 
 import type { ProTableController, ProTableProps } from '../interface'
@@ -55,14 +54,14 @@ const ToolbarRefreshButton = memo(
     const label = intl.getMessage('zby.pro.table.refresh', '刷新')
 
     return (
-      <Tooltip title={label}>
-        <ActionIcon
-          disabled={loading}
-          icon={RELOAD_ICON}
-          aria-label={label}
-          onClick={handleReload}
-        />
-      </Tooltip>
+      <ActionIcon
+        size="small"
+        disabled={loading}
+        icon={RELOAD_ICON}
+        title={label}
+        aria-label={label}
+        onClick={handleReload}
+      />
     )
   },
 )
@@ -78,14 +77,14 @@ const ToolbarColumnsStateButton = memo(({ viewStore }: { viewStore: ProTableView
   const label = intl.getMessage('zby.pro.table.columnSetting', '列设置')
 
   return (
-    <Tooltip title={label}>
-      <ActionIcon
-        icon={SETTING_ICON}
-        aria-label={label}
-        selected={columnsModalOpen}
-        onClick={handleOpenColumnsModal}
-      />
-    </Tooltip>
+    <ActionIcon
+      size="small"
+      icon={SETTING_ICON}
+      title={label}
+      aria-label={label}
+      selected={columnsModalOpen}
+      onClick={handleOpenColumnsModal}
+    />
   )
 })
 
@@ -102,14 +101,14 @@ const ToolbarFullscreenButton = memo(({ viewStore }: { viewStore: ProTableViewSt
     : intl.getMessage('zby.pro.table.fullScreen', '全屏')
 
   return (
-    <Tooltip title={fullscreenLabel}>
-      <ActionIcon
-        icon={fullscreenActive ? FULLSCREEN_EXIT_ICON : FULLSCREEN_ICON}
-        aria-label={fullscreenLabel}
-        selected={fullscreenActive}
-        onClick={handleToggleFullscreen}
-      />
-    </Tooltip>
+    <ActionIcon
+      size="small"
+      icon={fullscreenActive ? FULLSCREEN_EXIT_ICON : FULLSCREEN_ICON}
+      title={fullscreenLabel}
+      aria-label={fullscreenLabel}
+      selected={fullscreenActive}
+      onClick={handleToggleFullscreen}
+    />
   )
 })
 

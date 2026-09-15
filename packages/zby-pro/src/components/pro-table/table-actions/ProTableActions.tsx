@@ -85,7 +85,7 @@ export function ProTableActions<RecordType>({
         return <React.Fragment key={String(key)}>{renderTooltip(content, item.tooltip)}</React.Fragment>
       })}
       {overflow.length > 0 && (
-        <Dropdown {...dropdownProps} menu={{ items: menuItems }} trigger={dropdownProps?.trigger ?? ['click']}>
+        <Dropdown {...dropdownProps} menu={{ items: menuItems }} trigger={dropdownProps?.trigger ?? ['hover']}>
           {moreButton}
         </Dropdown>
       )}
