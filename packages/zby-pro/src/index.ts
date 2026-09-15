@@ -4,6 +4,11 @@ export {
   createRemoteProViewManagementAdapter,
 } from './components/pro-view-management'
 export { default as ProViewManagement } from './components/pro-view-management'
+export { default as ProModal } from './components/pro-modal'
+export type {
+  ProModalBodyHeightMode,
+  ProModalProps,
+} from './components/pro-modal'
 export type {
   ProViewManagementAdapter,
   ProViewManagementCreateValidationPayload,

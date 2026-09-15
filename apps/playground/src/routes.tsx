@@ -13,6 +13,7 @@ const ProViewManagementPlayground = createLazyRouteComponent(
   () => import('./pages/ProViewManagementPlayground'),
 )
 const ScrollAreaPlayground = createLazyRouteComponent(() => import('./pages/ScrollAreaPlayground'))
+const ProTablePlayground = createLazyRouteComponent(() => import('./pages/ProTablePlayground'))
 const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
 const EmptyPage = () => null
 
@@ -305,6 +306,11 @@ export const appRouters: ProLayoutRoute[ ] = [
             path: '/demo/ui/table',
             title: '表格',
             element: TablePlayground,
+          },
+          {
+            path: '/demo/ui/pro-table',
+            title: '高级表格',
+            element: ProTablePlayground,
           },
           {
             path: '/demo/ui/pro-view-management',

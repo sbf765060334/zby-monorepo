@@ -66,7 +66,6 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
       return
     }
 
-    initializedVersionRef.current = retryVersion
     let cancelled = false
 
     const applyInitialSnapshot = async () => {
@@ -123,6 +122,7 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
         actions.setAdvancedDraftQuery(null)
         actions.setSearchReady(true)
         actions.setColumnsReady(true)
+        initializedVersionRef.current = retryVersion
 
         setInitialization({
           error,

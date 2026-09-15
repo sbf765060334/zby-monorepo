@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { useIntl } from '@zby/intl'
-import { Button, Modal } from 'antd'
+import { Button } from 'antd'
 import { clsx } from 'clsx'
 
+import { ProModal } from '../../pro-modal'
 import type { ProTableColumnPreference } from '../interface'
 import useStyle from '../style'
 import type { ProTableColumnDefinition } from '../utils/columns'
@@ -47,17 +48,18 @@ export function ColumnSettings({
   }, [currentPreferences, open])
 
   return (
-    <Modal
+    <ProModal
       title={intl.getMessage('zby.pro.table.columnsModalTitle', '列设置')}
       open={open}
       onCancel={onCancel}
       destroyOnHidden
       width="fit-content"
+      bodyHeightMode="height"
       className={className}
       rootClassName={clsx(`${prefixCls}-columns-modal`, hashId, cssVarCls, rootClassName)}
       style={style}
       styles={{
-        body: { padding: 0, height: 520 },
+        body: { padding: 0 },
         footer: { width: '100%' },
       }}
       footer={(
@@ -89,7 +91,7 @@ export function ColumnSettings({
           onChange={setDraft}
         />
       </div>
-    </Modal>
+    </ProModal>
   )
 }
 
