@@ -38,9 +38,9 @@ const columns: TableColumnsType<Order> = [
 - `tooltip`：为表头增加 Tooltip；
 - `renderText`：转换显示文本；
 - `copyable`：使用 ActionText 提供复制操作，操作在表格行 hover 时显示；
-- `ellipsis.rows` 与 `ellipsis.tooltip`：使用 ActionText 的多行省略和提示。
+- `ellipsis`：表头走 AntD 原生单行省略与 `title`；表体由 ActionText 托管，不写原生 `title`。`ellipsis.rows` / `ellipsis.tooltip` 传给 ActionText；`ellipsis.showTitle === false` 关闭表体溢出提示。
 
-显式 `render` 始终优先，存在 `render` 时不会执行 `renderText`，也不会自动包裹 ActionText。
+显式 `render` 始终优先。存在 `render` 时不会执行 `renderText`，也不会自动包裹 ActionText，因此表体的 `ellipsis` 与 `copyable` 不生效。表头只要列上配置了 `ellipsis`，仍走 AntD 原生省略。表头若同时开启了排序或筛选，省略效果与 AntD 相同，受 `column-title` 与图标并排布局限制。
 
 ## 高度填充
 
@@ -161,7 +161,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使�
 | tooltip | `ReactNode | TooltipProps` | 表头提示 |
 | renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
 | copyable | `TableColumnCopyable<T>` | 无显式 render 时提供复制操作，详见下文 |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 原生单行或 ActionText 多行省略 |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头：AntD 原生单行省略与 `title`。表体：无 `render` 时由 ActionText 托管；有 `render` 时表体省略不生效 |
 | minWidth | `number` | 普通 auto 布局最小宽度；resize 模式下为拖拽下限 |
 | maxWidth | `number` | resize 模式下的拖拽上限 |
 | resizable | `boolean` | 是否允许当前叶子列拖拽 |
@@ -226,6 +226,6 @@ const columns: TableColumnsType<Order> = [
 
 `copyable={true}` 默认复制 `renderText` 处理后的显示内容。对象形式未提供 `text` 时也使用该默认内容。`text` 函数中的 `value` 是 `dataIndex` 对应的原始单元格值，而不是 `renderText` 的结果；返回 `null` 或 `undefined` 时回退到 ActionText 的默认内容提取逻辑。
 
-显式提供列 `render` 时，Table 不会自动包裹 ActionText，因此 `copyable` 不生效。如需在自定义渲染结果中提供复制操作，请直接使用 `ActionText`。
+显式提供列 `render` 时，Table 不会自动包裹 ActionText，因此表体的 `copyable` 与 `ellipsis` 都不生效。如需在自定义渲染结果中提供复制或省略，请直接使用 `ActionText`。
 
 公开类型包括 `TableColumnCopyable`、`TableColumnCopyText`、`ColumnResizeConfig`、`ColumnResizeInfo` 和 `ColumnResizeWidths`。

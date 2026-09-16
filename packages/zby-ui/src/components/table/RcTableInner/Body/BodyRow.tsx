@@ -205,7 +205,6 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
           <Cell<RecordType>
             className={clsx(columnClassName, classNames.cell)}
             style={styles.cell}
-            ellipsis={column.ellipsis}
             align={column.align}
             scope={column.rowScope}
             component={column.rowScope ? scopeCellComponent : cellComponent}

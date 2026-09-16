@@ -13,7 +13,6 @@ import type {
   ColumnTitleProps,
   ColumnType,
   TableColumnCopyable,
-  TableColumnEllipsisConfig,
   TableColumnTooltip,
   TransformColumns,
 } from '../interface'
@@ -35,26 +34,6 @@ function isTooltipProps(tooltip: TableColumnTooltip): tooltip is Omit<TooltipPro
     !Array.isArray(tooltip) &&
     !React.isValidElement(tooltip)
   )
-}
-
-function isEllipsisConfig(
-  ellipsis: ColumnType<any>['ellipsis'],
-): ellipsis is TableColumnEllipsisConfig {
-  return typeof ellipsis === 'object' && ellipsis !== null
-}
-
-function shouldUseActionTextEllipsis(ellipsis: ColumnType<any>['ellipsis']) {
-  return isEllipsisConfig(ellipsis) && (ellipsis.rows !== undefined || ellipsis.tooltip !== undefined)
-}
-
-function normalizeCellEllipsis(ellipsis: ColumnType<any>['ellipsis']) {
-  if (!ellipsis) return ellipsis
-  if (ellipsis === true) return { showTitle: false }
-
-  return {
-    ...ellipsis,
-    showTitle: false,
-  }
 }
 
 function resolveActionTextEllipsis(
@@ -144,7 +123,7 @@ function enhanceColumn<RecordType extends AnyObject>(
     }
   }
 
-  const needActionText = Boolean(copyable) || shouldUseActionTextEllipsis(ellipsis)
+  const needActionText = Boolean(copyable) || Boolean(ellipsis)
   const needRender = Boolean(renderText) || needActionText
 
   if (!needRender) {
@@ -164,7 +143,7 @@ function enhanceColumn<RecordType extends AnyObject>(
     ...restColumn,
     copyable,
     dataIndex,
-    ellipsis: needActionText ? normalizeCellEllipsis(ellipsis) : ellipsis,
+    ellipsis,
     onCell: needActionText
       ? (record: RecordType, index?: number) => {
           const cellProps = onCell?.(record, index)

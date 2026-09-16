@@ -336,6 +336,85 @@ describe('Table', () => {
       bodyCell?.classList.contains('ant-table-cell-with-action-text'),
     ).toBe(true)
     expect(renderText).toHaveBeenCalledWith('Alpha', data[0], 0)
+    const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
+    expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
+    expect(bodyCell?.getAttribute('title')).toBeNull()
+  })
+
+  it('uses ActionText for body ellipsis and native header ellipsis', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[{ dataIndex: 'name', title: 'Name', ellipsis: true }]}
+        dataSource={data.slice(0, 1)}
+      />,
+    )
+
+    const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
+    const bodyCell = container.querySelector('.ant-table-tbody .ant-table-cell')
+
+    expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(headerCell?.getAttribute('title')).toBe('Name')
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
+    expect(bodyCell?.getAttribute('title')).toBeNull()
+    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).not.toBeNull()
+    expect(bodyCell?.classList.contains('ant-table-cell-with-action-text')).toBe(true)
+  })
+
+  it('skips body ActionText and native body ellipsis when a custom render is set', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[
+          {
+            dataIndex: 'name',
+            title: 'Name',
+            ellipsis: true,
+            copyable: true,
+            render: () => <span data-custom-cell="">Custom</span>,
+          },
+        ]}
+        dataSource={data.slice(0, 1)}
+      />,
+    )
+
+    const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
+    const bodyCell = container.querySelector('.ant-table-tbody .ant-table-cell')
+
+    expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.querySelector('[data-custom-cell]')).not.toBeNull()
+    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).toBeNull()
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
+    expect(bodyCell?.classList.contains('ant-table-cell-with-action-text')).toBe(false)
+    expect(bodyCell?.getAttribute('title')).toBeNull()
+  })
+
+  it('keeps virtual body cells off the native ellipsis path', () => {
+    const virtualData = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1,
+      name: `Row ${index + 1} with a long name`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        virtual
+        scroll={{ x: 280, y: 120 }}
+        columns={[{ dataIndex: 'name', title: 'Name', width: 200, ellipsis: true }]}
+        dataSource={virtualData}
+      />,
+    )
+
+    const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
+    const bodyCell = container.querySelector('.ant-table-tbody-virtual .ant-table-cell')
+
+    expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
+    expect(bodyCell?.getAttribute('title')).toBeNull()
+    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).not.toBeNull()
   })
 
   it('keeps the default selection width on the AntD token path without a split header', () => {

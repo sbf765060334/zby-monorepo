@@ -37,9 +37,9 @@ When a column has no explicit `render`, Table applies the Shuzhi behavior:
 - `tooltip` adds a Tooltip to the header title;
 - `renderText` transforms the displayed value;
 - `copyable` uses ActionText and reveals its action on table-row hover;
-- `ellipsis.rows` and `ellipsis.tooltip` use ActionText multi-line ellipsis.
+- `ellipsis` uses AntD native single-line ellipsis and `title` on the header, and ActionText on the body (no native `title`). `ellipsis.rows` / `ellipsis.tooltip` are passed to ActionText; `ellipsis.showTitle === false` turns off the body overflow tooltip.
 
-An explicit `render` always wins. In that case `renderText` is not called and Table does not wrap the result in ActionText.
+An explicit `render` always wins. In that case `renderText` is not called and Table does not wrap the result in ActionText, so body `ellipsis` and `copyable` have no effect. Header ellipsis still follows AntD whenever the column sets `ellipsis`. Combined with sorter or filter, header ellipsis has the same limitation as AntD because the title sits beside the icons.
 
 ## Fill Height
 
@@ -160,7 +160,7 @@ All other props follow AntD 6.6.4 Table.
 | tooltip | `ReactNode | TooltipProps` | Header title tooltip |
 | renderText | `(value, record, index) => ReactNode` | Transform text when no explicit render exists |
 | copyable | `TableColumnCopyable<T>` | Add a copy action when no explicit render exists; see below |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Native single-line or ActionText multi-line ellipsis |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Header: AntD native single-line ellipsis and `title`. Body: ActionText when there is no `render`; body ellipsis is skipped when `render` is set |
 | minWidth | `number` | Auto-layout minimum; resize lower bound in resize mode |
 | maxWidth | `number` | Resize upper bound |
 | resizable | `boolean` | Whether the current leaf is resizable |
@@ -225,6 +225,6 @@ const columns: TableColumnsType<Order> = [
 
 With `copyable={true}`, the default copy content is the displayed value after `renderText` processing. Object form without `text` uses the same default. The `value` received by a `text` function is the raw cell value addressed by `dataIndex`, not the `renderText` result. Returning `null` or `undefined` falls back to ActionText's default content extraction.
 
-When a column provides an explicit `render`, Table does not wrap its result in ActionText and `copyable` has no effect. Use `ActionText` directly when a custom render result needs a copy action.
+When a column provides an explicit `render`, Table does not wrap its result in ActionText, so body `copyable` and `ellipsis` have no effect. Use `ActionText` directly when a custom render result needs copy or ellipsis.
 
 Public types include `TableColumnCopyable`, `TableColumnCopyText`, `ColumnResizeConfig`, `ColumnResizeInfo`, and `ColumnResizeWidths`.

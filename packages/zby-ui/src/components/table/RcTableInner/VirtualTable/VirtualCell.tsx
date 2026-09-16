@@ -114,7 +114,6 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
   return (
     <Cell
       className={clsx(columnClassName, className)}
-      ellipsis={column.ellipsis}
       align={column.align}
       scope={column.rowScope}
       component={component}

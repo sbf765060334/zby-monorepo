@@ -12,19 +12,6 @@ const genEllipsisStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
         ...textEllipsis,
         wordBreak: 'keep-all',
 
-        [`&${componentCls}-cell-with-action-text`]: {
-          overflow: 'visible',
-          whiteSpace: 'normal',
-          textOverflow: 'clip',
-          wordBreak: 'normal',
-        },
-
-        [`${componentCls}-cell-action-text`]: {
-          maxWidth: '100%',
-          whiteSpace: 'normal',
-          wordBreak: 'normal',
-        },
-
         // Fixed first or last should special process
         [`
           &${componentCls}-cell-fix-start-shadow,
@@ -41,6 +28,13 @@ const genEllipsisStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           ...textEllipsis,
           wordBreak: 'keep-all',
         },
+      },
+
+      [`${componentCls}-cell-action-text`]: {
+        maxWidth: '100%',
+        minWidth: 0,
+        whiteSpace: 'normal',
+        wordBreak: 'normal',
       },
     },
   }
