@@ -124,13 +124,10 @@ export type ProTableColumnValueType =
   | 'year'
   | 'percent'
   | 'digit'
-  | 'select'
   | 'boolean'
   | 'index'
   | 'indexBorder'
   | 'progress'
-  | 'avatar'
-  | 'image'
   | 'code'
   | 'jsonCode'
   | 'textarea'
@@ -140,8 +137,10 @@ export type ProTableColumnValueTypeConfig = {
   currency?: string
   locale?: string
   precision?: number
-  showSymbol?: boolean
-  width?: number
+  showSymbol?: boolean | ((value: unknown) => boolean)
+  showColor?: boolean
+  moneySymbol?: boolean
+  status?: 'normal' | 'active' | 'success' | 'exception'
 }
 
 export type ProTableColumnFieldValueType =
@@ -154,6 +153,7 @@ export type ProTableColumnValueEnumItem =
     text?: ReactNode
     color?: string
     status?: string
+    disabled?: boolean
   }
 
 export type ProTableColumnValueEnum =
@@ -176,7 +176,7 @@ export type ProTableColumnType<
   fieldConfig?: false | ProTableColumnFieldConfig<Meta>
   children?: ProTableColumnType<RecordType, Meta>[]
   valueEnum?: ProTableColumnValueEnum
-  tagColorEnum?: Record<string, string>
+  emptyText?: ReactNode | false
   renderText?: (value: unknown, record: RecordType, index: number) => ReactNode
   valueType?: ProTableColumnFieldValueType
   /** @deprecated use valueType */
@@ -568,6 +568,7 @@ export interface ProTableProps<
   fullscreen?: boolean | { enabled?: boolean }
   layout?: ProTableLayoutConfig
   emptyState?: ProTableEmptyStateConfig
+  columnEmptyText?: ReactNode | false
   onTableChange?: TableProps<RecordType>['onChange']
   pagination?: false | ProTablePaginationConfig
   rowSelection?: TableProps<RecordType>['rowSelection']

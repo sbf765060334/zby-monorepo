@@ -3,6 +3,7 @@ export {
   buildColumnDefinitions,
   extractColumnKey,
   flattenColumnLeaves,
+  formatColumnValue,
   normalizeTableColumns,
 } from './columns'
 export type { ProTableColumnDefinition, ProTableColumnDefinitionMeta, ProTableColumnValueMessages } from './columns'

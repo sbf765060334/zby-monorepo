@@ -7,7 +7,47 @@ import {
   buildColumnDefinitions,
   buildDefaultColumnPreferences,
   moveVisibleColumnToTop,
+  normalizeTableColumns,
 } from '..'
+
+describe('normalizeTableColumns empty text', () => {
+  it('renders "-" for undefined, null and empty string', () => {
+    const [column] = normalizeTableColumns([{ dataIndex: 'name', title: '名称' }]) as Array<{
+      renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown
+    }>
+
+    expect(column.renderText?.(undefined, {}, 0)).toBe('-')
+    expect(column.renderText?.(null, {}, 0)).toBe('-')
+    expect(column.renderText?.('', {}, 0)).toBe('-')
+    expect(column.renderText?.(0, {}, 0)).toBe(0)
+    expect(column.renderText?.(false, {}, 0)).toBe(false)
+  })
+
+  it('lets column.emptyText override the table-level columnEmptyText', () => {
+    const [column] = normalizeTableColumns(
+      [{ dataIndex: 'name', title: '名称', emptyText: '无' }],
+      undefined,
+      '空',
+    ) as Array<{
+      renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown
+    }>
+
+    expect(column.renderText?.(undefined, {}, 0)).toBe('无')
+  })
+
+  it('keeps empty values when columnEmptyText is false', () => {
+    const [column] = normalizeTableColumns(
+      [{ dataIndex: 'name', title: '名称' }],
+      undefined,
+      false,
+    ) as Array<{
+      renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown
+    }>
+
+    expect(column.renderText?.(undefined, {}, 0)).toBeUndefined()
+    expect(column.renderText?.('', {}, 0)).toBe('')
+  })
+})
 
 type Row = {
   id: string

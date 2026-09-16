@@ -62,6 +62,7 @@
     "@zby/router-core": "workspace:*",
     "@zby/ui": "workspace:*",
     "clsx": "2.1.1",
+    "dayjs": "1.11.21",
     "cmdk": "1.1.1",
     "nprogress": "0.2.0",
     "react-error-boundary": "6.1.2",

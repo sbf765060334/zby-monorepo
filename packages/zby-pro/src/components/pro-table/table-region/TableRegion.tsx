@@ -25,6 +25,7 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
   columnResizeDefaultPersist: boolean
   viewStore: ProTableViewStore
   emptyState?: ProTableProps<RecordType, Query, Summary>['emptyState']
+  columnEmptyText?: ProTableProps<RecordType, Query, Summary>['columnEmptyText']
   heightMode: NonNullable<ProTableProps<RecordType, Query, Summary>['heightMode']>
   loadingOverride?: ProTableProps<RecordType, Query, Summary>['loading']
   onTableChange?: ProTableProps<RecordType, Query, Summary>['onTableChange']
@@ -60,6 +61,7 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
     | 'fullscreen'
     | 'layout'
     | 'emptyState'
+    | 'columnEmptyText'
     | 'onTableChange'
     | 'loading'
     | 'prefixCls'
@@ -128,6 +130,7 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
   columnResizeDefaultPersist,
   viewStore,
   emptyState,
+  columnEmptyText,
   heightMode,
   loadingOverride,
   onTableChange,
@@ -193,9 +196,10 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
             columnDefinitions,
             mergedColumnsPreferences,
             columnValueMessages,
+            columnEmptyText,
           )
-        : normalizeTableColumns(columns, columnValueMessages),
-    [columnDefinitions, columnValueMessages, columns, columnsStateEnabled, mergedColumnsPreferences],
+        : normalizeTableColumns(columns, columnValueMessages, columnEmptyText),
+    [columnDefinitions, columnEmptyText, columnValueMessages, columns, columnsStateEnabled, mergedColumnsPreferences],
   )
   const {
     columnResizeEnabled,

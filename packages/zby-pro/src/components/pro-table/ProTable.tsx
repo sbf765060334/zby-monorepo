@@ -82,6 +82,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     emptyState,
     onTableChange,
     loading,
+    columnEmptyText,
     className,
     rootClassName,
     style,
@@ -357,6 +358,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               }
               viewStore={viewStore}
               emptyState={resolvedConfig.mergedEmptyState}
+              columnEmptyText={columnEmptyText}
               heightMode={resolvedConfig.mergedHeightMode}
               loadingOverride={loading}
               onTableChange={onTableChange}
@@ -383,6 +385,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       resolvedConfig.mergedColumnResize,
       resolvedConfig.mergedColumnsState,
       resolvedConfig.mergedEmptyState,
+      columnEmptyText,
       resolvedConfig.mergedExpandable,
       resolvedConfig.mergedHeightMode,
       resolvedConfig.mergedLayout,

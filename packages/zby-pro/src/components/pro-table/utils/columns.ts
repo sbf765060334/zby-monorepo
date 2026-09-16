@@ -1,18 +1,17 @@
-import * as React from 'react'
 import type { ReactNode } from 'react'
 import type { TableColumnsType, TableColumnType } from '@zby/ui'
 
 import type {
   ProTableColumnType,
-  ProTableColumnValueEnum,
-  ProTableColumnValueEnumItem,
   ProTableColumnPreference,
 } from '../interface'
+import {
+  formatColumnValue,
+  type ProTableColumnValueMessages,
+} from './column-value'
 
-export type ProTableColumnValueMessages = {
-  booleanTrue?: string
-  booleanFalse?: string
-}
+export { formatColumnValue }
+export type { ProTableColumnValueMessages }
 
 export interface ProTableColumnDefinitionMeta {
   title?: ReactNode
@@ -119,113 +118,48 @@ export function buildColumnDefinitions<RecordType>(
     })
 }
 
-function enumText(valueEnum: ProTableColumnValueEnum | undefined, value: unknown): ReactNode {
-  if (!valueEnum) return value as ReactNode
-  const item: ProTableColumnValueEnumItem | undefined =
-    valueEnum instanceof Map
-      ? valueEnum.get(value) ?? valueEnum.get(String(value))
-      : valueEnum[String(value)]
-  if (item === undefined || item === null) return value as ReactNode
-  if (typeof item === 'object' && !React.isValidElement(item) && 'text' in item) {
-    return item.text ?? (value as ReactNode)
-  }
-  return item as ReactNode
-}
-
-function formatValue(
-  value: unknown,
-  column: ProTableColumnType<any>,
-  index = 0,
-  messages?: ProTableColumnValueMessages,
-): ReactNode {
-  const valueType = typeof column.valueType === 'object' ? column.valueType.type : column.valueType ?? column.dataRenderType
-  const typeConfig = typeof column.valueType === 'object' ? column.valueType : {}
-  const fieldProps = (column.fieldProps ?? {}) as Record<string, any>
-  if (value === undefined || value === null || value === '') return ''
-  const text = enumText(column.valueEnum, value)
-  if (valueType === 'tag') {
-    const key = String(value)
-    const props = typeof column.fieldProps === 'function' ? column.fieldProps(value, {}, 0) : column.fieldProps
-    const enumItem = column.valueEnum instanceof Map ? column.valueEnum.get(value) : column.valueEnum?.[key]
-    const enumColor = enumItem && typeof enumItem === 'object' && !React.isValidElement(enumItem) && 'color' in enumItem ? enumItem.color : undefined
-    return React.createElement('span', {
-      ...props,
-      style: { display: 'inline-block', padding: '0 6px', borderRadius: 4, background: column.tagColorEnum?.[key] ?? column.tagColorEnum?.__default ?? enumColor, ...((props as any)?.style ?? {}) },
-    }, text)
-  }
-  if (valueType === 'money' && typeof value === 'number') {
-    const precision = typeConfig.precision ?? fieldProps.precision
-    const formatted = value.toLocaleString(typeConfig.locale ?? fieldProps.locale, {
-      style: typeConfig.showSymbol === false || fieldProps.showSymbol === false ? 'decimal' : 'currency',
-      currency: typeConfig.currency ?? fieldProps.currency ?? 'CNY',
-      minimumFractionDigits: precision,
-      maximumFractionDigits: precision,
-    })
-    return typeConfig.showSymbol === false || fieldProps.showSymbol === false
-      ? formatted
-      : fieldProps.customSymbol
-        ? `${fieldProps.customSymbol}${formatted.replace(/^[^\d-]+/u, '')}`
-        : formatted
-  }
-  if (valueType === 'percent' && typeof value === 'number') {
-    const precision = typeConfig.precision ?? fieldProps.precision
-    return `${precision === undefined ? value : value.toFixed(precision)}%`
-  }
-  if (valueType === 'digit' && typeof value === 'number') {
-    const precision = typeConfig.precision ?? fieldProps.precision
-    return value.toLocaleString(typeConfig.locale ?? fieldProps.locale, {
-      minimumFractionDigits: precision,
-      maximumFractionDigits: precision,
-    })
-  }
-  if (valueType === 'boolean' && typeof value === 'boolean') {
-    return value ? (messages?.booleanTrue ?? '是') : (messages?.booleanFalse ?? '否')
-  }
-  if (valueType === 'index' || valueType === 'indexBorder') return index + 1
-  if (valueType === 'progress' && typeof value === 'number') {
-    const percent = Math.max(0, Math.min(100, value))
-    return React.createElement('span', { style: { display: 'inline-block', minWidth: 80 } }, `${percent}%`)
-  }
-  if (valueType === 'avatar' || valueType === 'image') {
-    return React.createElement('img', { src: String(value), alt: '', style: { maxWidth: 32, maxHeight: 32, objectFit: 'cover', borderRadius: valueType === 'avatar' ? '50%' : undefined } })
-  }
-  if (valueType === 'code') return React.createElement('code', null, String(value))
-  if (valueType === 'jsonCode') {
-    let json = String(value)
-    try {
-      json = JSON.stringify(value, null, 2)
-    } catch {
-      /* fall back to string */
-    }
-    return React.createElement('pre', { style: { margin: 0 } }, json)
-  }
-  if (valueType === 'textarea') return React.createElement('span', { style: { whiteSpace: 'pre-wrap' } }, String(value))
-  if (valueType === 'date' || valueType === 'dateTime' || valueType === 'week' || valueType === 'month' || valueType === 'year') {
-    const date = new Date(String(value))
-    if (!Number.isNaN(date.valueOf())) {
-      if (valueType === 'month') return date.toISOString().slice(0, 7)
-      if (valueType === 'year') return date.toISOString().slice(0, 4)
-      if (valueType === 'week') {
-        const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
-        const week = Math.ceil((((date.getTime() - start.getTime()) / 86400000) + start.getUTCDay() + 1) / 7)
-        return `${date.toISOString().slice(0, 4)}-W${String(week).padStart(2, '0')}`
-      }
-      return valueType === 'date' ? date.toISOString().slice(0, 10) : date.toISOString().replace('T', ' ').slice(0, 19)
-    }
-  }
-  return text
-}
-
 function normalizeColumn<RecordType>(
   column: ProTableColumnType<RecordType>,
   messages?: ProTableColumnValueMessages,
+  columnEmptyText?: ReactNode | false,
 ): TableColumnsType<RecordType>[number] {
-  const { children, fieldConfig: _fieldConfig, label: _label, valueType: _valueType, dataRenderType: _dataRenderType, fieldProps: _fieldProps, valueEnum: _valueEnum, tagColorEnum: _tagColorEnum, renderText, ...rest } = column
+  const {
+    children,
+    fieldConfig: _fieldConfig,
+    label: _label,
+    valueType: _valueType,
+    dataRenderType: _dataRenderType,
+    fieldProps: _fieldProps,
+    valueEnum: _valueEnum,
+    emptyText: _emptyText,
+    renderText,
+    ...rest
+  } = column
   if (Array.isArray(children)) {
-    return { ...rest, children: children.map((child) => normalizeColumn(child, messages)) } as TableColumnsType<RecordType>[number]
+    return {
+      ...rest,
+      children: children.map((child) =>
+        normalizeColumn(child, messages, columnEmptyText),
+      ),
+    } as TableColumnsType<RecordType>[number]
   }
-  if (!rest.render && !renderText && (column.valueType || column.dataRenderType || column.valueEnum || column.tagColorEnum || column.fieldProps)) {
-    return { ...rest, renderText: (value: unknown, record: RecordType, index: number) => formatValue(value, { ...column, fieldProps: typeof column.fieldProps === 'function' ? column.fieldProps(value, record, index) : column.fieldProps }, index, messages) } as TableColumnsType<RecordType>[number]
+  if (!rest.render && !renderText) {
+    return {
+      ...rest,
+      renderText: (value: unknown, record: RecordType, index: number) =>
+        formatColumnValue(
+          value,
+          {
+            ...column,
+            fieldProps:
+              typeof column.fieldProps === 'function'
+                ? column.fieldProps(value, record, index)
+                : column.fieldProps,
+          },
+          index,
+          { emptyText: columnEmptyText, messages },
+        ),
+    } as TableColumnsType<RecordType>[number]
   }
   return { ...rest, renderText } as TableColumnsType<RecordType>[number]
 }
@@ -233,8 +167,11 @@ function normalizeColumn<RecordType>(
 export function normalizeTableColumns<RecordType>(
   columns: ProTableColumnType<RecordType>[] | undefined,
   messages?: ProTableColumnValueMessages,
+  columnEmptyText?: ReactNode | false,
 ): TableColumnsType<RecordType> {
-  return (columns ?? []).map((column) => normalizeColumn(column, messages))
+  return (columns ?? []).map((column) =>
+    normalizeColumn(column, messages, columnEmptyText),
+  )
 }
 
 function peelTrailingLockedColumns<RecordType>(
@@ -259,6 +196,7 @@ export function applyColumnPreferences<RecordType>(
   definitions: ProTableColumnDefinition[],
   preferences: ProTableColumnPreference[],
   messages?: ProTableColumnValueMessages,
+  columnEmptyText?: ReactNode | false,
 ): TableColumnsType<RecordType> {
   const definitionMap = new Map(definitions.map((definition) => [definition.key, definition]))
   const preferenceMap = new Map(preferences.map((item) => [item.key, item]))
@@ -269,7 +207,7 @@ export function applyColumnPreferences<RecordType>(
     const column = sourceMap.get(preference.key)
     if (!definition || !column) return null
     return {
-      ...normalizeColumn(column, messages),
+      ...normalizeColumn(column, messages, columnEmptyText),
       fixed: preference.pin ?? undefined,
       title: definition.meta?.title ?? column.title,
     } as TableColumnsType<RecordType>[number]
@@ -300,19 +238,19 @@ export function applyColumnPreferences<RecordType>(
         hoistedRight.push(...nested.hoistedRight)
         if (nested.columns.length > 0) {
           result.push({
-            ...normalizeColumn(column, messages),
+            ...normalizeColumn(column, messages, columnEmptyText),
             children: nested.columns,
           } as TableColumnsType<RecordType>[number])
         }
         return result
       }
       if (column.fieldConfig === false) {
-        result.push(normalizeColumn(column, messages))
+        result.push(normalizeColumn(column, messages, columnEmptyText))
         return result
       }
       const key = extractColumnKey(column)
       if (!key || !definitionMap.has(key)) {
-        result.push(normalizeColumn(column, messages))
+        result.push(normalizeColumn(column, messages, columnEmptyText))
         return result
       }
       const preference = preferenceMap.get(key)
