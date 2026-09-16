@@ -124,7 +124,19 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 />
 ```
 
-虚拟模式使用 rc-table 1.11.1 的 VirtualList，只渲染可视区附近的行并测量实际行高。Shuzhi 的补偿逻辑会在合并起始行滚出可视区时继续渲染 `rowSpan` origin，也会在跨度超出数据尾部时按现有数据范围计算高度。
+虚拟模式使用 rc-table 1.11.1 的 VirtualList，只渲染可视区附近的行并测量实际行高。跨可视区的 `rowSpan` 补偿只读取 `columns.onCell().rowSpan`：单元格文案用 `render`，合并信息必须放在 `onCell`。起始行滚出可视区后仍会保留 origin，跨度超出数据尾部时按现有数据范围计算高度。
+
+```tsx
+{
+  title: '批次',
+  onCell: (_, index) => ({
+    rowSpan: index % 12 === 0 ? 12 : 0,
+  }),
+  render: (_, __, index) => `批次 ${Math.floor(index / 12) + 1}`,
+}
+```
+
+`render` 返回 `{ children, props: { rowSpan } }` 是 Ant Design 已废弃的写法。可见行仍可能合并，但补偿逻辑不会读取这份 `rowSpan`，起始行滚出后 origin 不会保留。
 
 `height` 与 `virtual` 可以组合，测得的剩余高度会作为数值 `scroll.y` 传给 VirtualList。不传 `height` 的虚拟表格应遵循 AntD 语义提供数值 `scroll.y`。
 

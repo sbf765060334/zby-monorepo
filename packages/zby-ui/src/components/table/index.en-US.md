@@ -123,7 +123,19 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 />
 ```
 
-Virtual mode uses rc-table 1.11.1 VirtualList, rendering rows around the viewport and measuring their actual heights. Shuzhi compensation keeps a `rowSpan` origin rendered after it leaves the normal visible range and clamps spans that extend beyond the data tail.
+Virtual mode uses rc-table 1.11.1 VirtualList, rendering rows around the viewport and measuring their actual heights. Cross-viewport `rowSpan` compensation reads only `columns.onCell().rowSpan`: use `render` for cell content and `onCell` for merge metadata. The origin stays mounted after it leaves the normal visible range, and spans that extend past the data tail are clamped to the available rows.
+
+```tsx
+{
+  title: 'Batch',
+  onCell: (_, index) => ({
+    rowSpan: index % 12 === 0 ? 12 : 0,
+  }),
+  render: (_, __, index) => `Batch ${Math.floor(index / 12) + 1}`,
+}
+```
+
+Returning `{ children, props: { rowSpan } }` from `render` is the deprecated Ant Design API. Visible rows may still merge, but compensation does not read that `rowSpan`, so the origin is not kept after it scrolls away.
 
 `height` can be combined with `virtual`; the measured remaining height is passed to VirtualList as numeric `scroll.y`. A virtual table without `height` should provide numeric `scroll.y` as required by AntD.
 
