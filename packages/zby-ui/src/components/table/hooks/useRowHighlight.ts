@@ -1,4 +1,5 @@
 import type { GetRowKey, TableProps as RcTableProps } from '../RcTableInner'
+import { ConfigContext } from 'antd/es/config-provider/context'
 import * as React from 'react'
 
 import useControllableValue from '../../_util/hooks/useControllableValue'
@@ -11,10 +12,56 @@ interface UseRowHighlightOptions<RecordType extends object> {
   prefixCls: string
 }
 
+const INTERACTIVE_SELECTOR_CORE = [
+  'a',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'label',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="combobox"]',
+  '[role="menuitem"]',
+  '[role="slider"]',
+  '[data-row-click-ignore]',
+].join(', ')
+
+function getInteractiveSelector(getPrefixCls: (suffixCls?: string) => string) {
+  return [
+    INTERACTIVE_SELECTOR_CORE,
+    `.${getPrefixCls('select')}`,
+    `.${getPrefixCls('picker')}`,
+    `.${getPrefixCls('dropdown')}-trigger`,
+    `.${getPrefixCls('input-number')}`,
+  ].join(', ')
+}
+
+function isInteractiveEventTarget(
+  target: EventTarget | null,
+  selector: string,
+) {
+  const element =
+    target instanceof Element
+      ? target
+      : target instanceof Node
+        ? target.parentElement
+        : null
+  return Boolean(element?.closest(selector))
+}
+
 export default function useRowHighlight<RecordType extends object>(
   options: UseRowHighlightOptions<RecordType>,
 ) {
   const { config, getRowKey, onRow, prefixCls } = options
+  const { getPrefixCls } = React.useContext(ConfigContext)
+  const interactiveSelector = React.useMemo(
+    () => getInteractiveSelector(getPrefixCls),
+    [getPrefixCls],
+  )
   const enabled = Boolean(config)
   const highlightProps =
     typeof config === 'object'
@@ -53,13 +100,23 @@ export default function useRowHighlight<RecordType extends object>(
         onClick: (event: React.MouseEvent<HTMLElement>) => {
           userRowProps.onClick?.(event)
           if (event.defaultPrevented) return
+          if (isInteractiveEventTarget(event.target, interactiveSelector)) {
+            return
+          }
 
           if (isCurrent) setCurrentRowKey(null, null)
           else setCurrentRowKey(recordKey, record)
         },
       }
     },
-    [currentRowKey, enabled, getRowKey, onRow, setCurrentRowKey],
+    [
+      currentRowKey,
+      enabled,
+      getRowKey,
+      interactiveSelector,
+      onRow,
+      setCurrentRowKey,
+    ],
   )
 
   return {

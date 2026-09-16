@@ -188,6 +188,76 @@ describe('Table', () => {
     expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
   })
 
+  it('does not toggle row highlight from interactive cell content', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        rowHighlight
+        columns={[
+          ...columns,
+          {
+            key: 'action',
+            title: 'Action',
+            render: () => (
+              <>
+                <button type="button">Edit</button>
+                <a href="#row-link">Link</a>
+                <div role="combobox">Combo</div>
+                <div data-row-click-ignore>Custom</div>
+              </>
+            ),
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row')
+    const firstRow = rows[0]
+    const secondRow = rows[1]
+
+    fireEvent.click(firstRow.querySelector('button')!)
+    fireEvent.click(firstRow.querySelector('a')!)
+    fireEvent.click(firstRow.querySelector('[role="combobox"]')!)
+    fireEvent.click(firstRow.querySelector('[data-row-click-ignore]')!)
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
+
+    fireEvent.click(firstRow.querySelector('td')!)
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(true)
+
+    fireEvent.click(secondRow.querySelector('button')!)
+    expect(firstRow.classList.contains('ant-table-row-current')).toBe(true)
+    expect(secondRow.classList.contains('ant-table-row-current')).toBe(false)
+  })
+
+  it('ignores ConfigProvider-prefixed antd composite roots when highlighting', () => {
+    const { container } = render(
+      <ConfigProvider prefixCls="zby">
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          rowHighlight
+          columns={[
+            ...columns,
+            {
+              key: 'select',
+              title: 'Select',
+              render: () => <div className="zby-select">Sel</div>,
+            },
+          ]}
+          dataSource={data}
+        />
+      </ConfigProvider>,
+    )
+    const firstRow = container.querySelector('.zby-table-tbody .zby-table-row')!
+
+    fireEvent.click(firstRow.querySelector('.zby-select')!)
+    expect(firstRow.classList.contains('zby-table-row-current')).toBe(false)
+
+    fireEvent.click(firstRow.querySelector('td')!)
+    expect(firstRow.classList.contains('zby-table-row-current')).toBe(true)
+  })
+
   it('keeps current-row highlighting independent from rowSelection', () => {
     const { container } = render(
       <Table<RowData>

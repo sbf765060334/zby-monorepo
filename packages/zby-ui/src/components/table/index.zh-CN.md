@@ -152,7 +152,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态，也不会缓存�
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | 开启 ZBY 当前行高亮；再次点击当前行取消 |
 
-`rowHighlight` 是 ZBY 扩展，与 AntD `rowSelection` 相互独立。传入 `true` 时启用非受控高亮；传入对象时为受控模式，必须提供 `currentRowKey`，变化时 `onChange` 收到当前 key 和记录，清除时收到 `(null, null)`。业务 `onRow().onClick` 会先执行，调用 `event.preventDefault()` 可取消本次高亮切换。
+`rowHighlight` 是 ZBY 扩展，与 AntD `rowSelection` 相互独立。传入 `true` 时启用非受控高亮；传入对象时为受控模式，必须提供 `currentRowKey`，变化时 `onChange` 收到当前 key 和记录，清除时收到 `(null, null)`。业务 `onRow().onClick` 会先执行，调用 `event.preventDefault()` 可取消本次高亮切换。点击落在按钮、链接、输入、下拉等可交互节点（含 `ConfigProvider` 前缀下的 Select / Picker / Dropdown / InputNumber）内部时不切换当前行；自定义可点节点可加 `data-row-click-ignore`。
 
 ## 列扩展字段
 

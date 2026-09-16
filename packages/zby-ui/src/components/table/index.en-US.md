@@ -151,7 +151,7 @@ All other props follow AntD 6.6.4 Table.
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | Enable ZBY current-row highlighting; click again to clear |
 
-`rowHighlight` is a ZBY extension independent of AntD `rowSelection`. Pass `true` for uncontrolled highlighting. Passing an object selects controlled mode and requires `currentRowKey`; `onChange` receives the current key and record, or `(null, null)` when cleared. The application's `onRow().onClick` runs first and can cancel the highlight change with `event.preventDefault()`.
+`rowHighlight` is a ZBY extension independent of AntD `rowSelection`. Pass `true` for uncontrolled highlighting. Passing an object selects controlled mode and requires `currentRowKey`; `onChange` receives the current key and record, or `(null, null)` when cleared. The application's `onRow().onClick` runs first and can cancel the highlight change with `event.preventDefault()`. Clicks inside interactive nodes (buttons, links, inputs, comboboxes, and ConfigProvider-prefixed Select / Picker / Dropdown / InputNumber) do not change the current row. Custom clickable nodes can opt out with `data-row-click-ignore`.
 
 ## Column Extensions
 
