@@ -139,7 +139,7 @@ Returning `{ children, props: { rowSpan } }` from `render` is the deprecated Ant
 
 `height` can be combined with `virtual`; the measured remaining height is passed to VirtualList as numeric `scroll.y`. A virtual table without `height` should provide numeric `scroll.y` as required by AntD.
 
-Table does not interpret KeepAlive, Tabs, or other application activity state and does not cache the last valid height. When an ancestor uses `display: none`, the browser reports an actual height of zero and Table derives a zero body height. Applications that need to preserve virtual scrolling must choose a layout-preserving hiding strategy, or omit `height` and control a stable `scroll.y` themselves.
+Table does not interpret KeepAlive, Tabs, or other application activity state. When an ancestor uses `display: none`, the browser reports a height of zero. If a positive fill height was already measured, Table keeps that value so a virtual body does not collapse. A table that first mounts while hidden may still start at 0 and remeasure when it becomes visible. Applications that need full control can omit `height` and pass a stable numeric `scroll.y`.
 
 ## Additional Table Props
 

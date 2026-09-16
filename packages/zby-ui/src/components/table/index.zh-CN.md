@@ -140,7 +140,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 `height` 与 `virtual` 可以组合，测得的剩余高度会作为数值 `scroll.y` 传给 VirtualList。不传 `height` 的虚拟表格应遵循 AntD 语义提供数值 `scroll.y`。
 
-Table 不识别 KeepAlive、Tabs 或其他业务激活状态，也不会缓存最后一次有效高度。祖先节点使用 `display: none` 时，浏览器测得的实际高度为 0，Table 会同步将 body 高度计算为 0；需要保持虚拟滚动高度时，应由业务层调整隐藏策略，或不传 `height` 并控制稳定的 `scroll.y`。
+Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使用 `display: none` 时浏览器会测得高度 0：若此前已有大于 0 的填充高度，Table 会保持该值，避免虚拟表塌掉；若一开始就在隐藏容器中挂载，高度仍可为 0，显示后再测量。需要完全自己控制虚拟高度时，可不传 `height` 并提供稳定的 `scroll.y`。
 
 ## 新增 Table Props
 

@@ -847,7 +847,7 @@ describe('Table', () => {
     ).not.toContain('`scroll.y` in virtual table must be number')
   })
 
-  it('reflects a collapsed root height without an activity guard', () => {
+  it('keeps the last valid fill height when the root collapses to 0', () => {
     vi.useFakeTimers()
     const virtualData = Array.from({ length: 100 }, (_, index) => ({
       id: index,
@@ -884,7 +884,7 @@ describe('Table', () => {
     flushResizeObservers()
     act(() => vi.runOnlyPendingTimers())
 
-    expect(holder.style.height).toBe('0px')
+    expect(holder.style.height).toBe('264px')
   })
 
   it('uses the AntD 6.6.4 native body for non-virtual scrolling', () => {

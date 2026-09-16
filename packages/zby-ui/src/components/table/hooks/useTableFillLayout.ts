@@ -87,11 +87,9 @@ function getOwnedNonBodyNodes(
 }
 
 function collectObservedNodes(root: HTMLDivElement, prefixCls: string) {
-  return [
-    root,
-    ...getOwnedElements(root, prefixCls, NON_BODY_SELECTORS),
-    ...getOwnedElements(root, prefixCls, BODY_SELECTORS),
-  ].filter((node, index, list) => list.indexOf(node) === index)
+  return [root, ...getOwnedElements(root, prefixCls, NON_BODY_SELECTORS)].filter(
+    (node, index, list) => list.indexOf(node) === index,
+  )
 }
 
 function clearBodyHeight(node: HTMLElement | null) {
@@ -127,6 +125,7 @@ export default function useTableFillLayout({
   const observerRef = React.useRef<ResizeObserver | null>(null)
   const observedNodesRef = React.useRef<Set<HTMLElement>>(new Set())
   const previousBodyRef = React.useRef<HTMLElement | null>(null)
+  const lastValidBodyHeightRef = React.useRef<number | undefined>()
 
   const clearObservedNodes = React.useCallback(() => {
     const observer = observerRef.current
@@ -177,6 +176,17 @@ export default function useTableFillLayout({
       )
       const nextBodyHeight = Math.max(root.clientHeight - occupiedHeight, 0)
 
+      refreshObservedNodes(root)
+
+      const lastValidBodyHeight = lastValidBodyHeightRef.current
+      if (
+        root.clientHeight === 0 &&
+        lastValidBodyHeight != null &&
+        lastValidBodyHeight > 0
+      ) {
+        return
+      }
+
       if (previousBodyRef.current && previousBodyRef.current !== bodyNode) {
         clearBodyHeight(previousBodyRef.current)
       }
@@ -186,10 +196,12 @@ export default function useTableFillLayout({
       }
 
       previousBodyRef.current = bodyNode
+      if (nextBodyHeight > 0) {
+        lastValidBodyHeightRef.current = nextBodyHeight
+      }
       setBodyHeight((previous) =>
         previous === nextBodyHeight ? previous : nextBodyHeight,
       )
-      refreshObservedNodes(root)
     },
     [prefixCls, refreshObservedNodes],
   )
@@ -216,6 +228,7 @@ export default function useTableFillLayout({
       observerRef.current = null
       clearBodyHeight(previousBodyRef.current)
       previousBodyRef.current = null
+      lastValidBodyHeightRef.current = undefined
       return undefined
     }
 
@@ -258,6 +271,7 @@ export default function useTableFillLayout({
       setBodyHeight(undefined)
       clearBodyHeight(previousBodyRef.current)
       previousBodyRef.current = null
+      lastValidBodyHeightRef.current = undefined
       return
     }
 
@@ -267,6 +281,7 @@ export default function useTableFillLayout({
     refreshObservedNodes(root)
     measure(root)
   }, [
+    bodyHeight,
     enabled,
     measure,
     metrics.hasFooter,
@@ -277,15 +292,6 @@ export default function useTableFillLayout({
     metrics.virtual,
     refreshObservedNodes,
   ])
-
-  React.useLayoutEffect(() => {
-    if (!enabled) return
-
-    const root = rootRef.current
-    if (root && refreshObservedNodes(root)) {
-      measure(root)
-    }
-  })
 
   return {
     bodyHeight,
