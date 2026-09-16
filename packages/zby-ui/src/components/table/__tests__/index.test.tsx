@@ -631,6 +631,39 @@ describe('Table', () => {
     )
   })
 
+  it('does not emit resize callbacks when the handle is clicked without dragging', () => {
+    const onResize = vi.fn()
+    const onWidthsChange = vi.fn()
+    const onResizeEnd = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{
+          defaultWidths: { id: 120, name: 160 },
+          onResize,
+          onWidthsChange,
+          onResizeEnd,
+        }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerUp(document, { clientX: 100, pointerId: 1 })
+
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '120px',
+    )
+    expect(onResize).not.toHaveBeenCalled()
+    expect(onWidthsChange).not.toHaveBeenCalled()
+    expect(onResizeEnd).not.toHaveBeenCalled()
+  })
+
   it('inverts column resize drag delta under RTL', () => {
     const onWidthsChange = vi.fn()
     const { container } = render(

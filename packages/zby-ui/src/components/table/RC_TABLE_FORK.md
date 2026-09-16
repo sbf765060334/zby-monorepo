@@ -10,7 +10,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`、`onResize` / `onWidthsChange` / `onResizeEnd` |
+| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`、`onResize` / `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调 |
 
 ## 改过的上游文件
 

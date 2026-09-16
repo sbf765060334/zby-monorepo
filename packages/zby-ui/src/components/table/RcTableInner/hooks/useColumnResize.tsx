@@ -459,6 +459,11 @@ export function useColumnResize<RecordType>({
 
       const previousWidth = currentWidths[key] ?? resizeMeta.width;
       const nextWidth = clampWidth(width, resizeMeta.minWidth, resizeMeta.maxWidth);
+
+      if (nextWidth === previousWidth) {
+        return;
+      }
+
       const nextWidths = {
         ...currentWidths,
         [key]: nextWidth,
@@ -480,10 +485,8 @@ export function useColumnResize<RecordType>({
         setInnerWidths(nextWidths);
       }
 
-      if (nextWidth !== previousWidth) {
-        resizeConfig?.onWidthsChange?.(nextWidths, info);
-        resizeConfig?.onResize?.(info);
-      }
+      resizeConfig?.onWidthsChange?.(nextWidths, info);
+      resizeConfig?.onResize?.(info);
 
       if (triggerResizeEnd) {
         resizeConfig?.onResizeEnd?.(info);

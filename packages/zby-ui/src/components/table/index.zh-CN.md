@@ -92,7 +92,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - selection 列遵循 `rowSelection.columnWidth` 或 Table token，默认使用 `controlHeight`；expand 列缺少明确宽度时使用 48px 兜底；两者均不可拖拽；
 - 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；
 - `resizable={false}` 禁止单列拖拽；
-- 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；RTL 下拖动手柄会按文字方向取反，向手柄外侧拖动加宽；
+- 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；宽度未变化的单击不触发这些回调；RTL 下拖动手柄会按文字方向取反，向手柄外侧拖动加宽；
 - 业务列总宽小于 viewport 时插入 filler；存在 fixed-end 列时 filler 位于第一个 fixed-end 叶子列之前；
 - 业务列溢出时移除 filler 并启用横向滚动。
 
@@ -107,7 +107,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | defaultWidths | `ColumnResizeWidths` | 非受控初始宽度映射 |
 | onWidthsChange | `(widths, info) => void` | 宽度映射变化 |
 | onResize | `(info) => void` | 拖动期间触发 |
-| onResizeEnd | `(info) => void` | 拖动结束触发 |
+| onResizeEnd | `(info) => void` | 宽度发生变化的拖动结束时触发 |
 
 `ColumnResizeInfo<T>` 包含 `key`、`width`、`previousWidth`、`delta`、`widths`、`column` 和 `nativeEvent`。
 

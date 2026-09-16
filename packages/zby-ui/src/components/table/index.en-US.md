@@ -91,7 +91,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - The selection column follows `rowSelection.columnWidth` or the Table token and defaults to `controlHeight`. The expand column falls back to 48px without an explicit width. Neither can be resized.
 - Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle.
 - `resizable={false}` disables an individual leaf.
-- Dragging changes only the active leaf and reports through `onResize`, `onWidthsChange`, and `onResizeEnd`. In RTL, the handle delta follows the writing direction: dragging outward widens the column.
+- Dragging changes only the active leaf and reports through `onResize`, `onWidthsChange`, and `onResizeEnd`. A click that does not change width does not fire these callbacks. In RTL, the handle delta follows the writing direction: dragging outward widens the column.
 - A filler represents unused viewport width. It is inserted before the first fixed-end leaf.
 - When business columns overflow, the filler is removed and horizontal scrolling is enabled.
 
@@ -106,7 +106,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | defaultWidths | `ColumnResizeWidths` | Initial uncontrolled width map |
 | onWidthsChange | `(widths, info) => void` | Width-map change callback |
 | onResize | `(info) => void` | Called during dragging |
-| onResizeEnd | `(info) => void` | Called when dragging ends |
+| onResizeEnd | `(info) => void` | Called when a drag that changed the width ends |
 
 `ColumnResizeInfo<T>` contains `key`, `width`, `previousWidth`, `delta`, `widths`, `column`, and `nativeEvent`.
 
