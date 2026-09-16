@@ -707,6 +707,38 @@ describe('Table', () => {
     ).toBe('264px')
   })
 
+  it('does not fall back to a 500px virtual body before fill height is measured', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const virtualData = Array.from({ length: 100 }, (_, index) => ({
+      id: index,
+      name: `Row ${index}`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        height="100%"
+        virtual
+        columns={columns}
+        dataSource={virtualData}
+        pagination={false}
+        scroll={{ x: 600 }}
+      />,
+    )
+
+    const holder = container.querySelector<HTMLElement>(
+      '.ant-table-tbody-virtual-holder',
+    )
+
+    expect(holder).not.toBeNull()
+    expect(holder?.style.height).not.toBe('500px')
+    expect(
+      errorSpy.mock.calls
+        .flat()
+        .map((item) => String(item))
+        .join('\n'),
+    ).not.toContain('`scroll.y` in virtual table must be number')
+  })
+
   it('reflects a collapsed root height without an activity guard', () => {
     vi.useFakeTimers()
     const virtualData = Array.from({ length: 100 }, (_, index) => ({

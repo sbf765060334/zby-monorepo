@@ -834,7 +834,10 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   const columnResizeScroll = columnResize ? (mergedScroll ?? {}) : mergedScroll
   const effectiveScroll = fillEnabled
-    ? { ...columnResizeScroll, y: mergedScrollY }
+    ? {
+        ...columnResizeScroll,
+        y: virtual ? (mergedScrollY ?? 0) : mergedScrollY,
+      }
     : columnResizeScroll
 
   return (

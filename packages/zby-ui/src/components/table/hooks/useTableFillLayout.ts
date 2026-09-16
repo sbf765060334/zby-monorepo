@@ -227,7 +227,6 @@ export default function useTableFillLayout({
     }
 
     refreshObservedNodes(root)
-    scheduleMeasure()
 
     return () => {
       clearObservedNodes()
@@ -255,11 +254,36 @@ export default function useTableFillLayout({
   ])
 
   React.useLayoutEffect(() => {
+    if (!enabled) {
+      setBodyHeight(undefined)
+      clearBodyHeight(previousBodyRef.current)
+      previousBodyRef.current = null
+      return
+    }
+
+    const root = rootRef.current
+    if (!root) return
+
+    refreshObservedNodes(root)
+    measure(root)
+  }, [
+    enabled,
+    measure,
+    metrics.hasFooter,
+    metrics.hasSummary,
+    metrics.hasTitle,
+    metrics.paginationEnabled,
+    metrics.paginationPlacement,
+    metrics.virtual,
+    refreshObservedNodes,
+  ])
+
+  React.useLayoutEffect(() => {
     if (!enabled) return
 
     const root = rootRef.current
     if (root && refreshObservedNodes(root)) {
-      scheduleMeasure()
+      measure(root)
     }
   })
 
