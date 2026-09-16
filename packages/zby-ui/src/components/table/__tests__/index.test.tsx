@@ -482,6 +482,44 @@ describe('Table', () => {
     )
   })
 
+  it('inverts column resize drag delta under RTL', () => {
+    const onWidthsChange = vi.fn()
+    const { container } = render(
+      <ConfigProvider direction="rtl">
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{
+            defaultWidths: { id: 120, name: 160 },
+            onWidthsChange,
+          }}
+          columns={columns}
+          dataSource={data}
+        />
+      </ConfigProvider>,
+    )
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 140, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerUp(document, { clientX: 100, pointerId: 1 })
+
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '160px',
+    )
+    expect(onWidthsChange).toHaveBeenLastCalledWith(
+      { id: 160, name: 160 },
+      expect.objectContaining({
+        key: 'id',
+        width: 160,
+        previousWidth: 120,
+        delta: 40,
+      }),
+    )
+  })
+
   it('keeps Shuzhi fixed-holder sizing and omits empty scrollbar columns', () => {
     const offsetWidth = vi
       .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')

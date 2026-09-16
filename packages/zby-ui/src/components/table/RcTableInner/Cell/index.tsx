@@ -15,11 +15,22 @@ import type {
   CustomizeComponent,
   DataIndex,
   DefaultRecordType,
+  Direction,
   ScopeType,
 } from '../interface';
 import useCellRender from './useCellRender';
 import useHoverState from './useHoverState';
 import { useEvent } from '@rc-component/util';
+
+function getDraggedColumnWidth(
+  startWidth: number,
+  startX: number,
+  clientX: number,
+  direction?: Direction,
+) {
+  const delta = clientX - startX;
+  return startWidth + (direction === 'rtl' ? -delta : delta);
+}
 
 export interface CellProps<RecordType extends DefaultRecordType> {
   prefixCls?: string;
@@ -141,11 +152,13 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
   const {
     allColumnsFixedLeft,
     rowHoverable,
+    direction,
     onColumnResizeDrag,
     onColumnResizeEnd,
   } = useContext(TableContext, [
     'allColumnsFixedLeft',
     'rowHoverable',
+    'direction',
     'onColumnResizeDrag',
     'onColumnResizeEnd',
   ]);
@@ -264,7 +277,12 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       nativeEvent.preventDefault();
       onColumnResizeDrag?.(
         dragState.key,
-        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        getDraggedColumnWidth(
+          dragState.startWidth,
+          dragState.startX,
+          nativeEvent.clientX,
+          direction,
+        ),
         nativeEvent,
       );
     };
@@ -280,7 +298,12 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       setResizeActive(false);
       onColumnResizeEnd?.(
         dragState.key,
-        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        getDraggedColumnWidth(
+          dragState.startWidth,
+          dragState.startX,
+          nativeEvent.clientX,
+          direction,
+        ),
         nativeEvent,
       );
     };
@@ -323,7 +346,12 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       nativeEvent.preventDefault();
       onColumnResizeDrag?.(
         dragState.key,
-        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        getDraggedColumnWidth(
+          dragState.startWidth,
+          dragState.startX,
+          nativeEvent.clientX,
+          direction,
+        ),
         nativeEvent as unknown as PointerEvent,
       );
     };
@@ -339,7 +367,12 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       setResizeActive(false);
       onColumnResizeEnd?.(
         dragState.key,
-        dragState.startWidth + nativeEvent.clientX - dragState.startX,
+        getDraggedColumnWidth(
+          dragState.startWidth,
+          dragState.startX,
+          nativeEvent.clientX,
+          direction,
+        ),
         nativeEvent as unknown as PointerEvent,
       );
     };
