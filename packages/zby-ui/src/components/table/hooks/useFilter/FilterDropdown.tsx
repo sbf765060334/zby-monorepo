@@ -18,7 +18,7 @@ import type { DropdownProps } from 'antd/es/dropdown'
 import Empty from 'antd/es/empty'
 import type { MenuProps } from 'antd/es/menu'
 import Menu from 'antd/es/menu'
-// AntD 6.5.3 exports this runtime symbol but omits it from the published d.ts.
+// 6.6.4 exports this runtime symbol but omits it from the published d.ts.
 // @ts-expect-error -- upstream declaration mismatch
 import { OverrideProvider } from 'antd/es/menu/OverrideContext'
 import Radio from 'antd/es/radio'
@@ -190,11 +190,11 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
     filterState &&
     (filterState.filteredKeys?.length || filterState.forceFiltered)
   )
-  const triggerVisible = (newVisible: boolean) => {
-    setVisible(newVisible)
-    filterDropdownProps.onOpenChange?.(newVisible)
+  const triggerOpen = (nextOpen: boolean) => {
+    setVisible(nextOpen)
+    filterDropdownProps.onOpenChange?.(nextOpen)
     // deprecated
-    onFilterDropdownOpenChange?.(newVisible)
+    onFilterDropdownOpenChange?.(nextOpen)
   }
 
   // =================Warning===================
@@ -236,7 +236,7 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
     { node, checked }: { node: EventDataNode<FilterTreeDataNode>; checked: boolean },
   ) => {
     if (!filterMultiple) {
-      onSelectKeys({ selectedKeys: checked && node.key ? [node.key] : [] })
+      onSelectKeys({ selectedKeys: checked ? [node.key] : [] })
     } else {
       onSelectKeys({ selectedKeys: keys })
     }
@@ -293,7 +293,7 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
   }
 
   const onConfirm = () => {
-    triggerVisible(false)
+    triggerOpen(false)
     internalTriggerFilter(getFilteredKeysSync())
   }
 
@@ -304,7 +304,7 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
       internalTriggerFilter([])
     }
     if (closeDropdown) {
-      triggerVisible(false)
+      triggerOpen(false)
     }
 
     setSearchValue('')
@@ -318,22 +318,22 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
 
   const doFilter = ({ closeDropdown } = { closeDropdown: true }) => {
     if (closeDropdown) {
-      triggerVisible(false)
+      triggerOpen(false)
     }
     internalTriggerFilter(getFilteredKeysSync())
   }
 
-  const onVisibleChange: DropdownProps['onOpenChange'] = (newVisible, info) => {
+  const onDropdownOpenChange: DropdownProps['onOpenChange'] = (nextOpen, info) => {
     if (info.source === 'trigger') {
-      if (newVisible && propFilteredKeys !== undefined) {
+      if (nextOpen && propFilteredKeys !== undefined) {
         // Sync filteredKeys on appear in controlled mode (propFilteredKeys !== undefined)
         setFilteredKeysSync(wrapStringListType(propFilteredKeys))
       }
 
-      triggerVisible(newVisible)
-
-      if (!newVisible && !column.filterDropdown && filterOnClose) {
+      if (!nextOpen && !column.filterDropdown && filterOnClose) {
         onConfirm()
+      } else {
+        triggerOpen(nextOpen)
       }
     }
   }
@@ -386,7 +386,7 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
       filters: column.filters,
       visible: mergedVisible,
       close: () => {
-        triggerVisible(false)
+        triggerOpen(false)
       },
     })
   } else if (column.filterDropdown) {
@@ -588,7 +588,7 @@ const FilterDropdown = <RecordType extends AnyObject = AnyObject>(
       ...filterDropdownProps,
       rootClassName: clsx(rootClassName, filterDropdownProps.rootClassName),
       open: mergedVisible,
-      onOpenChange: onVisibleChange,
+      onOpenChange: onDropdownOpenChange,
       popupRender: () => {
         if (isFunction(filterDropdownProps?.dropdownRender)) {
           return filterDropdownProps.dropdownRender(dropdownContent)

@@ -167,8 +167,7 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
               pointerEvents: 'auto',
             },
 
-            [`.${tableCellHoverClassNames.hoverToOpacity1}`]:
-              tableCellHoverOpacityVisibleStyle,
+            [`.${tableCellHoverClassNames.hoverToOpacity1}`]: tableCellHoverOpacityVisibleStyle,
           },
         },
       },

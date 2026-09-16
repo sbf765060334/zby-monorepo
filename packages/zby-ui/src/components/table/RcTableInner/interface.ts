@@ -129,10 +129,7 @@ export type Direction = 'ltr' | 'rtl';
 export type SpecialString<T> = T | (string & NonNullable<unknown>);
 
 export type DataIndex<T = any> =
-  | DeepNamePath<T>
-  | SpecialString<T>
-  | number
-  | (SpecialString<T> | number)[];
+  DeepNamePath<T> | SpecialString<T> | number | (SpecialString<T> | number)[];
 
 export type CellEllipsisType = { showTitle?: boolean } | boolean;
 
@@ -182,8 +179,7 @@ export interface ColumnType<RecordType> extends ColumnSharedType<RecordType> {
 }
 
 export type ColumnsType<RecordType = unknown> = readonly (
-  | ColumnGroupType<RecordType>
-  | ColumnType<RecordType>
+  ColumnGroupType<RecordType> | ColumnType<RecordType>
 )[];
 
 export type GetRowKey<RecordType> = (record: RecordType, index?: number) => Key;
@@ -300,6 +296,7 @@ export interface ExpandableConfig<RecordType> {
   expandedRowKeys?: readonly Key[];
   defaultExpandedRowKeys?: readonly Key[];
   expandedRowRender?: ExpandedRowRender<RecordType>;
+  forceRender?: boolean;
   columnTitle?: React.ReactNode;
   expandRowByClick?: boolean;
   expandIcon?: RenderExpandIcon<RecordType>;

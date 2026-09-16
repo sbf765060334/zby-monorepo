@@ -58,6 +58,8 @@ export interface CellProps<RecordType extends DefaultRecordType> {
   /** @private Used for `expandable` with nest tree */
   appendNode?: React.ReactNode;
   additionalProps?: React.TdHTMLAttributes<HTMLTableCellElement>;
+  /** @private Original rowSpan before patching it for expanded rows */
+  originRowSpan?: number;
 
   rowType?: 'header' | 'body' | 'footer';
 
@@ -130,6 +132,7 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     // Private
     appendNode,
     additionalProps = {},
+    originRowSpan,
     isSticky,
   } = props;
 
@@ -197,13 +200,14 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
   // ================ RowSpan & ColSpan =================
   const mergedColSpan = legacyCellProps?.colSpan ?? additionalProps.colSpan ?? colSpan ?? 1;
   const mergedRowSpan = legacyCellProps?.rowSpan ?? additionalProps.rowSpan ?? rowSpan ?? 1;
+  const mergedHoverRowSpan = legacyCellProps?.rowSpan ?? originRowSpan ?? mergedRowSpan;
 
   // ====================== Hover =======================
-  const [hovering, onHover] = useHoverState(index, mergedRowSpan);
+  const [hovering, onHover] = useHoverState(index, mergedHoverRowSpan);
 
   const onMouseEnter: React.MouseEventHandler<HTMLTableCellElement> = useEvent(event => {
     if (record) {
-      onHover(index, index + mergedRowSpan - 1);
+      onHover(index, index + mergedHoverRowSpan - 1);
     }
 
     additionalProps?.onMouseEnter?.(event);

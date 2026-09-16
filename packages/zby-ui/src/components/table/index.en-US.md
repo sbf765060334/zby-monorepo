@@ -2,17 +2,17 @@
 category: Components
 group: Data Display
 title: Table
-description: Ant Design 6.5.3 and rc-table 1.10.4 with Shuzhi Table extension semantics.
+description: Ant Design 6.6.4 and rc-table 1.11.1 with Shuzhi Table extension semantics.
 ---
 
 ## Baseline
 
-Table preserves the upstream behavior and fixes from Ant Design 6.5.3 and `@rc-component/table@1.10.4`, then adds Shuzhi column enhancement, column resizing, fill height, and virtual `rowSpan` semantics.
+Table preserves the upstream behavior and fixes from Ant Design 6.6.4 and `@rc-component/table@1.11.1`, then adds Shuzhi column enhancement, column resizing, fill height, and virtual `rowSpan` semantics.
 
-- Normal scroll tables use the native AntD 6.5.3/rc-table 1.10.4 scroll container.
-- Virtual tables retain the rc-table 1.10.4 VirtualList viewport, scrollbar, `scrollTo`, and row measurement model.
+- Normal scroll tables use the native AntD 6.6.4/rc-table 1.11.1 scroll container.
+- Virtual tables retain the rc-table 1.11.1 VirtualList viewport, scrollbar, `scrollTo`, and row measurement model.
 - Columns are not virtualized horizontally.
-- Without an extension enabled, layout and scrolling stay on the AntD 6.5.3 path.
+- Without an extension enabled, layout and scrolling stay on the AntD 6.6.4 path.
 
 ## Column Enhancement
 
@@ -123,7 +123,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 />
 ```
 
-Virtual mode uses rc-table 1.10.4 VirtualList, rendering rows around the viewport and measuring their actual heights. Shuzhi compensation keeps a `rowSpan` origin rendered after it leaves the normal visible range and clamps spans that extend beyond the data tail.
+Virtual mode uses rc-table 1.11.1 VirtualList, rendering rows around the viewport and measuring their actual heights. Shuzhi compensation keeps a `rowSpan` origin rendered after it leaves the normal visible range and clamps spans that extend beyond the data tail.
 
 `height` can be combined with `virtual`; the measured remaining height is passed to VirtualList as numeric `scroll.y`. A virtual table without `height` should provide numeric `scroll.y` as required by AntD.
 
@@ -131,7 +131,7 @@ Table does not interpret KeepAlive, Tabs, or other application activity state an
 
 ## Additional Table Props
 
-All other props follow AntD 6.5.3 Table.
+All other props follow AntD 6.6.4 Table.
 
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |

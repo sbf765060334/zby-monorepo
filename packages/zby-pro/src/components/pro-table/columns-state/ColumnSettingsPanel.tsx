@@ -236,7 +236,7 @@ export function ColumnSettingsPanel({
   }
 
   const commitRowPatch = (key: string, patch: Partial<ProTableColumnPreference>) => {
-    if (Object.prototype.hasOwnProperty.call(patch, 'pin')) {
+    if (Object.hasOwn(patch, 'pin')) {
       onChange(applyVisibleColumnPin(value, key, patch.pin ?? null))
       return
     }

@@ -300,7 +300,7 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
           ${componentCls}-tbody > tr > td,
           tfoot > tr > th,
           tfoot > tr > td
-      `]: {
+        `]: {
         position: 'relative',
         padding: `${unit(tablePaddingVertical)} ${unit(tablePaddingHorizontal)}`,
         overflowWrap: 'break-word',

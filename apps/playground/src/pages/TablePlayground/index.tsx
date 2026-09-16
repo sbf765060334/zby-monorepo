@@ -30,7 +30,7 @@ export default function TablePlayground() {
   return (
     <PlaygroundPage
       title="Table"
-      description="按独立实例展示 AntD 6.5.3 基线能力与 ZBY Table 扩展；每个实例自行管理状态，互不触发整页更新。"
+      description="按独立实例展示 AntD 6.6.4 基线能力与 ZBY Table 扩展；每个实例自行管理状态，互不触发整页更新。"
     >
       <PlaygroundSection
         title="渲染与布局"
@@ -71,7 +71,7 @@ export default function TablePlayground() {
 
       <PlaygroundSection
         title="AntD 基线能力"
-        description="以下实例继续使用 AntD 6.5.3 的原生语义。"
+        description="以下实例继续使用 AntD 6.6.4 的原生语义。"
       >
         <ExampleTabs
           items={[

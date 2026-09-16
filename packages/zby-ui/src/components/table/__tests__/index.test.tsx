@@ -747,7 +747,7 @@ describe('Table', () => {
     expect(holder.style.height).toBe('0px')
   })
 
-  it('uses the AntD 6.5.3 native body for non-virtual scrolling', () => {
+  it('uses the AntD 6.6.4 native body for non-virtual scrolling', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -795,7 +795,7 @@ describe('Table', () => {
     expect(highlightedRow.classList.contains('ant-table-row-current')).toBe(true)
   })
 
-  it('keeps virtual tables on rc-table 1.10.4 VirtualList semantics', () => {
+  it('keeps virtual tables on rc-table 1.11.1 VirtualList semantics', () => {
     const virtualData = Array.from({ length: 100 }, (_, index) => ({
       id: index,
       name: `Row ${index}`,

@@ -84,7 +84,8 @@ export function getCellProps<RecordType>(
     );
   }
 
-  const additionalCellProps = column.onCell?.(record, index) || {};
+  const additionalCellProps = { ...column.onCell?.(record, index) };
+  let originRowSpan: number | undefined;
 
   // Expandable row has offset
   if (expandedRowOffset) {
@@ -93,6 +94,7 @@ export function getCellProps<RecordType>(
     // For expandable row with rowSpan,
     // We should increase the rowSpan if the row is expanded
     if (expandable && rowSpan && colIndex < expandedRowOffset) {
+      originRowSpan = rowSpan;
       let currentRowSpan = rowSpan;
 
       for (let i = index; i < index + rowSpan; i += 1) {
@@ -110,6 +112,7 @@ export function getCellProps<RecordType>(
     fixedInfo,
     appendCellNode,
     additionalCellProps: additionalCellProps,
+    originRowSpan,
   };
 }
 
@@ -146,6 +149,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
     flattenColumns,
     expandedRowClassName,
     expandedRowRender,
+    forceRender,
     rowProps,
 
     // Misc
@@ -153,7 +157,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
     rowSupportExpand,
   } = rowInfo;
 
-  // Force render expand row if expanded before
+  // Keep the expanded row mounted after it has been expanded
   const expandedRef = React.useRef(false);
   expandedRef.current ||= expanded;
 
@@ -187,7 +191,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
       {flattenColumns.map((column: ColumnType<RecordType>, colIndex) => {
         const { render, dataIndex, className: columnClassName } = column;
 
-        const { key, fixedInfo, appendCellNode, additionalCellProps } = getCellProps(
+        const { key, fixedInfo, appendCellNode, additionalCellProps, originRowSpan } = getCellProps(
           rowInfo,
           column,
           colIndex,
@@ -217,6 +221,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
             {...fixedInfo}
             appendNode={appendCellNode}
             additionalProps={additionalCellProps}
+            originRowSpan={originRowSpan}
           />
         );
       })}
@@ -225,7 +230,7 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
 
   // ======================== Expand Row =========================
   let expandRowNode: React.ReactElement<ExpandedRowProps>;
-  if (rowSupportExpand && (expandedRef.current || expanded)) {
+  if (rowSupportExpand && (forceRender || expandedRef.current || expanded)) {
     const expandContent = expandedRowRender(record, index, indent + 1, expanded);
 
     expandRowNode = (

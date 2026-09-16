@@ -1,13 +1,12 @@
 import React from 'react'
 
-import { isNonNullable } from 'antd/es/_util/is'
 import type { AnyObject } from 'antd/es/_util/type'
 import type { ColumnTitleProps, FilterValue } from '../interface'
 
 const getMergedFilters = (filters: Record<string, FilterValue | null>) => {
   const mergedFilters: Record<string, FilterValue> = {}
   for (const [key, value] of Object.entries(filters)) {
-    if (isNonNullable(value)) {
+    if (value != null) {
       mergedFilters[key] = value
     }
   }

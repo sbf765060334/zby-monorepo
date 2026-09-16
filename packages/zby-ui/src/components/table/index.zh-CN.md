@@ -3,17 +3,17 @@ category: Components
 group: 数据展示
 title: Table
 subtitle: 表格
-description: 以 Ant Design 6.5.3 和 rc-table 1.10.4 为底座，提供 Shuzhi Table 的扩展语义。
+description: 以 Ant Design 6.6.4 和 rc-table 1.11.1 为底座，提供 Shuzhi Table 的扩展语义。
 ---
 
 ## 实现基线
 
-Table 保留 Ant Design 6.5.3 与 `@rc-component/table@1.10.4` 的上游行为和修复，并迁移 Shuzhi 的列增强、列宽拖拽、高度填充及虚拟 `rowSpan` 语义。
+Table 保留 Ant Design 6.6.4 与 `@rc-component/table@1.11.1` 的上游行为和修复，并迁移 Shuzhi 的列增强、列宽拖拽、高度填充及虚拟 `rowSpan` 语义。
 
-- 普通滚动表格使用 AntD 6.5.3/rc-table 1.10.4 原生滚动容器。
-- 虚拟表格保留 rc-table 1.10.4 的 VirtualList viewport、滚动条、`scrollTo` 与行测量模型。
+- 普通滚动表格使用 AntD 6.6.4/rc-table 1.11.1 原生滚动容器。
+- 虚拟表格保留 rc-table 1.11.1 的 VirtualList viewport、滚动条、`scrollTo` 与行测量模型。
 - 不进行横向列虚拟化。
-- 未开启扩展能力时，列布局与滚动行为继续使用 AntD 6.5.3 基线。
+- 未开启扩展能力时，列布局与滚动行为继续使用 AntD 6.6.4 基线。
 
 ## 列增强
 
@@ -124,7 +124,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 />
 ```
 
-虚拟模式使用 rc-table 1.10.4 的 VirtualList，只渲染可视区附近的行并测量实际行高。Shuzhi 的补偿逻辑会在合并起始行滚出可视区时继续渲染 `rowSpan` origin，也会在跨度超出数据尾部时按现有数据范围计算高度。
+虚拟模式使用 rc-table 1.11.1 的 VirtualList，只渲染可视区附近的行并测量实际行高。Shuzhi 的补偿逻辑会在合并起始行滚出可视区时继续渲染 `rowSpan` origin，也会在跨度超出数据尾部时按现有数据范围计算高度。
 
 `height` 与 `virtual` 可以组合，测得的剩余高度会作为数值 `scroll.y` 传给 VirtualList。不传 `height` 的虚拟表格应遵循 AntD 语义提供数值 `scroll.y`。
 
@@ -132,7 +132,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态，也不会缓存�
 
 ## 新增 Table Props
 
-其余属性遵循 AntD 6.5.3 Table。
+其余属性遵循 AntD 6.6.4 Table。
 
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |

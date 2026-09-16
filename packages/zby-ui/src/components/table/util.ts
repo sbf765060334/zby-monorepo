@@ -1,4 +1,4 @@
-import { isFunction, isNonNullable, isPlainObject } from 'antd/es/_util/is'
+import { isFunction, isPlainObject } from 'antd/es/_util/is'
 import type { AnyObject } from 'antd/es/_util/type'
 import type { SizeType } from 'antd/es/config-provider/SizeContext'
 import type {
@@ -15,10 +15,14 @@ export {
   TableCellHoverRelatedClassNames,
 } from '../_util/tableCellHover'
 
+function isNonNullable<T>(value: T): value is NonNullable<T> {
+  return value !== undefined && value !== null
+}
+
 export const getColumnKey = <RecordType extends AnyObject = AnyObject>(
   column: ColumnType<RecordType>,
   defaultKey: string,
-) => {
+): Key => {
   if ('key' in column && isNonNullable(column.key)) {
     return column.key
   }

@@ -12,6 +12,7 @@ export default antfu(
       '**/.vite/**',
       '**/.turbo/**',
       '**/.cache/**',
+      '**/.tmp-table-upstream/**',
       'packages/zby-ui/src/components/table/RcTableInner/**',
       '**/*.d.ts',
     ],

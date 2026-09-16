@@ -34,7 +34,7 @@ export default function SortFilterExample() {
   return (
     <PlaygroundCase
       title="排序与筛选"
-      description="状态列筛选、金额列排序沿用 AntD 6.5.3 行为。"
+      description="状态列筛选、金额列排序沿用 AntD 6.6.4 行为。"
     >
       <Table<OrderRecord>
         rowKey="id"

@@ -5,7 +5,13 @@ import { omit, pickAttrs } from '@rc-component/util'
 import { clsx } from 'clsx'
 
 import { useProxyImperativeHandle } from 'antd/es/_util/hooks'
-import { useMergeSemantic, useSemanticRootStyle } from 'antd/es/_util/hooks/useMergeSemantic'
+import {
+  mergeClassNames,
+  mergeStyles,
+  resolveStyleOrClass,
+  useMergeSemantic,
+  useSemanticRootStyle,
+} from 'antd/es/_util/hooks/useMergeSemantic'
 import type { GenerateSemantic } from 'antd/es/_util/hooks/useMergeSemantic/semanticType'
 import { isFunction, isNumber, isPlainObject } from 'antd/es/_util/is'
 import type { Breakpoint } from 'antd/es/_util/responsiveObserver'
@@ -37,13 +43,14 @@ import useFilter, { getFilterData } from './hooks/useFilter'
 import useLazyKVMap from './hooks/useLazyKVMap'
 import usePagination, { DEFAULT_PAGE_SIZE, getPaginationParam } from './hooks/usePagination'
 import useRowHighlight from './hooks/useRowHighlight'
-import useTableFillLayout from './hooks/useTableFillLayout'
 import useSelection from './hooks/useSelection'
 import type { SortState } from './hooks/useSorter'
 import useSorter, { getSortData } from './hooks/useSorter'
 import useSpinProps from './hooks/useSpinProps'
+import useTableFillLayout from './hooks/useTableFillLayout'
 import useTitleColumns from './hooks/useTitleColumns'
 import type {
+  ColumnResizeConfig,
   ColumnsType,
   ColumnType,
   ExpandableConfig,
@@ -56,7 +63,6 @@ import type {
   SorterTooltipProps,
   SortOrder,
   TableAction,
-  ColumnResizeConfig,
   TableCurrentDataSource,
   TableLocale,
   TablePaginationConfig,
@@ -230,6 +236,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     locale,
     showSorterTooltip = { target: 'full-header' },
     virtual,
+    title,
+    showHeader,
     height,
     columnResize,
     rowHighlight,
@@ -349,7 +357,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     },
   )
   const mergedRootStyle = React.useMemo(
-    () => height === undefined ? mergedStyles.root : { ...mergedStyles.root, height },
+    () => (height === undefined ? mergedStyles.root : { ...mergedStyles.root, height }),
     [height, mergedStyles.root],
   )
 
@@ -378,6 +386,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     token.Table?.selectionColumnWidth,
     token.controlHeight,
   ])
+
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
   const [transformEnhanceColumns] = useColumnEnhance<RecordType>(prefixCls)
@@ -408,11 +417,11 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   // ============================ Width =============================
   const getContainerWidth = useContainerWidth(prefixCls)
+
+  // ============================ Scroll ============================
   const mergedScroll = scroll ?? table?.scroll
   const fillEnabled = height !== undefined
-  const mergedTableLayout = columnResizingEnabled
-    ? 'fixed'
-    : tableProps.tableLayout
+  const mergedTableLayout = columnResizingEnabled ? 'fixed' : tableProps.tableLayout
   if (process.env.NODE_ENV !== 'production') {
     warning(
       !(columnResizingEnabled && tableProps.tableLayout === 'auto'),
@@ -438,7 +447,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
   // ============================ RowKey ============================
   const rowKey = customizeRowKey || table?.rowKey || 'key'
 
-  // ============================ Scroll ============================
   if (process.env.NODE_ENV !== 'production') {
     warning(
       !(isFunction(rowKey) && rowKey.length > 1),
@@ -564,6 +572,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     locale: tableLocale,
     dropdownPrefixCls,
     mergedColumns,
+    baseColumns,
     onFilterChange,
     getPopupContainer: getPopupContainer || getContextPopupContainer,
     rootClassName: clsx(rootClassName, rootCls),
@@ -593,6 +602,15 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     onPaginationChange,
     pagination,
   )
+
+  const paginationClassNames: TablePaginationConfig['classNames'] = (info) =>
+    mergeClassNames(
+      {},
+      mergedClassNames.pagination,
+      resolveStyleOrClass(mergedPagination.classNames, info),
+    )
+  const paginationStyles: TablePaginationConfig['styles'] = (info) =>
+    mergeStyles(resolveStyleOrClass(mergedPagination.styles, info), mergedStyles.pagination)
 
   changeEventInfo.pagination =
     pagination === false ? {} : getPaginationParam(mergedPagination, pagination)
@@ -658,7 +676,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   // ========================== Expandable ==========================
 
-  // Pass origin render status into the local RcTable fork.
+  // Pass origin render status into `@rc-component/table`, this can be removed when refactor with `@rc-component/table`
   (mergedExpandable as any).__PARENT_RENDER_ICON__ = mergedExpandable.expandIcon
 
   // Customize expandable icon
@@ -701,8 +719,8 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     const renderPagination = (placement: 'start' | 'end' | 'center' = 'end') => (
       <Pagination
         {...mergedPagination}
-        classNames={mergedClassNames.pagination}
-        styles={mergedStyles.pagination}
+        classNames={paginationClassNames}
+        styles={paginationStyles}
         className={clsx(
           `${prefixCls}-pagination`,
           `${prefixCls}-pagination-${placement}`,
@@ -771,6 +789,12 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     return renderEmpty?.('Table') || <DefaultRenderEmpty componentName="Table" />
   }, [spinProps?.spinning, rawData, locale?.emptyText, renderEmpty])
 
+  // ========================== Render ==========================
+  const TableComponent = virtual ? RcVirtualTable : RcTable
+
+  // >>> Virtual Table props. We set height here since it will affect height collection
+  const virtualProps: { listItemHeight?: number } = {}
+
   const listItemHeight = React.useMemo(() => {
     const { fontSize, lineHeight, lineWidth, padding, paddingXS, paddingSM } = token
     const fontHeight = Math.floor(fontSize * lineHeight)
@@ -787,7 +811,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     }
   }, [token, mergedSize])
 
-  const virtualProps: { listItemHeight?: number } = {}
   if (virtual) {
     virtualProps.listItemHeight = listItemHeight
   }
@@ -814,9 +837,6 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     ? { ...columnResizeScroll, y: mergedScrollY }
     : columnResizeScroll
 
-  // ========================== Render ==========================
-  const TableComponent = virtual ? RcVirtualTable : RcTable
-
   return (
     <div ref={rootRef} className={wrappercls} style={mergedRootStyle}>
       <Spin spinning={false} {...spinProps}>
@@ -842,6 +862,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
                 [`${prefixCls}-small`]: mergedSize === 'small',
                 [`${prefixCls}-bordered`]: bordered,
                 [`${prefixCls}-empty`]: rawData.length === 0,
+                [`${prefixCls}-no-header`]: !title && showHeader === false,
                 [`${prefixCls}-fill`]: fillEnabled,
               },
               cssVarCls,
