@@ -97,9 +97,9 @@ describe('ScrollArea', () => {
     const root = container.querySelector<HTMLElement>('.ant-scroll-area')!
     const styleText = extractStyle(cache)
 
-    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('20px')
-    expect(styleText).toContain('height:calc(var(--zby-scroll-area-track-size) + 4px)')
-    expect(styleText).toContain('width:calc(var(--zby-scroll-area-track-size) + 4px)')
+    expect(root.style.getPropertyValue('--ant-scroll-area-track-size')).toBe('20px')
+    expect(styleText).toContain('height:calc(var(--ant-scroll-area-track-size) + 4px)')
+    expect(styleText).toContain('width:calc(var(--ant-scroll-area-track-size) + 4px)')
     expect(styleText).not.toContain('min-width:44px')
     expect(styleText).not.toContain('min-height:44px')
   })
@@ -228,17 +228,17 @@ describe('ScrollArea', () => {
     const styleText = extractStyle(cache)
     expect(styleText).toContain('scrollbar-width:none')
     expect(styleText).toContain('::-webkit-scrollbar')
-    expect(styleText).toContain('width:var(--zby-scroll-area-track-size)')
-    expect(styleText).toContain('background:var(--zby-scroll-area-thumb-bg)')
-    expect(styleText).toContain('background:var(--zby-scroll-area-thumb-hover-bg)')
-    expect(styleText).toContain('z-index:var(--zby-scroll-area-z-index)')
-    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('10px')
-    expect(root.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')
-    expect(root.style.getPropertyValue('--zby-scroll-area-thumb-hover-bg')).toBe('#654321')
-    expect(root.style.getPropertyValue('--zby-scroll-area-z-index')).toBe('99')
+    expect(styleText).toContain('width:var(--ant-scroll-area-track-size)')
+    expect(styleText).toContain('background:var(--ant-scroll-area-thumb-bg)')
+    expect(styleText).toContain('background:var(--ant-scroll-area-thumb-hover-bg)')
+    expect(styleText).toContain('z-index:var(--ant-scroll-area-z-index)')
+    expect(root.style.getPropertyValue('--ant-scroll-area-track-size')).toBe('10px')
+    expect(root.style.getPropertyValue('--ant-scroll-area-thumb-bg')).toBe('#123456')
+    expect(root.style.getPropertyValue('--ant-scroll-area-thumb-hover-bg')).toBe('#654321')
+    expect(root.style.getPropertyValue('--ant-scroll-area-z-index')).toBe('99')
   })
 
-  it('uses ConfigProvider prefixCls for DOM classes without renaming component variables', () => {
+  it('uses ConfigProvider prefixCls for DOM classes and component CSS variables', () => {
     const { container } = render(
       <ConfigProvider prefixCls="custom">
         <ScrollArea />
@@ -248,8 +248,9 @@ describe('ScrollArea', () => {
     const root = container.querySelector<HTMLElement>('.custom-scroll-area')!
 
     expect(root).not.toBeNull()
-    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).not.toBe('')
-    expect(root.style.getPropertyValue('--custom-scroll-area-track-size')).toBe('')
+    expect(root.style.getPropertyValue('--custom-scroll-area-track-size')).not.toBe('')
+    expect(root.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('')
+    expect(root.style.getPropertyValue('--ant-scroll-area-track-size')).toBe('')
   })
 
   it('isolates component token variables between nested cssVar ConfigProviders', () => {
@@ -280,14 +281,20 @@ describe('ScrollArea', () => {
     const customScrollArea = getByTestId('custom-scroll-area')
     const styleText = extractStyle(cache)
 
-    expect(defaultScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('8px')
-    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-track-size')).toBe('12px')
-    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-bg')).toBe('#123456')
-    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-thumb-hover-bg')).toBe(
+    expect(defaultScrollArea.style.getPropertyValue('--zby-test-scroll-area-track-size')).toBe(
+      '8px',
+    )
+    expect(customScrollArea.style.getPropertyValue('--zby-test-scroll-area-track-size')).toBe(
+      '12px',
+    )
+    expect(customScrollArea.style.getPropertyValue('--zby-test-scroll-area-thumb-bg')).toBe(
+      '#123456',
+    )
+    expect(customScrollArea.style.getPropertyValue('--zby-test-scroll-area-thumb-hover-bg')).toBe(
       '#654321',
     )
-    expect(customScrollArea.style.getPropertyValue('--zby-scroll-area-z-index')).toBe('88')
-    expect(styleText).toContain('width:var(--zby-scroll-area-track-size)')
+    expect(customScrollArea.style.getPropertyValue('--zby-test-scroll-area-z-index')).toBe('88')
+    expect(styleText).toContain('width:var(--zby-test-scroll-area-track-size)')
   })
 
   it('keeps horizontal wheel behavior native by default', () => {
@@ -625,6 +632,9 @@ describe('ScrollArea', () => {
     fireEvent.wheel(viewportRef.current!, { deltaY: 120, deltaX: 0 })
 
     expect(container.querySelector('.ant-scroll-area')?.getAttribute('dir')).toBe('rtl')
+    expect(
+      container.querySelector('.ant-scroll-area')?.classList.contains('ant-scroll-area-rtl'),
+    ).toBe(true)
     expect(viewportRef.current?.scrollLeft).toBe(-120)
   })
 })

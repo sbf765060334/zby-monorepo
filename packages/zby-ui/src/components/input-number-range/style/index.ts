@@ -1,16 +1,21 @@
 import { useStyleRegister } from '@ant-design/cssinjs'
-import { theme as antdTheme } from 'antd'
+import { ConfigProvider, theme as antdTheme } from 'antd'
+import * as React from 'react'
 
 const toCssUnit = (value: number | string) => (typeof value === 'number' ? `${value}px` : value)
 
 export function useInputNumberRangeStyle(prefixCls: string, inputNumberPrefixCls: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
+  const { theme: themeConfig } = React.useContext(ConfigProvider.ConfigContext)
   const styleToken = cssVar ?? token
+  const cssVarKey =
+    typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar.key : undefined
+  const cssVarCls = cssVarKey ?? 'css-var-root'
 
   useStyleRegister(
     {
       theme,
-      token: styleToken,
+      token,
       hashId,
       path: ['zby-ui', 'input-number-range', prefixCls, inputNumberPrefixCls],
     },
@@ -323,5 +328,5 @@ export function useInputNumberRangeStyle(prefixCls: string, inputNumberPrefixCls
     },
   )
 
-  return hashId
+  return [hashId, cssVarCls] as const
 }

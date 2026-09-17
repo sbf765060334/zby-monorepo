@@ -1,7 +1,8 @@
 import { unit, useStyleRegister } from '@ant-design/cssinjs'
 import type { CSSObject } from '@ant-design/cssinjs'
-import { theme as antdTheme } from 'antd'
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import type { CSSProperties } from 'react'
+import * as React from 'react'
 
 export interface ScrollAreaComponentToken {
   /**
@@ -34,18 +35,6 @@ declare module 'antd/es/theme/interface/components' {
 
 type GlobalToken = ReturnType<typeof antdTheme.useToken>['token']
 
-const scrollAreaTrackSizeVar = '--zby-scroll-area-track-size'
-const scrollAreaThumbBgVar = '--zby-scroll-area-thumb-bg'
-const scrollAreaThumbHoverBgVar = '--zby-scroll-area-thumb-hover-bg'
-const scrollAreaZIndexVar = '--zby-scroll-area-z-index'
-
-type ScrollAreaCSSVariableStyle = CSSProperties & {
-  [scrollAreaTrackSizeVar]: string | number
-  [scrollAreaThumbBgVar]: string
-  [scrollAreaThumbHoverBgVar]: string
-  [scrollAreaZIndexVar]: string | number
-}
-
 type ScrollAreaToken = GlobalToken & {
   componentCls: string
   scrollAreaTrackSize: string
@@ -56,6 +45,18 @@ type ScrollAreaToken = GlobalToken & {
 
 function incrementCSSValue(value: number | string) {
   return typeof value === 'number' ? value + 1 : `calc(${value} + 1)`
+}
+
+function getCssVarPrefix(
+  themeConfig: { cssVar?: boolean | { prefix?: string; key?: string } } | undefined,
+  getPrefixCls: (suffixCls?: string, customizePrefixCls?: string) => string,
+) {
+  const cssVarConfig = typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar : undefined
+  return cssVarConfig?.prefix ?? getPrefixCls()
+}
+
+function getComponentCssVarName(cssVarPrefix: string, tokenName: string) {
+  return `--${cssVarPrefix}-scroll-area-${tokenName}`
 }
 
 function resetComponent(token: GlobalToken): CSSObject {
@@ -202,21 +203,30 @@ const genBaseStyle = (token: ScrollAreaToken): CSSObject => {
 
 export default function useStyle(prefixCls: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
+  const { getPrefixCls, theme: themeConfig } = React.useContext(ConfigProvider.ConfigContext)
   const styleToken = cssVar ?? token
+  const cssVarPrefix = getCssVarPrefix(themeConfig, getPrefixCls)
+  const cssVarKey =
+    typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar.key : undefined
+  const cssVarCls = cssVarKey ?? 'css-var-root'
   const componentToken = token.ScrollArea
-  const componentCSSVariables: ScrollAreaCSSVariableStyle = {
-    [scrollAreaTrackSizeVar]: unit(componentToken?.trackSize ?? 8),
-    [scrollAreaThumbBgVar]: componentToken?.thumbBg ?? styleToken.colorTextQuaternary,
-    [scrollAreaThumbHoverBgVar]: componentToken?.thumbHoverBg ?? styleToken.colorTextTertiary,
-    [scrollAreaZIndexVar]: componentToken?.zIndex ?? incrementCSSValue(styleToken.zIndexBase),
+  const trackSizeVar = getComponentCssVarName(cssVarPrefix, 'track-size')
+  const thumbBgVar = getComponentCssVarName(cssVarPrefix, 'thumb-bg')
+  const thumbHoverBgVar = getComponentCssVarName(cssVarPrefix, 'thumb-hover-bg')
+  const zIndexVar = getComponentCssVarName(cssVarPrefix, 'z-index')
+  const componentCSSVariables: CSSProperties = {
+    [trackSizeVar]: unit(componentToken?.trackSize ?? 8),
+    [thumbBgVar]: componentToken?.thumbBg ?? styleToken.colorTextQuaternary,
+    [thumbHoverBgVar]: componentToken?.thumbHoverBg ?? styleToken.colorTextTertiary,
+    [zIndexVar]: componentToken?.zIndex ?? incrementCSSValue(styleToken.zIndexBase),
   }
   const mergedToken: ScrollAreaToken = {
     ...styleToken,
     componentCls: `.${prefixCls}`,
-    scrollAreaTrackSize: `var(${scrollAreaTrackSizeVar})`,
-    scrollAreaThumbBg: `var(${scrollAreaThumbBgVar})`,
-    scrollAreaThumbHoverBg: `var(${scrollAreaThumbHoverBgVar})`,
-    scrollAreaZIndex: `var(${scrollAreaZIndexVar})`,
+    scrollAreaTrackSize: `var(${trackSizeVar})`,
+    scrollAreaThumbBg: `var(${thumbBgVar})`,
+    scrollAreaThumbHoverBg: `var(${thumbHoverBgVar})`,
+    scrollAreaZIndex: `var(${zIndexVar})`,
   }
 
   useStyleRegister(
@@ -224,10 +234,10 @@ export default function useStyle(prefixCls: string) {
       theme,
       token,
       hashId,
-      path: ['zby-ui', 'scroll-area', prefixCls],
+      path: ['zby-ui', 'scroll-area', prefixCls, cssVarPrefix],
     },
     () => genBaseStyle(mergedToken),
   )
 
-  return [hashId, componentCSSVariables] as const
+  return [hashId, cssVarCls, componentCSSVariables] as const
 }

@@ -15,6 +15,10 @@ Table 保留 Ant Design 6.6.4 与 `@rc-component/table@1.11.1` 的上游行为�
 - 不进行横向列虚拟化。
 - 未开启扩展能力时，列布局与滚动行为继续使用 AntD 6.6.4 基线。
 
+## 国际化
+
+筛选、空态、展开、分页等 Table 内置文案走 `ConfigProvider.locale`（antd 语言包）。列 `copyable` 使用 ActionText，文案走 `ZbyIntlProvider` 与 `zbyUiLocales`。应用需要同时注入这两套语言资源。
+
 ## 列增强
 
 ```tsx

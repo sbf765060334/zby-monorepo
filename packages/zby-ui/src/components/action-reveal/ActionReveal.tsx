@@ -303,7 +303,7 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
   /**
    * 驱动开合动画状态机：
    * - 打开时等待一帧再切换宽度，确保浏览器能识别 transition 的起止状态；
-   * - 关闭时先切回折叠宽度，再按 token 时长延迟卸载内容；
+   * - 关闭时先切回折叠宽度，优先等 width 的 transitionend，再用 token 时长兜底卸载；
    * - motion=false 时跳过所有等待，直接进入目标状态。
    */
   React.useEffect(() => {
@@ -343,9 +343,30 @@ const ActionReveal = React.forwardRef<unknown, ActionRevealProps>((props, ref) =
       return undefined
     }
 
-    const timeout = window.setTimeout(hideContent, getMotionDeadline(token.motionDurationMid))
+    const contentElement =
+      findContentElement(contentRef.current, contentScopeClassName) ??
+      getFocusableElement(contentRef.current)
 
-    return () => window.clearTimeout(timeout)
+    let finished = false
+    const finish = () => {
+      if (finished) return
+      finished = true
+      hideContent()
+    }
+
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target !== contentElement) return
+      if (event.propertyName !== 'width') return
+      finish()
+    }
+
+    contentElement?.addEventListener('transitionend', onTransitionEnd)
+    const timeout = window.setTimeout(finish, getMotionDeadline(token.motionDurationMid))
+
+    return () => {
+      contentElement?.removeEventListener('transitionend', onTransitionEnd)
+      window.clearTimeout(timeout)
+    }
   }, [contentScopeClassName, open, renderContent, token.motionDurationMid, widthMotionEnabled])
 
   // 内容挂载完成后再聚焦，兼容 HTMLElement 与 antd 组件 Ref。

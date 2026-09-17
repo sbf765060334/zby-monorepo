@@ -2,6 +2,7 @@ import { CloseCircleFilled, SwapRightOutlined } from '@ant-design/icons'
 import { ConfigProvider, InputNumber } from 'antd'
 import type { InputNumberProps } from 'antd'
 import { useIntl } from '@zby/intl'
+import { clsx } from 'clsx'
 import * as React from 'react'
 import { useInputNumberRangeStyle } from './style'
 
@@ -242,7 +243,7 @@ export interface InputNumberRangeProps<
   style?: React.CSSProperties
   /** 外层根 className，通常用于主题或上层样式注入。 */
   rootClassName?: string
-  /** 自定义样式前缀，默认 zby-input-number-range。 */
+  /** 自定义样式前缀，默认由 ConfigProvider.getPrefixCls('input-number-range') 生成。 */
   prefixCls?: string
   /** 组件尺寸，支持 antd InputNumber 的 small/middle/large。 */
   size?: RangeSize
@@ -250,12 +251,6 @@ export interface InputNumberRangeProps<
   status?: RangeStatus
   /** antd v5/v6 输入类组件外观变体，如 outlined、filled、borderless、underlined。 */
   variant?: RangeVariant
-}
-
-const DEFAULT_PREFIX_CLS = 'zby-input-number-range'
-
-function composeClassName(...classNames: Array<string | false | null | undefined>) {
-  return classNames.filter(Boolean).join(' ')
 }
 
 /** 在异步回调里读取最新值，避免闭包拿到过期 props/state。 */
@@ -475,7 +470,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       className,
       style,
       rootClassName,
-      prefixCls = DEFAULT_PREFIX_CLS,
+      prefixCls: customizePrefixCls,
       size: customizeSize,
       status: customStatus,
       variant: customVariant,
@@ -491,9 +486,10 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     } = props
 
     const intl = useIntl()
-    const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
+    const { getPrefixCls, direction } = React.useContext(ConfigProvider.ConfigContext)
+    const prefixCls = getPrefixCls('input-number-range', customizePrefixCls)
     const inputNumberPrefixCls = getPrefixCls('input-number')
-    const hashId = useInputNumberRangeStyle(prefixCls, inputNumberPrefixCls)
+    const [hashId, cssVarCls] = useInputNumberRangeStyle(prefixCls, inputNumberPrefixCls)
     const { componentDisabled, componentSize } = ConfigProvider.useConfig()
     const mergedSize = customizeSize ?? componentSize
     const rangeRef = React.useRef<HTMLDivElement>(null)
@@ -780,9 +776,10 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const showAffix = showClear || !!suffix
 
     /** 外层容器统一承接 antd 尺寸、状态、variant、disabled/readOnly 等视觉状态。 */
-    const triggerClassName = composeClassName(
+    const triggerClassName = clsx(
       prefixCls,
       hashId,
+      cssVarCls,
       rootClassName,
       customVariant && `${prefixCls}-${customVariant}`,
       focused && `${prefixCls}-focused`,
@@ -791,6 +788,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       mergedSize === 'large' && `${prefixCls}-lg`,
       mergedSize === 'small' && `${prefixCls}-sm`,
       customStatus && `${prefixCls}-status-${customStatus}`,
+      { [`${prefixCls}-rtl`]: direction === 'rtl' },
       className,
     )
 
@@ -813,7 +811,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             controls={false}
             variant={customVariant}
             status={customStatus}
-            className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-start`)}
+            className={clsx(`${prefixCls}-input`, `${prefixCls}-input-start`)}
             placeholder={startProps?.placeholder ?? placeholder[0]}
             onChange={(value) => {
               startProps?.onChange?.(value as ValueType | null)
@@ -843,7 +841,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
             controls={false}
             variant={customVariant}
             status={customStatus}
-            className={composeClassName(`${prefixCls}-input`, `${prefixCls}-input-end`)}
+            className={clsx(`${prefixCls}-input`, `${prefixCls}-input-end`)}
             placeholder={endProps?.placeholder ?? placeholder[1]}
             onChange={(value) => {
               endProps?.onChange?.(value as ValueType | null)

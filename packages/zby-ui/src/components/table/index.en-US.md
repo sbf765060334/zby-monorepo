@@ -14,6 +14,10 @@ Table preserves the upstream behavior and fixes from Ant Design 6.6.4 and `@rc-c
 - Columns are not virtualized horizontally.
 - Without an extension enabled, layout and scrolling stay on the AntD 6.6.4 path.
 
+## Internationalization
+
+Built-in Table strings for filters, empty state, expand, and pagination use `ConfigProvider.locale` (antd locales). Column `copyable` uses ActionText, whose copy is served by `ZbyIntlProvider` and `zbyUiLocales`. Applications need to inject both locale sources.
+
 ## Column Enhancement
 
 ```tsx

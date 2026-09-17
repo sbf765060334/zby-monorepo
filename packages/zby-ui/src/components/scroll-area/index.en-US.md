@@ -299,3 +299,5 @@ Configure these values through `ConfigProvider.theme.components.ScrollArea`:
 | thumbBg | Default thumb background | `string` | `colorTextQuaternary` |
 | thumbHoverBg | Thumb background on hover | `string` | `colorTextTertiary` |
 | zIndex | Custom scrollbar stacking level | `number` | `zIndexBase + 1` |
+
+ScrollArea writes these tokens onto its root as CSS variables named after antd `theme.cssVar.prefix`: `--{prefix}-scroll-area-track-size`, `--{prefix}-scroll-area-thumb-bg`, `--{prefix}-scroll-area-thumb-hover-bg`, and `--{prefix}-scroll-area-z-index`. `prefix` defaults to `ConfigProvider.prefixCls` (`ant`). antd does not generate these variables for this component.

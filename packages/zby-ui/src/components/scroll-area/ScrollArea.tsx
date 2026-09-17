@@ -261,7 +261,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   } = viewportProps ?? {}
 
   const prefixCls = getPrefixCls('scroll-area', customizePrefixCls)
-  const [hashId, componentCSSVariables] = useStyle(prefixCls)
+  const [hashId, cssVarCls, componentCSSVariables] = useStyle(prefixCls)
   const mergedDirection = customizeDirection ?? 'vertical'
   const scrollbar = customizeScrollbar ?? 'hover'
   const scrollHideDelay = customizeScrollHideDelay ?? SCROLLBAR_HIDE_DELAY
@@ -407,7 +407,11 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
         prefixCls,
         `${prefixCls}-${mergedDirection}`,
         hashId,
-        { [`${prefixCls}-native`]: usesNativeScrollbar },
+        cssVarCls,
+        {
+          [`${prefixCls}-native`]: usesNativeScrollbar,
+          [`${prefixCls}-rtl`]: directionMode === 'rtl',
+        },
         className,
         rootClassName,
         mergedClassNames.root,

@@ -300,3 +300,5 @@ type ScrollAreaStylesType =
 | thumbBg | 滑块默认背景色 | `string` | `colorTextQuaternary` |
 | thumbHoverBg | 滑块 hover 背景色 | `string` | `colorTextTertiary` |
 | zIndex | 自定义滚动条层级 | `number` | `zIndexBase + 1` |
+
+这些 token 由 ScrollArea 自己写到根节点上，变量名遵循 antd `theme.cssVar.prefix`：`--{prefix}-scroll-area-track-size`、`--{prefix}-scroll-area-thumb-bg`、`--{prefix}-scroll-area-thumb-hover-bg`、`--{prefix}-scroll-area-z-index`。`prefix` 默认与 `ConfigProvider.prefixCls` 相同（`ant`）。antd 不会替这个组件生成这些变量。

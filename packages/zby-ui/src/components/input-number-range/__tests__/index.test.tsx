@@ -46,14 +46,14 @@ describe('InputNumberRange antd context integration', () => {
       </ConfigProvider>,
     )
 
-    const root = container.querySelector('.zby-input-number-range')!
+    const root = container.querySelector('.ant-input-number-range')!
     const inputs = Array.from(container.querySelectorAll<HTMLInputElement>('input'))
 
-    expect(root.classList.contains('zby-input-number-range-disabled')).toBe(true)
-    expect(root.classList.contains('zby-input-number-range-lg')).toBe(true)
+    expect(root.classList.contains('ant-input-number-range-disabled')).toBe(true)
+    expect(root.classList.contains('ant-input-number-range-lg')).toBe(true)
     expect(inputs).toHaveLength(2)
     expect(inputs.every((input) => input.disabled)).toBe(true)
-    expect(container.querySelector('.zby-input-number-range-clear')).toBeNull()
+    expect(container.querySelector('.ant-input-number-range-clear')).toBeNull()
   })
 
   it('delegates inherited variant and Form.Item status to the inner InputNumber controls', () => {
@@ -70,12 +70,12 @@ describe('InputNumberRange antd context integration', () => {
       </StyleProvider>,
     )
 
-    const root = container.querySelector('.zby-input-number-range')!
+    const root = container.querySelector('.ant-input-number-range')!
     const controls = Array.from(container.querySelectorAll<HTMLElement>('.ant-input-number'))
     const styleText = extractStyle(cache)
 
-    expect(root.classList.contains('zby-input-number-range-filled')).toBe(false)
-    expect(root.classList.contains('zby-input-number-range-status-warning')).toBe(false)
+    expect(root.classList.contains('ant-input-number-range-filled')).toBe(false)
+    expect(root.classList.contains('ant-input-number-range-status-warning')).toBe(false)
     expect(controls).toHaveLength(2)
     expect(controls.every((control) => control.classList.contains('ant-input-number-filled'))).toBe(
       true,
@@ -83,9 +83,9 @@ describe('InputNumberRange antd context integration', () => {
     expect(
       controls.every((control) => control.classList.contains('ant-input-number-status-warning')),
     ).toBe(true)
-    expect(styleText).toContain(':has(.zby-input-number-range-input.ant-input-number-filled)')
+    expect(styleText).toContain(':has(.ant-input-number-range-input.ant-input-number-filled)')
     expect(styleText).toContain(
-      ':has(.zby-input-number-range-input.ant-input-number-status-warning)',
+      ':has(.ant-input-number-range-input.ant-input-number-status-warning)',
     )
   })
 
@@ -99,11 +99,11 @@ describe('InputNumberRange antd context integration', () => {
       />,
     )
 
-    const root = container.querySelector('.zby-input-number-range')!
+    const root = container.querySelector('.ant-input-number-range')!
     const controls = Array.from(container.querySelectorAll<HTMLElement>('.ant-input-number'))
 
-    expect(root.classList.contains('zby-input-number-range-underlined')).toBe(true)
-    expect(root.classList.contains('zby-input-number-range-status-error')).toBe(true)
+    expect(root.classList.contains('ant-input-number-range-underlined')).toBe(true)
+    expect(root.classList.contains('ant-input-number-range-status-error')).toBe(true)
     expect(
       controls.every((control) => control.classList.contains('ant-input-number-underlined')),
     ).toBe(true)
@@ -112,7 +112,7 @@ describe('InputNumberRange antd context integration', () => {
     ).toBe(true)
   })
 
-  it('targets the InputNumber prefix configured by ConfigProvider', () => {
+  it('uses ConfigProvider prefixCls for the range root and inner InputNumber', () => {
     const cache = createCache()
     const { container } = render(
       <StyleProvider cache={cache}>
@@ -122,13 +122,29 @@ describe('InputNumberRange antd context integration', () => {
       </StyleProvider>,
     )
 
+    const root = container.querySelector('.custom-input-number-range')!
     const controls = container.querySelectorAll('.custom-input-number')
     const styleText = extractStyle(cache)
 
+    expect(root).not.toBeNull()
     expect(controls).toHaveLength(2)
-    expect(styleText).toContain('.zby-input-number-range-input.custom-input-number')
+    expect(styleText).toContain('.custom-input-number-range-input.custom-input-number')
     expect(styleText).toContain(
-      ':has(.zby-input-number-range-input.custom-input-number-outlined)',
+      ':has(.custom-input-number-range-input.custom-input-number-outlined)',
     )
+  })
+
+  it('inherits ConfigProvider direction as an RTL class', () => {
+    const { container } = render(
+      <ConfigProvider direction="rtl">
+        <InputNumberRange defaultValue={[1, 2]} placeholder={['Min', 'Max']} />
+      </ConfigProvider>,
+    )
+
+    expect(
+      container.querySelector('.ant-input-number-range')?.classList.contains(
+        'ant-input-number-range-rtl',
+      ),
+    ).toBe(true)
   })
 })

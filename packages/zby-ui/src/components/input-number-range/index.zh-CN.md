@@ -208,7 +208,7 @@ export default () => (
 | className | 最外层容器的 className | `string` | - |
 | style | 最外层容器的内联样式 | `CSSProperties` | - |
 | rootClassName | 追加到最外层容器的稳定 className | `string` | - |
-| prefixCls | 自定义组件 CSS 类名前缀 | `string` | `zby-input-number-range` |
+| prefixCls | 自定义组件 CSS 类名前缀 | `string` | 由 ConfigProvider 生成 |
 | size | 组件尺寸；未传时继承 ConfigProvider | `small \| middle \| large` | 继承 ConfigProvider |
 | status | 校验状态；未传时可继承 Form.Item 状态 | `error \| warning` | - |
 | variant | 输入框外观；显式值会传给两侧 InputNumber | `outlined \| filled \| borderless \| underlined` | 继承 ConfigProvider |
