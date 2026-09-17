@@ -28,7 +28,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   const siderIconSize = token.fontSizeHeading3
   const fixedIconWidth = unit(styleToken.fontSize)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
-  const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) * -1)`
+  const unfixedLabelOffset = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) * -1)`
   // 固定页签宽按密度 token 推算：左右 padding、钉/关图标、四字标题，另留 paddingXXS 避免亚像素裁切。
   const tabWidth = alignToGrid(
     token.paddingSM * 2 +
@@ -522,17 +522,19 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-tab-label`]: {
           position: 'relative',
-          left: unfixedLabelLeft,
           display: 'block',
           minWidth: 0,
           flex: 1,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          transition: `left ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
+          marginInlineStart: unfixedLabelOffset,
+          transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
-        [`.ant-tabs-tab:hover ${componentCls}-tab-label`]: { left: 0 },
-        [`${componentCls}-tab-label-fixed`]: { left: 0 },
+        [`.ant-tabs-tab:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+          marginInlineStart: 0,
+        },
+        [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
         [`${componentCls}-fixed-icon`]: {
           display: 'inline-flex',
           width: fixedIconWidth,
@@ -649,7 +651,13 @@ export default function useProLayoutStyles(prefixCls: string) {
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          marginInlineStart: unfixedLabelOffset,
+          transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
+        [`.ant-tabs-dropdown-menu-item:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+          marginInlineStart: 0,
+        },
+        [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
         [`${componentCls}-fixed-icon`]: {
           display: 'inline-flex',
           width: fixedIconWidth,

@@ -980,15 +980,28 @@ describe('ReactRouterProLayout', () => {
 
     const pinButton = screen.getByRole('button', { name: '固定页签：工作台' })
     expect(pinButton.classList.contains('zby-pro-layout-fixed-icon-unfixed')).toBe(true)
+    const unfixedLabel = container.querySelector(
+      '.zby-pro-layout-tab-label-unfixed',
+    ) as HTMLElement
+    expect(getComputedStyle(unfixedLabel).marginInlineStart).not.toBe('0px')
     fireEvent.click(pinButton)
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '取消固定页签：工作台' })
         .classList.contains('zby-pro-layout-fixed-icon-active')).toBe(true)
     })
     expect(await screen.findByText('页签固定成功')).toBeTruthy()
+    const fixedLabel = container.querySelector(
+      '.zby-pro-layout-tab-label-fixed',
+    ) as HTMLElement
+    expect(getComputedStyle(fixedLabel).marginInlineStart).toBe('0px')
 
     fireEvent.click(screen.getByRole('button', { name: '取消固定页签：工作台' }))
     expect(await screen.findByText('已取消页签固定')).toBeTruthy()
+    const unpinnedLabel = container.querySelector(
+      '.zby-pro-layout-tab-label-unfixed',
+    ) as HTMLElement
+    fireEvent.mouseLeave(unpinnedLabel.closest('.ant-tabs-tab') as HTMLElement)
+    expect(getComputedStyle(unpinnedLabel).marginInlineStart).not.toBe('0px')
   })
 
   it('Header semantic 样式不能覆盖布局管理的结构属性', async () => {
@@ -1067,11 +1080,18 @@ describe('ReactRouterProLayout', () => {
     ])
     expect(tabLabels.every((label) => getComputedStyle(label).textOverflow === 'ellipsis'))
       .toBe(true)
+    expect(
+      tabLabels.every((label) => label.classList.contains('zby-pro-layout-tab-label-unfixed')),
+    ).toBe(true)
+    expect(
+      tabLabels.every((label) => getComputedStyle(label).marginInlineStart !== '0px'),
+    ).toBe(true)
     const tabNodes = Array.from(
       container.querySelectorAll('.zby-pro-layout-tab-node'),
     ) as HTMLElement[]
     expect(tabNodes).toHaveLength(2)
     expect(getComputedStyle(tabNodes[0]).width).toBe(getComputedStyle(tabNodes[1]).width)
+    expect(getComputedStyle(tabNodes[0]).width).toBe('var(--zby-pro-layout-tab-width)')
     expect(container.querySelector('.ant-tooltip')).toBeNull()
 
     await act(async () => {
