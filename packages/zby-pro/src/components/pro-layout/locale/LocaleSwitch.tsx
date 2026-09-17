@@ -11,7 +11,7 @@ const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 
 export type ProLocale = 'zh-CN' | 'en-US'
 
-/** 语言选择按钮由业务侧控制，确保 antd 和 ZbyIntlProvider 共享同一语言状态。 */
+/** 语言选择按钮由业务侧控制，确保 ZbyConfigProvider 使用同一语言状态。 */
 export interface ProLocaleSwitchProps {
   /** 当前生效的语言。 */
   value: ProLocale

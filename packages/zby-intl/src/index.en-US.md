@@ -9,38 +9,33 @@ description: Shared i18next-based internationalization infrastructure for ZBY Re
 
 Use `@zby/intl` to share one internationalization context across ZBY component packages and an application. It registers locale resources, follows a controlled locale value, and provides consistent message lookup, date formatting, and number formatting.
 
-The package uses `i18next` and `react-i18next` internally. Configure `ZbyIntlProvider` once at the application root, then use the same instance from both library and application components through `useIntl`.
+The package uses `i18next` and `react-i18next` internally. Applications should wrap the root with `ZbyConfigProvider` from `@zby/ui`, which nests antd `ConfigProvider`, `App`, and `ZbyIntlProvider`. Keep using `ZbyIntlProvider` directly in tests or when you already have an i18next instance.
 
 ## Basic Usage
 
-```tsx
-import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
-import { zbyProLocales } from '@zby/pro'
-import { zbyUiLocales } from '@zby/ui'
-import { useState } from 'react'
-import { appLocales } from './locales'
+Application root:
 
-const resources = mergeIntlResources(zbyUiLocales, zbyProLocales, appLocales)
+```tsx
+import antdEnUS from 'antd/locale/en_US'
+import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import uiEnUS from '@zby/ui/locale/en_US'
+import proEnUS from '@zby/pro/locale/en_US'
+
+const enUS = mergeLocales({
+  antd: antdEnUS,
+  packs: [uiEnUS, proEnUS, appEnUS],
+})
 
 export default function AppRoot() {
-  const [locale, setLocale] = useState('en-US')
-
   return (
-    <ZbyIntlProvider
-      locale={locale}
-      fallbackLocale="zh-CN"
-      resources={resources}
-    >
-      <button type="button" onClick={() => setLocale('zh-CN')}>
-        简体中文
-      </button>
+    <ZbyConfigProvider locale={enUS}>
       <App />
-    </ZbyIntlProvider>
+    </ZbyConfigProvider>
   )
 }
 ```
 
-`locale` is controlled. The application owns locale preference, persistence, and switching; the provider only synchronizes the latest `locale` value to i18next.
+`ZbyIntlProvider` is the lower-level engine. `locale` is a language code string and `resources` is `{ 'en-US': messageTree }`. The application owns locale preference, persistence, and switching.
 
 ## Locale Resources
 
@@ -61,15 +56,7 @@ export const appLocales = {
 }
 ```
 
-Use `mergeIntlResources` to combine component and application resources. Messages under the same locale are deeply merged. Later resources override matching keys, allowing an application to replace default component copy.
-
-```ts
-const resources = mergeIntlResources(
-  zbyUiLocales,
-  zbyProLocales,
-  appLocales,
-)
-```
+Use `mergeLocales` from `@zby/ui` to assemble the current-language antd / ui / pro / app packs at the application root. `mergeIntlResources` is the lower-level helper that deeply merges `{ 'zh-CN': messageTree }` maps, for `createIntl` or tests. Later resources override matching keys.
 
 ## Reading Messages
 

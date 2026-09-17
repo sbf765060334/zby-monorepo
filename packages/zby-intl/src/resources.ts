@@ -29,7 +29,7 @@ function mergeLocaleMessages(base: LocaleMessages, override: LocaleMessages): Lo
 }
 
 // 合并多份语言资源，典型用法：
-// mergeIntlResources(zbyUiLocales, zbyProLocales, appLocales)
+// mergeIntlResources(uiMessages, proMessages, appMessages)
 // 后面的资源优先级更高，所以业务项目可以覆盖组件库默认文案。
 export function mergeIntlResources(
   ...resourcesList: Array<IntlResources | undefined>

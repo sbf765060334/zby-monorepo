@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { zbyProLocales } from '../../../../locales'
+import { zbyProIntlResources } from '../../../../locale/intl-resources'
 import PageErrorBoundary from '../PageErrorBoundary'
 
 import type { ErrorInfo, ReactNode } from 'react'
@@ -104,7 +104,7 @@ function createBoundaryNode(
     <ZbyIntlProvider
       locale={locale}
       fallbackLocale="zh-CN"
-      resources={zbyProLocales}
+      resources={zbyProIntlResources}
     >
       <PageErrorBoundary
         prefixCls="zby-pro-layout"

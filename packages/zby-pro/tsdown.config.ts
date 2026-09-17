@@ -3,7 +3,8 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   entry: {
     index: './src/index.ts',
-    'locales/index': './src/locales/index.ts',
+    'locale/zh_CN': './src/locale/zh_CN.ts',
+    'locale/en_US': './src/locale/en_US.ts',
     'pro-layout/index': './src/components/pro-layout/index.ts',
     'pro-modal/index': './src/components/pro-modal/index.ts',
     'pro-sortable-list/index': './src/components/pro-sortable-list/index.ts',

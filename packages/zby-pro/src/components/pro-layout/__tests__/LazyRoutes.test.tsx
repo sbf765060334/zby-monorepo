@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createLazyRouteComponent } from '../createLazyRouteComponent'
 import PageContent from '../page/PageContent'
 import PageLoadingProgressProvider from '../page-loading-progress'
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import type { ProLayoutLazyRouteModule } from '../createLazyRouteComponent'
 import type { ProLayoutRoute } from '../types'
 
@@ -114,7 +114,7 @@ describe('createLazyRouteComponent', () => {
       <ZbyIntlProvider
         locale="zh-CN"
         fallbackLocale="zh-CN"
-        resources={zbyProLocales}
+        resources={zbyProIntlResources}
       >
         <PageLoadingProgressProvider>
           <RouterCoreProvider router={router}>
@@ -296,7 +296,7 @@ describe('createLazyRouteComponent', () => {
       <ZbyIntlProvider
         locale="zh-CN"
         fallbackLocale="zh-CN"
-        resources={zbyProLocales}
+        resources={zbyProIntlResources}
       >
         <PageLoadingProgressProvider>
           <RouterCoreProvider router={router}>

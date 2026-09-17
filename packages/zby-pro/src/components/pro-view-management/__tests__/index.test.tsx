@@ -9,7 +9,7 @@ import { ConfigProvider } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import ProViewManagement, {
   createIndexedDBProViewManagementAdapter,
   createRemoteProViewManagementAdapter,
@@ -81,7 +81,7 @@ const customView: ProViewManagementView<{ keyword: string }> = {
 
 function renderWithIntl(node: React.ReactElement, locale = 'en-US') {
   return render(
-    <ZbyIntlProvider locale={locale} resources={zbyProLocales}>
+    <ZbyIntlProvider locale={locale} resources={zbyProIntlResources}>
       {node}
     </ZbyIntlProvider>,
   )
@@ -325,7 +325,7 @@ describe('ProViewManagement component', () => {
     expect(container.querySelector('.ant-select-loading')).not.toBeNull()
 
     rerender(
-      <ZbyIntlProvider locale="en-US" resources={zbyProLocales}>
+      <ZbyIntlProvider locale="en-US" resources={zbyProIntlResources}>
         <ProViewManagement
           currentSnapshot={systemView.snapshot}
           defaultSnapshot={systemView.snapshot}

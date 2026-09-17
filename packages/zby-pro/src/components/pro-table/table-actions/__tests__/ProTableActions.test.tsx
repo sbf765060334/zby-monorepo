@@ -6,7 +6,7 @@ import { ConfigProvider } from 'antd'
 import * as React from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { zbyProLocales } from '../../../../locales'
+import { zbyProIntlResources } from '../../../../locale/intl-resources'
 import { ProTableActions } from '..'
 
 afterEach(() => {
@@ -20,7 +20,7 @@ const actions = [
 
 function renderActions(ui: React.ReactElement) {
   return render(
-    <ZbyIntlProvider locale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
       <ConfigProvider>{ui}</ConfigProvider>
     </ZbyIntlProvider>,
   )

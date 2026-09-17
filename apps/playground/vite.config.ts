@@ -27,6 +27,8 @@ export default defineConfig({
       { find: '@zby/router-core/react-router', replacement: sourcePath('../../packages/router-core/src/react-router/index.ts') },
       { find: '@zby/router-core/react', replacement: sourcePath('../../packages/router-core/src/react/index.ts') },
       { find: '@zby/router-core', replacement: sourcePath('../../packages/router-core/src/index.ts') },
+      { find: /^@zby\/pro\/locale\/(.*)$/, replacement: sourcePath('../../packages/zby-pro/src/locale/$1.ts') },
+      { find: /^@zby\/ui\/locale\/(.*)$/, replacement: sourcePath('../../packages/zby-ui/src/locale/$1.ts') },
       { find: '@zby/pro', replacement: sourcePath('../../packages/zby-pro/src/index.ts') },
       { find: '@zby/ui', replacement: sourcePath('../../packages/zby-ui/src/index.ts') },
       { find: /^dayjs$/, replacement: `${dayjsDir}/dayjs.min.js` },

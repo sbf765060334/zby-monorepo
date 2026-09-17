@@ -7,7 +7,7 @@ import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import Table from '../index'
-import { zbyUiLocales } from '../../../locales'
+import { zbyUiIntlResources } from '../../../locale/intl-resources'
 
 const OriginalResizeObserver = globalThis.ResizeObserver
 const originalMatchMedia = window.matchMedia
@@ -308,7 +308,7 @@ describe('Table', () => {
   it('enhances column title, display text, copyable and multi-line ellipsis', () => {
     const renderText = vi.fn((value: unknown) => `Name: ${String(value)}`)
     const { container } = render(
-      <ZbyIntlProvider locale="zh-CN" resources={zbyUiLocales}>
+      <ZbyIntlProvider locale="zh-CN" resources={zbyUiIntlResources}>
         <Table<RowData>
           rowKey="id"
           pagination={false}

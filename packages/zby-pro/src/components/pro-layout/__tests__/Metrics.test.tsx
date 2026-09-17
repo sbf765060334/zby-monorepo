@@ -17,7 +17,7 @@ import {
   useProLayoutMetrics,
   useProLayoutSiderWidth,
 } from '../index'
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import type { ReactElement } from 'react'
 import { ProLayoutProvider } from '../metrics/ProLayoutMetricsContext'
 import type { ProLayoutContextValue } from '../metrics'
@@ -93,7 +93,7 @@ function createNoBarRouter() {
 
 function renderLayout(router: ReturnType<typeof createMetricsRouter>, compact = false) {
   const renderNode = (nextCompact: boolean) => (
-    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
       <ConfigProvider
         theme={{
           algorithm: nextCompact ? antdTheme.compactAlgorithm : antdTheme.defaultAlgorithm,
@@ -119,7 +119,7 @@ function renderLayout(router: ReturnType<typeof createMetricsRouter>, compact = 
 
 function renderNoBarLayout(router: ReturnType<typeof createNoBarRouter>) {
   return render(
-    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
       <MemoryRouter initialEntries={['/visible']}>
         <ReactRouterProLayout router={router} title="Metrics" noBar />
       </MemoryRouter>

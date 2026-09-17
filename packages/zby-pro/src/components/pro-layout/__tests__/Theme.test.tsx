@@ -12,7 +12,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLayoutEffect } from 'react'
 
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import { ProThemeSwitch, useThemePreference } from '../theme'
 import type { ProThemePreference } from '../theme'
 
@@ -72,7 +72,7 @@ afterEach(() => {
 describe('ProThemeSwitch', () => {
   it('registers trigger styles independently with its own prefix', () => {
     render(
-      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
         <ProThemeSwitch
           value={{ mode: 'light', density: 'default' }}
           appearance="light"
@@ -272,7 +272,7 @@ function ThemeFixture(props: {
 
 function renderThemeFixture(defaultValue?: ProThemePreference) {
   return render(
-    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
       <ThemeFixture defaultValue={defaultValue} />
     </ZbyIntlProvider>,
   )

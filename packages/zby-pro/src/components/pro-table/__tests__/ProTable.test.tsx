@@ -7,7 +7,7 @@ import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider } from 'antd'
 import type * as ZbyUi from '@zby/ui'
 
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import { ProTable, createProTableController } from '..'
 import type { ProTableRef } from '..'
 import type { ProViewManagementAdapter } from '../../pro-view-management'
@@ -59,7 +59,7 @@ type Query = {
 
 function renderProTable(ui: React.ReactElement) {
   return render(
-    <ZbyIntlProvider locale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
       <ConfigProvider>{ui}</ConfigProvider>
     </ZbyIntlProvider>,
   )
@@ -283,7 +283,7 @@ describe('ProTable', () => {
     expect(screen.getByTestId('height').textContent).toBe('none')
 
     rerender(
-      <ZbyIntlProvider locale="zh-CN" resources={zbyProLocales}>
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
         <ConfigProvider>
           <ProTable<Row, Query> controller={controller} columns={[]} heightMode="fill" />
         </ConfigProvider>

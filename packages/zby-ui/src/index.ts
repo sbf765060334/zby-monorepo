@@ -42,7 +42,17 @@ export type {
   InputNumberRangeProps,
   InputNumberRangeValue,
 } from './components/input-number-range'
-export { zbyUiEnUS, zbyUiLocales, zbyUiZhCN } from './locales'
+export {
+  mergeLocales,
+  toIntlResources,
+  ZbyConfigProvider,
+} from './config-provider'
+export type {
+  AntdLocale,
+  MergeLocalesOptions,
+  ZbyConfigProviderProps,
+  ZbyLocalePack,
+} from './config-provider'
 export { default as ScrollArea } from './components/scroll-area'
 export type {
   ScrollAreaClassNamesType,

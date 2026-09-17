@@ -149,7 +149,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update its outer `ZbyIntlProvider`, Ant Design `ConfigProvider`, and application resources. `useLocalePreference` and `useThemePreference` only manage preferences and localStorage; they do not create providers.
+`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. `useLocalePreference` and `useThemePreference` only manage preferences and localStorage; they do not create providers.
 
 ## Route Conventions
 

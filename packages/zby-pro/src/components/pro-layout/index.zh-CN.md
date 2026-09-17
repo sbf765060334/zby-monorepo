@@ -150,7 +150,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyIntlProvider`、Ant Design `ConfigProvider` 以及自身国际化资源。`useLocalePreference` 和 `useThemePreference` 只管理偏好与 localStorage，不创建 Provider。
+`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。`useLocalePreference` 和 `useThemePreference` 只管理偏好与 localStorage，不创建 Provider。
 
 ## 路由约定
 

@@ -3,7 +3,8 @@ import { defineConfig } from 'tsdown'
 const sharedConfig = {
   entry: {
     index: './src/index.ts',
-    'locales/index': './src/locales/index.ts',
+    'locale/zh_CN': './src/locale/zh_CN.ts',
+    'locale/en_US': './src/locale/en_US.ts',
   },
   dts: true,
   sourcemap: true,

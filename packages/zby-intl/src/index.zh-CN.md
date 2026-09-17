@@ -10,38 +10,33 @@ description: 基于 i18next 的 ZBY React 国际化基础设施。
 
 `@zby/intl` 用于在 ZBY 组件库和业务应用之间共享同一个国际化上下文。它负责注册语言资源、响应受控的语言状态，并统一提供文案读取、日期格式化和数字格式化能力。
 
-底层使用 `i18next` 和 `react-i18next`。业务应用只需要在根节点配置一次 `ZbyIntlProvider`，组件库和业务组件即可通过 `useIntl` 使用同一个实例。
+底层使用 `i18next` 和 `react-i18next`。业务应用请在根节点使用 `@zby/ui` 的 `ZbyConfigProvider`；它会内部包裹 antd `ConfigProvider`、`App` 和 `ZbyIntlProvider`。`ZbyIntlProvider` 仍可用于测试或已有 i18next 实例的进阶场景。
 
 ## 基本用法
 
-```tsx
-import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
-import { zbyProLocales } from '@zby/pro'
-import { zbyUiLocales } from '@zby/ui'
-import { useState } from 'react'
-import { appLocales } from './locales'
+应用根节点：
 
-const resources = mergeIntlResources(zbyUiLocales, zbyProLocales, appLocales)
+```tsx
+import antdZhCN from 'antd/locale/zh_CN'
+import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import uiZhCN from '@zby/ui/locale/zh_CN'
+import proZhCN from '@zby/pro/locale/zh_CN'
+
+const zhCN = mergeLocales({
+  antd: antdZhCN,
+  packs: [uiZhCN, proZhCN, appZhCN],
+})
 
 export default function AppRoot() {
-  const [locale, setLocale] = useState('zh-CN')
-
   return (
-    <ZbyIntlProvider
-      locale={locale}
-      fallbackLocale="zh-CN"
-      resources={resources}
-    >
-      <button type="button" onClick={() => setLocale('en-US')}>
-        English
-      </button>
+    <ZbyConfigProvider locale={zhCN}>
       <App />
-    </ZbyIntlProvider>
+    </ZbyConfigProvider>
   )
 }
 ```
 
-`locale` 是受控属性。语言偏好、持久化和切换入口由业务状态负责，Provider 只负责把最新的 `locale` 同步给 i18next。
+`ZbyIntlProvider` 是底层引擎。`locale` 是语言码字符串，`resources` 是 `{ 'zh-CN': 文案树 }`。语言偏好、持久化和切换入口由业务状态负责。
 
 ## 语言资源
 
@@ -62,15 +57,7 @@ export const appLocales = {
 }
 ```
 
-使用 `mergeIntlResources` 合并组件库和业务语言包。相同 locale 下的文案会深度合并；同名 key 以后传入的资源为准，因此业务应用可以覆盖组件库默认文案。
-
-```ts
-const resources = mergeIntlResources(
-  zbyUiLocales,
-  zbyProLocales,
-  appLocales,
-)
-```
+使用 `@zby/ui` 的 `mergeLocales` 在业务侧组合当前语言的 antd / ui / pro / 应用语言包。`mergeIntlResources` 是更底层的工具，用来深合并 `{ 'zh-CN': 文案树 }` 这种结构，供 `createIntl` 或测试使用。同名 key 以后传入的资源为准。
 
 ## 读取文案
 

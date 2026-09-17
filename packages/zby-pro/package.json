@@ -12,10 +12,15 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./locales": {
-      "types": "./dist/locales/index.d.mts",
-      "import": "./dist/locales/index.mjs",
-      "require": "./dist/locales/index.cjs"
+    "./locale/zh_CN": {
+      "types": "./dist/locale/zh_CN.d.mts",
+      "import": "./dist/locale/zh_CN.mjs",
+      "require": "./dist/locale/zh_CN.cjs"
+    },
+    "./locale/en_US": {
+      "types": "./dist/locale/en_US.d.mts",
+      "import": "./dist/locale/en_US.mjs",
+      "require": "./dist/locale/en_US.cjs"
     },
     "./pro-layout": {
       "types": "./dist/pro-layout/index.d.mts",

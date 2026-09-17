@@ -3,7 +3,7 @@ import { mergeIntlResources } from '../resources'
 
 // 这组单测专门保护语言包合并规则。
 // zby-ui、zby-pro、业务项目都会各自维护语言包，最终会通过
-// mergeIntlResources(zbyUiLocales, zbyProLocales, appLocales) 合并成一份资源。
+// mergeIntlResources 合并成一份 `{ 'zh-CN': 文案树 }` 资源。
 // 所以这里最需要固定的行为是：
 // 1. 同一个语言下的嵌套文案对象必须深合并，不能互相覆盖整棵子树。
 // 2. 后传入的语言包优先级更高，方便业务覆盖组件库默认文案。

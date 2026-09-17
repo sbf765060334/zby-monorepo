@@ -4,7 +4,7 @@ import { ZbyIntlProvider } from '@zby/intl'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import { ProLocaleSwitch, useLocalePreference } from '../locale'
 
 const LOCALE_STORAGE_KEY = 'zby-pro:locale-preference'
@@ -31,7 +31,7 @@ afterEach(cleanup)
 describe('ProLocaleSwitch', () => {
   it('registers trigger styles independently with its own prefix', () => {
     render(
-      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
         <ProLocaleSwitch
           value="zh-CN"
           onChange={() => {}}
@@ -91,7 +91,7 @@ function LocaleFixture() {
     <ZbyIntlProvider
       locale={locale}
       fallbackLocale="zh-CN"
-      resources={zbyProLocales}
+      resources={zbyProIntlResources}
     >
       <ProLocaleSwitch value={locale} onChange={preference.setValue} />
       <output data-testid="locale">{locale}</output>

@@ -1,4 +1,14 @@
-export { zbyProEnUS, zbyProLocales, zbyProZhCN } from './locales'
+export {
+  mergeLocales,
+  toIntlResources,
+  ZbyConfigProvider,
+} from '@zby/ui'
+export type {
+  AntdLocale,
+  MergeLocalesOptions,
+  ZbyConfigProviderProps,
+  ZbyLocalePack,
+} from '@zby/ui'
 export {
   createIndexedDBProViewManagementAdapter,
   createRemoteProViewManagementAdapter,

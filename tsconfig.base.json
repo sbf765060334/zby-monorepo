@@ -21,7 +21,9 @@
       "@zby/hooks": ["./packages/hooks/index.ts"],
       "@zby/intl": ["./packages/zby-intl/src/index.ts"],
       "@zby/ui": ["./packages/zby-ui/src/index.ts"],
-      "@zby/pro": ["./packages/zby-pro/src/index.ts"]
+      "@zby/ui/locale/*": ["./packages/zby-ui/src/locale/*"],
+      "@zby/pro": ["./packages/zby-pro/src/index.ts"],
+      "@zby/pro/locale/*": ["./packages/zby-pro/src/locale/*"]
     }
   },
   "exclude": ["node_modules", "dist", "coverage"]

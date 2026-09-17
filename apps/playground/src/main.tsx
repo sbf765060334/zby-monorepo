@@ -1,8 +1,7 @@
 import 'antd/dist/reset.css'
-import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd'
+import { theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
-import { mergeIntlResources, ZbyIntlProvider } from '@zby/intl'
 import {
   ProLocaleSwitch,
   ProRouteSearch,
@@ -11,13 +10,16 @@ import {
   ReactRouterProLayout,
   useLocalePreference,
   useThemePreference,
-  zbyProLocales,
 } from '@zby/pro'
-import { zbyUiLocales } from '@zby/ui'
-import React, { useLayoutEffect } from 'react'
+import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import uiEnUS from '@zby/ui/locale/en_US'
+import uiZhCN from '@zby/ui/locale/zh_CN'
+import proEnUS from '@zby/pro/locale/en_US'
+import proZhCN from '@zby/pro/locale/zh_CN'
+import React, { useLayoutEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { playgroundLocales } from './playgroundIntl'
+import { playgroundEnUS, playgroundZhCN } from './playgroundIntl'
 import { createRouterCore } from '@zby/router-core'
 import { appRouters } from './routes'
 
@@ -32,11 +34,15 @@ const routers = createRouterCore<ProLayoutRoute>({
   hasAuth: (code) => perssmiosn.includes(code),
 })
 
-const resources = mergeIntlResources(zbyUiLocales, zbyProLocales, playgroundLocales)
-
-const antdLocales = {
-  'zh-CN': antdZhCN,
-  'en-US': antdEnUS,
+const playgroundLocales = {
+  'zh-CN': mergeLocales({
+    antd: antdZhCN,
+    packs: [uiZhCN, proZhCN, playgroundZhCN],
+  }),
+  'en-US': mergeLocales({
+    antd: antdEnUS,
+    packs: [uiEnUS, proEnUS, playgroundEnUS],
+  }),
 }
 
 function PlaygroundApp() {
@@ -63,7 +69,7 @@ function PlaygroundApp() {
     }
   }, [themePreference.appearance])
 
-  const algorithm = React.useMemo(() => {
+  const algorithm = useMemo(() => {
     const appearanceAlgorithm = themePreference.appearance === 'dark'
       ? antdTheme.darkAlgorithm
       : antdTheme.defaultAlgorithm
@@ -74,63 +80,55 @@ function PlaygroundApp() {
   }, [themePreference.appearance, themePreference.value.density])
 
   return (
-    <ConfigProvider
-      locale={antdLocales[localePreference.value]}
+    <ZbyConfigProvider
+      locale={playgroundLocales[localePreference.value]}
       theme={{ algorithm, cssVar: { prefix: 'zby-playground' } }}
     >
-      <AntdApp>
-        <ZbyIntlProvider
-          locale={localePreference.value}
-          fallbackLocale="zh-CN"
-          resources={resources}
-        >
-          <ReactRouterProLayout
-            router={routers}
-            title="数字化平台"
-            showBreadcrumb={true}
-            header={{
-              logo: (
-                <>
-                  <img
-                    aria-hidden
-                    alt=""
-                    src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
-                  />
-                  <div style={{ color: '#fff' }}>Zibuyu</div>
-                </>
-              ),
-              extra: (
-                <>
-                  <ProRouteSearch />
-                  <ProLocaleSwitch
-                    value={localePreference.value}
-                    onChange={localePreference.setValue}
-                  />
-                  <ProThemeSwitch
-                    value={themePreference.value}
-                    appearance={themePreference.appearance}
-                    onChange={themePreference.setValue}
-                  />
-                </>
-              ),
-            }}
-            minimumContentWidth={900}
-            onStorageError={(error, info) => {
-              console.error(`[Playground] Router storage ${info.phase} failed.`, error)
-            }}
-            systemList={
-              [{
-                systemName: '百度',
-                name: '百度',
-                url: 'https://www.baidu.com',
-                description: '百度',
-                logo: 'https://www.baidu.com/favicon.ico',
-              }]
-            }
-          />
-        </ZbyIntlProvider>
-      </AntdApp>
-    </ConfigProvider>
+      <ReactRouterProLayout
+        router={routers}
+        title="数字化平台"
+        showBreadcrumb={true}
+        header={{
+          logo: (
+            <>
+              <img
+                aria-hidden
+                alt=""
+                src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
+              />
+              <div style={{ color: '#fff' }}>Zibuyu</div>
+            </>
+          ),
+          extra: (
+            <>
+              <ProRouteSearch />
+              <ProLocaleSwitch
+                value={localePreference.value}
+                onChange={localePreference.setValue}
+              />
+              <ProThemeSwitch
+                value={themePreference.value}
+                appearance={themePreference.appearance}
+                onChange={themePreference.setValue}
+              />
+            </>
+          ),
+        }}
+        minimumContentWidth={900}
+        onStorageError={(error, info) => {
+          console.error(`[Playground] Router storage ${info.phase} failed.`, error)
+        }}
+        systemList={
+          [{
+            systemName: '百度',
+            name: '百度',
+            url: 'https://www.baidu.com',
+            description: '百度',
+            logo: 'https://www.baidu.com/favicon.ico',
+          }]
+        }
+      />
+    </ZbyConfigProvider>
   )
 }
 

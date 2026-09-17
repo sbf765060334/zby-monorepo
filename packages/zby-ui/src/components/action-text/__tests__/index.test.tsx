@@ -8,7 +8,7 @@ import { ConfigProvider, theme } from 'antd'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { zbyUiLocales } from '../../../locales'
+import { zbyUiIntlResources } from '../../../locale/intl-resources'
 import ActionText from '../index'
 
 const originalResizeObserver = globalThis.ResizeObserver
@@ -22,7 +22,7 @@ class TestResizeObserver implements ResizeObserver {
 
 const render = (node: React.ReactElement, locale = 'zh-CN') =>
   renderNode(
-    <ZbyIntlProvider locale={locale} resources={zbyUiLocales}>
+    <ZbyIntlProvider locale={locale} resources={zbyUiIntlResources}>
       {node}
     </ZbyIntlProvider>,
   )

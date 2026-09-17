@@ -18,7 +18,7 @@ import {
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { zbyProLocales } from '../../../locales'
+import { zbyProIntlResources } from '../../../locale/intl-resources'
 import ReactRouterProLayout from '../ReactRouterProLayout'
 import PageContent from '../page/PageContent'
 import { ProRouteSearch } from '../search'
@@ -67,7 +67,7 @@ afterEach(() => {
 /** 测试与业务入口保持一致，默认使用中文并注册 @zby/pro 自带语言包。 */
 function render(node: ReactNode, locale = 'zh-CN') {
   return testingLibraryRender(
-    <ZbyIntlProvider locale={locale} fallbackLocale="zh-CN" resources={zbyProLocales}>
+    <ZbyIntlProvider locale={locale} fallbackLocale="zh-CN" resources={zbyProIntlResources}>
       {node}
     </ZbyIntlProvider>,
   )
@@ -473,7 +473,7 @@ describe('ReactRouterProLayout', () => {
       storageKey: 'pro-layout-route-search-filter',
     })
     const renderSearch = (router: RouterCore<ProLayoutRoute>) => (
-      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProLocales}>
+      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
         <RouterCoreProvider router={router}>
           <ProRouteSearch />
         </RouterCoreProvider>
