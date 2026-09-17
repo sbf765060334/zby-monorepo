@@ -11,6 +11,7 @@ import DisabledReadOnlyExample from './examples/DisabledReadOnlyExample'
 import EmptyBoundaryExample from './examples/EmptyBoundaryExample'
 import EventPropsExample from './examples/EventPropsExample'
 import FormattingExample from './examples/FormattingExample'
+import FormSubmitExample from './examples/FormSubmitExample'
 import HighPrecisionExample from './examples/HighPrecisionExample'
 import OrderDisabledExample from './examples/OrderDisabledExample'
 import PrefixExample from './examples/PrefixExample'
@@ -26,18 +27,23 @@ export default function InputNumberRangePlayground() {
   return (
     <PlaygroundPage
       title="InputNumberRange"
-      description="数字范围的草稿提交、排序、空边界、高精度、分侧属性和外观状态完整预览。"
+      description="数字范围的草稿提交、Form 对接、排序、空边界、高精度、分侧属性和外观状态。"
     >
-      <PlaygroundSection title="交互实验台">
-        <ControlledRangeExample />
+      <PlaygroundSection title="受控与表单">
+        <PlaygroundGrid>
+          <ControlledRangeExample />
+          <FormSubmitExample />
+          <UncontrolledOrderExample />
+        </PlaygroundGrid>
       </PlaygroundSection>
       <PlaygroundSection title="值模式与提交规则">
         <PlaygroundGrid>
-          <UncontrolledOrderExample />
           <OrderDisabledExample />
           <EmptyBoundaryExample />
           <UndefinedValueExample />
           <ClearIconExample />
+          <AutoFocusExample />
+          <EventPropsExample />
         </PlaygroundGrid>
       </PlaygroundSection>
       <PlaygroundSection title="尺寸、变体与状态">
@@ -47,20 +53,14 @@ export default function InputNumberRangePlayground() {
           <DisabledReadOnlyExample />
           <StatusExample />
           <ConfigProviderExample />
+          <PrefixExample />
         </PlaygroundGrid>
       </PlaygroundSection>
-      <PlaygroundSection title="数值能力">
+      <PlaygroundSection title="数值能力与样式">
         <PlaygroundGrid>
           <FormattingExample />
           <HighPrecisionExample />
           <StepExample />
-        </PlaygroundGrid>
-      </PlaygroundSection>
-      <PlaygroundSection title="分侧属性、事件与前缀">
-        <PlaygroundGrid>
-          <PrefixExample />
-          <EventPropsExample />
-          <AutoFocusExample />
           <SemanticClassExample />
         </PlaygroundGrid>
       </PlaygroundSection>

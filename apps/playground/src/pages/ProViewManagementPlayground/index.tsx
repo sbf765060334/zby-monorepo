@@ -1,4 +1,5 @@
 import {
+  PlaygroundGrid,
   PlaygroundPage,
   PlaygroundSection,
 } from '../../components/ComponentPlayground'
@@ -12,9 +13,11 @@ export default function ProViewManagementPlayground() {
       title="ProViewManagement"
       description="可持久化的视图切换、创建、保存、重置、管理与排序。"
     >
-      <OrderViewsExample />
-      <PlaygroundSection title="受控状态">
-        <ControlledStateExample />
+      <PlaygroundSection title="完整交互">
+        <PlaygroundGrid columns={1}>
+          <OrderViewsExample />
+          <ControlledStateExample />
+        </PlaygroundGrid>
       </PlaygroundSection>
     </PlaygroundPage>
   )

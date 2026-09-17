@@ -24,7 +24,7 @@ export default function ActionTextPlayground() {
   return (
     <PlaygroundPage
       title="ActionText"
-      description="文本省略、复制、编辑、点击访问、自定义操作与主题兼容完整预览。"
+      description="文本省略、复制、编辑、点击访问、自定义操作与主题兼容。"
     >
       <PlaygroundSection title="基础文本与省略">
         <PlaygroundGrid>
@@ -54,15 +54,13 @@ export default function ActionTextPlayground() {
           <ControlledVisitedExample />
         </PlaygroundGrid>
       </PlaygroundSection>
-      <PlaygroundSection title="操作区与语义样式">
+      <PlaygroundSection title="操作区、语义样式与主题">
         <PlaygroundGrid>
           <SelfHoverActionsExample />
           <AlwaysActionsExample />
           <SemanticStylesExample />
+          <ThemeRtlExample />
         </PlaygroundGrid>
-      </PlaygroundSection>
-      <PlaygroundSection title="主题、RTL 与前缀兼容">
-        <ThemeRtlExample />
       </PlaygroundSection>
     </PlaygroundPage>
   )

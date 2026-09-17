@@ -18,33 +18,25 @@ export default function ActionIconPlayground() {
   return (
     <PlaygroundPage
       title="ActionIcon"
-      description="纯图标操作的尺寸、状态、颜色、变体、语义节点和业务场景完整预览。"
+      description="纯图标操作的尺寸、状态、颜色、变体、语义节点和业务场景。"
     >
-      <PlaygroundSection title="属性实验台">
-        <AttributePlaygroundExample />
-      </PlaygroundSection>
-      <PlaygroundSection title="尺寸与状态">
+      <PlaygroundSection title="属性与基础">
         <PlaygroundGrid>
+          <AttributePlaygroundExample />
           <SizesExample />
           <StatesExample />
           <ContentExample />
-        </PlaygroundGrid>
-      </PlaygroundSection>
-      <PlaygroundSection title="颜色与变体">
-        <PlaygroundGrid>
           <ColorExample />
           <VariantsExample />
         </PlaygroundGrid>
       </PlaygroundSection>
-      <PlaygroundSection title="语义样式与上下文">
+      <PlaygroundSection title="语义样式、上下文与场景">
         <PlaygroundGrid>
           <SemanticStylesExample />
           <ConfigProviderExample />
           <DarkRtlExample />
+          <TableActionsExample />
         </PlaygroundGrid>
-      </PlaygroundSection>
-      <PlaygroundSection title="表格操作列">
-        <TableActionsExample />
       </PlaygroundSection>
     </PlaygroundPage>
   )

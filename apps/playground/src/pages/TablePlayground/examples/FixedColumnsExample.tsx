@@ -18,7 +18,7 @@ export default function FixedColumnsExample() {
         columns={tableColumns}
         dataSource={normalData.slice(0, 8)}
         pagination={false}
-        scroll={{ x: 1290, y: 300 }}
+        scroll={{ x: 1290, y: 320 }}
       />
     </PlaygroundCase>
   )

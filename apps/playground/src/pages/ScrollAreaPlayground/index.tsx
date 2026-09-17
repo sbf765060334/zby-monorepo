@@ -21,35 +21,27 @@ export default function ScrollAreaPlayground() {
   return (
     <PlaygroundPage
       title="ScrollArea"
-      description="滚动方向、滚动条策略、滚轮映射、语义节点、组件 Token 和嵌套场景完整预览。"
+      description="滚动方向、滚动条策略、滚轮映射、语义节点、组件 Token 和嵌套场景。"
     >
-      <PlaygroundSection title="交互实验台">
-        <InteractiveExample />
-      </PlaygroundSection>
-      <PlaygroundSection title="方向与展示策略">
+      <PlaygroundSection title="交互与方向">
         <PlaygroundGrid>
+          <InteractiveExample />
           <VerticalHoverExample />
           <VerticalScrollingExample />
           <HorizontalExample />
           <BothDirectionsExample />
           <ScrollbarOffExample />
           <NativeScrollbarExample />
+          <NestedExample />
+          <RtlExample />
         </PlaygroundGrid>
       </PlaygroundSection>
-      <PlaygroundSection title="Ref、Semantic 与前缀">
+      <PlaygroundSection title="Ref、语义样式与 Token">
         <PlaygroundGrid>
           <RefExample />
           <SemanticStylesExample />
           <CustomPrefixExample />
-        </PlaygroundGrid>
-      </PlaygroundSection>
-      <PlaygroundSection title="Component Token">
-        <ComponentTokenExample />
-      </PlaygroundSection>
-      <PlaygroundSection title="嵌套与 RTL">
-        <PlaygroundGrid>
-          <NestedExample />
-          <RtlExample />
+          <ComponentTokenExample />
         </PlaygroundGrid>
       </PlaygroundSection>
     </PlaygroundPage>
