@@ -60,6 +60,25 @@ describe('mergeLocales', () => {
     })
   })
 
+  it('accepts antd locale codes that omit region, such as en_US using "en"', () => {
+    const pack = mergeLocales({
+      antd: { locale: 'en' } as AntdLocale,
+      packs: [{ locale: 'en-US', zby: { ui: { actionText: { copy: 'Copy' } } } }],
+    })
+
+    expect(pack.locale).toBe('en-US')
+    expect(pack.antd?.locale).toBe('en')
+  })
+
+  it('accepts antd zh-cn against pack zh-CN', () => {
+    const pack = mergeLocales({
+      antd: { locale: 'zh-cn' } as AntdLocale,
+      packs: [uiZhCN],
+    })
+
+    expect(pack.locale).toBe('zh-CN')
+  })
+
   it('rejects mixed language codes', () => {
     expect(() => mergeLocales({
       packs: [uiZhCN, { locale: 'en-US', zby: { ui: {} } }],

@@ -45,7 +45,7 @@ function resolveLocale(antd: AntdLocale | undefined, packs: ZbyLocalePack[]): st
   }
 
   const locale = packCodes[0]
-  if (antd?.locale && normalizeLocale(antd.locale) !== normalizeLocale(locale)) {
+  if (antd?.locale && !localesMatch(antd.locale, locale)) {
     throw new Error(`mergeLocales: antd.locale "${antd.locale}" does not match pack locale "${locale}"`)
   }
 
@@ -64,6 +64,17 @@ function unwrapAntdLocale(antd?: AntdLocale): AntdLocale | undefined {
   }
 
   return antd
+}
+
+function localesMatch(antdLocale: string, packLocale: string) {
+  const antd = normalizeLocale(antdLocale)
+  const pack = normalizeLocale(packLocale)
+  if (antd === pack) {
+    return true
+  }
+
+  // antd en_US 的 locale 字段是 "en"，zby pack 使用 "en-US"。
+  return pack.startsWith(`${antd}-`) || antd.startsWith(`${pack}-`)
 }
 
 function normalizeLocale(code: string) {
