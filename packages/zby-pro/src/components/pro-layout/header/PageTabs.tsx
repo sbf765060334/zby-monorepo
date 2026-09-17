@@ -2,7 +2,7 @@ import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Flex, message, Tooltip } from 'antd'
+import { Flex, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
 
@@ -39,9 +39,6 @@ function PageTabs(props: PageTabsProps) {
   const maxFixedTabCount = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.maxFixedTabCount,
   )
-  const descriptions = useRouterCoreSelector(
-    (state: RouterCoreState<ProLayoutRoute>) => state.pathnameDescriptionMap,
-  )
   const storageSettled = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) =>
       state.storageHydrated || state.storageLoadError !== undefined,
@@ -54,8 +51,6 @@ function PageTabs(props: PageTabsProps) {
   const items = useMemo<NonNullable<TabsProps['items']>>(
     () => tabs.map((tab) => {
       const fixed = fixedKeySet.has(tab.key)
-      const pathname = pagePathnameMap.get(tab.key) || tab.key
-      const description = descriptions[pathname]
       const PinIcon = fixed ? PushpinFilled : PushpinOutlined
       const pinLabel = fixed
         ? intl.getMessage('zby.pro.layout.tabs.unpin', '取消固定页签：{{title}}', {
@@ -67,6 +62,7 @@ function PageTabs(props: PageTabsProps) {
       const label = (
         <Flex
           align="center"
+          flex={1}
           className={clsx(`${prefixCls}-tab-label-wrap`, {
             [`${prefixCls}-tab-label-wrap-fixed`]: fixed,
             [`${prefixCls}-tab-label-wrap-unfixed`]: !fixed,
@@ -117,6 +113,7 @@ function PageTabs(props: PageTabsProps) {
               [`${prefixCls}-tab-label-fixed`]: fixed,
               [`${prefixCls}-tab-label-unfixed`]: !fixed,
             })}
+            title={tab.label}
           >
             {tab.label}
           </span>
@@ -125,15 +122,11 @@ function PageTabs(props: PageTabsProps) {
 
       return {
         key: tab.key,
-        label: description ? (
-          <Tooltip arrow={false} placement="bottomLeft" title={description}>
-            {label}
-          </Tooltip>
-        ) : label,
+        label,
         closable: true,
       }
     }),
-    [descriptions, fixedKeySet, fixedKeys.length, intl, maxFixedTabCount, messageApi, pagePathnameMap, prefixCls, router, tabs],
+    [fixedKeySet, fixedKeys.length, intl, maxFixedTabCount, messageApi, prefixCls, router, tabs],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {

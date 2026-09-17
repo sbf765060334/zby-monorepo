@@ -699,6 +699,7 @@ describe('ReactRouterProLayout', () => {
       siderWidth: string,
       siderItemHeight: string,
       siderIconSize: string,
+      tabWidth: string,
     ) => {
       const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
       const root = container.querySelector('.zby-pro-layout') as HTMLElement
@@ -716,6 +717,7 @@ describe('ReactRouterProLayout', () => {
       const activeNode = container.querySelector(
         '.zby-pro-layout-tab-node-active',
       ) as HTMLElement
+      const tab = container.querySelector('.ant-tabs-tab') as HTMLElement
       const siderLabel = container.querySelector(
         '.zby-pro-layout-sider-item dd',
       ) as HTMLElement
@@ -731,6 +733,7 @@ describe('ReactRouterProLayout', () => {
       expect(root.style.getPropertyValue('--zby-pro-layout-header-tab-height')).toBe(
         activeNodeHeight,
       )
+      expect(root.style.getPropertyValue('--zby-pro-layout-tab-width')).toBe(tabWidth)
       expect(root.style.getPropertyValue('--zby-pro-layout-sider-width')).toBe(siderWidth)
       expect(root.style.getPropertyValue('--zby-pro-layout-sider-item-height')).toBe(
         siderItemHeight,
@@ -744,6 +747,10 @@ describe('ReactRouterProLayout', () => {
       expect(getComputedStyle(activeNode).height).toBe(
         'var(--zby-pro-layout-header-tab-height)',
       )
+      expect(getComputedStyle(activeNode).width).toBe(
+        'var(--zby-pro-layout-tab-width)',
+      )
+      expect(getComputedStyle(tab).width).toBe('var(--zby-pro-layout-tab-width)')
       expect(getComputedStyle(siderItem).width).toBe(
         'var(--zby-pro-layout-sider-width)',
       )
@@ -770,7 +777,7 @@ describe('ReactRouterProLayout', () => {
 
     const defaultLayout = renderLayout(false)
     await screen.findByTestId('dashboard-page')
-    expectLayoutSize(defaultLayout.container, '38px', '34px', '68px', '60px', '24px')
+    expectLayoutSize(defaultLayout.container, '38px', '34px', '68px', '60px', '24px', '124px')
 
     const orderMenu = screen.getByRole('button', { name: /订单管理/ })
     fireEvent.click(orderMenu)
@@ -791,7 +798,7 @@ describe('ReactRouterProLayout', () => {
 
     defaultLayout.rerenderDensity(true)
     await waitFor(() => {
-      expectLayoutSize(defaultLayout.container, '33px', '29px', '60px', '52px', '20px')
+      expectLayoutSize(defaultLayout.container, '33px', '29px', '60px', '52px', '20px', '104px')
     })
     fireEvent.click(screen.getByRole('button', { name: /订单管理/ }))
     await screen.findByRole('dialog')
@@ -804,11 +811,11 @@ describe('ReactRouterProLayout', () => {
 
     const compactLayout = renderLayout(true)
     await screen.findByTestId('dashboard-page')
-    expectLayoutSize(compactLayout.container, '33px', '29px', '60px', '52px', '20px')
+    expectLayoutSize(compactLayout.container, '33px', '29px', '60px', '52px', '20px', '104px')
 
     compactLayout.rerenderDensity(false)
     await waitFor(() => {
-      expectLayoutSize(compactLayout.container, '38px', '34px', '68px', '60px', '24px')
+      expectLayoutSize(compactLayout.container, '38px', '34px', '68px', '60px', '24px', '124px')
     })
   })
 
@@ -1046,6 +1053,26 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('orders-page')
     expect(container.querySelector('.ant-tabs')).toBe(tabsRoot)
     expect(container.querySelectorAll('.ant-tabs-tab-remove')).toHaveLength(2)
+    const closeIcons = Array.from(
+      container.querySelectorAll('.ant-tabs-tab-remove'),
+    ) as HTMLElement[]
+    expect(closeIcons.every((icon) => getComputedStyle(icon).opacity === '1')).toBe(true)
+    const tabLabels = Array.from(
+      container.querySelectorAll('.zby-pro-layout-tab-label'),
+    ) as HTMLElement[]
+    expect(tabLabels.map((label) => label.textContent)).toEqual(['工作台', '订单列表'])
+    expect(tabLabels.map((label) => label.getAttribute('title'))).toEqual([
+      '工作台',
+      '订单列表',
+    ])
+    expect(tabLabels.every((label) => getComputedStyle(label).textOverflow === 'ellipsis'))
+      .toBe(true)
+    const tabNodes = Array.from(
+      container.querySelectorAll('.zby-pro-layout-tab-node'),
+    ) as HTMLElement[]
+    expect(tabNodes).toHaveLength(2)
+    expect(getComputedStyle(tabNodes[0]).width).toBe(getComputedStyle(tabNodes[1]).width)
+    expect(container.querySelector('.ant-tooltip')).toBeNull()
 
     await act(async () => {
       await router.closeTab('/dashboard')

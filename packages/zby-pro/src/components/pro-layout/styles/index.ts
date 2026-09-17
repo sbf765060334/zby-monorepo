@@ -28,7 +28,15 @@ export default function useProLayoutStyles(prefixCls: string) {
   const siderIconSize = token.fontSizeHeading3
   const fixedIconWidth = unit(styleToken.fontSize)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
-  const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) / -2)`
+  const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) * -1)`
+  // 固定页签宽按密度 token 推算：左右 padding、钉/关图标、四字标题，另留 paddingXXS 避免亚像素裁切。
+  const tabWidth = alignToGrid(
+    token.paddingSM * 2
+      + token.lineWidth * 2
+      + token.fontSize * 6
+      + token.marginXXS * 2
+      + token.paddingXXS,
+  )
   const tabCurveValue = Math.min(
     headerIdleTabHeight / 2,
     token.borderRadiusLG + token.marginXXS,
@@ -42,6 +50,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   const headerHeightVar = `--${prefixCls}-header-height`
   const headerTabHeightVar = `--${prefixCls}-header-tab-height`
   const headerIdleTabHeightVar = `--${prefixCls}-header-idle-tab-height`
+  const tabWidthVar = `--${prefixCls}-tab-width`
   const tabCurveSizeVar = `--${prefixCls}-tab-curve-size`
   const tabTrailingPaddingVar = `--${prefixCls}-tab-trailing-padding`
   const tabSplitHeightVar = `--${prefixCls}-tab-split-height`
@@ -53,6 +62,7 @@ export default function useProLayoutStyles(prefixCls: string) {
     [headerHeightVar]: unit(headerHeight),
     [headerTabHeightVar]: unit(headerTabHeight),
     [headerIdleTabHeightVar]: unit(headerIdleTabHeight),
+    [tabWidthVar]: unit(tabWidth),
     [tabCurveSizeVar]: tabCurveSize,
     [tabTrailingPaddingVar]: tabTrailingPadding,
     [tabSplitHeightVar]: unit(tabSplitHeight),
@@ -64,6 +74,7 @@ export default function useProLayoutStyles(prefixCls: string) {
   const headerHeightStyle = `var(${headerHeightVar})`
   const headerTabHeightStyle = `var(${headerTabHeightVar})`
   const headerIdleTabHeightStyle = `var(${headerIdleTabHeightVar})`
+  const tabWidthStyle = `var(${tabWidthVar})`
   const tabCurveSizeStyle = `var(${tabCurveSizeVar})`
   const tabTrailingPaddingStyle = `var(${tabTrailingPaddingVar})`
   const tabSplitHeightStyle = `var(${tabSplitHeightVar})`
@@ -345,7 +356,10 @@ export default function useProLayoutStyles(prefixCls: string) {
             alignItems: 'center',
           },
           [`.ant-tabs-tab`]: {
-            display: 'inline-flex',
+            display: 'flex',
+            width: tabWidthStyle,
+            minWidth: tabWidthStyle,
+            maxWidth: tabWidthStyle,
             height: headerIdleTabHeightStyle,
             minHeight: headerIdleTabHeightStyle,
             boxSizing: 'border-box',
@@ -353,6 +367,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             marginInline: 0,
             paddingBlock: 0,
             paddingInline: styleToken.paddingSM,
+            flex: `0 0 ${tabWidthStyle}`,
             alignItems: 'center',
             border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
             borderRadius: `${unit(styleToken.borderRadiusLG)} !important`,
@@ -369,10 +384,12 @@ export default function useProLayoutStyles(prefixCls: string) {
             },
           },
           [`.ant-tabs-tab-btn`]: {
-            display: 'inline-flex',
+            display: 'flex',
             minWidth: 0,
             height: '100%',
+            flex: '1 1 auto',
             alignItems: 'center',
+            overflow: 'hidden',
             color: 'inherit',
             lineHeight: styleToken.lineHeight,
             transition: 'none',
@@ -402,26 +419,24 @@ export default function useProLayoutStyles(prefixCls: string) {
             color: styleToken.colorText,
             textShadow: 'none',
           },
-          [`.ant-tabs-tab-remove`]: {
+          [`.ant-tabs-tab-remove, .ant-tabs-tab:hover .ant-tabs-tab-remove, .ant-tabs-tab-active .ant-tabs-tab-remove`]: {
             display: 'inline-flex',
             width: styleToken.fontSize,
+            minWidth: styleToken.fontSize,
             height: styleToken.fontSize,
+            flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'center',
             marginInlineStart: styleToken.marginXXS,
             borderRadius: styleToken.borderRadiusXS,
-            color: styleToken.colorTextTertiary,
+            color: styleToken.colorTextQuaternary,
             lineHeight: unit(styleToken.fontSize),
-            opacity: 0,
-            transition: `background ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}, opacity ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
-
-            '&:hover, &:active, &:focus-visible': {
-              background: 'transparent',
-              color: styleToken.colorTextTertiary,
-            },
-          },
-          [`.ant-tabs-tab:hover .ant-tabs-tab-remove, .ant-tabs-tab-active .ant-tabs-tab-remove`]: {
             opacity: 1,
+            transition: `background ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}`,
+          },
+          [`.ant-tabs-tab-remove:hover, .ant-tabs-tab:hover .ant-tabs-tab-remove:hover, .ant-tabs-tab-active .ant-tabs-tab-remove:hover, .ant-tabs-tab-remove:active, .ant-tabs-tab-remove:focus-visible`]: {
+            background: 'transparent',
+            color: styleToken.colorText,
           },
           [`.ant-tabs-content-holder`]: { display: 'none' },
         },
@@ -429,7 +444,11 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-tab-node`]: {
           position: 'relative',
           display: 'flex',
+          width: tabWidthStyle,
+          minWidth: tabWidthStyle,
+          maxWidth: tabWidthStyle,
           height: '100%',
+          flex: `0 0 ${tabWidthStyle}`,
           alignItems: 'flex-end',
           overflow: 'hidden',
           transition: `opacity ${styleToken.motionDurationFast} ${styleToken.motionEaseOut}`,
@@ -494,14 +513,19 @@ export default function useProLayoutStyles(prefixCls: string) {
           opacity: 0,
         },
         [`${componentCls}-tab-label-wrap`]: {
+          display: 'flex',
           maxWidth: '100%',
           minWidth: 0,
+          flex: 1,
+          alignItems: 'center',
+          overflow: 'visible',
         },
         [`${componentCls}-tab-label`]: {
           position: 'relative',
           left: unfixedLabelLeft,
-          display: 'inline-block',
+          display: 'block',
           minWidth: 0,
+          flex: 1,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -664,11 +688,11 @@ export default function useProLayoutStyles(prefixCls: string) {
           marginInlineStart: styleToken.marginXXS,
           padding: 0,
           borderRadius: styleToken.borderRadiusXS,
-          color: styleToken.colorTextTertiary,
+          color: styleToken.colorTextQuaternary,
           lineHeight: unit(styleToken.fontSize),
 
           '&:hover, &:focus-visible': {
-            color: styleToken.colorTextSecondary,
+            color: styleToken.colorText,
           },
         },
       },
