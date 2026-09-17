@@ -690,6 +690,53 @@ describe('createRouterCore', () => {
     expect(navigate).toHaveBeenLastCalledWith('/secret/1')
   })
 
+  /** 已授权共享动态页也必须打开调用方给出的具体地址；点页签 pattern 才恢复已确认地址。 */
+  it('keeps an explicit pathname for authorized shared dynamic routes', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({
+      pathname: '/project/42',
+      search: '?tab=detail',
+      hash: '#summary',
+    })
+    navigate.mockClear()
+
+    router.jumpTo('/project/99')
+    expect(navigate).toHaveBeenLastCalledWith('/project/99')
+    expect(router.getState().currentPathname).toBe('/project/42')
+
+    // 宿主尚未确认 99 时，点页签仍应回到最后确认的 42，并恢复其 search/hash。
+    router.jumpTo({ pathname: '/project/:id' })
+    expect(navigate).toHaveBeenLastCalledWith(
+      '/project/42?tab=detail#summary',
+    )
+
+    router.syncLocation({
+      pathname: '/project/99',
+      search: '?tab=pay',
+      hash: '',
+    })
+    router.jumpTo({ pathname: '/dashboard' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    router.jumpTo({ pathname: '/project/:id' })
+    expect(navigate).toHaveBeenLastCalledWith('/project/99?tab=pay')
+  })
+
+  /** 独立多页签动态路由不共用 pathname 缓存，换 ID 必须打开新地址。 */
+  it('opens a new concrete pathname for independent dynamic tabs', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    navigate.mockClear()
+
+    router.jumpTo('/task/99')
+    expect(navigate).toHaveBeenLastCalledWith('/task/99')
+  })
+
   /** smartNavigate 一旦跨 pathname，就必须复用 jumpTo 的权限与页签完整流程。 */
   it('delegates smartNavigate to jumpTo when pathname changes', () => {
     const navigate = vi.fn()

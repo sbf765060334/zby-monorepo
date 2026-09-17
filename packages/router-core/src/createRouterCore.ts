@@ -67,8 +67,6 @@ interface RouterNavigationPlan {
   hash?: string | null
   /** 目标真实地址对应的稳定页签身份。 */
   tabKey: string
-  /** 当前用户是否能把目标当作页面打开。 */
-  authorized: boolean
 }
 
 /** 导航计划执行时允许替换的宿主能力；普通命令继续使用当前 Host.navigate。 */
@@ -440,13 +438,11 @@ export function createRouterCore<Route extends RouterRoute>(
       pathname = cachedPathname
     }
 
-    const authorized = registry.resolveLeafRoute(pathname, { withinAuth: true })
     return {
       pathname,
       searchParams,
       hash,
       tabKey,
-      authorized: registry.isPageRoute(authorized?.route),
     }
   }
 
@@ -491,10 +487,9 @@ export function createRouterCore<Route extends RouterRoute>(
   /** 生成交给宿主的最终 URL，但不提前创建或激活任何页签和页面。 */
   function buildNavigationTarget(plan: RouterNavigationPlan) {
     return buildUrl({
-      // 无权限地址保留调用方的具体 pathname；授权共享页签可以恢复最后真实参数。
-      pathname: plan.authorized
-        ? cache.getParamsPath(plan.tabKey) || plan.pathname
-        : plan.pathname,
+      // pathname 已在 resolveNavigationPlan 中完成「pattern → 缓存真实地址」；
+      // 具体地址必须原样交给宿主，search/hash 才按页签缓存补齐。
+      pathname: plan.pathname,
       searchParams: resolveSearch(
         plan.searchParams,
         cache.getSearch(plan.tabKey),
