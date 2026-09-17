@@ -171,8 +171,9 @@ export interface InputNumberRangeProps<
   /**
    * 是否自动保证 start <= end。
    *
-   * 默认 true。提交时如果 start 大于 end，会自动交换两侧值；stringMode 下会使用
-   * 高精度字符串比较，避免大数被 Number 转换丢精度。
+   * 默认 true。只在提交阶段、且两侧都有值时交换；已经展示的 committed 值不会
+   * 因为 order 自动对调。stringMode 下会使用高精度字符串比较，避免大数被
+   * Number 转换丢精度。
    */
   order?: boolean
   /**
@@ -218,7 +219,8 @@ export interface InputNumberRangeProps<
   /**
    * 输入框 id。
    *
-   * 传字符串时会生成 `${id}-start` 和 `${id}-end`；对象形式可完全自定义两侧 id。
+   * 传字符串时赋给 start，end 为 `${id}-end`，以便 Form.Item 的 label 能点中起始输入框。
+   * 对象形式可完全自定义两侧 id。
    */
   id?: string | { start?: string; end?: string }
   /** start 输入框的单侧定制属性，优先级高于组件级对应配置。 */
@@ -234,7 +236,9 @@ export interface InputNumberRangeProps<
   /**
    * 任一侧失焦时触发。
    *
-   * 真正提交会延迟到确认焦点离开整个范围组件之后，因此 start/end 之间切换不会提交。
+   * 真正提交发生在确认焦点离开整个范围之后：start/end 之间切换不会提交。
+   * 焦点落到组件外的可聚焦节点（例如提交按钮）时会在当前事件后尽快提交，
+   * 避免 Form 的 click 读到旧值。
    */
   onBlur?: (event: React.FocusEvent<HTMLInputElement>, info: { range: RangeSide }) => void
   /** 外层容器 className。 */
@@ -446,7 +450,13 @@ function getRangeFieldForwardProps<T extends ValueType = ValueType>(
   return forwardedProps
 }
 
-export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRangeProps>(
+type InputNumberRangeComponent = (<T extends ValueType = ValueType>(
+  props: InputNumberRangeProps<T> & React.RefAttributes<HTMLDivElement>,
+) => React.ReactElement | null) & {
+  displayName?: string
+}
+
+const ForwardInputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRangeProps>(
   (props, ref) => {
     const {
       autoFocus = false,
@@ -496,6 +506,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const startInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const endInputRef = React.useRef<InputNumberFocusRef | null>(null)
     const autoFocusRef = React.useRef(false)
+    const blurCommitEpochRef = React.useRef(0)
     const scheduledBlurCommitRef = React.useRef<{
       id: number
       type: 'frame' | 'timeout'
@@ -508,6 +519,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
 
     /** 取消失焦后延迟提交，避免组件卸载后继续 setState 或触发过期 onChange。 */
     const cancelScheduledBlurCommit = React.useCallback(() => {
+      blurCommitEpochRef.current += 1
       const scheduledBlurCommit = scheduledBlurCommitRef.current
 
       if (!scheduledBlurCommit) {
@@ -580,9 +592,10 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
     const mergedReadOnly = !!readOnly
     const separator = customSeparator ?? <SwapRightOutlined />
 
-    const startId =
-      startProps?.id ?? (typeof id === 'object' ? id?.start : id ? `${id}-start` : undefined)
-    const endId = endProps?.id ?? (typeof id === 'object' ? id?.end : id ? `${id}-end` : undefined)
+    const rangeId = typeof id === 'string' ? id : undefined
+    const startId = startProps?.id ?? (typeof id === 'object' ? id?.start : rangeId)
+    const endId =
+      endProps?.id ?? (typeof id === 'object' ? id?.end : rangeId ? `${rangeId}-end` : undefined)
     const startFieldForwardProps = React.useMemo(
       () => getRangeFieldForwardProps(startProps),
       [startProps],
@@ -694,34 +707,53 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       [draftCommittedValueRef, draftValueRef, mergedCommittedValueRef],
     )
 
-    /** 延迟到下一帧判断焦点位置，避免 start/end 内部切换时误提交。 */
-    const scheduleCommitOnBlur = React.useCallback(() => {
-      cancelScheduledBlurCommit()
+    /**
+     * 确认焦点离开整个范围后再提交。
+     *
+     * InputNumber 在 wrapper 的冒泡 blur 里才 flush 草稿，input 上的 onBlur 更早。
+     * 焦点已经落到组件外的可聚焦节点时，用 microtask 等 flush 写完 ref 再提交，
+     * 这样 Form 按钮的 click 能读到新值；relatedTarget 为空时仍用 rAF。
+     */
+    const scheduleCommitOnBlur = React.useCallback(
+      (strategy: 'microtask' | 'frame') => {
+        cancelScheduledBlurCommit()
+        const generation = ++blurCommitEpochRef.current
 
-      const runCommit = () => {
-        scheduledBlurCommitRef.current = null
+        const runCommit = () => {
+          if (generation !== blurCommitEpochRef.current) {
+            return
+          }
 
-        if (!rangeRef.current || rangeRef.current.contains(document.activeElement)) {
+          scheduledBlurCommitRef.current = null
+
+          if (!rangeRef.current || rangeRef.current.contains(document.activeElement)) {
+            return
+          }
+
+          setFocused(false)
+          commitRange()
+        }
+
+        if (strategy === 'microtask') {
+          queueMicrotask(runCommit)
           return
         }
 
-        setFocused(false)
-        commitRange()
-      }
-
-      if (typeof requestAnimationFrame === 'function') {
-        scheduledBlurCommitRef.current = {
-          id: requestAnimationFrame(runCommit),
-          type: 'frame',
+        if (typeof requestAnimationFrame === 'function') {
+          scheduledBlurCommitRef.current = {
+            id: requestAnimationFrame(runCommit),
+            type: 'frame',
+          }
+          return
         }
-        return
-      }
 
-      scheduledBlurCommitRef.current = {
-        id: window.setTimeout(runCommit, 0),
-        type: 'timeout',
-      }
-    }, [cancelScheduledBlurCommit, commitRange])
+        scheduledBlurCommitRef.current = {
+          id: window.setTimeout(runCommit, 0),
+          type: 'timeout',
+        }
+      },
+      [cancelScheduledBlurCommit, commitRange],
+    )
 
     /** 进入编辑态时，用最新 committed value 初始化草稿，保证本轮编辑从最新值开始。 */
     const handleInputFocus = React.useCallback(
@@ -730,6 +762,8 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
         event: React.FocusEvent<HTMLInputElement>,
         sideOnFocus?: React.FocusEventHandler<HTMLInputElement>,
       ) => {
+        cancelScheduledBlurCommit()
+
         if (!focused) {
           const latestCommittedValue = mergedCommittedValueRef.current
           draftCommittedValueRef.current = latestCommittedValue
@@ -741,7 +775,14 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
         sideOnFocus?.(event)
         onFocus?.(event, { range: side })
       },
-      [draftCommittedValueRef, draftValueRef, focused, mergedCommittedValueRef, onFocus],
+      [
+        cancelScheduledBlurCommit,
+        draftCommittedValueRef,
+        draftValueRef,
+        focused,
+        mergedCommittedValueRef,
+        onFocus,
+      ],
     )
 
     const handleInputBlur = React.useCallback(
@@ -752,9 +793,16 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
       ) => {
         sideOnBlur?.(event)
         onBlur?.(event, { range: side })
-        scheduleCommitOnBlur()
+
+        const relatedTarget = event.relatedTarget
+        if (relatedTarget instanceof Node && rangeRef.current?.contains(relatedTarget)) {
+          cancelScheduledBlurCommit()
+          return
+        }
+
+        scheduleCommitOnBlur(relatedTarget instanceof Node ? 'microtask' : 'frame')
       },
-      [onBlur, scheduleCommitOnBlur],
+      [cancelScheduledBlurCommit, onBlur, scheduleCommitOnBlur],
     )
 
     /** 清空整个范围；禁用或只读时不会展示 clear 入口，因此这里始终提交双侧 null。 */
@@ -868,7 +916,7 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
                 }}
                 role="button"
                 tabIndex={-1}
-                aria-label="clear"
+                aria-label={intl.getMessage('zby.ui.inputNumberRange.clear', '清空')}
               >
                 {clearIconNode}
               </span>
@@ -881,4 +929,6 @@ export const InputNumberRange = React.forwardRef<HTMLDivElement, InputNumberRang
   },
 )
 
-InputNumberRange.displayName = 'InputNumberRange'
+ForwardInputNumberRange.displayName = 'InputNumberRange'
+
+export const InputNumberRange = ForwardInputNumberRange as InputNumberRangeComponent

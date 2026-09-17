@@ -56,7 +56,7 @@ Input is held in an internal draft while the user is editing. The complete range
 - Enter is pressed in either input;
 - The clear control is clicked, which directly commits `[null, null]`.
 
-Moving focus only between start and end does not commit. `startProps.onChange` and `endProps.onChange` observe per-side draft changes; the component-level `onChange` runs only after a valid range is committed and differs from the previous committed value.
+Moving focus only between start and end does not commit. When focus moves to a focusable node outside the component (for example a Form submit button), the range is committed at the end of that blur turn so the following click can read the new value. `startProps.onChange` and `endProps.onChange` observe per-side draft changes; the component-level `onChange` runs only after a valid range is committed and differs from the previous committed value.
 
 ```tsx
 <InputNumberRange
@@ -92,7 +92,7 @@ If a draft does not satisfy `allowEmpty`, blur or Enter does not submit it and t
 | `[false, true]` | Start is required; end may be empty |
 | `[true, false]` | Start may be empty; end is required |
 
-`order` defaults to `true`. If both sides have values and start is greater than end, the submitted values are swapped. Use `order={false}` to preserve input order. Clear is an explicit action and is never blocked by `allowEmpty`.
+`order` defaults to `true`. If both sides have values and start is greater than end, the **committed** values are swapped. Already displayed committed values are not auto-swapped: `value` / `defaultValue` of `[90, 10]` still shows 90–10 until the next successful commit. Use `order={false}` to preserve input order. Clear is an explicit action and is never blocked by `allowEmpty`.
 
 ### High-precision and very large values
 
@@ -169,7 +169,7 @@ export default () => (
 )
 ```
 
-The `value` and `onChange` contract follows antd Form field conventions. An empty range is `[null, null]`, which is still a non-empty array, so validate its two boundaries as shown instead of relying only on a standard `required` rule. `status`, `size`, `disabled`, and `variant` also integrate with Form or ConfigProvider context. Explicit component props take precedence where supported.
+The `value` and `onChange` contract follows antd Form field conventions. The `id` injected by Form.Item is applied to the start input so the label `htmlFor` focuses the start side. An empty range is `[null, null]`, which is still a non-empty array, so validate its two boundaries as shown instead of relying only on a standard `required` rule. `status`, `size`, `disabled`, and `variant` also integrate with Form or ConfigProvider context. Explicit component props take precedence where supported.
 
 ## Props
 
@@ -190,7 +190,7 @@ The forwarded ref points to the outer `div`. InputNumberRange does not forward a
 | disabled | Disable both sides; an explicit value takes precedence over ConfigProvider | `boolean` | From ConfigProvider |
 | readOnly | Make both sides read-only; inputs remain focusable, but clear is hidden | `boolean` | `false` |
 | allowEmpty | Allow empty boundaries; a tuple controls start and end separately | `boolean \| [boolean, boolean]` | `false` |
-| id | Generate both input ids from a string, or configure them separately with an object | `string \| InputNumberRangeIdConfig` | - |
+| id | Apply a string id to start (`${id}-end` on end), or configure them separately with an object | `string \| InputNumberRangeIdConfig` | - |
 | startProps | Per-side props for start; selected fields override component-level configuration | `InputNumberRangeFieldProps<T>` | - |
 | endProps | Per-side props for end; selected fields override component-level configuration | `InputNumberRangeFieldProps<T>` | - |
 | onFocus | Called when either side receives focus; inspect `info.range` for the source | `(event, info: InputNumberRangeFocusInfo) => void` | - |
@@ -270,7 +270,7 @@ This documentation name describes the object form accepted by `id`.
 | start | Id of the start input | `string` |
 | end | Id of the end input | `string` |
 
-A string `id` generates `${id}-start` and `${id}-end`. `startProps.id` and `endProps.id` have higher priority.
+A string `id` is applied to start; end uses `${id}-end`. `startProps.id` and `endProps.id` have higher priority.
 
 ### InputNumberRangeFocusInfo
 

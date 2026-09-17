@@ -17,7 +17,7 @@ export default function PrefixExample() {
         endProps={{ prefix: '止', suffix: '元' }}
         style={{ width: '100%' }}
       />
-      <Text code>price-range-start / price-range-end</Text>
+      <Text code>price-range / price-range-end</Text>
     </PlaygroundCase>
   )
 }

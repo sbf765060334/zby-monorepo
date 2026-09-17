@@ -57,7 +57,7 @@ export default () => {
 - 在任一输入框中按 Enter；
 - 点击清空按钮，此时直接提交 `[null, null]`。
 
-焦点只在 start 和 end 之间切换时不会提交。`startProps.onChange`、`endProps.onChange` 用于观察单侧草稿变化，组件级 `onChange` 只在完整范围成功提交且最终值发生变化时触发。
+焦点只在 start 和 end 之间切换时不会提交。焦点落到组件外的可聚焦节点（例如 Form 的提交按钮）时，会在当前失焦事件处理完后尽快提交，避免按钮 click 读到旧值。`startProps.onChange`、`endProps.onChange` 用于观察单侧草稿变化，组件级 `onChange` 只在完整范围成功提交且最终值发生变化时触发。
 
 ```tsx
 <InputNumberRange
@@ -93,7 +93,7 @@ export default () => {
 | `[false, true]` | start 必须有值，end 可以为空 |
 | `[true, false]` | start 可以为空，end 必须有值 |
 
-`order` 默认为 `true`。当两侧都有值且 start 大于 end 时，提交结果会自动交换；设置 `order={false}` 可保留用户输入顺序。点击 clear 是明确清空操作，不受 `allowEmpty` 限制。
+`order` 默认为 `true`。当两侧都有值且 start 大于 end 时，**提交结果**会自动交换；已经展示的 committed 值不会因为 `order` 自动对调。例如 `value` / `defaultValue` 为 `[90, 10]` 时，未再次提交前屏幕仍显示 90～10。设置 `order={false}` 可保留用户输入顺序。点击 clear 是明确清空操作，不受 `allowEmpty` 限制。
 
 ### 高精度与超大数值
 
@@ -170,7 +170,7 @@ export default () => (
 )
 ```
 
-组件的 `value` 和 `onChange` 符合 antd Form 字段约定。范围空值是 `[null, null]`，它仍是一个非空数组，因此需要像示例一样校验数组中的两个边界，不能只依赖普通的 `required` 规则。`status`、`size`、`disabled` 和 `variant` 也会与 Form 或 ConfigProvider 的上下文保持一致；显式传入组件属性时，以显式值为准。
+组件的 `value` 和 `onChange` 符合 antd Form 字段约定。Form.Item 注入的 `id` 会落到 start 输入框，label 的 `htmlFor` 可以点中起始侧。范围空值是 `[null, null]`，它仍是一个非空数组，因此需要像示例一样校验数组中的两个边界，不能只依赖普通的 `required` 规则。`status`、`size`、`disabled` 和 `variant` 也会与 Form 或 ConfigProvider 的上下文保持一致；显式传入组件属性时，以显式值为准。
 
 ## Props
 
@@ -191,7 +191,7 @@ export default () => (
 | disabled | 整体禁用，同时作用于两侧；显式值优先于 ConfigProvider | `boolean` | 继承 ConfigProvider |
 | readOnly | 整体只读；两侧仍可聚焦和复制，但不能编辑且不显示 clear | `boolean` | `false` |
 | allowEmpty | 是否允许空边界；元组分别控制 start 和 end | `boolean \| [boolean, boolean]` | `false` |
-| id | 字符串自动生成两侧 id；对象形式可分别配置 | `string \| InputNumberRangeIdConfig` | - |
+| id | 字符串赋给 start，end 为 `${id}-end`；对象形式可分别配置 | `string \| InputNumberRangeIdConfig` | - |
 | startProps | start 输入框的单侧属性；部分字段优先于组件级配置 | `InputNumberRangeFieldProps<T>` | - |
 | endProps | end 输入框的单侧属性；部分字段优先于组件级配置 | `InputNumberRangeFieldProps<T>` | - |
 | onFocus | 任一侧聚焦时触发，通过 `info.range` 区分来源 | `(event, info: InputNumberRangeFocusInfo) => void` | - |
@@ -271,7 +271,7 @@ type InputNumberRangeValue<T extends string | number = string | number> = [
 | start | start 输入框 id | `string` |
 | end | end 输入框 id | `string` |
 
-当 `id` 是字符串时会生成 `${id}-start` 和 `${id}-end`。`startProps.id`、`endProps.id` 的优先级更高。
+当 `id` 是字符串时赋给 start，end 为 `${id}-end`。`startProps.id`、`endProps.id` 的优先级更高。
 
 ### InputNumberRangeFocusInfo
 

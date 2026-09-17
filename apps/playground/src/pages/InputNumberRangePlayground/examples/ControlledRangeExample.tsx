@@ -50,7 +50,7 @@ export default function ControlledRangeExample() {
         >
           <InputNumberRange
             value={value}
-            onChange={(next) => setValue(next as Value)}
+            onChange={setValue}
             min={0}
             max={1000}
             step={5}

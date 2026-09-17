@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 
 import { createCache, extractStyle, StyleProvider } from '@ant-design/cssinjs'
-import { cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
+import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider, Form } from 'antd'
 import * as React from 'react'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { zbyUiIntlResources } from '../../../locale/intl-resources'
 import { InputNumberRange } from '../index'
+import type { InputNumberRangeValue } from '../InputNumberRange'
 
 const originalMatchMedia = window.matchMedia
 
@@ -37,6 +40,14 @@ afterAll(() => {
 afterEach(() => {
   cleanup()
 })
+
+const wrapIntl = (node: React.ReactElement, locale = 'zh-CN') => (
+  <ZbyIntlProvider locale={locale} resources={zbyUiIntlResources}>
+    {node}
+  </ZbyIntlProvider>
+)
+
+const renderRange = (node: React.ReactElement, locale = 'zh-CN') => render(wrapIntl(node, locale))
 
 describe('InputNumberRange antd context integration', () => {
   it('inherits disabled and size from the public ConfigProvider API', () => {
@@ -146,5 +157,184 @@ describe('InputNumberRange antd context integration', () => {
         'ant-input-number-range-rtl',
       ),
     ).toBe(true)
+  })
+
+  it('applies Form.Item id to the start input so the label htmlFor matches', () => {
+    const { container } = renderRange(
+      <Form>
+        <Form.Item name="amountRange" label="金额范围">
+          <InputNumberRange defaultValue={[1, 2]} />
+        </Form.Item>
+      </Form>,
+    )
+
+    const label = container.querySelector('label')
+    const inputs = Array.from(container.querySelectorAll<HTMLInputElement>('input'))
+
+    expect(label?.htmlFor).toBeTruthy()
+    expect(inputs[0]?.id).toBe(label?.htmlFor)
+    expect(inputs[1]?.id).toBe(`${label?.htmlFor}-end`)
+  })
+})
+
+const getInputs = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll<HTMLInputElement>('input'))
+
+async function flushMicrotasks() {
+  await act(async () => {
+    await Promise.resolve()
+  })
+}
+
+function typeInto(input: HTMLInputElement, value: string) {
+  fireEvent.focus(input)
+  fireEvent.change(input, { target: { value } })
+}
+
+describe('InputNumberRange commit state machine', () => {
+  it('commits synchronously after blur onto a focusable node outside the range', async () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(
+      <>
+        <InputNumberRange defaultValue={[1, 2]} onChange={onChange} />
+        <button type="button">submit</button>
+      </>,
+    )
+
+    const [start] = getInputs(container)
+    const submit = container.querySelector('button')!
+
+    typeInto(start, '0')
+    fireEvent.blur(start, { relatedTarget: submit })
+    await flushMicrotasks()
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith([0, 2])
+  })
+
+  it('does not commit when focus moves from start to end', async () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(<InputNumberRange defaultValue={[1, 2]} onChange={onChange} />)
+    const [start, end] = getInputs(container)
+
+    typeInto(start, '0')
+    fireEvent.blur(start, { relatedTarget: end })
+    await flushMicrotasks()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('commits on Enter without waiting for blur', () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(<InputNumberRange defaultValue={[1, 2]} onChange={onChange} />)
+    const [start] = getInputs(container)
+
+    typeInto(start, '0')
+    fireEvent.keyDown(start, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenCalledWith([0, 2])
+  })
+
+  it('keeps an inverted committed display until the next successful commit, then orders', () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(
+      <InputNumberRange defaultValue={[90, 10]} onChange={onChange} />,
+    )
+    const [start, end] = getInputs(container)
+
+    expect(start.value).toBe('90')
+    expect(end.value).toBe('10')
+
+    fireEvent.focus(start)
+    fireEvent.keyDown(start, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenCalledWith([10, 90])
+    expect(getInputs(container)[0].value).toBe('10')
+    expect(getInputs(container)[1].value).toBe('90')
+  })
+
+  it('rolls back drafts that violate allowEmpty', async () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(
+      <>
+        <InputNumberRange defaultValue={[10, 20]} onChange={onChange} />
+        <button type="button">submit</button>
+      </>,
+    )
+    const [start] = getInputs(container)
+    const submit = container.querySelector('button')!
+
+    typeInto(start, '')
+    fireEvent.blur(start, { relatedTarget: submit })
+    await flushMicrotasks()
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(getInputs(container)[0].value).toBe('10')
+    expect(getInputs(container)[1].value).toBe('20')
+  })
+
+  it('lets clear bypass allowEmpty and emit [null, null]', () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(
+      <InputNumberRange defaultValue={[10, 20]} allowClear onChange={onChange} />,
+    )
+
+    fireEvent.click(container.querySelector('.ant-input-number-range-clear')!)
+
+    expect(onChange).toHaveBeenCalledWith([null, null])
+  })
+
+  it('uses the localized clear label', () => {
+    const { container } = renderRange(
+      <InputNumberRange defaultValue={[1, 2]} allowClear />,
+      'en-US',
+    )
+
+    expect(container.querySelector('.ant-input-number-range-clear')?.getAttribute('aria-label')).toBe(
+      'Clear',
+    )
+  })
+
+  it('does not keep a stale draft after the controlled value changes while focused', async () => {
+    const onChange = vi.fn()
+
+    function Harness({ value }: { value: InputNumberRangeValue<number> }) {
+      return (
+        <>
+          <InputNumberRange value={value} onChange={onChange} />
+          <button type="button">submit</button>
+        </>
+      )
+    }
+
+    const { container, rerender } = renderRange(<Harness value={[1, 2]} />)
+    const [start] = getInputs(container)
+    const submit = container.querySelector('button')!
+
+    typeInto(start, '0')
+    rerender(wrapIntl(<Harness value={[8, 9]} />))
+    fireEvent.blur(getInputs(container)[0], { relatedTarget: submit })
+    await flushMicrotasks()
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(getInputs(container)[0].value).toBe('8')
+    expect(getInputs(container)[1].value).toBe('9')
+  })
+
+  it('orders high-precision stringMode values without converting to Number', () => {
+    const onChange = vi.fn()
+    const { container } = renderRange(
+      <InputNumberRange
+        stringMode
+        defaultValue={['9007199254740993', '1']}
+        onChange={onChange}
+      />,
+    )
+    const [start] = getInputs(container)
+
+    fireEvent.focus(start)
+    fireEvent.keyDown(start, { key: 'Enter' })
+
+    expect(onChange).toHaveBeenCalledWith(['1', '9007199254740993'])
   })
 })
