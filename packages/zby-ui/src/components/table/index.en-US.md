@@ -90,7 +90,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 `columnResize` accepts `boolean | ColumnResizeConfig<T>`. When enabled:
 
-- The default column width is 160px and the default minimum is 80px.
+- The default column width is 160px and the default minimum is 32px.
 - Numbers and `px` strings are normalized to integer pixels.
 - The selection column follows `rowSelection.columnWidth` or the Table token and defaults to `controlHeight`. The expand column falls back to 48px without an explicit width. Neither can be resized.
 - Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle. A missing identity warns in development and that leaf is not resizable.

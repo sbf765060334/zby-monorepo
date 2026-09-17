@@ -91,7 +91,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 `columnResize` 为 `boolean | ColumnResizeConfig<T>`。开启后：
 
-- 默认列宽为 160px，默认最小宽度为 80px；
+- 默认列宽为 160px，默认最小宽度为 32px；
 - 数字和 `px` 字符串会归一为整数像素；
 - selection 列遵循 `rowSelection.columnWidth` 或 Table token，默认使用 `controlHeight`；expand 列缺少明确宽度时使用 48px 兜底；两者均不可拖拽；
 - 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；缺少两者时开发环境会警告，且该列不可拖拽；
