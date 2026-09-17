@@ -31,11 +31,11 @@ export default function useProLayoutStyles(prefixCls: string) {
   const unfixedLabelLeft = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) * -1)`
   // 固定页签宽按密度 token 推算：左右 padding、钉/关图标、四字标题，另留 paddingXXS 避免亚像素裁切。
   const tabWidth = alignToGrid(
-    token.paddingSM * 2
-      + token.lineWidth * 2
-      + token.fontSize * 6
-      + token.marginXXS * 2
-      + token.paddingXXS,
+    token.paddingSM * 2 +
+      token.lineWidth * 2 +
+      token.fontSize * 6 +
+      token.marginXXS * 2 +
+      token.paddingXXS,
   )
   const tabCurveValue = Math.min(
     headerIdleTabHeight / 2,
