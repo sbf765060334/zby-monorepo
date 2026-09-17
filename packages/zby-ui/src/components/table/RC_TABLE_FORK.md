@@ -10,7 +10,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`、`onResize` / `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调 |
+| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`、`onResize` / `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调；`info.column` 为盖章前的 `source` 列 |
 
 ## 改过的上游文件
 
@@ -18,7 +18,7 @@
 
 | 文件 | 贴回去时要对上的点 |
 | --- | --- |
-| `interface.ts` | `ColumnResizeConfig` / `ColumnResizeInfo` / `ColumnResizeWidths`；`INTERNAL_COLUMN_RESIZE_META` / `INTERNAL_COLUMN_RESIZE_FILLER`；列上的 `resizable` / `minWidth` / `maxWidth` |
+| `interface.ts` | `ColumnResizeConfig` / `ColumnResizeInfo` / `ColumnResizeWidths`；`INTERNAL_COLUMN_RESIZE_META`（含 `source`）/ `INTERNAL_COLUMN_RESIZE_FILLER`；列上的 `resizable` / `minWidth` / `maxWidth` |
 | `index.ts` | 导出上述 resize 类型 |
 | `Table.tsx` | 接收 `columnResize`；走 `useColumnResize` 覆盖 columns / flattenColumns / scrollX；开启后关掉上游 `measureColumnWidth`；给滚动 body 包 `ResizeObserver`；context 里提供 `onColumnResize` / `onColumnResizeDrag` / `onColumnResizeEnd`；`FixedHolder` 传入 `columnResize` |
 | `context/TableContext.tsx` | `onColumnResizeDrag`、`onColumnResizeEnd` |
@@ -40,5 +40,5 @@
 
 ## 当前行为备忘（不是漏补丁）
 
-- 没有稳定 `key` / `dataIndex` 的列（合成 key）默认不能拖，见 `useColumnResize` 里的 `SYNTHETIC_KEY_PATTERN`。
+- 没有稳定 `key` / `dataIndex` 的列（合成 key）默认不能拖，见 `useColumnResize` 里的 `SYNTHETIC_KEY_PATTERN`；开发环境会 warning。
 - 虚拟 `rowSpan` 补偿只认 `column.onCell().rowSpan`。这是 1.11.1 原行为，本层没有再补 `render` 返回值那条路径。

@@ -89,7 +89,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - The default column width is 160px and the default minimum is 80px.
 - Numbers and `px` strings are normalized to integer pixels.
 - The selection column follows `rowSelection.columnWidth` or the Table token and defaults to `controlHeight`. The expand column falls back to 48px without an explicit width. Neither can be resized.
-- Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle.
+- Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle. A missing identity warns in development and that leaf is not resizable.
 - `resizable={false}` disables an individual leaf.
 - Dragging changes only the active leaf and reports through `onResize`, `onWidthsChange`, and `onResizeEnd`. A click that does not change width does not fire these callbacks. In RTL, the handle delta follows the writing direction: dragging outward widens the column.
 - A filler represents unused viewport width. It is inserted before the first fixed-end leaf.
@@ -108,7 +108,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | onResize | `(info) => void` | Called during dragging |
 | onResizeEnd | `(info) => void` | Called when a drag that changed the width ends |
 
-`ColumnResizeInfo<T>` contains `key`, `width`, `previousWidth`, `delta`, `widths`, `column`, and `nativeEvent`.
+`ColumnResizeInfo<T>` contains `key`, `width`, `previousWidth`, `delta`, `widths`, `column`, and `nativeEvent`. `column` is the leaf before the resize layer stamps it, without internal meta. Read the new width from `info.width`, not `info.column.width`. Look up the original config with `info.key`; do not compare `info.column` by reference to your `columns` array.
 
 ## Virtual Tables
 

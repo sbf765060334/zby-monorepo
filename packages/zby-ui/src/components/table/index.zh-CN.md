@@ -90,7 +90,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - 默认列宽为 160px，默认最小宽度为 80px；
 - 数字和 `px` 字符串会归一为整数像素；
 - selection 列遵循 `rowSelection.columnWidth` 或 Table token，默认使用 `controlHeight`；expand 列缺少明确宽度时使用 48px 兜底；两者均不可拖拽；
-- 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；
+- 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；缺少两者时开发环境会警告，且该列不可拖拽；
 - `resizable={false}` 禁止单列拖拽；
 - 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；宽度未变化的单击不触发这些回调；RTL 下拖动手柄会按文字方向取反，向手柄外侧拖动加宽；
 - 业务列总宽小于 viewport 时插入 filler；存在 fixed-end 列时 filler 位于第一个 fixed-end 叶子列之前；
@@ -109,7 +109,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | onResize | `(info) => void` | 拖动期间触发 |
 | onResizeEnd | `(info) => void` | 宽度发生变化的拖动结束时触发 |
 
-`ColumnResizeInfo<T>` 包含 `key`、`width`、`previousWidth`、`delta`、`widths`、`column` 和 `nativeEvent`。
+`ColumnResizeInfo<T>` 包含 `key`、`width`、`previousWidth`、`delta`、`widths`、`column` 和 `nativeEvent`。`column` 是拖拽层盖章前的业务列，不含内部 meta；当前宽度请用 `info.width`，不要用 `info.column.width` 当拖完后的值。用 `info.key` 去原始 `columns` 里查找，不要对 `info.column` 做引用比较。
 
 ## 虚拟表格
 

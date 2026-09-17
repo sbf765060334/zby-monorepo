@@ -48,12 +48,13 @@ export interface ColumnResizeConfig<RecordType = any> {
   onResizeEnd?: (info: ColumnResizeInfo<RecordType>) => void;
 }
 
-export interface InternalColumnResizeMeta {
+export interface InternalColumnResizeMeta<RecordType = any> {
   key: ColumnResizeKey;
   width: number;
   minWidth?: number;
   maxWidth?: number;
   resizable: boolean;
+  source: ColumnType<RecordType>;
 }
 
 export const INTERNAL_COLUMN_RESIZE_META = 'RC_TABLE_INTERNAL_COLUMN_RESIZE_META';
@@ -151,7 +152,7 @@ interface ColumnSharedType<RecordType> {
   rowScope?: RowScopeType;
   resizable?: boolean;
   maxWidth?: number;
-  [INTERNAL_COLUMN_RESIZE_META]?: InternalColumnResizeMeta;
+  [INTERNAL_COLUMN_RESIZE_META]?: InternalColumnResizeMeta<RecordType>;
   [INTERNAL_COLUMN_RESIZE_FILLER]?: boolean;
 }
 

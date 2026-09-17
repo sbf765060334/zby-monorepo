@@ -629,6 +629,13 @@ describe('Table', () => {
     expect(onResizeEnd).toHaveBeenCalledWith(
       expect.objectContaining({ key: 'id', width: 160 }),
     )
+    const resizeInfo = onResizeEnd.mock.calls[0][0]
+    expect(resizeInfo.column).toEqual(
+      expect.objectContaining({ key: 'id', title: 'ID', width: 120 }),
+    )
+    expect(resizeInfo.column).not.toHaveProperty(
+      'RC_TABLE_INTERNAL_COLUMN_RESIZE_META',
+    )
   })
 
   it('does not emit resize callbacks when the handle is clicked without dragging', () => {
@@ -662,6 +669,36 @@ describe('Table', () => {
     expect(onResize).not.toHaveBeenCalled()
     expect(onWidthsChange).not.toHaveBeenCalled()
     expect(onResizeEnd).not.toHaveBeenCalled()
+  })
+
+  it('warns when a column has no stable key or dataIndex under columnResize', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize
+        columns={[
+          { title: 'No identity', width: 120 },
+          { key: 'name', dataIndex: 'name', title: 'Name', width: 160 },
+        ]}
+        dataSource={data}
+      />,
+    )
+
+    const headerCells = container.querySelectorAll('.ant-table-thead th')
+    expect(headerCells[0].querySelector('.ant-table-cell-resize-handle')).toBeNull()
+    expect(headerCells[1].querySelector('.ant-table-cell-resize-handle')).not.toBeNull()
+    expect(
+      errorSpy.mock.calls.some((args) =>
+        args.some((arg) =>
+          String(arg).includes(
+            'stable `key` or stringifiable `dataIndex`',
+          ),
+        ),
+      ),
+    ).toBe(true)
+    errorSpy.mockRestore()
   })
 
   it('inverts column resize drag delta under RTL', () => {

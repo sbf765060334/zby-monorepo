@@ -229,6 +229,26 @@ export function useColumnResize<RecordType>({
 }) {
   const resizeConfig = normalizeResizeConfig(columnResize);
   const enabled = Boolean(resizeConfig);
+
+  React.useEffect(() => {
+    if (!enabled || process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    flattenColumns.forEach((column, index) => {
+      if (isExpandableColumn(column) || isSelectionColumn(column)) {
+        return;
+      }
+
+      const { stable } = getResizeKeyInfo(column, columnsKey[index] ?? index);
+      if (!stable) {
+        warning(
+          false,
+          'A column without a stable `key` or stringifiable `dataIndex` is not resizable when `columnResize` is enabled.',
+        );
+      }
+    });
+  }, [columnsKey, enabled, flattenColumns]);
   const controlledWidths = resizeConfig?.widths;
   const defaultWidths = resizeConfig?.defaultWidths;
   const defaultWidthsSignature = createWidthSignature(defaultWidths);
@@ -363,6 +383,7 @@ export function useColumnResize<RecordType>({
           minWidth,
           maxWidth,
           resizable,
+          source: column,
         },
       } as ColumnType<RecordType>;
     });
@@ -474,7 +495,7 @@ export function useColumnResize<RecordType>({
         previousWidth,
         delta: nextWidth - previousWidth,
         widths: nextWidths,
-        column: currentColumn,
+        column: resizeMeta.source,
         nativeEvent,
       };
 
