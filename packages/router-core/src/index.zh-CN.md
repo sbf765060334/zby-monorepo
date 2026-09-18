@@ -217,7 +217,7 @@ export function App() {
 | `setPathnameDescription(map)` | `Record<string, string>` | `void` | 增量合并真实地址的描述文本，相同值不会重复发布状态。 |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
-| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 执行全部关闭守卫；只剩一个页签时返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
+| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 按注册顺序串行执行关闭守卫，遇到第一个不是 `true` 的立刻拒绝；只剩一个页签时返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。适合保存成功后的详情页替换。这次导航同样使用 replace。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
@@ -270,7 +270,7 @@ export function App() {
 
 | 类型 / 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `RouterBeforeCloseHook` | `() => boolean \| Promise<boolean>` | 所有守卫都必须明确返回 `true` 才能关闭。 |
+| `RouterBeforeCloseHook` | `() => boolean \| Promise<boolean>` | 按注册顺序串行执行；必须明确返回 `true` 才继续，否则关闭被拒绝且后续守卫不会运行。 |
 | `RouterCloseOptions.skipBeforeClose` | `boolean` | 受信调用方跳过关闭守卫；普通业务关闭通常不要设置。 |
 | `RouterRuntimeOptions.onTabClose` | `(tabKey, info) => void \| Promise<void>` | 关闭已经提交后的通知，不能撤销关闭。 |
 | `RouterAfterTabCloseInfo.pathname` | `string` | 被关闭页签最后对应的真实 pathname。 |

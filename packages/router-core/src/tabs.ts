@@ -387,11 +387,12 @@ export function createRouterTabs<Route extends RouterRoute>(
     closingTabKeys.add(tabKey)
     try {
       if (!closeOptions?.skipBeforeClose) {
-        // 多个守卫可以并行询问，但必须全部明确返回 true；undefined 也代表拒绝。
-        const hooks = beforeCloseMap.get(tabKey) || []
-        const results = await Promise.all(hooks.map((hook) => hook()))
-        if (!results.every((result) => result === true))
-          return false
+        // 按注册顺序一个一个问；不是 true 就停，后面的守卫不会再跑。
+        const hooks = [...(beforeCloseMap.get(tabKey) || [])]
+        for (const hook of hooks) {
+          if ((await hook()) !== true)
+            return false
+        }
       }
 
       // await 期间页签或宿主可能已变化，因此守卫结束后必须重新读取和校验最新状态。

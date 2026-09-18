@@ -10,6 +10,10 @@ const ListenerThrowDemo = createLazyRouteComponent(() => import('./pages/Listene
 const PendingLockDemo = createLazyRouteComponent(() => import('./pages/PendingLockDemo'))
 const InactiveReplaceDemo = createLazyRouteComponent(() => import('./pages/InactiveReplaceDemo'))
 const IdbLoadRaceDemo = createLazyRouteComponent(() => import('./pages/IdbLoadRaceDemo'))
+const ParallelCloseGuardsDemo = createLazyRouteComponent(
+  () => import('./pages/ParallelCloseGuardsDemo'),
+)
+const CloseGuardDemo = createLazyRouteComponent(() => import('./pages/CloseGuardDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -68,9 +72,9 @@ export const appRouters: ProLayoutRoute[ ] = [
       },
       {
         path: '/workbench/dirty',
-        title: '关闭拦截',
-        tag: { text: 'Hook', color: 'warning' },
-        element: DemoPage,
+        title: '关闭门禁',
+        tag: { text: 'Demo', color: 'warning' },
+        element: CloseGuardDemo,
       },
       {
         path: '/workbench/close-confirm',
@@ -107,6 +111,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: 'IndexedDB 读写排队',
         tag: { text: 'Demo', color: 'warning' },
         element: IdbLoadRaceDemo,
+      },
+      {
+        path: '/workbench/parallel-close-guards',
+        title: '关闭守卫串行',
+        tag: { text: 'Demo', color: 'warning' },
+        element: ParallelCloseGuardsDemo,
       },
       {
         path: '/workbench/content-container',

@@ -139,7 +139,10 @@ export interface RouterHost {
   redirect?: RouterNavigate
 }
 
-/** 页签关闭前守卫；只有所有守卫都明确返回 true 才允许关闭。 */
+/**
+ * 页签关闭前守卫。按注册顺序串行执行，必须明确返回 true 才继续；
+ * 否则关闭被拒绝，排在后面的守卫不会运行。
+ */
 export type RouterBeforeCloseHook = () => boolean | Promise<boolean>
 
 /** 调用关闭命令时允许提供的额外控制项。 */
@@ -379,7 +382,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   toggleFixed: (tabKey: string) => boolean
   /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */
   toggleFavoriteRoute: (path: string) => boolean
-  /** 运行关闭守卫；最后一个页签不会关闭。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理，若该页签在导航中已成为活动页则不再删除。关页跳转使用 replace。 */
+  /** 按注册顺序串行运行关闭守卫；最后一个页签不会关闭。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理，若该页签在导航中已成为活动页则不再删除。关页跳转使用 replace。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
   /** 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。整个过程只产生一次最终导航，且使用 replace。 */
   closeThisTabOpenNewOne: (

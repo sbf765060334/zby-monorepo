@@ -217,7 +217,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `setPathnameDescription(map)` | `Record<string, string>` | `void` | Incrementally merges concrete-path descriptions; repeated values do not publish state. |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | Fixes/unfixes an open tab; returns `false` for unknown tabs or a reached limit. |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | Favorites/unfavorites a registered page and canonicalizes dynamic paths to route patterns. |
-| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | Runs every guard; the last remaining tab is not closed. Inactive tabs clear immediately, unless a composite close still needs to navigate: that navigation runs first and the tab is cleared only after it succeeds. The active tab waits until the host has left the closed page. A second close of that same tab returns `false` until the host confirms. Close navigation uses replace so Back cannot revive the closed tab. |
+| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | Runs close guards in registration order and rejects at the first result that is not `true`; the last remaining tab is not closed. Inactive tabs clear immediately, unless a composite close still needs to navigate: that navigation runs first and the tab is cleared only after it succeeds. The active tab waits until the host has left the closed page. A second close of that same tab returns `false` until the host confirms. Close navigation uses replace so Back cannot revive the closed tab. |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | Requests one final replacement navigation. An active old tab closes after the host has left that page; an inactive old tab navigates first and closes only if that request succeeds. That navigation also uses replace. |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | Adds a close guard to the tab owning the pathname. |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
@@ -270,7 +270,7 @@ The second `RouterNavigate` parameter is `{ replace?: boolean }`. `replace: true
 
 | Type / Field | Type | Description |
 | --- | --- | --- |
-| `RouterBeforeCloseHook` | `() => boolean \| Promise<boolean>` | Every guard must explicitly return `true` to allow closing. |
+| `RouterBeforeCloseHook` | `() => boolean \| Promise<boolean>` | Guards run in registration order. Each must explicitly return `true` to continue; otherwise closing is rejected and later guards do not run. |
 | `RouterCloseOptions.skipBeforeClose` | `boolean` | Lets trusted callers skip guards; normal business closes should not set it. |
 | `RouterRuntimeOptions.onTabClose` | `(tabKey, info) => void \| Promise<void>` | Notification after closing commits; it cannot undo the close. |
 | `RouterAfterTabCloseInfo.pathname` | `string` | Last concrete pathname represented by the closed tab. |

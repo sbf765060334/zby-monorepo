@@ -1168,6 +1168,36 @@ describe('createRouterCore', () => {
     ).toBe(true)
   })
 
+  /** 多个关闭守卫按注册顺序串行执行，前面拒绝后后面不再调用。 */
+  it('runs close guards in registration order and stops after the first rejection', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    const events: string[] = []
+    const first = vi.fn(async () => {
+      events.push('first')
+      return false
+    })
+    const second = vi.fn(() => {
+      events.push('second')
+      return true
+    })
+    router.addBeforeCloseHook(first, '/settings/profile')
+    router.addBeforeCloseHook(second, '/settings/profile')
+
+    expect(await router.closeTab('/settings/profile')).toBe(false)
+    expect(events).toEqual(['first'])
+    expect(second).not.toHaveBeenCalled()
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+
+    router.clearBeforeCloseHook('/settings/profile', first)
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    expect(events).toEqual(['first', 'second'])
+  })
+
   /** 只剩一个页签时不能关掉，避免经根路径重定向后再被打开。 */
   it('rejects closing the last remaining tab', async () => {
     const navigate = vi.fn()
