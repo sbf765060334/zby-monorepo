@@ -10,7 +10,7 @@ description: 独立的视图切换与视图管理组件。
 
 - 表格、列表、看板或筛选页面需要保存多组业务视图；
 - 需要把视图切换、新建、保存、重置、管理和排序从具体业务组件中拆出来；
-- 需要本地 IndexedDB 持久化，同时保留远程接口 adapter 扩展点。
+- 需要本地 IndexedDB 持久化自定义视图和当前激活视图。
 
 ## 基本用法
 
@@ -51,7 +51,7 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 - `initialStorageState` 适合服务端或业务层预加载数据，传入后不会调用 `adapter.load`；
 - `viewCounts` 优先于 `getViewCount`，数量可以是同步值或异步获取；
 - 创建和重命名都会对去除首尾空格后的名称查重，范围包含系统视图和自定义视图；
-- `maxCustomViews` 只限制新建和另存为，不限制重命名；远程查重或配额可通过 adapter 的异步校验方法接入。
+- `maxCustomViews` 只限制新建和另存为，不限制重命名。
 
 ## API
 
@@ -64,7 +64,7 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 | defaultSnapshot | 新建视图时使用的默认业务状态 | `TSnapshot` | - |
 | currentSnapshot | 当前业务状态，保存、另存为和 dirty 判断都基于它 | `TSnapshot` | - |
 | initialStorageState | 已预加载的存储状态；传入后跳过首次 `load` | `ProViewManagementStorageState<TSnapshot>` | - |
-| adapter | 视图持久化 adapter；未传时使用 IndexedDB adapter | `ProViewManagementAdapter<TSnapshot>` | 内置 IndexedDB |
+| adapter | 视图持久化 adapter；未传时使用本地 IndexedDB | `ProViewManagementAdapter<TSnapshot>` | 内置 IndexedDB |
 | loading | 外部控制的加载状态；传入后组件不会执行内部首屏 load | `boolean` | - |
 | loadError | 外部控制的加载错误；错误时仍允许切换系统视图 | `unknown` | - |
 | dirty | 外部覆盖未保存状态；未传时按 snapshot 自动比较 | `boolean` | - |
@@ -100,17 +100,12 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 
 | 方法 | 说明 | 类型 |
 | --- | --- | --- |
-| load | 加载指定实例的自定义视图和激活视图 | `(instanceId) => Promise<ProViewManagementStorageState<TSnapshot>>` |
-| validateCreate | 创建前异步校验；返回字符串表示失败 | `(instanceId, payload) => string | void | Promise<string | void>` |
-| validateRename | 重命名前异步校验；返回字符串表示失败 | `(instanceId, payload) => string | void | Promise<string | void>` |
-| create | 创建自定义视图 | `(instanceId, view) => Promise<void>` |
-| update | 更新名称、排序或 snapshot | `(instanceId, viewId, patch) => Promise<void>` |
-| remove | 删除自定义视图 | `(instanceId, viewId) => Promise<void>` |
-| reorder | 保存自定义视图排序 | `(instanceId, orderedViewIds) => Promise<void>` |
-| setActiveViewId | 保存当前激活视图 | `(instanceId, viewId) => Promise<void>` |
+| `load` | 加载指定实例的自定义视图和激活视图 | `(instanceId) => Promise<ProViewManagementStorageState<TSnapshot>>` |
+| `update` | 对着磁盘最新完整状态应用一次变更 | `(instanceId, recipe: (current) => next) => Promise<void>` |
 
-可使用 `createRemoteProViewManagementAdapter(config)` 将远程接口配置原样转换为 adapter。内置
-`createIndexedDBProViewManagementAdapter({ validationMessages })` 支持覆盖名称校验文案。
+未传 `adapter` 时使用内置 IndexedDB Adapter。写入一律 `update(latest => next)`：同一 `instanceId` 的 load/update 会排队，recipe 在同一笔事务里对着当时磁盘最新值执行。名称校验在组件本地完成。一般业务不需要自己实现 Adapter。
+
+可用 `createIndexedDBProViewManagementAdapter()` 拿到默认 IndexedDB Adapter；`normalizeProViewManagementStorageState(...)` 会补齐并清洗字段。
 
 ### ProViewManagementStorageState
 

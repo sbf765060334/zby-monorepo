@@ -110,9 +110,7 @@ describe('ReactRouterProLayout', () => {
         fixedParamsPathMap: {},
         favoriteRoutePaths: [],
       })),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+      update: vi.fn(async () => undefined),
     }
     const router = createPersistentTestRouter(
       'pro-layout-fixed-tab-on-not-found',
@@ -141,9 +139,7 @@ describe('ReactRouterProLayout', () => {
           resolveLoad = resolve
         }),
       ),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+      update: vi.fn(async () => undefined),
     }
     const router = createRouterCore<ProLayoutRoute>({
       routes: hydrationRoutes,
@@ -192,9 +188,7 @@ describe('ReactRouterProLayout', () => {
             rejectLoad = reject
           }),
         ),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        update: vi.fn(async () => undefined),
       },
     })
     const { container } = render(
@@ -1318,12 +1312,19 @@ describe('ReactRouterProLayout', () => {
     const loadPromise = new Promise<Partial<RouterStorageState>>((resolve) => {
       resolveLoad = resolve
     })
-    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const disk = {
+      favoriteRoutePaths: [] as string[],
+    }
     const storageAdapter: RouterStorageAdapter = {
       load: vi.fn(() => loadPromise),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths,
+      update: async (_storageKey, recipe) => {
+        const next = recipe({
+          fixedTabs: [],
+          fixedParamsPathMap: {},
+          favoriteRoutePaths: [...disk.favoriteRoutePaths],
+        })
+        disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+      },
     }
     const router = createPersistentTestRouter(
       'pro-layout-favorite-hydration',
@@ -1348,10 +1349,9 @@ describe('ReactRouterProLayout', () => {
 
     expect(screen.getByRole('button', { name: '取消收藏：订单列表' })).toBeTruthy()
     expect(router.getState().favoriteRoutePaths).toEqual(['/orders/list'])
-    expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
-      'pro-layout-favorite-hydration',
-      ['/orders/list'],
-    )
+    await waitFor(() => {
+      expect(disk.favoriteRoutePaths).toEqual(['/orders/list'])
+    })
   })
 })
 

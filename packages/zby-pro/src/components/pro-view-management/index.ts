@@ -1,13 +1,12 @@
 export {
   createIndexedDBProViewManagementAdapter,
-  createRemoteProViewManagementAdapter,
+  normalizeProViewManagementStorageState,
 } from './adapters'
 export { default } from './ProViewManagement'
 export type {
   ProViewManagementAdapter,
   ProViewManagementCreateValidationPayload,
   ProViewManagementProps,
-  ProViewManagementRemoteAdapterConfig,
   ProViewManagementRenameValidationPayload,
   ProViewManagementScope,
   ProViewManagementStorageState,

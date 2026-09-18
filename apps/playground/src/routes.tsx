@@ -9,6 +9,7 @@ const QueryReencodeDemo = createLazyRouteComponent(() => import('./pages/QueryRe
 const ListenerThrowDemo = createLazyRouteComponent(() => import('./pages/ListenerThrowDemo'))
 const PendingLockDemo = createLazyRouteComponent(() => import('./pages/PendingLockDemo'))
 const InactiveReplaceDemo = createLazyRouteComponent(() => import('./pages/InactiveReplaceDemo'))
+const IdbLoadRaceDemo = createLazyRouteComponent(() => import('./pages/IdbLoadRaceDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -100,6 +101,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '非活动页组合关闭',
         tag: { text: 'Demo', color: 'warning' },
         element: InactiveReplaceDemo,
+      },
+      {
+        path: '/workbench/idb-load-race',
+        title: 'IndexedDB 读写排队',
+        tag: { text: 'Demo', color: 'warning' },
+        element: IdbLoadRaceDemo,
       },
       {
         path: '/workbench/content-container',

@@ -40,37 +40,12 @@ export interface ProViewManagementAdapter<TSnapshot = unknown> {
   load: (
     instanceId: string,
   ) => Promise<ProViewManagementStorageState<TSnapshot>>
-  validateCreate?: (
-    instanceId: string,
-    payload: ProViewManagementCreateValidationPayload<TSnapshot>,
-  ) => string | void | Promise<string | void>
-  validateRename?: (
-    instanceId: string,
-    payload: ProViewManagementRenameValidationPayload<TSnapshot>,
-  ) => string | void | Promise<string | void>
-  create: (
-    instanceId: string,
-    view: ProViewManagementView<TSnapshot>,
-  ) => Promise<void>
   update: (
     instanceId: string,
-    viewId: string,
-    patch: Partial<Omit<ProViewManagementView<TSnapshot>, 'id'>>,
+    recipe: (
+      current: ProViewManagementStorageState<TSnapshot>,
+    ) => ProViewManagementStorageState<TSnapshot>,
   ) => Promise<void>
-  remove: (instanceId: string, viewId: string) => Promise<void>
-  reorder: (instanceId: string, orderedViewIds: string[]) => Promise<void>
-  setActiveViewId: (instanceId: string, viewId: string) => Promise<void>
-}
-
-export interface ProViewManagementRemoteAdapterConfig<TSnapshot = unknown> {
-  load: ProViewManagementAdapter<TSnapshot>['load']
-  validateCreate?: ProViewManagementAdapter<TSnapshot>['validateCreate']
-  validateRename?: ProViewManagementAdapter<TSnapshot>['validateRename']
-  create: ProViewManagementAdapter<TSnapshot>['create']
-  update: ProViewManagementAdapter<TSnapshot>['update']
-  remove: ProViewManagementAdapter<TSnapshot>['remove']
-  reorder: ProViewManagementAdapter<TSnapshot>['reorder']
-  setActiveViewId: ProViewManagementAdapter<TSnapshot>['setActiveViewId']
 }
 
 export interface ProViewManagementProps<TSnapshot = unknown> {

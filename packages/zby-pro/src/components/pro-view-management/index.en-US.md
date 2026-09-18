@@ -9,7 +9,7 @@ description: Standalone view switching and view management.
 
 - A table, list, board, or filter page needs multiple saved business views;
 - View switching, creation, save, reset, management, and sorting should be independent from a business component;
-- Local IndexedDB persistence is needed while retaining a remote adapter extension point.
+- Local IndexedDB persistence for custom views and the active view.
 
 ## Basic Usage
 
@@ -50,7 +50,7 @@ named `zby-ui-pro-view-management`, and `instanceId` isolates data for each busi
 - `initialStorageState` is useful for server or business-layer preloading and skips the initial `adapter.load` call;
 - `viewCounts` takes precedence over `getViewCount`, and counts may be synchronous or asynchronous;
 - Create and rename validate trimmed names against both system and custom views;
-- `maxCustomViews` limits create/save-as but not rename. Remote uniqueness or quota checks can use adapter validation methods.
+- `maxCustomViews` limits create/save-as but not rename.
 
 ## API
 
@@ -63,7 +63,7 @@ named `zby-ui-pro-view-management`, and `instanceId` isolates data for each busi
 | defaultSnapshot | Business state used when creating a new view | `TSnapshot` | - |
 | currentSnapshot | Current business state used for save, save-as, and dirty detection | `TSnapshot` | - |
 | initialStorageState | Preloaded storage state; skips the initial `load` call | `ProViewManagementStorageState<TSnapshot>` | - |
-| adapter | Persistence adapter; omitted value uses IndexedDB | `ProViewManagementAdapter<TSnapshot>` | Built-in IndexedDB |
+| adapter | Persistence adapter; omitted value uses local IndexedDB | `ProViewManagementAdapter<TSnapshot>` | Built-in IndexedDB |
 | loading | Externally controlled loading state; prevents the internal first load | `boolean` | - |
 | loadError | Externally controlled load error; system views remain selectable | `unknown` | - |
 | dirty | External dirty-state override; omitted value compares snapshots | `boolean` | - |
@@ -99,17 +99,12 @@ named `zby-ui-pro-view-management`, and `instanceId` isolates data for each busi
 
 | Method | Description | Type |
 | --- | --- | --- |
-| load | Load custom views and the active view for an instance | `(instanceId) => Promise<ProViewManagementStorageState<TSnapshot>>` |
-| validateCreate | Async create validation; a string indicates failure | `(instanceId, payload) => string \| void \| Promise<string \| void>` |
-| validateRename | Async rename validation; a string indicates failure | `(instanceId, payload) => string \| void \| Promise<string \| void>` |
-| create | Create a custom view | `(instanceId, view) => Promise<void>` |
-| update | Update name, order, or snapshot | `(instanceId, viewId, patch) => Promise<void>` |
-| remove | Remove a custom view | `(instanceId, viewId) => Promise<void>` |
-| reorder | Persist custom view ordering | `(instanceId, orderedViewIds) => Promise<void>` |
-| setActiveViewId | Persist the active view id | `(instanceId, viewId) => Promise<void>` |
+| `load` | Load custom views and the active view for an instance | `(instanceId) => Promise<ProViewManagementStorageState<TSnapshot>>` |
+| `update` | Apply one change to the latest persisted state | `(instanceId, recipe: (current) => next) => Promise<void>` |
 
-Use `createRemoteProViewManagementAdapter(config)` to return a remote configuration as an adapter.
-The built-in `createIndexedDBProViewManagementAdapter({ validationMessages })` can override name-validation messages.
+When `adapter` is omitted, the component uses the built-in IndexedDB adapter. Writes always go through `update(latest => next)`: same-`instanceId` `load`/`update` calls are queued, and the recipe runs against the latest disk value in one transaction. Name validation stays in the component. Most callers do not need a custom adapter.
+
+Use `createIndexedDBProViewManagementAdapter()` for the default IndexedDB adapter, and `normalizeProViewManagementStorageState(...)` to fill missing fields.
 
 ### ProViewManagementStorageState
 

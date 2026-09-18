@@ -45,45 +45,17 @@ function createTransientViewManagementAdapter<TSnapshot>(): ProViewManagementAda
   return {
     async load() {
       return {
-        views,
+        views: views.map((view) => ({ ...view })),
         activeViewId,
       }
     },
-    async create(_instanceId, view) {
-      views = views.concat({
-        ...view,
-        scope: 'custom',
+    async update(_instanceId, recipe) {
+      const next = recipe({
+        views: views.map((view) => ({ ...view })),
+        activeViewId,
       })
-    },
-    async update(_instanceId, viewId, patch) {
-      views = views.map((view) =>
-        view.id === viewId
-          ? {
-              ...view,
-              ...patch,
-              id: view.id,
-              scope: 'custom',
-            }
-          : view,
-      )
-    },
-    async remove(_instanceId, viewId) {
-      views = views.filter((view) => view.id !== viewId)
-      if (activeViewId === viewId) {
-        activeViewId = undefined
-      }
-    },
-    async reorder(_instanceId, orderedViewIds) {
-      const orderLookup = new Map(orderedViewIds.map((viewId, index) => [viewId, index]))
-      views = views
-        .map((view, index) => ({
-          ...view,
-          order: orderLookup.get(view.id) ?? index,
-        }))
-        .sort((left, right) => left.order - right.order || left.name.localeCompare(right.name))
-    },
-    async setActiveViewId(_instanceId, viewId) {
-      activeViewId = viewId
+      views = next.views.map((view) => ({ ...view }))
+      activeViewId = next.activeViewId
     },
   }
 }

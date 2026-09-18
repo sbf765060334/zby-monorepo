@@ -22,11 +22,10 @@ export class RouterUrlCache {
   /**
    * 注入 pathname 映射变化回调。
    *
-   * Cache 不知道数据存在哪里，只在真实 pathname 改变时把完整副本交给持久化协调器。
+   * Cache 不知道数据存在哪里，只在真实 pathname 改变时把变化的 tabKey 交给持久化。
    */
   constructor(
     private readonly onParamsPathMapChange: (
-      value: Record<string, string>,
       tabKey: string,
       pathname: string | null,
     ) => void,
@@ -59,12 +58,7 @@ export class RouterUrlCache {
         return
       this.paramsPathMap[tabKey] = pathname
     }
-    // 传递对象副本，外部回调无法反过来修改 Cache 内部数据。
-    this.onParamsPathMapChange(
-      { ...this.paramsPathMap },
-      tabKey,
-      pathname || null,
-    )
+    this.onParamsPathMapChange(tabKey, pathname || null)
   }
 
   /** 读取页签最后保存的查询字符串；返回值不包含开头的 `?`。 */

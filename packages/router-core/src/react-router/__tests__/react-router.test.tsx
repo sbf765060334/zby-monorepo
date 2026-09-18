@@ -85,7 +85,6 @@ describe('RouterCoreReactRouterAdapter', () => {
     const savedStorageKeys: string[] = []
     const operations: string[] = []
     const savedParamsPathMaps: Array<Record<string, string>> = []
-    /** 用数组记录远程调用顺序的假 Adapter，帮助断言 load 一定早于 save。 */
     const storageAdapter: RouterStorageAdapter = {
       async load(storageKey) {
         loadedStorageKeys.push(storageKey)
@@ -95,16 +94,15 @@ describe('RouterCoreReactRouterAdapter', () => {
           fixedParamsPathMap: { '/customer/:id': '/customer/7' },
         }
       },
-      async saveFixedTabs(storageKey) {
+      async update(storageKey, recipe) {
         savedStorageKeys.push(storageKey)
-      },
-      async saveFixedParamsPathMap(storageKey, fixedParamsPathMap) {
-        savedStorageKeys.push(storageKey)
-        operations.push('saveFixedParamsPathMap')
-        savedParamsPathMaps.push({ ...fixedParamsPathMap })
-      },
-      async saveFavoriteRoutePaths(storageKey) {
-        savedStorageKeys.push(storageKey)
+        operations.push('update')
+        const next = recipe({
+          fixedTabs: [],
+          fixedParamsPathMap: { '/customer/:id': '/customer/7' },
+          favoriteRoutePaths: [],
+        })
+        savedParamsPathMaps.push({ ...next.fixedParamsPathMap })
       },
     }
     const router = createRouterCore({

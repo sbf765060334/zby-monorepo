@@ -7,14 +7,16 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  createRemoteRouterStorageAdapter,
   createRouteRegistry,
   createRouterCore,
   matchRoutePath,
+  normalizeRouterStorageState,
   preloadRoute,
-  type normalizeRouterStorageState,
   type RouterRoute,
   type RouterStorageAdapter,
   type RouterStorageErrorInfo,
+  type RouterStorageState,
 } from '../index'
 
 /** 大多数 Core 场景复用的最小路由树，覆盖目录、动态页签、独立页签和权限路由。 */
@@ -36,6 +38,39 @@ const routes: RouterRoute[] = [
   },
   { path: '/admin', title: 'Admin', element: {}, auth: 'admin' },
 ]
+
+/** 测试用内存 Adapter：update 对着这份 disk 执行 recipe。 */
+function createMemoryStorage(initial?: Partial<RouterStorageState>) {
+  const disk = normalizeRouterStorageState(initial)
+  const adapter: RouterStorageAdapter = {
+    load: async () => ({
+      fixedTabs: [...disk.fixedTabs],
+      fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+      favoriteRoutePaths: [...disk.favoriteRoutePaths],
+    }),
+    update: async (_storageKey, recipe) => {
+      const next = recipe({
+        fixedTabs: [...disk.fixedTabs],
+        fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+        favoriteRoutePaths: [...disk.favoriteRoutePaths],
+      })
+      disk.fixedTabs = [...next.fixedTabs]
+      disk.fixedParamsPathMap = { ...next.fixedParamsPathMap }
+      disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+    },
+  }
+  return { disk, adapter }
+}
+
+/** 只关心 load 行为、不检查落盘内容时使用。 */
+function createNoopStorageAdapter(
+  load: RouterStorageAdapter['load'] = async () => ({}),
+): RouterStorageAdapter {
+  return {
+    load,
+    update: vi.fn(async () => undefined),
+  }
+}
 
 /** 模拟 ProLayout 在 core 基础字段之外声明的强类型 UI 元数据。 */
 interface PlatformRoute extends RouterRoute {
@@ -475,9 +510,7 @@ describe('createRouterCore', () => {
             '/project/:id': '/project/42',
           },
         })),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        update: vi.fn(async () => undefined),
       },
     })
     router.bindHost({ navigate })
@@ -491,34 +524,31 @@ describe('createRouterCore', () => {
   /** 存储加载前宿主已确认的新参数地址，应覆盖并修复存储中的旧映射。 */
   it('uses a pre-hydration pathname to repair a fixed dynamic tab mapping', async () => {
     const navigate = vi.fn()
-    const saveFixedParamsPathMap = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/project/:id'],
+      fixedParamsPathMap: {},
+    })
+    const update = vi.fn(adapter.update)
     const router = createRouterCore({
       routes,
       storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: ['/project/:id'],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap,
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        load: adapter.load,
+        update,
       },
     })
     router.bindHost({ navigate })
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
 
-    // 未加载完整 Map 前只能记录本地增量，不能先保存局部快照。
-    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
     await router.hydrateStorage()
 
     expect(router.getState().fixedSet).toEqual(['/project/:id'])
     router.jumpTo('/project/:id')
     expect(navigate).toHaveBeenCalledWith('/project/42')
     await vi.waitFor(() => {
-      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
-        'default',
-        { '/project/:id': '/project/42' },
-      )
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/project/:id': '/project/42',
+      })
     })
   })
 
@@ -916,17 +946,13 @@ describe('createRouterCore', () => {
 
   /** 合法重排更新全部页签，但只有固定组顺序变化才写持久化。 */
   it('reorders the complete tab set and persists only a changed fixed order', async () => {
-    const saveFixedTabs = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage()
+    const update = vi.fn(adapter.update)
     const router = createRouterCore({
       routes,
       storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: [],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs,
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        load: adapter.load,
+        update,
       },
     })
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
@@ -934,8 +960,10 @@ describe('createRouterCore', () => {
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
     router.toggleFixed('/dashboard')
     router.toggleFixed('/settings/profile')
-    await vi.waitFor(() => expect(saveFixedTabs).toHaveBeenCalledTimes(2))
-    saveFixedTabs.mockClear()
+    await vi.waitFor(() => {
+      expect(disk.fixedTabs).toEqual(['/dashboard', '/settings/profile'])
+    })
+    const writesAfterFix = update.mock.calls.length
 
     const previousTabs = new Map(
       router.getState().tabs.map((tab) => [tab.key, tab]),
@@ -959,12 +987,9 @@ describe('createRouterCore', () => {
     expect(state.tabs[0]).toBe(previousTabs.get('/settings/profile'))
     expect(state.tabs[1]).toBe(previousTabs.get('/dashboard'))
     await vi.waitFor(() => {
-      expect(saveFixedTabs).toHaveBeenCalledOnce()
+      expect(disk.fixedTabs).toEqual(['/settings/profile', '/dashboard'])
     })
-    expect(saveFixedTabs).toHaveBeenCalledWith('default', [
-      '/settings/profile',
-      '/dashboard',
-    ])
+    expect(update.mock.calls.length).toBe(writesAfterFix + 1)
 
     const subscriber = vi.fn()
     const unsubscribe = router.subscribe(subscriber)
@@ -1002,54 +1027,40 @@ describe('createRouterCore', () => {
 
   /** 只有已打开页签才能固定，未知 key 不应产生状态或存储写入。 */
   it('does not fix unknown or unopened tab keys', async () => {
-    const saveFixedTabs = vi.fn(async () => undefined)
+    const adapter = createNoopStorageAdapter(async () => ({
+      fixedTabs: [],
+      fixedParamsPathMap: {},
+    }))
     const router = createRouterCore({
       routes,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: [],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs,
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
-      },
+      storageAdapter: adapter,
     })
     const snapshot = router.getState()
     const subscriber = vi.fn()
     const unsubscribe = router.subscribe(subscriber)
 
-    // 已注册但尚未打开的页面和完全未知的 key 都不能旁路创建固定状态。
     expect(router.toggleFixed('/dashboard')).toBe(false)
     expect(router.toggleFixed('/unknown')).toBe(false)
     await Promise.resolve()
 
     expect(router.getState()).toBe(snapshot)
     expect(subscriber).not.toHaveBeenCalled()
-    expect(saveFixedTabs).not.toHaveBeenCalled()
+    expect(adapter.update).not.toHaveBeenCalled()
     unsubscribe()
   })
 
   /** 收藏只接受已注册页面，每次变化保存完整且有序的收藏快照。 */
   it('toggles registered page favorites and persists complete snapshots', async () => {
-    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage()
     const router = createRouterCore({
       routes,
-      storageAdapter: {
-        load: vi.fn(async () => ({})),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths,
-      },
+      storageAdapter: adapter,
     })
 
     expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
     expect(router.getState().favoriteRoutePaths).toEqual(['/dashboard'])
     await vi.waitFor(() => {
-      expect(saveFavoriteRoutePaths).toHaveBeenLastCalledWith(
-        'default',
-        ['/dashboard'],
-      )
+      expect(disk.favoriteRoutePaths).toEqual(['/dashboard'])
     })
 
     expect(router.toggleFavoriteRoute('/settings')).toBe(false)
@@ -1057,7 +1068,7 @@ describe('createRouterCore', () => {
     expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
     expect(router.getState().favoriteRoutePaths).toEqual([])
     await vi.waitFor(() => {
-      expect(saveFavoriteRoutePaths).toHaveBeenLastCalledWith('default', [])
+      expect(disk.favoriteRoutePaths).toEqual([])
     })
   })
 
@@ -1095,27 +1106,22 @@ describe('createRouterCore', () => {
 
   /** 加载收藏时要规范化路径，并保留暂时无权限但仍存在的完整路由。 */
   it('hydrates, canonicalizes and preserves unauthorized favorite routes', async () => {
-    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage({
+      favoriteRoutePaths: [
+        '/Dashboard/',
+        '/dashboard',
+        '/settings',
+        '/missing',
+        '/admin',
+        '/project/:id',
+        '/project/42',
+        '/task/1',
+      ],
+    })
     const router = createRouterCore({
       routes,
       hasAuth: () => false,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          favoriteRoutePaths: [
-            '/Dashboard/',
-            '/dashboard',
-            '/settings',
-            '/missing',
-            '/admin',
-            '/project/:id',
-            '/project/42',
-            '/task/1',
-          ],
-        })),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths,
-      },
+      storageAdapter: adapter,
     })
 
     await router.hydrateStorage()
@@ -1127,10 +1133,12 @@ describe('createRouterCore', () => {
       '/task/:id',
     ])
     await vi.waitFor(() => {
-      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
-        'default',
-        ['/dashboard', '/admin', '/project/:id', '/task/:id'],
-      )
+      expect(disk.favoriteRoutePaths).toEqual([
+        '/dashboard',
+        '/admin',
+        '/project/:id',
+        '/task/:id',
+      ])
     })
   })
 
@@ -1843,62 +1851,71 @@ describe('createRouterCore', () => {
 
   /** hydration 前已经确认的真实动态地址应覆盖存储旧值并回写修复。 */
   it('writes back a current dynamic pathname that overrides hydrated storage', async () => {
-    const saveFixedParamsPathMap = vi.fn(async () => undefined)
-    const adapter: RouterStorageAdapter = {
-      load: vi.fn(async () => ({
-        fixedTabs: [],
-        fixedParamsPathMap: {
-          '/project/:id': '/project/1',
-          '/customer/:id': '/customer/7',
-        },
-      })),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap,
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
-    }
+    const { disk, adapter } = createMemoryStorage({
+      fixedParamsPathMap: {
+        '/project/:id': '/project/1',
+        '/customer/:id': '/customer/7',
+      },
+    })
+    const update = vi.fn(adapter.update)
     const router = createRouterCore({
       routes,
-      storageAdapter: adapter,
+      storageAdapter: {
+        load: adapter.load,
+        update,
+      },
     })
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
 
-    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
     await router.hydrateStorage()
     await vi.waitFor(() => {
-      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
-        'default',
-        {
-          '/project/:id': '/project/42',
-          '/customer/:id': '/customer/7',
-        },
-      )
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/project/:id': '/project/42',
+        '/customer/:id': '/customer/7',
+      })
     })
 
     await router.hydrateStorage()
-    expect(saveFixedParamsPathMap).toHaveBeenCalledOnce()
+    expect(update).toHaveBeenCalledOnce()
   })
 
   /** 加载进行中确认的新 pathname 要与存储中的其它 key 合并，不能覆盖整张表。 */
   it('merges a dynamic pathname confirmed while hydration is in flight', async () => {
-    let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
-    const saveFixedParamsPathMap = vi.fn(async () => undefined)
+    const disk = normalizeRouterStorageState()
+    let resolveLoad!: (value: RouterStorageState) => void
     const router = createRouterCore({
       routes,
       storageAdapter: {
-        load: vi.fn(
-          () => new Promise<ReturnType<typeof normalizeRouterStorageState>>((resolve) => {
-            resolveLoad = resolve
-          }),
-        ),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap,
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        load: () => new Promise<RouterStorageState>((resolve) => {
+          resolveLoad = (value) => {
+            disk.fixedTabs = [...value.fixedTabs]
+            disk.fixedParamsPathMap = { ...value.fixedParamsPathMap }
+            disk.favoriteRoutePaths = [...value.favoriteRoutePaths]
+            resolve({
+              fixedTabs: [...disk.fixedTabs],
+              fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+              favoriteRoutePaths: [...disk.favoriteRoutePaths],
+            })
+          }
+        }),
+        update: async (_storageKey, recipe) => {
+          const next = recipe({
+            fixedTabs: [...disk.fixedTabs],
+            fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+            favoriteRoutePaths: [...disk.favoriteRoutePaths],
+          })
+          disk.fixedTabs = [...next.fixedTabs]
+          disk.fixedParamsPathMap = { ...next.fixedParamsPathMap }
+          disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+        },
       },
     })
 
     const hydration = router.hydrateStorage()
+    await vi.waitFor(() => expect(resolveLoad).toEqual(expect.any(Function)))
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
-    expect(saveFixedParamsPathMap).not.toHaveBeenCalled()
+    expect(disk.fixedParamsPathMap).toEqual({})
 
     resolveLoad({
       fixedTabs: [],
@@ -1910,30 +1927,22 @@ describe('createRouterCore', () => {
     })
     await hydration
     await vi.waitFor(() => {
-      expect(saveFixedParamsPathMap).toHaveBeenCalledWith(
-        'default',
-        {
-          '/project/:id': '/project/42',
-          '/customer/:id': '/customer/7',
-        },
-      )
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/project/:id': '/project/42',
+        '/customer/:id': '/customer/7',
+      })
     })
   })
 
-  /** 缺少可信真实地址的固定动态页签无法恢复，应清理并回写存储。 */
+  /** 缺少可信真实地址的固定动态页签无法恢复，应对着磁盘最新值清掉。 */
   it('removes an unrestorable fixed dynamic tab loaded from storage', async () => {
-    const saveFixedTabs = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/project/:id'],
+      fixedParamsPathMap: {},
+    })
     const router = createRouterCore({
       routes,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: ['/project/:id'],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs,
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
-      },
+      storageAdapter: adapter,
     })
 
     await router.hydrateStorage()
@@ -1941,24 +1950,18 @@ describe('createRouterCore', () => {
     expect(router.getState().fixedSet).toEqual([])
     expect(router.getState().tabs).toEqual([])
     await vi.waitFor(() => {
-      expect(saveFixedTabs).toHaveBeenCalledWith('default', [])
+      expect(disk.fixedTabs).toEqual([])
     })
   })
 
   /** 旧存储中的大小写、尾斜杠和重复 key 要整理成当前标准页签集合。 */
   it('normalizes and deduplicates persisted fixed tab keys', async () => {
-    const saveFixedTabs = vi.fn(async () => undefined)
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/Dashboard/', '/dashboard'],
+    })
     const router = createRouterCore({
       routes,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: ['/Dashboard/', '/dashboard'],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs,
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
-      },
+      storageAdapter: adapter,
     })
 
     await router.hydrateStorage()
@@ -1967,7 +1970,7 @@ describe('createRouterCore', () => {
     expect(router.getState().fixedSet).toEqual(['/dashboard'])
     expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
     await vi.waitFor(() => {
-      expect(saveFixedTabs).toHaveBeenCalledWith('default', ['/dashboard'])
+      expect(disk.fixedTabs).toEqual(['/dashboard'])
     })
   })
 
@@ -1975,15 +1978,10 @@ describe('createRouterCore', () => {
   it('restores persisted fixed-tab order after the active route syncs first', async () => {
     const router = createRouterCore({
       routes,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: ['/dashboard', '/settings/profile'],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
-      },
+      storageAdapter: createNoopStorageAdapter(async () => ({
+        fixedTabs: ['/dashboard', '/settings/profile'],
+        fixedParamsPathMap: {},
+      })),
     })
 
     router.syncLocation({
@@ -2008,21 +2006,15 @@ describe('createRouterCore', () => {
     expect(router.getState().activeTabKey).toBe('/settings/profile')
   })
 
-  /** 加载数据超过当前固定上限时要裁剪，并把清理结果写回存储。 */
-  it('limits hydrated fixed tabs and writes back the cleaned set', async () => {
-    const saveFixedTabs = vi.fn(async () => undefined)
+  /** 加载数据超过当前固定上限时要裁剪，并对着磁盘最新值写回清理结果。 */
+  it('limits hydrated fixed tabs and writes the cleaned set back', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/dashboard', '/settings/profile'],
+    })
     const router = createRouterCore({
       routes,
       maxFixedTabCount: 1,
-      storageAdapter: {
-        load: vi.fn(async () => ({
-          fixedTabs: ['/dashboard', '/settings/profile'],
-          fixedParamsPathMap: {},
-        })),
-        saveFixedTabs,
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths: vi.fn(async () => undefined),
-      },
+      storageAdapter: adapter,
     })
 
     await router.hydrateStorage()
@@ -2030,7 +2022,7 @@ describe('createRouterCore', () => {
     expect(router.getState().fixedSet).toEqual(['/dashboard'])
     expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
     await vi.waitFor(() => {
-      expect(saveFixedTabs).toHaveBeenCalledWith('default', ['/dashboard'])
+      expect(disk.fixedTabs).toEqual(['/dashboard'])
     })
   })
 
@@ -2041,15 +2033,14 @@ describe('createRouterCore', () => {
     let attempts = 0
     const onStorageError = vi.fn()
     const adapter: RouterStorageAdapter = {
-      load: vi.fn(async () => ({ fixedTabs: [], fixedParamsPathMap: {} })),
-      saveFixedTabs: vi.fn(async (_storageKey, fixedTabs) => {
+      load: vi.fn(async () => ({})),
+      update: async (_storageKey, recipe) => {
         attempts += 1
+        const next = recipe(normalizeRouterStorageState())
         if (attempts === 1)
           throw saveError
-        persistedFixedTabs.push([...fixedTabs])
-      }),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+        persistedFixedTabs.push([...next.fixedTabs])
+      },
     }
     const router = createRouterCore({
       routes,
@@ -2063,7 +2054,7 @@ describe('createRouterCore', () => {
     await vi.waitFor(() => expect(onStorageError).toHaveBeenCalledOnce())
     expect(onStorageError).toHaveBeenCalledWith(saveError, {
       storageKey: 'default',
-      phase: 'saveFixedTabs',
+      phase: 'update',
     })
 
     expect(router.toggleFixed('/settings/profile')).toBe(true)
@@ -2084,15 +2075,12 @@ describe('createRouterCore', () => {
     const loadError = new Error('load failed')
     const callbackError = new Error('storage callback failed')
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const adapter: RouterStorageAdapter = {
-      load: vi.fn(async () => {
+    const router = createRouterCore({
+      routes,
+      storageAdapter: createNoopStorageAdapter(async () => {
         throw loadError
       }),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
-    }
-    const router = createRouterCore({ routes, storageAdapter: adapter })
+    })
     router.configureRuntime({
       onStorageError: () => {
         throw callbackError
@@ -2123,12 +2111,10 @@ describe('createRouterCore', () => {
       throw callbackError
     })
     const adapter: RouterStorageAdapter = {
-      load: vi.fn(async () => ({ fixedTabs: [], fixedParamsPathMap: {} })),
-      saveFixedTabs: vi.fn(async () => {
+      load: vi.fn(async () => ({})),
+      update: async () => {
         throw saveError
-      }),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
+      },
     }
     const router = createRouterCore({
       routes,
@@ -2147,7 +2133,7 @@ describe('createRouterCore', () => {
       })
       expect(onStorageError).toHaveBeenCalledOnce()
       expect(onStorageError.mock.calls[0][0]).toBe(saveError)
-      expect(onStorageError.mock.calls[0][1].phase).toBe('saveFixedTabs')
+      expect(onStorageError.mock.calls[0][1].phase).toBe('update')
       expect(router.getState().fixedSet).toEqual(['/dashboard'])
     } finally {
       consoleError.mockRestore()
@@ -2156,31 +2142,24 @@ describe('createRouterCore', () => {
 
   /** 加载期间用户修改固定页签时，返回的旧存储值不能覆盖本地新状态。 */
   it('hydrates fixed tabs without overwriting local changes made in flight', async () => {
-    let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
-    const adapter: RouterStorageAdapter = {
-      load: vi.fn(
-        () => new Promise<ReturnType<typeof normalizeRouterStorageState>>((resolve) => {
+    let resolveLoad!: (value: RouterStorageState) => void
+    const router = createRouterCore({
+      routes,
+      storageAdapter: createNoopStorageAdapter(
+        () => new Promise<RouterStorageState>((resolve) => {
           resolveLoad = resolve
         }),
       ),
-      saveFixedTabs: vi.fn(async () => undefined),
-      saveFixedParamsPathMap: vi.fn(async () => undefined),
-      saveFavoriteRoutePaths: vi.fn(async () => undefined),
-    }
-    const router = createRouterCore({
-      routes,
-      storageAdapter: adapter,
       storageKey: 'user-1',
     })
     const hydration = router.hydrateStorage()
+    await vi.waitFor(() => expect(resolveLoad).toEqual(expect.any(Function)))
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     router.toggleFixed('/dashboard')
 
-    resolveLoad({
+    resolveLoad(normalizeRouterStorageState({
       fixedTabs: ['/settings/profile'],
-      fixedParamsPathMap: {},
-      favoriteRoutePaths: [],
-    })
+    }))
     await hydration
 
     expect(router.getState().fixedSet).toEqual(['/dashboard'])
@@ -2189,38 +2168,37 @@ describe('createRouterCore', () => {
 
   /** 收藏与固定页签遵循同样的版本保护，等待期间的本地收藏优先。 */
   it('hydrates favorites without overwriting local changes made in flight', async () => {
-    let resolveLoad!: (value: ReturnType<typeof normalizeRouterStorageState>) => void
-    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const disk = normalizeRouterStorageState()
+    let resolveLoad!: (value: RouterStorageState) => void
     const router = createRouterCore({
       routes,
       storageAdapter: {
-        load: vi.fn(
-          () => new Promise<ReturnType<typeof normalizeRouterStorageState>>((resolve) => {
-            resolveLoad = resolve
-          }),
-        ),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths,
+        load: () => new Promise<RouterStorageState>((resolve) => {
+          resolveLoad = resolve
+        }),
+        update: async (_storageKey, recipe) => {
+          const next = recipe({
+            fixedTabs: [...disk.fixedTabs],
+            fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+            favoriteRoutePaths: [...disk.favoriteRoutePaths],
+          })
+          disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+        },
       },
     })
     const hydration = router.hydrateStorage()
+    await vi.waitFor(() => expect(resolveLoad).toEqual(expect.any(Function)))
 
     expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
-    resolveLoad({
-      fixedTabs: [],
-      fixedParamsPathMap: {},
+    resolveLoad(normalizeRouterStorageState({
       favoriteRoutePaths: ['/settings/profile'],
-    })
+    }))
     await hydration
 
     expect(router.getState().favoriteRoutePaths).toEqual(['/dashboard'])
     expect(router.getState().storageHydrated).toBe(true)
     await vi.waitFor(() => {
-      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
-        'default',
-        ['/dashboard'],
-      )
+      expect(disk.favoriteRoutePaths).toEqual(['/dashboard'])
     })
   })
 
@@ -2228,21 +2206,25 @@ describe('createRouterCore', () => {
   it('keeps and persists a favorite change when hydration fails', async () => {
     const loadError = new Error('favorite load failed')
     let rejectLoad!: (reason?: unknown) => void
-    const saveFavoriteRoutePaths = vi.fn(async () => undefined)
+    const disk = normalizeRouterStorageState()
     const router = createRouterCore({
       routes,
       storageAdapter: {
-        load: vi.fn(
-          () => new Promise<never>((_resolve, reject) => {
-            rejectLoad = reject
-          }),
-        ),
-        saveFixedTabs: vi.fn(async () => undefined),
-        saveFixedParamsPathMap: vi.fn(async () => undefined),
-        saveFavoriteRoutePaths,
+        load: () => new Promise<never>((_resolve, reject) => {
+          rejectLoad = reject
+        }),
+        update: async (_storageKey, recipe) => {
+          const next = recipe({
+            fixedTabs: [...disk.fixedTabs],
+            fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+            favoriteRoutePaths: [...disk.favoriteRoutePaths],
+          })
+          disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+        },
       },
     })
     const hydration = router.hydrateStorage()
+    await vi.waitFor(() => expect(rejectLoad).toEqual(expect.any(Function)))
 
     expect(router.toggleFavoriteRoute('/dashboard')).toBe(true)
     rejectLoad(loadError)
@@ -2252,10 +2234,117 @@ describe('createRouterCore', () => {
     expect(router.getState().storageHydrated).toBe(false)
     expect(router.getState().storageLoadError).toBe(loadError)
     await vi.waitFor(() => {
-      expect(saveFavoriteRoutePaths).toHaveBeenCalledWith(
-        'default',
-        ['/dashboard'],
-      )
+      expect(disk.favoriteRoutePaths).toEqual(['/dashboard'])
+    })
+  })
+
+  /** 包装后的 Adapter 让后打开的 Core 等到排队中的收藏写入完成再 load。 */
+  it('loads through the remote write queue after a queued favorite save', async () => {
+    const disk = normalizeRouterStorageState()
+    let releaseSave!: () => void
+    const saveGate = new Promise<void>((resolve) => {
+      releaseSave = resolve
+    })
+    let markSaveStarted!: () => void
+    const saveStarted = new Promise<void>((resolve) => {
+      markSaveStarted = resolve
+    })
+    const adapter = createRemoteRouterStorageAdapter({
+      async load() {
+        return {
+          fixedTabs: [...disk.fixedTabs],
+          fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+          favoriteRoutePaths: [...disk.favoriteRoutePaths],
+        }
+      },
+      update: async (_storageKey, recipe) => {
+        markSaveStarted()
+        await saveGate
+        const next = recipe({
+          fixedTabs: [...disk.fixedTabs],
+          fixedParamsPathMap: { ...disk.fixedParamsPathMap },
+          favoriteRoutePaths: [...disk.favoriteRoutePaths],
+        })
+        disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
+      },
+    })
+    const windowA = createRouterCore({ routes, storageAdapter: adapter })
+    await windowA.hydrateStorage()
+    expect(windowA.toggleFavoriteRoute('/settings/profile')).toBe(true)
+    await saveStarted
+
+    const windowB = createRouterCore({ routes, storageAdapter: adapter })
+    const hydrationB = windowB.hydrateStorage()
+    releaseSave()
+    await hydrationB
+
+    expect(windowB.getState().favoriteRoutePaths).toEqual(['/settings/profile'])
+  })
+
+  /** 只改当前动态页，不能用本实例整张 map 覆盖磁盘上别的 key。 */
+  it('patches one dynamic pathname without replacing the rest of the stored map', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedParamsPathMap: { '/customer/:id': '/customer/7' },
+    })
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+    })
+
+    await router.hydrateStorage()
+    router.syncLocation({ pathname: '/project/99', search: '', hash: '' })
+    await vi.waitFor(() => {
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/customer/:id': '/customer/7',
+        '/project/:id': '/project/99',
+      })
+    })
+  })
+
+  /** 关页时 pathname 为 null 必须从磁盘删掉该 key，不能把已删 key 又合并回来。 */
+  it('deletes a closed shared tab pathname without wiping other stored keys', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedParamsPathMap: {
+        '/customer/:id': '/customer/7',
+        '/project/:id': '/project/1',
+      },
+    })
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+    })
+
+    await router.hydrateStorage()
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/1', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(await router.closeTab('/project/:id')).toBe(true)
+    await vi.waitFor(() => {
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/customer/:id': '/customer/7',
+      })
+    })
+  })
+
+  /** 加载前确认的动态地址只补这一条，仍保留存储里其它 key。 */
+  it('patches a pre-hydration pathname instead of replacing the stored map', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedParamsPathMap: {
+        '/project/:id': '/project/1',
+        '/customer/:id': '/customer/7',
+      },
+    })
+    const router = createRouterCore({
+      routes,
+      storageAdapter: adapter,
+    })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    await router.hydrateStorage()
+    await vi.waitFor(() => {
+      expect(disk.fixedParamsPathMap).toEqual({
+        '/project/:id': '/project/42',
+        '/customer/:id': '/customer/7',
+      })
     })
   })
 })

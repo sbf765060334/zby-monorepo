@@ -10,7 +10,6 @@ import {
 } from '../../../components/ComponentPlayground'
 import type { CountMode, Snapshot } from '../shared'
 import {
-  createMemoryAdapter,
   defaultSnapshot,
   syncCounts,
   systemViews,
@@ -34,8 +33,6 @@ export default function OrderViewsExample() {
     setEvents((current) => [{ id, text }, ...current].slice(0, 8))
   }, [])
 
-  const adapter = React.useMemo(() => createMemoryAdapter(appendEvent), [appendEvent])
-
   const countGetter = React.useCallback(
     async (view: (typeof systemViews)[number]) => {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 240))
@@ -56,7 +53,6 @@ export default function OrderViewsExample() {
     >
       <Flex align="center" gap="small" wrap>
         <ProViewManagement<Snapshot>
-          adapter={adapter}
           currentSnapshot={snapshot}
           defaultSnapshot={defaultSnapshot}
           getViewCount={countMode === 'async' ? countGetter : undefined}
@@ -78,7 +74,7 @@ export default function OrderViewsExample() {
           onSaveView={(view) => appendEvent(`save · ${view.name}`)}
           onViewsChange={(views) => setLastViews(views)}
         />
-        <Tag color="blue">adapter + IndexedDB API shape</Tag>
+        <Tag color="blue">本地 IndexedDB</Tag>
       </Flex>
 
       <Divider style={{ marginBlock: 4 }} />

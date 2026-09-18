@@ -182,10 +182,8 @@ These options are fixed for the lifetime of a core instance:
 
 | Method | Parameters | Return | Description |
 | --- | --- | --- | --- |
-| `load` | `storageKey: string` | `Promise<Partial<RouterStorageState>>` | Loads a namespace. Fields may be missing; the core fills empty values. |
-| `saveFixedTabs` | `storageKey, fixedTabs: string[]` | `Promise<void>` | Saves the full ordered fixed-tab key snapshot. |
-| `saveFixedParamsPathMap` | `storageKey, fixedParamsPathMap: Record<string, string>` | `Promise<void>` | Saves the full mapping from shared dynamic tab keys to concrete pathnames. |
-| `saveFavoriteRoutePaths` | `storageKey, favoriteRoutePaths: string[]` | `Promise<void>` | Saves the full ordered favorite route snapshot. |
+| `load` | `storageKey: string` | `Promise<Partial<RouterStorageState>>` | Loads a namespace. Fields may be missing; the core fills empty values. Same-key `load` is queued with `update`. |
+| `update` | `storageKey, recipe: (current) => next` | `Promise<void>` | Applies one change to the latest persisted state. The core patches one field or one pathname; `null` deletes that key. |
 
 ### Dependent type: `RouterStorageState`
 
@@ -278,7 +276,7 @@ The second `RouterNavigate` parameter is `{ replace?: boolean }`. `replace: true
 | `RouterAfterTabCloseInfo.pathname` | `string` | Last concrete pathname represented by the closed tab. |
 | `RouterRuntimeOptions.onStorageError` | `(error, info) => void \| Promise<void>` | Load/save failure notification; callback failures are isolated. |
 | `RouterStorageErrorInfo.storageKey` | `string` | Storage namespace that failed. |
-| `RouterStorageErrorInfo.phase` | `RouterStorageErrorPhase` | `load`, `saveFixedTabs`, `saveFixedParamsPathMap`, or `saveFavoriteRoutePaths`. |
+| `RouterStorageErrorInfo.phase` | `RouterStorageErrorPhase` | `load` or `update`. |
 
 #### `RouterLocationEventPayload`
 
@@ -482,7 +480,8 @@ Router-core persists fixed-tab keys, the concrete pathname mapping needed by sha
 
 - Omit `storageAdapter` to use the built-in IndexedDB adapter.
 - Set `storageAdapter: false` for memory-only behavior.
-- Use `createRemoteRouterStorageAdapter` to normalize and serialize writes from a custom remote adapter.
+- Use `createRemoteRouterStorageAdapter` to normalize data and serialize same-key `load` and `update` calls.
+- Writes always go through `update(latest => next)`: fixed tabs and favorites last-write-win as whole fields; dynamic pathnames patch or delete one key. Hydration revises the latest disk snapshot instead of writing back a stale loaded copy.
 - `onStorageError` reports failures; the core does not retry an old snapshot over newer state.
 
 ## Registry and Storage Utilities
@@ -526,7 +525,7 @@ Router-core persists fixed-tab keys, the concrete pathname mapping needed by sha
 | `preloadRoute(route?)` | `RouterRoute \| null` | Calls route.preload or element.preload; errors never escape. |
 | `normalizeRouterStorageState(state?)` | `Partial<RouterStorageState> \| null` | Cleans and fills a complete storage state. |
 | `createIndexedDBRouterStorageAdapter()` | none | Returns the built-in IndexedDB adapter. |
-| `createRemoteRouterStorageAdapter(config)` | `RouterStorageAdapter` | Adds boundary normalization and same-key serialized writes. |
+| `createRemoteRouterStorageAdapter(config)` | `RouterStorageAdapter` | Adds boundary normalization and same-key serialized load/update. |
 
 ## Development
 

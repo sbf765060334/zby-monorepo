@@ -68,11 +68,7 @@ function renderProTable(ui: React.ReactElement) {
 function createTestAdapter<TSnapshot>(): ProViewManagementAdapter<TSnapshot> {
   return {
     load: vi.fn().mockResolvedValue({ views: [], activeViewId: undefined }),
-    create: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    reorder: vi.fn().mockResolvedValue(undefined),
-    setActiveViewId: vi.fn().mockResolvedValue(undefined),
   }
 }
 

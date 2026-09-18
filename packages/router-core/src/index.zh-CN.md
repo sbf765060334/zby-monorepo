@@ -182,10 +182,8 @@ export function App() {
 
 | 方法 | 参数 | 返回值 | 说明 |
 | --- | --- | --- | --- |
-| `load` | `storageKey: string` | `Promise<Partial<RouterStorageState>>` | 加载指定命名空间；字段可缺失，Core 会补空值。 |
-| `saveFixedTabs` | `storageKey, fixedTabs: string[]` | `Promise<void>` | 保存完整固定页签 key 数组，数组顺序就是显示顺序。 |
-| `saveFixedParamsPathMap` | `storageKey, fixedParamsPathMap: Record<string, string>` | `Promise<void>` | 保存共享动态页签 key 到最后真实 pathname 的完整映射。 |
-| `saveFavoriteRoutePaths` | `storageKey, favoriteRoutePaths: string[]` | `Promise<void>` | 保存完整收藏路由数组，数组顺序就是收藏顺序。 |
+| `load` | `storageKey: string` | `Promise<Partial<RouterStorageState>>` | 加载指定命名空间；字段可缺失，Core 会补空值。同一 storageKey 的 load 会与 update 排队。 |
+| `update` | `storageKey, recipe: (current) => next` | `Promise<void>` | 对着磁盘最新完整状态应用一次变更。Core 只改当前字段或单个 pathname；`pathname` 为 `null` 时删除该 key。 |
 
 ### 依赖类型：`RouterStorageState`
 
@@ -278,7 +276,7 @@ export function App() {
 | `RouterAfterTabCloseInfo.pathname` | `string` | 被关闭页签最后对应的真实 pathname。 |
 | `RouterRuntimeOptions.onStorageError` | `(error, info) => void \| Promise<void>` | 加载或保存失败通知。回调失败会被隔离。 |
 | `RouterStorageErrorInfo.storageKey` | `string` | 出错的存储命名空间。 |
-| `RouterStorageErrorInfo.phase` | `RouterStorageErrorPhase` | `load`、`saveFixedTabs`、`saveFixedParamsPathMap` 或 `saveFavoriteRoutePaths`。 |
+| `RouterStorageErrorInfo.phase` | `RouterStorageErrorPhase` | `load` 或 `update`。 |
 
 #### `RouterLocationEventPayload`
 
@@ -482,7 +480,8 @@ Router-core 只持久化固定页签 key、恢复共享动态页签所需的真�
 
 - 省略 `storageAdapter` 时使用内置 IndexedDB Adapter。
 - 传入 `storageAdapter: false` 时仅使用内存状态。
-- 使用 `createRemoteRouterStorageAdapter` 包装远程 Adapter，可以统一标准化数据并串行同一命名空间的写入。
+- 使用 `createRemoteRouterStorageAdapter` 包装远程 Adapter，可以统一标准化数据，并把同一命名空间的 load 和 update 串行起来。
+- 写入一律 `update(latest => next)`：固定页签/收藏按字段后写赢；动态 pathname 只补或删当前 key。hydration 若需要清洗，也是对着当时磁盘最新值修订，不会把刚读到的过期快照整表写回。
 - `onStorageError` 负责通知失败；core 不会用失败时捕获的旧快照覆盖后续新状态。
 
 ## Registry 与 Storage 工具
@@ -526,7 +525,7 @@ Router-core 只持久化固定页签 key、恢复共享动态页签所需的真�
 | `preloadRoute(route?)` | `RouterRoute \| null` | 尝试调用 route.preload 或 element.preload；失败不会冒泡。 |
 | `normalizeRouterStorageState(state?)` | `Partial<RouterStorageState> \| null` | 清洗并补齐成完整存储状态。 |
 | `createIndexedDBRouterStorageAdapter()` | 无 | 返回默认 IndexedDB Adapter。 |
-| `createRemoteRouterStorageAdapter(config)` | `RouterStorageAdapter` | 返回带边界清洗与同 key 串行写入保护的 Adapter。 |
+| `createRemoteRouterStorageAdapter(config)` | `RouterStorageAdapter` | 返回带边界清洗，以及同 key 串行 load/update 保护的 Adapter。 |
 
 ## 开发命令
 

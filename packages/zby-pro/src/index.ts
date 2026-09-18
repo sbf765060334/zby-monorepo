@@ -11,7 +11,7 @@ export type {
 } from '@zby/ui'
 export {
   createIndexedDBProViewManagementAdapter,
-  createRemoteProViewManagementAdapter,
+  normalizeProViewManagementStorageState,
 } from './components/pro-view-management'
 export { default as ProViewManagement } from './components/pro-view-management'
 export { default as ProModal } from './components/pro-modal'
@@ -23,7 +23,6 @@ export type {
   ProViewManagementAdapter,
   ProViewManagementCreateValidationPayload,
   ProViewManagementProps,
-  ProViewManagementRemoteAdapterConfig,
   ProViewManagementRenameValidationPayload,
   ProViewManagementScope,
   ProViewManagementStorageState,

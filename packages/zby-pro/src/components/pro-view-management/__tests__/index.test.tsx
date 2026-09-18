@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { zbyProIntlResources } from '../../../locale/intl-resources'
 import ProViewManagement, {
   createIndexedDBProViewManagementAdapter,
-  createRemoteProViewManagementAdapter,
+  normalizeProViewManagementStorageState,
 } from '..'
 import type { ProViewManagementAdapter, ProViewManagementView } from '../interface'
 import {
@@ -90,11 +90,7 @@ function renderWithIntl(node: React.ReactElement, locale = 'en-US') {
 function createTestAdapter<TSnapshot>(): ProViewManagementAdapter<TSnapshot> {
   return {
     load: vi.fn().mockResolvedValue({ views: [], activeViewId: undefined }),
-    create: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    reorder: vi.fn().mockResolvedValue(undefined),
-    setActiveViewId: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -200,13 +196,7 @@ describe('ProViewManagement utilities', () => {
 })
 
 describe('ProViewManagement adapters', () => {
-  it('returns a remote adapter unchanged', () => {
-    const adapter = createTestAdapter<{ keyword: string }>()
-
-    expect(createRemoteProViewManagementAdapter(adapter)).toBe(adapter)
-  })
-
-  it('persists CRUD, ordering, active state, and instance isolation in IndexedDB', async () => {
+  it('persists views, ordering, active state, and instance isolation in IndexedDB', async () => {
     const adapter = createIndexedDBProViewManagementAdapter<{
       keyword: string
     }>()
@@ -214,15 +204,41 @@ describe('ProViewManagement adapters', () => {
     const secondInstance = `${firstInstance}-b`
     const secondView = { ...customView, id: 'custom-closed', name: 'Closed records', order: 1 }
 
-    await adapter.create(firstInstance, customView)
-    await adapter.create(firstInstance, secondView)
-    await adapter.create(secondInstance, { ...customView, id: 'other-instance' })
-    await adapter.update(firstInstance, customView.id, {
-      name: 'Open items',
-      snapshot: { keyword: 'open-items' },
-    })
-    await adapter.reorder(firstInstance, [secondView.id, customView.id])
-    await adapter.setActiveViewId(firstInstance, secondView.id)
+    await adapter.update(firstInstance, (current) => ({
+      ...current,
+      views: normalizeCustomViews([customView, secondView]),
+    }))
+    await adapter.update(secondInstance, (current) => ({
+      ...current,
+      views: normalizeCustomViews([{ ...customView, id: 'other-instance' }]),
+    }))
+    await adapter.update(firstInstance, (current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.map((view) =>
+          view.id === customView.id
+            ? {
+                ...view,
+                name: 'Open items',
+                snapshot: { keyword: 'open-items' },
+              }
+            : view,
+        ),
+      ),
+    }))
+    await adapter.update(firstInstance, (current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.map((view) => ({
+          ...view,
+          order: view.id === secondView.id ? 0 : 1,
+        })),
+      ),
+    }))
+    await adapter.update(firstInstance, (current) => ({
+      ...current,
+      activeViewId: secondView.id,
+    }))
 
     const firstState = await adapter.load(firstInstance)
     const secondState = await adapter.load(secondInstance)
@@ -239,36 +255,101 @@ describe('ProViewManagement adapters', () => {
     expect(firstState.activeViewId).toBe(secondView.id)
     expect(secondState.views.map((view) => view.id)).toEqual(['other-instance'])
 
-    await adapter.remove(firstInstance, secondView.id)
+    await adapter.update(firstInstance, (current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.filter((view) => view.id !== secondView.id),
+      ),
+      activeViewId: undefined,
+    }))
     expect((await adapter.load(firstInstance)).views.map((view) => view.id)).toEqual([
       customView.id,
     ])
   })
 
-  it('uses adapter-backed validation against persisted custom views', async () => {
-    const adapter = createIndexedDBProViewManagementAdapter({
-      validationMessages,
+  it('loads after a queued update so a later reader sees the latest views', async () => {
+    const adapter = createIndexedDBProViewManagementAdapter<{
+      keyword: string
+    }>()
+    const instanceId = `pro-view-management-queue-${Date.now()}`
+    const updatePromise = adapter.update(instanceId, (current) => ({
+      ...normalizeProViewManagementStorageState(current),
+      views: normalizeCustomViews([customView]),
+      activeViewId: customView.id,
+    }))
+    const loaded = adapter.load(instanceId)
+
+    await updatePromise
+    expect((await loaded).views.map((view) => view.id)).toEqual([customView.id])
+    expect((await loaded).activeViewId).toBe(customView.id)
+  })
+
+  it('keeps existing views when a later active-view update lands', async () => {
+    const adapter = createIndexedDBProViewManagementAdapter<{
+      keyword: string
+    }>()
+    const instanceId = `pro-view-management-field-${Date.now()}`
+
+    await adapter.update(instanceId, (current) => ({
+      ...current,
+      views: normalizeCustomViews([customView]),
+    }))
+    await adapter.update(instanceId, (current) => ({
+      ...current,
+      activeViewId: customView.id,
+    }))
+
+    expect(await adapter.load(instanceId)).toEqual({
+      views: normalizeCustomViews([customView]),
+      activeViewId: customView.id,
     })
-    const instanceId = `pro-view-management-validation-${Date.now()}`
+  })
 
-    await adapter.create(instanceId, customView)
+  it('migrates legacy per-view records into one state blob', async () => {
+    const instanceId = `pro-view-management-legacy-${Date.now()}`
+    await new Promise<void>((resolve, reject) => {
+      const deleteRequest = indexedDB.deleteDatabase('zby-ui-pro-view-management')
+      deleteRequest.onerror = () => reject(deleteRequest.error)
+      deleteRequest.onsuccess = () => resolve()
+    })
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('zby-ui-pro-view-management', 1)
+      request.onerror = () => reject(request.error)
+      request.onupgradeneeded = () => {
+        const db = request.result
+        const views = db.createObjectStore('views', { keyPath: 'storageKey' })
+        views.createIndex('instanceId', 'instanceId', { unique: false })
+        db.createObjectStore('meta', { keyPath: 'instanceId' })
+      }
+      request.onsuccess = () => {
+        const db = request.result
+        const transaction = db.transaction(['views', 'meta'], 'readwrite')
+        transaction.objectStore('views').put({
+          ...customView,
+          instanceId,
+          storageKey: `${instanceId}:${customView.id}`,
+        })
+        transaction.objectStore('meta').put({
+          instanceId,
+          activeViewId: customView.id,
+        })
+        transaction.oncomplete = () => {
+          db.close()
+          resolve()
+        }
+        transaction.onerror = () => {
+          db.close()
+          reject(transaction.error)
+        }
+      }
+    })
 
-    await expect(
-      adapter.validateCreate!(instanceId, {
-        customViews: [],
-        mode: 'create',
-        name: customView.name,
-        systemViews: [],
-      }),
-    ).resolves.toBe('duplicated')
-    await expect(
-      adapter.validateRename!(instanceId, {
-        customViews: [],
-        name: customView.name,
-        systemViews: [],
-        viewId: 'different-id',
-      }),
-    ).resolves.toBe('duplicated')
+    const adapter = createIndexedDBProViewManagementAdapter<{
+      keyword: string
+    }>()
+    const state = await adapter.load(instanceId)
+    expect(state.views.map((view) => view.id)).toEqual([customView.id])
+    expect(state.activeViewId).toBe(customView.id)
   })
 })
 
@@ -304,10 +385,19 @@ describe('ProViewManagement component', () => {
     await waitFor(() => {
       expect(onActiveViewChange).toHaveBeenCalledWith(customView)
       expect(onApplyView).toHaveBeenCalledWith(customView)
-      expect(adapter.setActiveViewId).toHaveBeenCalledWith(
+      expect(vi.mocked(adapter.update)).toHaveBeenCalledWith(
         'preloaded-instance',
-        customView.id,
+        expect.any(Function),
       )
+      const recipe = vi.mocked(adapter.update).mock.calls[0]?.[1]
+      expect(
+        recipe?.({
+          views: [customView],
+          activeViewId: systemView.id,
+        }),
+      ).toMatchObject({
+        activeViewId: customView.id,
+      })
     })
   })
 

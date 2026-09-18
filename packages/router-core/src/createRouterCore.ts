@@ -164,10 +164,8 @@ export function createRouterCore<Route extends RouterRoute>(
   const getState = store.getState
   // Cache 构造期不会触发写回；持久化协调器随后立即接管该回调。
   let persistence!: RouterPersistence
-  const cache = new RouterUrlCache(
-    (value, tabKey, pathname) =>
-      persistence.handleParamsPathMapChange(value, tabKey, pathname),
-  )
+  const cache = new RouterUrlCache((tabKey, pathname) =>
+    persistence.handleParamsPathMapChange(tabKey, pathname))
   persistence = createRouterPersistence({
     storageAdapter,
     registry,

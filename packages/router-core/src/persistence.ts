@@ -2,15 +2,19 @@
  * 文件职责：协调 RouterCore 内存状态与外部存储之间的加载、合并和保存。
  *
  * 最难的地方是加载期间用户仍可能点击固定或收藏。本文件会记录这些本地变化，等旧数
- * 据加载回来后再安全合并，避免“较晚返回的旧数据”覆盖用户刚做的操作。
+ * 据加载回来后再安全合并，避免“较晚返回的旧数据”覆盖用户刚做的操作。写入一律走
+ * Adapter.update(latest => next)，对着磁盘最新值改字段或单个 pathname。
  */
 import type { StoreApi } from 'zustand/vanilla'
 
 import type { RouteRegistry } from './registry'
-import { createIndexedDBRouterStorageAdapter, normalizeRouterStorageState } from './storage'
+import {
+  createIndexedDBRouterStorageAdapter,
+  createStorageWriteQueue,
+  normalizeRouterStorageState,
+} from './storage'
 import {
   areStringArraysEqual,
-  areStringRecordsEqual,
   mergeTabsWithFixedSet,
   sanitizeFavoriteRoutePaths,
   sanitizeFixedTabKeys,
@@ -21,12 +25,17 @@ import type {
   RouterRuntimeOptions,
   RouterStorageAdapter,
   RouterStorageErrorInfo,
-  RouterStorageErrorPhase,
+  RouterStorageState,
 } from './types'
 import type { RouterUrlCache } from './urlState'
 
 /** 未显式注入 Adapter 时复用同一个懒加载 IndexedDB 实现。 */
 const DEFAULT_STORAGE_ADAPTER = createIndexedDBRouterStorageAdapter()
+/** 每个 Adapter 实例自己的同 key 队列，裸自定义 Adapter 经 Core 调用时也会串行。 */
+const adapterCallQueues = new WeakMap<
+  RouterStorageAdapter,
+  ReturnType<typeof createStorageWriteQueue>
+>()
 
 /** 把创建参数统一成“明确关闭”或“可直接调用的 Adapter”两种内部状态。 */
 export function resolveStorageAdapter(
@@ -54,16 +63,10 @@ interface CreateRouterPersistenceOptions<Route extends RouterRoute> {
 
 /** 持久化协调器向 createRouterCore 和页签模块提供的内部命令。 */
 export interface RouterPersistence {
-  /** Cache 的动态 pathname 映射变化入口。 */
-  handleParamsPathMapChange: (
-    value: Record<string, string>,
-    tabKey: string,
-    pathname: string | null,
-  ) => void
+  /** Cache 的单个动态 pathname 变化入口。 */
+  handleParamsPathMapChange: (tabKey: string, pathname: string | null) => void
   /** 保存完整固定页签快照。 */
   persistFixedTabs: (value: readonly string[]) => void
-  /** 保存完整动态 pathname 映射。 */
-  persistParamsPathMap: (value: Record<string, string>) => void
   /** 保存完整收藏路由快照。 */
   persistFavoriteRoutePaths: (value: readonly string[]) => void
   /** 加载并合并持久化状态；并发调用复用同一个 Promise。 */
@@ -89,9 +92,8 @@ export function createRouterPersistence<Route extends RouterRoute>(
   // 动态 pathname 需要按 tabKey 保存最后增量，因为加载结果里可能还有其它未触达 key。
   const pendingParamsPathMutations = new Map<string, string | null>()
 
-  /** 根据 hydration 是否完成，决定立即保存完整 Map 还是暂存一条增量。 */
+  /** 根据 hydration 是否完成，决定立即按 key 补丁保存还是暂存一条增量。 */
   function handleParamsPathMapChange(
-    value: Record<string, string>,
     tabKey: string,
     pathname: string | null,
   ) {
@@ -100,30 +102,36 @@ export function createRouterPersistence<Route extends RouterRoute>(
       pendingParamsPathMutations.set(tabKey, pathname)
       return
     }
-    persistParamsPathMap(value)
+    persistParamsPathChange(tabKey, pathname)
   }
 
-  /** 标记固定页签发生本地修改，并异步保存当前完整快照。 */
+  /** 标记固定页签发生本地修改，并按字段后写赢保存。 */
   function persistFixedTabs(value: readonly string[]) {
+    const fixedTabs = [...value]
     fixedTabsMutationVersion += 1
-    persist('saveFixedTabs', (adapter, storageKey) =>
-      adapter.saveFixedTabs(storageKey, [...value]))
+    persist((current) => ({ ...current, fixedTabs }))
   }
 
-  /** 异步保存共享动态页签的完整 pathname 映射。 */
-  function persistParamsPathMap(value: Record<string, string>) {
-    persist(
-      'saveFixedParamsPathMap',
-      (adapter, storageKey) =>
-        adapter.saveFixedParamsPathMap(storageKey, value),
-    )
+  /** 在磁盘最新 map 上增删一个动态 pathname。 */
+  function persistParamsPathChange(
+    tabKey: string,
+    pathname: string | null,
+  ) {
+    persist((current) => ({
+      ...current,
+      fixedParamsPathMap: patchParamsPathMap(
+        current.fixedParamsPathMap,
+        tabKey,
+        pathname,
+      ),
+    }))
   }
 
-  /** 标记收藏发生本地修改，并异步保存当前完整快照。 */
+  /** 标记收藏发生本地修改，并按字段后写赢保存。 */
   function persistFavoriteRoutePaths(value: readonly string[]) {
+    const favoriteRoutePaths = [...value]
     favoriteRoutesMutationVersion += 1
-    persist('saveFavoriteRoutePaths', (adapter, storageKey) =>
-      adapter.saveFavoriteRoutePaths(storageKey, [...value]))
+    persist((current) => ({ ...current, favoriteRoutePaths }))
   }
 
   /** onStorageError 自己失败时只记录日志，不能再递归调用同一个错误回调。 */
@@ -141,7 +149,6 @@ export function createRouterPersistence<Route extends RouterRoute>(
       return
 
     try {
-      // Promise.resolve 同时兼容普通返回值和 Promise 返回值。
       void Promise.resolve(callback(error, info))
         .catch(reportStorageErrorCallbackError)
     } catch (callbackError) {
@@ -149,29 +156,30 @@ export function createRouterPersistence<Route extends RouterRoute>(
     }
   }
 
-  /** 在微任务中执行一次保存，并把所有失败统一交给错误回调。 */
+  /** 在微任务中对着磁盘最新值执行一次 recipe，失败交给错误回调。 */
   function persist(
-    phase: Exclude<RouterStorageErrorPhase, 'load'>,
-    action: (adapter: RouterStorageAdapter, storageKey: string) => Promise<void>,
+    recipe: (current: RouterStorageState) => RouterStorageState,
   ) {
     if (storageAdapter === false)
       return
-    // storageKey 在实例内固定，但仍从 Store 读取，保持唯一事实来源。
     const storageKey = getState().storageKey
-    void Promise.resolve().then(() => action(storageAdapter, storageKey)).catch((error) => {
-      notifyStorageError(error, { storageKey, phase })
-    })
+    void Promise.resolve()
+      .then(() =>
+        runAdapterCall(storageAdapter, storageKey, () =>
+          storageAdapter.update(storageKey, (current) =>
+            recipe(normalizeRouterStorageState(current)))))
+      .catch((error) => {
+        notifyStorageError(error, { storageKey, phase: 'update' })
+      })
   }
 
   /** 启动一次 hydration；重复或并发调用不会创建第二个加载任务。 */
   function hydrateStorage() {
-    // 已在加载时，后来的调用方必须等待同一个 Promise，而不是提前认为加载完成。
     if (storageHydrationPromise)
       return storageHydrationPromise
     if (storageAdapter === false || getState().storageHydrated)
       return Promise.resolve()
 
-    // 完成后清空任务引用：成功状态会阻止重复加载，失败状态则允许调用方再次尝试。
     const promise = executeHydration().finally(() => {
       storageHydrationPromise = null
     })
@@ -179,34 +187,32 @@ export function createRouterPersistence<Route extends RouterRoute>(
     return promise
   }
 
-  /** 执行“读取 → 清洗 → 合并本地变化 → 更新 Store → 必要时回写”的完整事务。 */
+  /** 执行“读取 → 清洗内存 → 必要时对着磁盘最新值修订”的完整事务。 */
   async function executeHydration() {
     if (storageAdapter === false)
       return
     const storageKey = getState().storageKey
-    // 记住加载开始时的版本，回来后就能判断用户是否在等待期间做过修改。
     const fixedTabsVersion = fixedTabsMutationVersion
     const favoriteRoutesVersion = favoriteRoutesMutationVersion
     setState({ storageLoading: true, storageLoadError: undefined })
 
     try {
-      // 外部 Adapter 返回的数据不可信，先补齐字段并复制数组/对象。
       const loaded = normalizeRouterStorageState(
-        await storageAdapter.load(storageKey),
+        await runAdapterCall(storageAdapter, storageKey, () =>
+          storageAdapter.load(storageKey)),
       )
       const state = getState()
       const fixedUnchanged = fixedTabsVersion === fixedTabsMutationVersion
       const favoritesUnchanged = favoriteRoutesVersion === favoriteRoutesMutationVersion
+      const pendingMutations = [...pendingParamsPathMutations]
 
-      // 先以存储全量数据为底，再叠加本次会话尚未保存的每个 tabKey 增量。
       const mergedParamsPathMap = { ...loaded.fixedParamsPathMap }
-      pendingParamsPathMutations.forEach((pathname, tabKey) => {
+      pendingMutations.forEach(([tabKey, pathname]) => {
         if (pathname)
           mergedParamsPathMap[tabKey] = pathname
         else
           delete mergedParamsPathMap[tabKey]
       })
-      // 加载期间未修改才采用存储值；已经修改就保留更“新”的当前内存值。
       const nextFixedSet = fixedUnchanged
         ? sanitizeFixedTabKeys(
             loaded.fixedTabs,
@@ -218,7 +224,6 @@ export function createRouterPersistence<Route extends RouterRoute>(
         ? sanitizeFavoriteRoutePaths(loaded.favoriteRoutePaths, registry)
         : state.favoriteRoutePaths
 
-      // Cache 要先拿到完整映射，再把 Store 标为 hydrated，后续变化才能直接完整保存。
       cache.hydrateParamsPathMap(mergedParamsPathMap)
       pendingParamsPathMutations.clear()
       setState({
@@ -230,19 +235,15 @@ export function createRouterPersistence<Route extends RouterRoute>(
         storageHydrated: true,
         storageLoading: false,
       })
-      // 清洗、去重或裁剪改变了存储内容时主动回写，避免下次启动重复清理。
-      if (fixedUnchanged && !areStringArraysEqual(nextFixedSet, loaded.fixedTabs))
-        persistFixedTabs(nextFixedSet)
-      if (!areStringRecordsEqual(mergedParamsPathMap, loaded.fixedParamsPathMap))
-        persistParamsPathMap(mergedParamsPathMap)
-      if (
-        favoritesUnchanged &&
-        !areStringArraysEqual(nextFavoriteRoutePaths, loaded.favoriteRoutePaths)
-      ) {
-        persistFavoriteRoutePaths(nextFavoriteRoutePaths)
-      }
+      persistHydrationRevision({
+        pendingMutations,
+        loaded,
+        nextFixedSet,
+        nextFavoriteRoutePaths,
+        fixedUnchanged,
+        favoritesUnchanged,
+      })
     } catch (error) {
-      // 加载失败不清空当前内存页签/收藏，只结束 loading 并暴露错误供 UI 决定展示。
       setState({ storageLoading: false, storageLoadError: error })
       notifyStorageError(error, {
         storageKey,
@@ -251,12 +252,89 @@ export function createRouterPersistence<Route extends RouterRoute>(
     }
   }
 
-  // 只返回其它模块真正需要的命令，版本号和 pending Map 继续留在私有闭包中。
+  /**
+   * 把 pending pathname 和内存清洗结果写到磁盘最新值上。
+   *
+   * 不能把刚 load 的那份快照整表 save 回去；recipe 会再读一次当时磁盘。
+   */
+  function persistHydrationRevision(input: {
+    pendingMutations: Array<[string, string | null]>
+    loaded: RouterStorageState
+    nextFixedSet: readonly string[]
+    nextFavoriteRoutePaths: readonly string[]
+    fixedUnchanged: boolean
+    favoritesUnchanged: boolean
+  }) {
+    const pendingParams = input.pendingMutations.length > 0
+    const dirtyFixed = input.fixedUnchanged &&
+      !areStringArraysEqual(input.nextFixedSet, input.loaded.fixedTabs)
+    const dirtyFavorites = input.favoritesUnchanged &&
+      !areStringArraysEqual(
+        input.nextFavoriteRoutePaths,
+        input.loaded.favoriteRoutePaths,
+      )
+    if (!pendingParams && !dirtyFixed && !dirtyFavorites)
+      return
+
+    persist((current) => {
+      const fixedParamsPathMap = { ...current.fixedParamsPathMap }
+      input.pendingMutations.forEach(([tabKey, pathname]) => {
+        if (pathname)
+          fixedParamsPathMap[tabKey] = pathname
+        else
+          delete fixedParamsPathMap[tabKey]
+      })
+      return {
+        fixedTabs: input.fixedUnchanged
+          ? sanitizeFixedTabKeys(
+              current.fixedTabs,
+              fixedParamsPathMap,
+              registry,
+            ).slice(0, getState().maxFixedTabCount)
+          : current.fixedTabs,
+        fixedParamsPathMap,
+        favoriteRoutePaths: input.favoritesUnchanged
+          ? sanitizeFavoriteRoutePaths(current.favoriteRoutePaths, registry)
+          : current.favoriteRoutePaths,
+      }
+    })
+  }
+
   return {
     handleParamsPathMapChange,
     persistFixedTabs,
-    persistParamsPathMap,
     persistFavoriteRoutePaths,
     hydrateStorage,
   }
+}
+
+/** 在完整 map 上增删一个 tabKey，pathname 为 null 时删除。 */
+function patchParamsPathMap(
+  map: Record<string, string>,
+  tabKey: string,
+  pathname: string | null,
+) {
+  const next = { ...map }
+  if (pathname)
+    next[tabKey] = pathname
+  else
+    delete next[tabKey]
+  return next
+}
+
+/** 同一 Adapter 实例、同一 storageKey 的 load/update 经 Core 调用时串行。 */
+function runAdapterCall<T>(
+  adapter: RouterStorageAdapter,
+  storageKey: string,
+  action: () => Promise<T>,
+): Promise<T> {
+  let enqueue = adapterCallQueues.get(adapter)
+  if (!enqueue) {
+    enqueue = createStorageWriteQueue()
+    adapterCallQueues.set(adapter, enqueue)
+  }
+  let result!: T
+  return enqueue(storageKey, async () => {
+    result = await action()
+  }).then(() => result)
 }

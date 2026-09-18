@@ -175,11 +175,7 @@ export interface RouterStorageState {
 }
 
 /** 持久化失败时所处的精确读写阶段。 */
-export type RouterStorageErrorPhase =
-  | 'load'
-  | 'saveFixedTabs'
-  | 'saveFixedParamsPathMap'
-  | 'saveFavoriteRoutePaths'
+export type RouterStorageErrorPhase = 'load' | 'update'
 
 /** 持久化错误回调收到的上下文，帮助业务判断哪一次读写失败。 */
 export interface RouterStorageErrorInfo {
@@ -192,22 +188,21 @@ export interface RouterStorageErrorInfo {
 /**
  * router-core 持久化适配器。
  *
- * 各 save 方法只负责各自字段，具体实现必须避免并发字段写入互相覆盖。
+ * 和 idb-keyval 一样：读用 load，写用 update(latest => next)。
+ * Core 只提交字段或单个 pathname 的 recipe，由 Adapter 对着磁盘最新值合并。
  */
 export interface RouterStorageAdapter {
-  /** 加载指定命名空间的持久化状态；缺失字段由 core 按空状态补齐。 */
+  /** 加载指定命名空间；字段可缺失，Core 会补空值。 */
   load: (storageKey: string) => Promise<Partial<RouterStorageState>>
-  /** 保存固定页签集合。 */
-  saveFixedTabs: (storageKey: string, fixedTabs: string[]) => Promise<void>
-  /** 保存共享动态页签的真实 pathname 映射。 */
-  saveFixedParamsPathMap: (
+  /**
+   * 在最新持久化状态上应用一次变更。
+   *
+   * recipe 收到的是已经补齐字段的完整状态；Adapter 必须基于当前磁盘值执行，
+   * 不能先用调用方手里的过期快照整份覆盖。
+   */
+  update: (
     storageKey: string,
-    fixedParamsPathMap: Record<string, string>,
-  ) => Promise<void>
-  /** 保存收藏路由集合。 */
-  saveFavoriteRoutePaths: (
-    storageKey: string,
-    favoriteRoutePaths: string[],
+    recipe: (current: RouterStorageState) => RouterStorageState,
   ) => Promise<void>
 }
 

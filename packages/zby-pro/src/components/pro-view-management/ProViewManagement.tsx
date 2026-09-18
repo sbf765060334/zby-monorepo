@@ -11,7 +11,6 @@ import * as React from 'react'
 
 import { createIndexedDBProViewManagementAdapter } from './adapters'
 import type {
-  ProViewManagementAdapter,
   ProViewManagementProps,
   ProViewManagementStorageState,
   ProViewManagementView,
@@ -118,11 +117,8 @@ export default function ProViewManagement<TSnapshot = unknown>({
     )
   const adapter = React.useMemo(
     () =>
-      (adapterProp ??
-        createIndexedDBProViewManagementAdapter({
-          validationMessages: viewNameValidationMessages,
-        })) as ProViewManagementAdapter<TSnapshot>,
-    [adapterProp, viewNameValidationMessages],
+      adapterProp ?? createIndexedDBProViewManagementAdapter<TSnapshot>(),
+    [adapterProp],
   )
   const normalizedSystemViews = React.useMemo(
     () => normalizeSystemViews(systemViews),
@@ -241,6 +237,20 @@ export default function ProViewManagement<TSnapshot = unknown>({
     [normalizedSystemViews, onViewsChangeEvent],
   )
 
+  const persist = React.useCallback(
+    (
+      recipe: (
+        current: ProViewManagementStorageState<TSnapshot>,
+      ) => ProViewManagementStorageState<TSnapshot>,
+    ) =>
+      adapter.update(instanceId, (current) =>
+        recipe({
+          views: normalizeCustomViews(current.views ?? []),
+          activeViewId: current.activeViewId,
+        })),
+    [adapter, instanceId],
+  )
+
   const setActiveView = React.useCallback(
     async (
       view: ProViewManagementView<TSnapshot>,
@@ -248,11 +258,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
     ) => {
       setActiveViewIdState(view.id)
       if (options?.persistActiveView !== false) {
-        await adapter.setActiveViewId(instanceId, view.id)
+        await persist((current) => ({
+          ...current,
+          activeViewId: view.id,
+        }))
       }
       onActiveViewChangeEvent?.(view)
     },
-    [adapter, instanceId, onActiveViewChangeEvent],
+    [onActiveViewChangeEvent, persist],
   )
 
   const applyView = React.useCallback(
@@ -269,12 +282,12 @@ export default function ProViewManagement<TSnapshot = unknown>({
 
   const applyLoadedStorageState = React.useCallback(
     (
-      storageState: ProViewManagementStorageState<TSnapshot>,
+      storageState: Partial<ProViewManagementStorageState<TSnapshot>>,
       options: {
         applyActiveView: boolean
       },
     ) => {
-      const nextCustomViews = normalizeCustomViews(storageState.views)
+      const nextCustomViews = normalizeCustomViews(storageState.views ?? [])
       const nextActiveView = resolveActiveView(
         storageState.activeViewId ?? null,
         normalizedSystemViews,
@@ -314,29 +327,20 @@ export default function ProViewManagement<TSnapshot = unknown>({
 
   const validateCreateName = React.useCallback(
     async (name: string) => {
-      const payload = {
-        customViews,
-        maxCustomViews,
-        mode: createMode,
-        name,
-        systemViews: normalizedSystemViews,
-      }
-      const localMessage = validateCreateViewName(
-        payload,
+      return validateCreateViewName(
+        {
+          customViews,
+          maxCustomViews,
+          mode: createMode,
+          name,
+          systemViews: normalizedSystemViews,
+        },
         viewNameValidationMessages,
       )
-
-      if (localMessage) {
-        return localMessage
-      }
-
-      return adapter.validateCreate?.(instanceId, payload)
     },
     [
-      adapter,
       createMode,
       customViews,
-      instanceId,
       maxCustomViews,
       normalizedSystemViews,
       viewNameValidationMessages,
@@ -345,27 +349,18 @@ export default function ProViewManagement<TSnapshot = unknown>({
 
   const validateRenameName = React.useCallback(
     async (viewId: string, name: string) => {
-      const payload = {
-        customViews,
-        name,
-        systemViews: normalizedSystemViews,
-        viewId,
-      }
-      const localMessage = validateRenameViewName(
-        payload,
+      return validateRenameViewName(
+        {
+          customViews,
+          name,
+          systemViews: normalizedSystemViews,
+          viewId,
+        },
         viewNameValidationMessages,
       )
-
-      if (localMessage) {
-        return localMessage
-      }
-
-      return adapter.validateRename?.(instanceId, payload)
     },
     [
-      adapter,
       customViews,
-      instanceId,
       normalizedSystemViews,
       viewNameValidationMessages,
     ],
@@ -508,11 +503,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
     }
     const nextCustomViews = normalizeCustomViews(customViews.concat(nextView))
 
-    await adapter.create(instanceId, nextView)
+    await persist((current) => ({
+      views: normalizeCustomViews(current.views.concat(nextView)),
+      activeViewId: nextView.id,
+    }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
     setCreateOpen(false)
-    await applyView(nextView)
+    await applyView(nextView, { persistActiveView: false })
   }
 
   const handleSave = async () => {
@@ -534,9 +532,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
       customViews.map((view) => (view.id === nextView.id ? nextView : view)),
     )
 
-    await adapter.update(instanceId, nextView.id, {
-      snapshot: currentSnapshot,
-    })
+    await persist((current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.map((view) =>
+          view.id === nextView.id ? nextView : view,
+        ),
+      ),
+    }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
     await onSaveViewEvent?.(nextView)
@@ -549,7 +552,13 @@ export default function ProViewManagement<TSnapshot = unknown>({
     )
     const deletedActiveView = activeView?.id === viewId
 
-    await adapter.remove(instanceId, viewId)
+    await persist((current) => ({
+      views: normalizeCustomViews(
+        current.views.filter((view) => view.id !== viewId),
+      ),
+      activeViewId:
+        current.activeViewId === viewId ? undefined : current.activeViewId,
+    }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
 
@@ -579,7 +588,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
       ),
     )
 
-    await adapter.update(instanceId, viewId, { name })
+    await persist((current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.map((view) =>
+          view.id === viewId ? { ...view, name } : view,
+        ),
+      ),
+    }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
     setEditingViewId(null)
@@ -596,7 +612,15 @@ export default function ProViewManagement<TSnapshot = unknown>({
       })),
     )
 
-    await adapter.reorder(instanceId, orderedViewIds)
+    await persist((current) => ({
+      ...current,
+      views: normalizeCustomViews(
+        current.views.map((view, index) => ({
+          ...view,
+          order: orderLookup.get(view.id) ?? index,
+        })),
+      ),
+    }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
   }
