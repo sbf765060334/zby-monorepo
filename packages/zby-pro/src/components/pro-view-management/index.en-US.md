@@ -40,7 +40,7 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 ```
 
 When `adapter` is omitted, the component uses the built-in IndexedDB adapter. Its database is
-named `zby-ui-pro-view-management`, and `instanceId` isolates data for each business instance.
+named `zby-pro-view-management`, and `instanceId` isolates data for each business instance.
 
 ## Key Design Choices
 

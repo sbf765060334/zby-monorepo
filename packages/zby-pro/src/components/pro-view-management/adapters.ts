@@ -1,35 +1,20 @@
 /**
  * 文件职责：把自定义视图状态落到本地 IndexedDB。
  *
- * Adapter 对外只有 load 和 update(latest => next)。同一个 instanceId 的读写会排队，
- * 写入在同一笔事务里对着磁盘最新值执行 recipe，不再先读后写拆成两笔事务。
+ * Adapter 对外只有 load 和 update(latest => next)。开库方式和 Core 一样走
+ * idb-keyval，不维护 IndexedDB 库版本。同一个 instanceId 的读写会排队。
  */
+import { createStore, get, update } from 'idb-keyval'
+
 import type {
   ProViewManagementAdapter,
   ProViewManagementStorageState,
-  ProViewManagementView,
 } from './interface'
 import { normalizeCustomViews } from './utils'
 
-const DB_NAME = 'zby-ui-pro-view-management'
-const DB_VERSION = 2
-const STATE_STORE = 'state'
-const LEGACY_VIEW_STORE = 'views'
-const LEGACY_META_STORE = 'meta'
-
-type StoredState<TSnapshot> = ProViewManagementStorageState<TSnapshot> & {
-  instanceId: string
-}
-
-type LegacyStoredView<TSnapshot> = ProViewManagementView<TSnapshot> & {
-  instanceId: string
-  storageKey: string
-}
-
-type LegacyStoredMeta = {
-  instanceId: string
-  activeViewId?: string
-}
+/** 默认 IndexedDB 数据库与 object store，和旧的分条视图库相互隔离。 */
+const DB_NAME = 'zby-pro-view-management'
+const STATE_STORE = 'view-state'
 
 type StorageWriteAction = () => Promise<void>
 type StorageWriteQueue = (
@@ -39,6 +24,8 @@ type StorageWriteQueue = (
 
 /** 默认 IndexedDB Adapter 的跨实例队列；相同 instanceId 严格串行。 */
 const enqueueIndexedDBWrite = createStorageWriteQueue()
+/** idb-keyval Store 延迟创建，保证 SSR 与无 IndexedDB 环境可以安全导入模块。 */
+let indexedDBStore: ReturnType<typeof createStore> | undefined
 
 /**
  * 将外部或部分持久化数据转换成组件可以安全消费的完整结构。
@@ -65,15 +52,31 @@ export function createIndexedDBProViewManagementAdapter<
 >(): ProViewManagementAdapter<TSnapshot> {
   return {
     async load(instanceId) {
+      const store = getIndexedDBStore()
+      if (!store)
+        return normalizeProViewManagementStorageState<TSnapshot>()
       let loaded = normalizeProViewManagementStorageState<TSnapshot>()
       await enqueueIndexedDBWrite(instanceId, async () => {
-        loaded = await readState<TSnapshot>(instanceId)
+        const current = await get<
+          Partial<ProViewManagementStorageState<TSnapshot>>
+        >(instanceId, store)
+        loaded = normalizeProViewManagementStorageState(current)
       })
       return loaded
     },
     update(instanceId, recipe) {
-      return enqueueIndexedDBWrite(instanceId, () =>
-        updateState(instanceId, recipe))
+      const store = getIndexedDBStore()
+      if (!store)
+        return Promise.resolve()
+      return enqueueIndexedDBWrite(
+        instanceId,
+        () =>
+          update<ProViewManagementStorageState<TSnapshot>>(
+            instanceId,
+            (current) => recipe(normalizeProViewManagementStorageState(current)),
+            store,
+          ),
+      )
     },
   }
 }
@@ -98,189 +101,10 @@ function createStorageWriteQueue(): StorageWriteQueue {
   }
 }
 
-function canUseIndexedDB() {
-  return typeof indexedDB !== 'undefined'
-}
-
-function openDatabase(): Promise<IDBDatabase | null> {
-  if (!canUseIndexedDB()) {
-    return Promise.resolve(null)
-  }
-
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
-
-    request.onupgradeneeded = (event) => {
-      const db = request.result
-      const transaction = request.transaction
-
-      if (!db.objectStoreNames.contains(STATE_STORE)) {
-        db.createObjectStore(STATE_STORE, {
-          keyPath: 'instanceId',
-        })
-      }
-
-      if (transaction) {
-        migrateLegacyStores(db, transaction, event.oldVersion)
-      }
-    }
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-  })
-}
-
-function migrateLegacyStores(
-  db: IDBDatabase,
-  transaction: IDBTransaction,
-  oldVersion: number,
-) {
-  if (oldVersion >= 2) {
-    return
-  }
-
-  const hasLegacyViews = db.objectStoreNames.contains(LEGACY_VIEW_STORE)
-  const hasLegacyMeta = db.objectStoreNames.contains(LEGACY_META_STORE)
-  if (!hasLegacyViews && !hasLegacyMeta) {
-    return
-  }
-
-  const stateStore = transaction.objectStore(STATE_STORE)
-  const writeState = (
-    views: LegacyStoredView<unknown>[],
-    metas: LegacyStoredMeta[],
-  ) => {
-    const grouped = new Map<string, LegacyStoredView<unknown>[]>()
-    views.forEach((item) => {
-      const list = grouped.get(item.instanceId) ?? []
-      list.push(item)
-      grouped.set(item.instanceId, list)
-    })
-    const activeViewIds = new Map(
-      metas.map((item) => [item.instanceId, item.activeViewId]),
-    )
-    const instanceIds = new Set([
-      ...grouped.keys(),
-      ...activeViewIds.keys(),
-    ])
-
-    instanceIds.forEach((instanceId) => {
-      const storedViews = grouped.get(instanceId) ?? []
-      stateStore.put({
-        instanceId,
-        ...normalizeProViewManagementStorageState({
-          views: storedViews.map(
-            ({
-              instanceId: _instanceId,
-              storageKey: _storageKey,
-              ...view
-            }) => view,
-          ),
-          activeViewId: activeViewIds.get(instanceId),
-        }),
-      } satisfies StoredState<unknown>)
-    })
-
-    if (hasLegacyViews) {
-      db.deleteObjectStore(LEGACY_VIEW_STORE)
-    }
-    if (hasLegacyMeta) {
-      db.deleteObjectStore(LEGACY_META_STORE)
-    }
-  }
-
-  if (hasLegacyViews && hasLegacyMeta) {
-    const viewsRequest = transaction
-      .objectStore(LEGACY_VIEW_STORE)
-      .getAll() as IDBRequest<LegacyStoredView<unknown>[]>
-    viewsRequest.onsuccess = () => {
-      const metaRequest = transaction
-        .objectStore(LEGACY_META_STORE)
-        .getAll() as IDBRequest<LegacyStoredMeta[]>
-      metaRequest.onsuccess = () => {
-        writeState(viewsRequest.result ?? [], metaRequest.result ?? [])
-      }
-    }
-    return
-  }
-
-  if (hasLegacyViews) {
-    const viewsRequest = transaction
-      .objectStore(LEGACY_VIEW_STORE)
-      .getAll() as IDBRequest<LegacyStoredView<unknown>[]>
-    viewsRequest.onsuccess = () => {
-      writeState(viewsRequest.result ?? [], [])
-    }
-    return
-  }
-
-  const metaRequest = transaction
-    .objectStore(LEGACY_META_STORE)
-    .getAll() as IDBRequest<LegacyStoredMeta[]>
-  metaRequest.onsuccess = () => {
-    writeState([], metaRequest.result ?? [])
-  }
-}
-
-async function readState<TSnapshot>(instanceId: string) {
-  const db = await openDatabase()
-  if (!db) {
-    return normalizeProViewManagementStorageState<TSnapshot>()
-  }
-
-  return new Promise<ProViewManagementStorageState<TSnapshot>>(
-    (resolve, reject) => {
-      const transaction = db.transaction(STATE_STORE, 'readonly')
-      const request = transaction
-        .objectStore(STATE_STORE)
-        .get(instanceId) as IDBRequest<StoredState<TSnapshot> | undefined>
-
-      transaction.oncomplete = () => {
-        db.close()
-        resolve(normalizeProViewManagementStorageState(request.result))
-      }
-      transaction.onerror = () => {
-        db.close()
-        reject(transaction.error)
-      }
-    },
-  )
-}
-
-async function updateState<TSnapshot>(
-  instanceId: string,
-  recipe: (
-    current: ProViewManagementStorageState<TSnapshot>,
-  ) => ProViewManagementStorageState<TSnapshot>,
-) {
-  const db = await openDatabase()
-  if (!db) {
-    return
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(STATE_STORE, 'readwrite')
-    const store = transaction.objectStore(STATE_STORE)
-    const request = store.get(instanceId) as IDBRequest<
-      StoredState<TSnapshot> | undefined
-    >
-
-    request.onsuccess = () => {
-      const next = recipe(
-        normalizeProViewManagementStorageState(request.result),
-      )
-      store.put({
-        instanceId,
-        views: next.views,
-        activeViewId: next.activeViewId,
-      } satisfies StoredState<TSnapshot>)
-    }
-    transaction.oncomplete = () => {
-      db.close()
-      resolve()
-    }
-    transaction.onerror = () => {
-      db.close()
-      reject(transaction.error)
-    }
-  })
+/** 懒创建 idb-keyval Store；SSR 或不支持 IndexedDB 时返回 null。 */
+function getIndexedDBStore() {
+  if (typeof indexedDB === 'undefined')
+    return null
+  indexedDBStore ||= createStore(DB_NAME, STATE_STORE)
+  return indexedDBStore
 }

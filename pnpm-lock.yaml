@@ -181,6 +181,9 @@ importers:
       dayjs:
         specifier: 1.11.21
         version: 1.11.21
+      idb-keyval:
+        specifier: 6.3.0
+        version: 6.3.0
       nprogress:
         specifier: 0.2.0
         version: 0.2.0

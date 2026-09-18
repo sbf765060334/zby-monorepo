@@ -304,53 +304,6 @@ describe('ProViewManagement adapters', () => {
       activeViewId: customView.id,
     })
   })
-
-  it('migrates legacy per-view records into one state blob', async () => {
-    const instanceId = `pro-view-management-legacy-${Date.now()}`
-    await new Promise<void>((resolve, reject) => {
-      const deleteRequest = indexedDB.deleteDatabase('zby-ui-pro-view-management')
-      deleteRequest.onerror = () => reject(deleteRequest.error)
-      deleteRequest.onsuccess = () => resolve()
-    })
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('zby-ui-pro-view-management', 1)
-      request.onerror = () => reject(request.error)
-      request.onupgradeneeded = () => {
-        const db = request.result
-        const views = db.createObjectStore('views', { keyPath: 'storageKey' })
-        views.createIndex('instanceId', 'instanceId', { unique: false })
-        db.createObjectStore('meta', { keyPath: 'instanceId' })
-      }
-      request.onsuccess = () => {
-        const db = request.result
-        const transaction = db.transaction(['views', 'meta'], 'readwrite')
-        transaction.objectStore('views').put({
-          ...customView,
-          instanceId,
-          storageKey: `${instanceId}:${customView.id}`,
-        })
-        transaction.objectStore('meta').put({
-          instanceId,
-          activeViewId: customView.id,
-        })
-        transaction.oncomplete = () => {
-          db.close()
-          resolve()
-        }
-        transaction.onerror = () => {
-          db.close()
-          reject(transaction.error)
-        }
-      }
-    })
-
-    const adapter = createIndexedDBProViewManagementAdapter<{
-      keyword: string
-    }>()
-    const state = await adapter.load(instanceId)
-    expect(state.views.map((view) => view.id)).toEqual([customView.id])
-    expect(state.activeViewId).toBe(customView.id)
-  })
 })
 
 describe('ProViewManagement component', () => {

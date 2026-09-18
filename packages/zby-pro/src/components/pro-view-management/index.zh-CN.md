@@ -41,7 +41,7 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 ```
 
 未传 `adapter` 时，组件使用内置 IndexedDB adapter。数据库名为
-`zby-ui-pro-view-management`，`instanceId` 用于隔离不同业务实例。
+`zby-pro-view-management`，`instanceId` 用于隔离不同业务实例。
 
 ## 关键设计
 
