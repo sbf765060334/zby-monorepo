@@ -604,32 +604,41 @@ describe('createRouterCore', () => {
     expect(listener).toHaveBeenCalledOnce()
   })
 
-  /** 首次补发就抛错的 listener 必须撤销，避免以后重复污染地址同步。 */
-  it('removes a page listener when its immediate replay throws', () => {
+  /** 首次补发抛错只记日志，订阅仍保留，也不能把错误抛出 subscribe。 */
+  it('keeps a page listener when its immediate replay throws', () => {
+    const error = new Error('page listener failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const router = createRouterCore({ routes, storageAdapter: false })
     router.syncLocation({
       pathname: '/project/42',
       search: 'tab=detail',
       hash: 'summary',
     })
-    const error = new Error('page listener failed')
     const listener = vi.fn(() => {
       throw error
     })
 
-    expect(() =>
-      router.subscribePageLocation('/project/:id', listener),
-    ).toThrow(error)
-    expect(listener).toHaveBeenCalledOnce()
+    try {
+      expect(() =>
+        router.subscribePageLocation('/project/:id', listener),
+      ).not.toThrow()
+      expect(listener).toHaveBeenCalledOnce()
+      expect(consoleError).toHaveBeenCalledWith(
+        '[RouterCore] page location listener failed.',
+        error,
+      )
 
-    expect(() =>
-      router.syncLocation({
-        pathname: '/project/42',
-        search: 'tab=activity',
-        hash: '',
-      }),
-    ).not.toThrow()
-    expect(listener).toHaveBeenCalledOnce()
+      expect(() =>
+        router.syncLocation({
+          pathname: '/project/42',
+          search: 'tab=activity',
+          hash: '',
+        }),
+      ).not.toThrow()
+      expect(listener).toHaveBeenCalledTimes(2)
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   /** 重复打开已经活动且无需刷新 LRU 的页面时，应复用原 Store 快照。 */
@@ -1535,6 +1544,41 @@ describe('createRouterCore', () => {
 
     expect(router.getState()).toBe(snapshot)
     expect(navigate).not.toHaveBeenCalled()
+  })
+
+  /** 落到的页面 listener 抛错时，关页提交和 onTabClose 仍要完成。 */
+  it('still notifies onTabClose when the landing page listener throws', async () => {
+    const error = new Error('page listener failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const onTabClose = vi.fn()
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({ onTabClose })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.subscribePageLocation('/dashboard', () => {
+      throw error
+    })
+
+    try {
+      expect(await router.closeTab('/settings/profile')).toBe(true)
+      expect(() =>
+        router.syncLocation({ pathname: '/dashboard', search: '', hash: '' }),
+      ).not.toThrow()
+      expect(onTabClose).toHaveBeenCalledOnce()
+      expect(onTabClose).toHaveBeenCalledWith('/settings/profile', {
+        pathname: '/settings/profile',
+      })
+      expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+      expect(router.getState().navigationStatus).toBe('settled')
+      expect(consoleError).toHaveBeenCalledWith(
+        '[RouterCore] page location listener failed.',
+        error,
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 
   /** 关闭通知同步抛错只能记录日志，不能破坏已经完成的组合导航。 */

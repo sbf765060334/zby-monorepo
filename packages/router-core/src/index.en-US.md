@@ -223,7 +223,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | Requests one final replacement navigation and closes an active old tab after the host has left that page. That navigation also uses replace. |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | Adds a close guard to the tab owning the pathname. |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
-| `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | Subscribes one retained page; immediately replays the current location when available. |
+| `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | Subscribes one retained page; immediately replays the current location when available. A throwing listener is logged and does not interrupt `syncLocation` or close notifications. |
 
 `jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning. A string target keeps `URL.search` as-is and does not re-encode it with `URLSearchParams`.
 

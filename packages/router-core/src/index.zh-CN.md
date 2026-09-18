@@ -223,7 +223,7 @@ export function App() {
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航，并在宿主确认已经离开旧页后关闭活动旧页，适合保存成功后的详情页替换。这次导航同样使用 replace。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
-| `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。 |
+| `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。listener 抛错只记日志，不会打断 `syncLocation` 或关页通知。 |
 
 `jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。字符串形式的查询串按 `URL.search` 保留，不再经 `URLSearchParams` 重编码。
 

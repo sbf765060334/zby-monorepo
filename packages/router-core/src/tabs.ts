@@ -517,19 +517,13 @@ export function createRouterTabs<Route extends RouterRoute>(
         pageLocationListenerMap.delete(tabKey)
     }
 
-    try {
-      // 页面可能晚于首次 syncLocation 挂载，立即补发可以避免它永远缺少首个地址。
-      const latestLocation = getLatestLocation()
-      if (
-        latestLocation &&
-        registry.getTabKey(latestLocation.pathname) === tabKey
-      ) {
-        listener(latestLocation)
-      }
-    } catch (error) {
-      // listener 首次执行就报错时撤销注册，避免以后每次地址变化都重复抛错。
-      unsubscribe()
-      throw error
+    // 页面可能晚于首次 syncLocation 挂载，立即补发可以避免它永远缺少首个地址。
+    const latestLocation = getLatestLocation()
+    if (
+      latestLocation &&
+      registry.getTabKey(latestLocation.pathname) === tabKey
+    ) {
+      publishPageLocation(tabKey, latestLocation)
     }
 
     return unsubscribe
@@ -540,7 +534,15 @@ export function createRouterTabs<Route extends RouterRoute>(
     tabKey: string,
     location: RouterLocationEventPayload,
   ) {
-    pageLocationListenerMap.get(tabKey)?.(location)
+    const listener = pageLocationListenerMap.get(tabKey)
+    if (!listener)
+      return
+    try {
+      listener(location)
+    } catch (error) {
+      // listener 不是提交点：抛错只记日志，不能打断 syncLocation 后的关页通知。
+      console.error('[RouterCore] page location listener failed.', error)
+    }
   }
 
   /** 在 403、404 或空目录场景清空活动页面，并按 KeepAlive 规则收缩页面缓存。 */

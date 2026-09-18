@@ -6,6 +6,7 @@ const ActionRevealPlayground = createLazyRouteComponent(() => import('./pages/Ac
 const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/ActionTextPlayground'))
 const CloseConfirmDemo = createLazyRouteComponent(() => import('./pages/CloseConfirmDemo'))
 const QueryReencodeDemo = createLazyRouteComponent(() => import('./pages/QueryReencodeDemo'))
+const ListenerThrowDemo = createLazyRouteComponent(() => import('./pages/ListenerThrowDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -79,6 +80,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '查询串重编码',
         tag: { text: 'Demo', color: 'warning' },
         element: QueryReencodeDemo,
+      },
+      {
+        path: '/workbench/listener-throw',
+        title: 'listener 抛错',
+        tag: { text: 'Demo', color: 'warning' },
+        element: ListenerThrowDemo,
       },
       {
         path: '/workbench/content-container',

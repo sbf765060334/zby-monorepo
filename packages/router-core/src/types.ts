@@ -403,6 +403,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
    *
    * 当前页签已经存在宿主 location 时会立即向 listener 补发一次最新地址。同一 tabKey
    * 只绑定当前页面实例的一个 listener；新订阅会接管旧订阅，旧清理函数不会误删新订阅。
+   * listener 抛错只记日志，不会打断 syncLocation 或关页通知。
    */
   subscribePageLocation: (
     tabKey: string,
