@@ -352,7 +352,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
    * Adapter 不需要也不应分别触发内部 bootstrap 或 pathname 状态确认流程。
    */
   syncLocation: (location: RouterLocation) => void
-  /** 请求完整平台导航；页签和页面只在宿主通过 syncLocation 确认后激活。未具体化且无缓存的 pattern 会被忽略。 */
+  /** 请求完整平台导航；页签和页面只在宿主通过 syncLocation 确认后激活。未具体化且无缓存的 pattern 会被忽略。字符串查询串按 URL.search 保留。 */
   jumpTo: (
     url:
       | string

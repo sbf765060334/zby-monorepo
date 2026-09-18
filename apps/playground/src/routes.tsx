@@ -5,6 +5,7 @@ const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/Acti
 const ActionRevealPlayground = createLazyRouteComponent(() => import('./pages/ActionRevealPlayground'))
 const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/ActionTextPlayground'))
 const CloseConfirmDemo = createLazyRouteComponent(() => import('./pages/CloseConfirmDemo'))
+const QueryReencodeDemo = createLazyRouteComponent(() => import('./pages/QueryReencodeDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -72,6 +73,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '关闭确认',
         tag: { text: 'Demo', color: 'warning' },
         element: CloseConfirmDemo,
+      },
+      {
+        path: '/workbench/query-reencode',
+        title: '查询串重编码',
+        tag: { text: 'Demo', color: 'warning' },
+        element: QueryReencodeDemo,
       },
       {
         path: '/workbench/content-container',

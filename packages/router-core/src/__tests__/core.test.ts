@@ -391,6 +391,23 @@ describe('createRouterCore', () => {
     expect(router.getState().activePage).toBe('/dashboard')
   })
 
+  /** 字符串 jumpTo 的查询串取 URL.search，不能再被 URLSearchParams 改成 + 或编码逗号。 */
+  it('keeps the original query encoding for string jumpTo', () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    router.jumpTo('/dashboard?q=hello%20world')
+    expect(navigate).toHaveBeenLastCalledWith('/dashboard?q=hello%20world')
+
+    router.jumpTo('/dashboard?ids=1,2,3')
+    expect(navigate).toHaveBeenLastCalledWith('/dashboard?ids=1,2,3')
+
+    router.jumpTo({ pathname: '/dashboard', searchParams: 'q=hello%20world' })
+    expect(navigate).toHaveBeenLastCalledWith('/dashboard?q=hello%20world')
+  })
+
   /** 同步宿主在 navigate 内回传 location 时，最终状态不能被外层 navigating 覆盖。 */
   it('settles immediately when the host confirms navigation synchronously', () => {
     let confirmNavigation: () => void = () => undefined

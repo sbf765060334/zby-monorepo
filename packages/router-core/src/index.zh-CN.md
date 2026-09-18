@@ -225,7 +225,7 @@ export function App() {
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。 |
 
-`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。
+`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。字符串形式的查询串按 `URL.search` 保留，不再经 `URLSearchParams` 重编码。
 
 `closeTab` 返回 `true` 表示关闭请求已被接受。只剩一个页签时返回 `false`，避免关完经根路径重定向后再被打开。非活动页签会在返回前完成清理；关闭活动页签时，当前页会保留到宿主确认已经离开被关页，这次跳转使用 replace。尾斜杠或编码差异仍视为同一页；已经离开被关页则提交删除，不要求回传字符串精确等于下一页。宿主不可用或导航同步失败时不会提前删除当前页。
 
@@ -242,7 +242,7 @@ export function App() {
 
 | `RouterNavigateTarget` 形式 | 字段 | 说明 |
 | --- | --- | --- |
-| 字符串 | 完整 `string` | 例如 `/orders/42?tab=detail#summary`。 |
+| 字符串 | 完整 `string` | 例如 `/orders/42?q=hello%20world#summary`。查询串按 `URL.search` 保留，不经 `URLSearchParams` 重编码。 |
 | 对象 | `pathname: string` | 必填的目标路径。 |
 | 对象 | `search?: string` | React Router 风格查询字符串。 |
 | 对象 | `hash?: string` | React Router 风格 hash。 |

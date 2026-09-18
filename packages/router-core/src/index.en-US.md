@@ -225,7 +225,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | Subscribes one retained page; immediately replays the current location when available. |
 
-`jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning.
+`jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning. A string target keeps `URL.search` as-is and does not re-encode it with `URLSearchParams`.
 
 `closeTab` returning `true` means the close request was accepted. The last remaining tab returns `false` so it cannot bounce through `/` and reopen. An inactive tab is cleared before the call returns. When closing the active tab, the current page remains until the host has left the closed page, and that navigation uses replace. A trailing slash or encoding difference still counts as the same page; leaving the closed page commits the close even if the confirmed string is not an exact match. An unavailable host or synchronous navigation failure never deletes the current page early.
 
@@ -242,7 +242,7 @@ The second `RouterNavigate` parameter is `{ replace?: boolean }`. `replace: true
 
 | `RouterNavigateTarget` form | Field | Description |
 | --- | --- | --- |
-| string | complete `string` | For example `/orders/42?tab=detail#summary`. |
+| string | complete `string` | For example `/orders/42?q=hello%20world#summary`. The query keeps `URL.search` and is not re-encoded with `URLSearchParams`. |
 | object | `pathname: string` | Required target path. |
 | object | `search?: string` | React Router-style query string. |
 | object | `hash?: string` | React Router-style hash. |

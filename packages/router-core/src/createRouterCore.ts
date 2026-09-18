@@ -409,11 +409,11 @@ export function createRouterCore<Route extends RouterRoute>(
   function resolveNavigationPlan(
     input: RouterNavigationInput,
   ): RouterNavigationPlan | null {
-    // 字符串先拆成三个独立片段；结构化输入保留 undefined/null 的业务区别。
+    // 字符串先拆成三个独立片段；查询串取 URL.search，避免 searchParams.toString() 重编码。
     const parsed = typeof input === 'string' ? parseUrl(input) : null
     let pathname = typeof input === 'string' ? parsed!.pathname : input.pathname
     const searchParams =
-      typeof input === 'string' ? parsed!.searchParams.toString() : input.searchParams
+      typeof input === 'string' ? normalizeSearchParams(parsed!.search) : input.searchParams
     const hash = typeof input === 'string' ? parsed!.hash : input.hash
 
     const target = registry.resolveLeafRoute(pathname, { withinAuth: true })
@@ -501,8 +501,9 @@ export function createRouterCore<Route extends RouterRoute>(
   /**
    * 执行完整平台导航。
    *
-   * 字符串被视为完整目标 URL；结构化参数中 undefined 表示恢复页签缓存，null/空串
-   * 表示显式清空。这里仅解析目录、权限和缓存 URL；活动状态等待 syncLocation 确认。
+   * 字符串被视为完整目标 URL；查询串取 URL.search，不经 URLSearchParams 重编码。
+   * 结构化参数中 undefined 表示恢复页签缓存，null/空串表示显式清空。这里仅解析目录、
+   * 权限和缓存 URL；活动状态等待 syncLocation 确认。
    */
   function jumpTo(input: RouterNavigationInput) {
     if (!runtime.host)
