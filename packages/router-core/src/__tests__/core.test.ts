@@ -345,6 +345,48 @@ describe('createRouterCore', () => {
     expect(router.getState().storageHydrated).toBe(true)
   })
 
+  /** 固定上限只在创建时规范化一次：非法值回退 4，0 表示禁止固定。 */
+  it('normalizes maxFixedTabCount once at creation', () => {
+    expect(
+      createRouterCore({ routes, storageAdapter: false }).getState().maxFixedTabCount,
+    ).toBe(4)
+    expect(
+      createRouterCore({
+        routes,
+        storageAdapter: false,
+        maxFixedTabCount: 0,
+      }).getState().maxFixedTabCount,
+    ).toBe(0)
+    expect(
+      createRouterCore({
+        routes,
+        storageAdapter: false,
+        maxFixedTabCount: 4.7,
+      }).getState().maxFixedTabCount,
+    ).toBe(4)
+    expect(
+      createRouterCore({
+        routes,
+        storageAdapter: false,
+        maxFixedTabCount: -1,
+      }).getState().maxFixedTabCount,
+    ).toBe(4)
+    expect(
+      createRouterCore({
+        routes,
+        storageAdapter: false,
+        maxFixedTabCount: Number.NaN,
+      }).getState().maxFixedTabCount,
+    ).toBe(4)
+    expect(
+      createRouterCore({
+        routes,
+        storageAdapter: false,
+        maxFixedTabCount: Number.POSITIVE_INFINITY,
+      }).getState().maxFixedTabCount,
+    ).toBe(4)
+  })
+
   /** 两次创建的 Store、页签和回调必须彼此隔离，不能出现跨实例串数据。 */
   it('creates a new independent state container on every factory call', () => {
     const first = createRouterCore({ routes, storageAdapter: false })
@@ -2054,6 +2096,49 @@ describe('createRouterCore', () => {
     await vi.waitFor(() => {
       expect(disk.fixedTabs).toEqual(['/dashboard'])
     })
+  })
+
+  /** 负数上限不能走 slice 从末尾删元素，应回退默认 4 并保留已固定页签。 */
+  it('does not treat a negative maxFixedTabCount as slice-from-end', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/dashboard', '/settings/profile'],
+    })
+    const router = createRouterCore({
+      routes,
+      maxFixedTabCount: -1,
+      storageAdapter: adapter,
+    })
+
+    await router.hydrateStorage()
+
+    expect(router.getState().maxFixedTabCount).toBe(4)
+    expect(router.getState().fixedSet).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+    expect(disk.fixedTabs).toEqual(['/dashboard', '/settings/profile'])
+  })
+
+  /** 上限为 0 时加载清空固定页签，并且不能再钉新的页签。 */
+  it('treats maxFixedTabCount 0 as no pinning', async () => {
+    const { disk, adapter } = createMemoryStorage({
+      fixedTabs: ['/dashboard', '/settings/profile'],
+    })
+    const router = createRouterCore({
+      routes,
+      maxFixedTabCount: 0,
+      storageAdapter: adapter,
+    })
+    router.bindHost({ navigate: vi.fn() })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    await router.hydrateStorage()
+
+    expect(router.getState().fixedSet).toEqual([])
+    await vi.waitFor(() => {
+      expect(disk.fixedTabs).toEqual([])
+    })
+    expect(router.toggleFixed('/dashboard')).toBe(false)
   })
 
   /** 一次保存失败要通知错误，但不能阻断下一次更完整的新快照保存。 */

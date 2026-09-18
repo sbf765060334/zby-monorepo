@@ -234,7 +234,11 @@ export interface CreateRouterCoreOptions<
   storageAdapter?: false | RouterStorageAdapter
   /** 固定的持久化命名空间；省略时使用 `default`。 */
   storageKey?: string
-  /** 固定页签数量上限；省略时使用 4。 */
+  /**
+   * 固定页签数量上限；省略、负数或非有限数字时使用 4。
+   *
+   * 只接受有限非负整数。小数会向下取整；`0` 表示不允许固定任何页签。
+   */
   maxFixedTabCount?: number
 }
 
@@ -297,7 +301,7 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   readonly pathnameDescriptionMap: Readonly<Record<string, string>>
   /** 实例创建时固定的持久化命名空间。 */
   readonly storageKey: string
-  /** 实例创建时固定的最大页签数量。 */
+  /** 实例创建时固定的页签固定上限；已经规范化为有限非负整数。 */
   readonly maxFixedTabCount: number
   /** 当前 storageKey 是否已经完成首次数据加载。 */
   readonly storageHydrated: boolean

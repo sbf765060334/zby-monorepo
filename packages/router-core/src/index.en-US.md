@@ -168,7 +168,7 @@ These options are fixed for the lifetime of a core instance:
 | `keepAlive` | `boolean \| RouterKeepAliveConfig<Route>` | no | `true` | `false` keeps only the active page, `true` keeps all opened pages, and an object applies rules. |
 | `storageAdapter` | `false \| RouterStorageAdapter` | no | built-in IndexedDB adapter | `false` disables persistence; provide an object for a remote or custom storage backend. |
 | `storageKey` | `string` | no | `default` | Persistence namespace. Use different keys for different users or platforms. |
-| `maxFixedTabCount` | `number` | no | `4` | Maximum number of opened tabs that may be fixed. |
+| `maxFixedTabCount` | `number` | no | `4` | Maximum number of opened tabs that may be fixed. Must be a finite non-negative integer; fractions are floored, `0` disables pinning, and negative or non-numeric values fall back to `4`. |
 
 ### Dependent type: `RouterKeepAliveConfig<Route>`
 

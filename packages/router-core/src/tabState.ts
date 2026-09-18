@@ -8,6 +8,16 @@ import { isConcreteRoutePath } from './registry'
 import type { RouteRegistry } from './registry'
 import type { RouterRoute, RouterTab } from './types'
 
+const DEFAULT_MAX_FIXED_TAB_COUNT = 4
+
+/** 创建期把固定页签上限收成有限非负整数；非法值回退默认 4，0 表示禁止固定。 */
+export function normalizeMaxFixedTabCount(value: number | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value))
+    return DEFAULT_MAX_FIXED_TAB_COUNT
+  const normalized = Math.floor(value)
+  return normalized < 0 ? DEFAULT_MAX_FIXED_TAB_COUNT : normalized
+}
+
 /** 清理重复、已删除或无法恢复真实地址的固定页签。 */
 export function sanitizeFixedTabKeys<Route extends RouterRoute>(
   fixedTabs: readonly string[],

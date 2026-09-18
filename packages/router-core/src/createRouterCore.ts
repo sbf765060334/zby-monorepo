@@ -10,6 +10,7 @@ import { snapshotKeepAlive } from './keepAlive'
 import { createRouterPersistence, resolveStorageAdapter } from './persistence'
 import type { RouterPersistence } from './persistence'
 import { createRouteRegistry, isConcreteRoutePath } from './registry'
+import { normalizeMaxFixedTabCount } from './tabState'
 import { createRouterTabs } from './tabs'
 import {
   buildUrl,
@@ -145,7 +146,7 @@ export function createRouterCore<Route extends RouterRoute>(
     pathnameDescriptionMap: {},
     // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
     storageKey: options.storageKey ?? 'default',
-    maxFixedTabCount: options.maxFixedTabCount ?? 4,
+    maxFixedTabCount: normalizeMaxFixedTabCount(options.maxFixedTabCount),
     // 只要存在外部 Adapter，就必须通过 hydrateStorage 建立完整持久化快照。
     storageHydrated: storageAdapter === false,
     storageLoading: false,

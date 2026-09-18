@@ -168,7 +168,7 @@ export function App() {
 | `keepAlive` | `boolean \| RouterKeepAliveConfig<Route>` | 否 | `true` | `false` 表示只留活动页；`true` 表示保留全部已打开页面；对象表示按规则保留。 |
 | `storageAdapter` | `false \| RouterStorageAdapter` | 否 | 内置 IndexedDB Adapter | `false` 完全关闭持久化；传对象可以接远程接口或其它存储。 |
 | `storageKey` | `string` | 否 | `default` | 存储命名空间。不同用户或不同平台应使用不同 key，避免数据串用。 |
-| `maxFixedTabCount` | `number` | 否 | `4` | 最多允许固定多少个已经打开的页签。 |
+| `maxFixedTabCount` | `number` | 否 | `4` | 最多允许固定多少个已经打开的页签。必须是有限非负整数；小数向下取整，`0` 表示禁止固定，负数或非数字回退为 `4`。 |
 
 ### 依赖类型：`RouterKeepAliveConfig<Route>`
 
