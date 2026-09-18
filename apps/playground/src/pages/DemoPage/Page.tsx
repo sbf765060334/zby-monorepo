@@ -19,8 +19,8 @@ export default function DemoPage() {
       {isDashboard ? (
         <Space orientation="vertical" size={8} style={{ marginTop: 16 }}>
           <Typography.Paragraph style={{ marginBottom: 0 }}>
-            playground 的默认页是 /dashboard。只剩这一个页签时，顶栏会收掉关闭按钮；
-            下面这个按钮直接调 closeTab。关掉后会先去 /，再被送回首页，等于没关。
+            只剩一个页签时 closeTab 会直接返回 false，不再绕到 / 再被默认页打开。
+            顶栏本来就会收掉关闭按钮；下面这个按钮用来确认 Core 同样拒绝关闭。
           </Typography.Paragraph>
           <Button
             onClick={() => {

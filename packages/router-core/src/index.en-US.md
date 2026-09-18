@@ -219,7 +219,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `setPathnameDescription(map)` | `Record<string, string>` | `void` | Incrementally merges concrete-path descriptions; repeated values do not publish state. |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | Fixes/unfixes an open tab; returns `false` for unknown tabs or a reached limit. |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | Favorites/unfavorites a registered page and canonicalizes dynamic paths to route patterns. |
-| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | Runs every guard; inactive tabs clear immediately, while the active tab waits for the host-confirmed fallback location. |
+| `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | Runs every guard; the last remaining tab is not closed. Inactive tabs clear immediately, while the active tab waits for the host-confirmed fallback location. |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | Requests one final replacement navigation and closes an active old tab after that location is confirmed. |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | Adds a close guard to the tab owning the pathname. |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
@@ -227,7 +227,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 
 `jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page.
 
-`closeTab` returning `true` means the close request was accepted. An inactive tab is cleared before the call returns. When closing the active tab, the current page remains until the host confirms the fallback pathname. An unavailable host, synchronous navigation failure, or an unconfirmed target never deletes the current page early.
+`closeTab` returning `true` means the close request was accepted. The last remaining tab returns `false` so it cannot bounce through `/` and reopen. An inactive tab is cleared before the call returns. When closing the active tab, the current page remains until the host confirms the fallback pathname. An unavailable host, synchronous navigation failure, or an unconfirmed target never deletes the current page early.
 
 ### Core method dependent types
 

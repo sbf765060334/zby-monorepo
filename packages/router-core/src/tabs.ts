@@ -358,6 +358,10 @@ export function createRouterTabs<Route extends RouterRoute>(
       return false
     if (closingTabKeys.has(tabKey))
       return false
+    // 只剩一个页签时关掉会变成空工作区，或经 / 再被默认页打开。普通 closeTab 直接拒绝。
+    // 组合命令带了最终新地址，关完还会打开另一页，不走这条限制。
+    if (getState().tabs.length === 1 && !transaction?.navigation)
+      return false
 
     closingTabKeys.add(tabKey)
     try {
@@ -372,6 +376,8 @@ export function createRouterTabs<Route extends RouterRoute>(
       // await 期间页签或宿主可能已变化，因此守卫结束后必须重新读取和校验最新状态。
       const state = getState()
       if (!state.tabs.some((tab) => tab.key === tabKey))
+        return false
+      if (state.tabs.length === 1 && !transaction?.navigation)
         return false
       if (transaction?.canCommit && !transaction.canCommit())
         return false

@@ -1130,6 +1130,53 @@ describe('createRouterCore', () => {
     ).toBe(true)
   })
 
+  /** 只剩一个页签时不能关掉，避免经根路径重定向后再被打开。 */
+  it('rejects closing the last remaining tab', async () => {
+    const navigate = vi.fn()
+    const guard = vi.fn(() => true)
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.addBeforeCloseHook(guard, '/dashboard')
+    const snapshot = router.getState()
+    navigate.mockClear()
+
+    expect(await router.closeTab('/dashboard')).toBe(false)
+    expect(guard).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState()).toBe(snapshot)
+
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    expect(await router.closeTab('/dashboard')).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/settings/profile'])
+    navigate.mockClear()
+    expect(await router.closeTab('/settings/profile')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/settings/profile'])
+  })
+
+  /** 最后一页仍可用组合命令替换到另一个页面。 */
+  it('still replaces the last tab when closeThisTabOpenNewOne has a new target', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/dashboard',
+        newPath: '/settings/profile',
+      }),
+    ).toBe(true)
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/settings/profile'])
+    expect(router.getState().activePage).toBe('/settings/profile')
+  })
+
   /** 关闭活动页发起的回退导航也必须等待宿主 location 确认后才 settled。 */
   it('tracks close-tab navigation until the host confirms its location', async () => {
     const navigate = vi.fn()
