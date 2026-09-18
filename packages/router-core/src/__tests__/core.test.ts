@@ -1252,6 +1252,89 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
   })
 
+  /** 共享动态页换 ID 也按普通关页再开页：跑守卫、关掉旧页签，再创建新页。 */
+  it('closes a shared dynamic tab and opens the new pathname as a fresh tab', async () => {
+    const navigate = vi.fn()
+    const onTabClose = vi.fn()
+    const listener = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({ onTabClose })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({
+      pathname: '/project/42',
+      search: '?tab=detail',
+      hash: '#summary',
+    })
+    router.setTabLabel('/project/:id', 'Project 42')
+    expect(router.toggleFixed('/project/:id')).toBe(true)
+    const guard = vi.fn(() => true)
+    router.addBeforeCloseHook(guard, '/project/42')
+    router.subscribePageLocation('/project/:id', listener)
+    listener.mockClear()
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/project/42',
+        newPath: '/project/99',
+      }),
+    ).toBe(true)
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/project/99')
+    expect(guard).toHaveBeenCalledOnce()
+
+    router.syncLocation({ pathname: '/project/99', search: '', hash: '' })
+
+    const state = router.getState()
+    const tab = state.tabs.find((item) => item.key === '/project/:id')
+    expect(onTabClose).toHaveBeenCalledOnce()
+    expect(onTabClose).toHaveBeenCalledWith('/project/:id', { pathname: '/project/42' })
+    expect(state.fixedSet).toEqual([])
+    expect(tab?.label).toBe('Project')
+    expect(tab?.labelCustomized).toBe(false)
+    expect(state.pages.find((page) => page.key === '/project/:id')?.pathname)
+      .toBe('/project/99')
+    expect(state.activePage).toBe('/project/:id')
+    expect(state.tabs.map((item) => item.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
+    expect(listener).not.toHaveBeenCalled()
+    const remountListener = vi.fn()
+    router.subscribePageLocation('/project/:id', remountListener)
+    expect(remountListener).toHaveBeenCalledWith({
+      pathname: '/project/99',
+      search: '',
+      hash: '',
+    })
+  })
+
+  /** 守卫拒绝时共享页签必须停在旧真实地址，不能开始替换导航。 */
+  it('keeps a shared dynamic tab when its close guard rejects replacement', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.addBeforeCloseHook(() => false, '/project/42')
+    const snapshot = router.getState()
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/project/42',
+        newPath: '/project/99',
+      }),
+    ).toBe(false)
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState()).toBe(snapshot)
+    expect(router.getState().pages.find((page) => page.key === '/project/:id')?.pathname)
+      .toBe('/project/42')
+  })
+
   /** 新地址无法解析时必须在删除旧页签前失败，保持状态与浏览器一致。 */
   it('keeps the old tab when the replacement target is unknown', async () => {
     const navigate = vi.fn()

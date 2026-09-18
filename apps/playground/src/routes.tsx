@@ -1,4 +1,4 @@
-import { AppstoreOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
+import { AppstoreOutlined, ClearOutlined, DashboardOutlined, FileTextOutlined, HomeOutlined, LineChartOutlined, LinkOutlined } from '@ant-design/icons'
 import { createLazyRouteComponent, type ProLayoutRoute } from '@zby/pro'
 
 const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/ActionIconPlayground'))
@@ -13,6 +13,10 @@ const ProViewManagementPlayground = createLazyRouteComponent(
   () => import('./pages/ProViewManagementPlayground'),
 )
 const ScrollAreaPlayground = createLazyRouteComponent(() => import('./pages/ScrollAreaPlayground'))
+const SharedTabOrderList = createLazyRouteComponent(() => import('./pages/SharedTabOrders/ListPage'))
+const SharedTabOrderDetail = createLazyRouteComponent(
+  () => import('./pages/SharedTabOrders/DetailPage'),
+)
 const ProTablePlayground = createLazyRouteComponent(() => import('./pages/ProTablePlayground'))
 const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
 const EmptyPage = () => null
@@ -29,6 +33,21 @@ export const appRouters: ProLayoutRoute[ ] = [
     title: '首页',
     icon: HomeOutlined,
     element: DemoPage,
+  },
+  {
+    path: '/orders',
+    title: '共享页签',
+    icon: FileTextOutlined,
+    tag: { text: 'Demo', color: 'warning' },
+    element: SharedTabOrderList,
+    routes: [
+      {
+        path: '/orders/:id',
+        title: '订单详情',
+        ignore: true,
+        element: SharedTabOrderDetail,
+      },
+    ],
   },
   {
     path: '/workbench',

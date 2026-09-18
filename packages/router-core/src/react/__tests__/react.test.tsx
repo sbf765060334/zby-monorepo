@@ -241,4 +241,61 @@ describe('RouterPageProvider', () => {
 
     expect(probeRenderCount).toBe(renderCountAfterMount)
   })
+
+  /** 关页再开到新真实地址后，页面 Context 必须拿到确认后的 location。 */
+  it('updates page location after close-and-open replacement', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({
+      pathname: '/project/1',
+      search: '',
+      hash: '',
+    })
+
+    function PageProbe() {
+      const page = useRouterPage<TestRoute>()
+      return (
+        <span>
+          {`${page.pathname}:${page.location?.pathname ?? 'null'}`}
+        </span>
+      )
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <PageProbe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    render(
+      <RouterCoreProvider router={router}>
+        <Pages />
+      </RouterCoreProvider>,
+    )
+    expect(screen.getByText('/project/1:/project/1')).toBeTruthy()
+
+    await act(async () => {
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/project/1',
+        newPath: '/project/2',
+      })
+      router.syncLocation({ pathname: '/project/2', search: '', hash: '' })
+    })
+
+    expect(screen.getByText('/project/2:/project/2')).toBeTruthy()
+  })
 })

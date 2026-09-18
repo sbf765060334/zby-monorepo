@@ -108,7 +108,7 @@ export function RouterPageProvider<Route extends RouterRoute>(
 
   useLayoutEffect(
     () => router.subscribePageLocation(page.key, handleLocation),
-    [handleLocation, page.key, router],
+    [handleLocation, page.key, page.pathname, router],
   )
 
   useLayoutEffect(() => {
