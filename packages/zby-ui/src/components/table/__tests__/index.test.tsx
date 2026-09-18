@@ -671,6 +671,91 @@ describe('Table', () => {
     expect(onResizeEnd).not.toHaveBeenCalled()
   })
 
+  it('emits onResizeEnd after a drag even if pointerup repeats the last width', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const onResizeEnd = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{
+          defaultWidths: { id: 120, name: 160 },
+          onResizeEnd,
+        }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      const callbacks = rafQueue.splice(0)
+      callbacks.forEach((callback) => callback(0))
+    })
+    fireEvent.pointerUp(document, { clientX: 140, pointerId: 1 })
+
+    expect(onResizeEnd).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'id', width: 160 }),
+    )
+  })
+
+  it('emits onResizeEnd when controlled widths rerender before pointerup', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const onResizeEnd = vi.fn()
+    function Demo() {
+      const [widths, setWidths] = React.useState({ id: 120, name: 160 })
+      return (
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{
+            widths,
+            onWidthsChange: (next) => setWidths(next),
+            onResizeEnd,
+          }}
+          columns={columns}
+          dataSource={data}
+        />
+      )
+    }
+
+    const { container } = render(<Demo />)
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      const callbacks = rafQueue.splice(0)
+      callbacks.forEach((callback) => callback(0))
+    })
+    fireEvent.pointerUp(document, { clientX: 140, pointerId: 1 })
+
+    expect(onResizeEnd).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'id', width: 160 }),
+    )
+  })
+
   it('warns when a column has no stable key or dataIndex under columnResize', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { container } = render(

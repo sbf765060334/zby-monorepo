@@ -264,6 +264,7 @@ export function useColumnResize<RecordType>({
     })
     .join('|');
   const resizedKeysRef = React.useRef<Set<string>>(new Set());
+  const pendingResizeEndKeysRef = React.useRef<Set<string>>(new Set());
   const [measuredWidths, setMeasuredWidths] = React.useState<Record<number, number>>({});
   const [innerWidths, setInnerWidths] = React.useState<ColumnResizeWidths>(() =>
     enabled && !controlledWidths ? (defaultWidths ?? {}) : {},
@@ -482,6 +483,21 @@ export function useColumnResize<RecordType>({
       const nextWidth = clampWidth(width, resizeMeta.minWidth, resizeMeta.maxWidth);
 
       if (nextWidth === previousWidth) {
+        // Pointer-up often repeats the last move width after rAF. ProTable
+        // keeps `widths` controlled, which clears `resizedKeysRef` on each
+        // update, so the drag-end mark lives in `pendingResizeEndKeysRef`.
+        if (triggerResizeEnd && pendingResizeEndKeysRef.current.has(String(key))) {
+          pendingResizeEndKeysRef.current.delete(String(key));
+          resizeConfig?.onResizeEnd?.({
+            key,
+            width: nextWidth,
+            previousWidth,
+            delta: 0,
+            widths: currentWidths,
+            column: resizeMeta.source,
+            nativeEvent,
+          });
+        }
         return;
       }
 
@@ -501,6 +517,7 @@ export function useColumnResize<RecordType>({
 
       widthsRef.current = nextWidths;
       resizedKeysRef.current.add(String(key));
+      pendingResizeEndKeysRef.current.add(String(key));
 
       if (!controlledWidths) {
         setInnerWidths(nextWidths);
@@ -510,6 +527,7 @@ export function useColumnResize<RecordType>({
       resizeConfig?.onResize?.(info);
 
       if (triggerResizeEnd) {
+        pendingResizeEndKeysRef.current.delete(String(key));
         resizeConfig?.onResizeEnd?.(info);
       }
     },

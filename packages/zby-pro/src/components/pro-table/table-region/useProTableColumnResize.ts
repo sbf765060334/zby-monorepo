@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type Key } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import type { TableColumnsType, TableColumnType } from '@zby/ui'
 
@@ -221,11 +221,14 @@ export function useProTableColumnResize<
   }, [columnResizeConfig, resizeDefaultWidths, resizeWidths, sourceColumnMap, visibleColumns])
 
   const updateColumnWidthPreference = useCallback(
-    (key: Key, width: number) => {
+    (info: ProTableColumnResizeInfo<RecordType>) => {
       const actions = viewStore.getState()
-      const keyText = String(key)
+      const keyText =
+        extractColumnKey(info.column as ProTableColumnType<RecordType>) ?? String(info.key)
+      const width = getFiniteWidth(info.width)
       if (
         !actions.columnsReady ||
+        width === undefined ||
         !columnDefinitions.some((definition) => definition.key === keyText) ||
         !actions.mergedColumnsPreferences.some((preference) => preference.key === keyText)
       ) {
@@ -263,7 +266,7 @@ export function useProTableColumnResize<
       },
       onResizeEnd: (info: ProTableColumnResizeInfo<RecordType>) => {
         if (persist) {
-          updateColumnWidthPreference(info.key, info.width)
+          updateColumnWidthPreference(info)
         }
         columnResizeConfig.onResizeEnd?.(info)
       },

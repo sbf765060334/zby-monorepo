@@ -130,7 +130,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
   {
     key: 'indexBorder',
     title: '序号(边框)',
-    width: 88,
+    width: 120,
     valueType: 'indexBorder',
   },
   {
@@ -242,28 +242,22 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     },
   },
   {
-    key: 'logistics',
-    title: '物流信息',
-    children: [
-      {
-        key: 'warehouse',
-        title: '仓库',
-        dataIndex: 'warehouse',
-        width: 120,
-      },
-      {
-        key: 'route',
-        title: '线路',
-        dataIndex: 'route',
-        width: 140,
-      },
-      {
-        key: 'destination',
-        title: '目的地',
-        dataIndex: 'destination',
-        width: 180,
-      },
-    ],
+    key: 'warehouse',
+    title: '仓库',
+    dataIndex: 'warehouse',
+    width: 120,
+  },
+  {
+    key: 'route',
+    title: '线路',
+    dataIndex: 'route',
+    width: 140,
+  },
+  {
+    key: 'destination',
+    title: '目的地',
+    dataIndex: 'destination',
+    width: 180,
   },
   {
     key: 'createdAt',
@@ -307,20 +301,6 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     dataIndex: 'sku',
     width: 120,
     valueType: 'code',
-  },
-  {
-    key: 'payload',
-    title: 'JSON',
-    dataIndex: 'payload',
-    width: 220,
-    valueType: 'jsonCode',
-  },
-  {
-    key: 'note',
-    title: '多行文本',
-    dataIndex: 'note',
-    width: 160,
-    valueType: 'textarea',
   },
   {
     key: 'remark',
