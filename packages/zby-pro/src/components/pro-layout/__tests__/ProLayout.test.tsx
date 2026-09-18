@@ -1263,7 +1263,7 @@ describe('ReactRouterProLayout', () => {
     })
   })
 
-  it('动态参数路由不显示收藏入口', async () => {
+  it('动态参数页面不出现在菜单中，但仍可通过具体地址进入', async () => {
     const router = createRouterCore<ProLayoutRoute>({
       routes: [
         {
@@ -1276,11 +1276,21 @@ describe('ReactRouterProLayout', () => {
           title: '项目管理',
           routes: [
             {
+              path: '/projects/list',
+              title: '项目列表',
+              element: DashboardPage,
+            },
+            {
               path: '/projects/:id',
               title: '项目详情',
               element: ReportDetailPage,
             },
           ],
+        },
+        {
+          path: '/orders/:id',
+          title: '订单详情',
+          element: ReportDetailPage,
         },
       ],
       defaultRedirectPath: '/dashboard',
@@ -1294,9 +1304,13 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('dashboard-page')
+    expect(screen.queryByRole('button', { name: /订单详情/ })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /项目管理/ }))
-    expect(await screen.findByRole('button', { name: '项目详情' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: '收藏：项目详情' })).toBeNull()
+    expect(await screen.findByRole('button', { name: '项目列表' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '项目详情' })).toBeNull()
+
+    act(() => router.jumpTo('/projects/79'))
+    expect(await screen.findByTestId('report-detail-page')).toBeTruthy()
   })
 
   it('hydration 期间保留本地收藏修改，和固定页签冲突语义一致', async () => {

@@ -26,7 +26,7 @@ export default function SharedTabOrderListPage() {
       after.navigationStatus !== 'navigating'
     ) {
       void messageApi.warning(
-        'jumpTo("/orders/:id") 没有发出导航。关详情时 cache 被清掉了，pattern 找不到真实地址，调用方也收不到失败。',
+        'jumpTo("/orders/:id") 没有发出导航。关详情后 cache 被清掉了；控制台会给出警告。',
       )
       return
     }
@@ -37,7 +37,7 @@ export default function SharedTabOrderListPage() {
     <PlaygroundPage
       packageName="@zby/router-core"
       title="共享页签复现"
-      description="一级菜单进入订单列表。详情路由 /orders/:id 未开 supportMultipleTabs。先打开一单，再关掉详情页签，然后点「按 pattern 打开详情」：jumpTo('/orders/:id') 会静默不跳。"
+      description="一级菜单进入订单列表。详情路由 /orders/:id 不会出现在菜单里。先打开一单，再关掉详情页签，然后点「按 pattern 打开详情」：jumpTo('/orders/:id') 不会跳转，控制台会警告。请用 /orders/79 这类具体地址进入。"
     >
       {contextHolder}
       <Space orientation="vertical" size={16} style={{ width: '100%' }}>

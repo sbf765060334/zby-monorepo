@@ -161,6 +161,7 @@ function PlatformLayout() {
 - 配置 `element` 表示点击后直接进入页面，不要再配置 `routes`。
 - 配置 `routes` 表示点击后打开多级菜单，不要再配置 `element`。
 - `ignore` 会从菜单和全局搜索中隐藏当前分支，但不会改变 router-core 的路由注册结果。
+- 带 `:param` 或通配符的页面路径不会出现在一级或叶子菜单中；只含这类子页面的目录也会被收起。仍可通过 `/orders/79` 这类具体地址进入。
 - `_blank` 使用原生链接打开；站内地址会保留 React Router 的 basename。
 - `prompt` 用于“暂未开放”入口，字符串值会作为提示文案。
 

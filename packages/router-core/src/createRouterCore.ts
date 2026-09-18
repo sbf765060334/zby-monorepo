@@ -508,8 +508,21 @@ export function createRouterCore<Route extends RouterRoute>(
     if (!runtime.host)
       return
     const plan = resolveNavigationPlan(input)
-    if (plan)
+    if (plan) {
       executeNavigationPlan(plan)
+      return
+    }
+    warnUnresolvedPatternJump(input)
+  }
+
+  /** 未具体化的 pattern 缺少可恢复地址时不导航，并给出控制台提示。 */
+  function warnUnresolvedPatternJump(input: RouterNavigationInput) {
+    const pathname = typeof input === 'string' ? parseUrl(input).pathname : input.pathname
+    if (isConcreteRoutePath(pathname))
+      return
+    console.warn(
+      `[router-core] jumpTo 忽略了未具体化的路由 pattern "${pathname}"。请传入 /orders/79 这类具体 pathname。`,
+    )
   }
 
   /** 同页 URL 状态使用 replace；真正切换 pathname 时转交完整 jumpTo 流程。 */

@@ -53,6 +53,7 @@ const zhCN = {
   },
   menu: {
     unavailable: '功能暂未开放',
+    needConcretePath: '请从列表进入该页面',
     switchSystem: '切换系统',
   },
   exception: {

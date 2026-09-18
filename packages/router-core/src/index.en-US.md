@@ -153,7 +153,7 @@ For a dynamic route such as `/orders/:id`:
 
 - `supportMultipleTabs: false` or omitted uses the pattern as one shared tab key and remembers the latest concrete pathname.
 - `supportMultipleTabs: true` uses each concrete pathname as an independent tab key.
-- Navigating directly to an unresolved pattern is rejected. Pass a concrete pathname such as `/orders/42`.
+- Navigating directly to an unresolved pattern is rejected. Pass a concrete pathname such as `/orders/42`. Without a cached concrete address, `jumpTo` is a no-op and writes a console warning.
 
 ## `createRouterCore` Options (Props)
 
@@ -210,7 +210,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `configureRuntime(options)` | `RouterRuntimeOptions` | `void` | Updates close/storage callbacks without publishing Store state. |
 | `hydrateStorage()` | none | `Promise<void>` | Loads fixed tabs, dynamic pathnames, and favorites. Concurrent calls share one task. |
 | `syncLocation(location)` | `RouterLocation` | `void` | Accepts the final host-confirmed URL. This is the only URL-to-Core entry. |
-| `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | Validates directories, authorization, and tabs before requesting navigation. |
+| `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | Validates directories, authorization, and tabs before requesting navigation. Missing host or an invalid address is a no-op. An unresolved pattern without a cached concrete pathname is ignored and writes a console warning. |
 | `smartNavigate(data)` | `RouterSmartNavigateData` | `void` | Replaces same-page search/hash and delegates pathname changes to full `jumpTo`. |
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | Converts a concrete URL into a stable tab identity. |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | Returns the root-to-leaf route chain for menus and breadcrumbs. |
@@ -225,7 +225,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | Subscribes one retained page; immediately replays the current location when available. |
 
-`jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page.
+`jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning.
 
 `closeTab` returning `true` means the close request was accepted. The last remaining tab returns `false` so it cannot bounce through `/` and reopen. An inactive tab is cleared before the call returns. When closing the active tab, the current page remains until the host has left the closed page, and that navigation uses replace. A trailing slash or encoding difference still counts as the same page; leaving the closed page commits the close even if the confirmed string is not an exact match. An unavailable host or synchronous navigation failure never deletes the current page early.
 

@@ -1,4 +1,4 @@
-import { preloadRoute } from '@zby/router-core'
+import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
@@ -14,6 +14,7 @@ import type {
   ProLayoutStyles,
   ProLayoutSystemItem,
 } from '../types'
+import { isVisibleRoute } from './isVisibleRoute'
 import MenuDrawer from './MenuDrawer'
 import SystemSwitcher from './SystemSwitcher'
 
@@ -136,6 +137,13 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
     }
 
     if (router.registry.isPageRoute(route)) {
+      if (!isConcreteRoutePath(route.path)) {
+        void messageApi.info(
+          intl.getMessage('zby.pro.layout.menu.needConcretePath', '请从列表进入该页面'),
+        )
+        closeDrawer()
+        return
+      }
       // 一级页面路由可以直接跳转，不需要打开用于展示子路由的 Drawer。
       router.jumpTo(route.path)
       closeDrawer()
@@ -321,20 +329,6 @@ function preloadVisibleRoute(
 function hasVisibleChildren(route: ProLayoutRoute) {
   // some 会在第一个可见后代处短路，无需为仅做布尔判断的场景创建过滤数组。
   return Boolean(route.routes?.some(isVisibleRoute))
-}
-
-/**
- * 菜单统一可见性规则。
- *
- * `ignore` 拥有最高优先级；其余路由只要能直接打开页面、显示 prompt、跳转外链，
- * 或者包含任意可见后代，就应保留在导航树中。递归判断可以避免渲染空目录。
- */
-function isVisibleRoute(route: ProLayoutRoute): boolean {
-  // 直接能力和后代能力取并集；目录无需自身 element，只要其子树最终存在可访问入口即可。
-  return (
-    !route.ignore &&
-    Boolean(route.element || route.prompt || route._blank || route.routes?.some(isVisibleRoute))
-  )
 }
 
 export default memo(IconDrawerMenu)

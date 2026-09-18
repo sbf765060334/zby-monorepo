@@ -53,6 +53,7 @@ const enUS = {
   },
   menu: {
     unavailable: 'This feature is not available yet',
+    needConcretePath: 'Open this page from a list instead',
     switchSystem: 'Switch system',
   },
   exception: {

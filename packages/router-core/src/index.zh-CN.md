@@ -153,7 +153,7 @@ export function App() {
 
 - `supportMultipleTabs: false` 或省略时，使用 pattern 作为共享页签 key，并记住最后一次真实 pathname。
 - `supportMultipleTabs: true` 时，每个真实 pathname 使用独立页签 key。
-- 未解析的动态 pattern 不能直接导航，应传入 `/orders/42` 这样的真实路径。
+- 未解析的动态 pattern 不能直接导航，应传入 `/orders/42` 这样的真实路径；没有可恢复缓存时会忽略这次 `jumpTo`，并打印控制台警告。
 
 ## `createRouterCore` 创建参数（Props）
 
@@ -210,7 +210,7 @@ export function App() {
 | `configureRuntime(options)` | `RouterRuntimeOptions` | `void` | 更新允许随 React render 变化的关闭/存储错误回调，不会发布 Store 状态。 |
 | `hydrateStorage()` | 无 | `Promise<void>` | 加载固定页签、动态 pathname 和收藏；并发调用共享同一个任务。 |
 | `syncLocation(location)` | `RouterLocation` | `void` | 接收宿主最终确认的地址，这是浏览器地址进入 Core 的唯一入口。 |
-| `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | 校验目录、权限和页签后请求完整导航。没有宿主或地址无效时安全地不做事。 |
+| `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | 校验目录、权限和页签后请求完整导航。没有宿主或地址无效时安全地不做事。未具体化且没有可恢复缓存的 pattern 会被忽略，并给出控制台警告。 |
 | `smartNavigate(data)` | `RouterSmartNavigateData` | `void` | 同页只替换 search/hash；pathname 变化时自动走完整 `jumpTo`。 |
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | 把真实地址转换成稳定页签身份；未知地址返回 `null`。 |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | 返回从根到叶子的匹配链，适合菜单和面包屑。 |
@@ -225,7 +225,7 @@ export function App() {
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。 |
 
-`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。
+`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。
 
 `closeTab` 返回 `true` 表示关闭请求已被接受。只剩一个页签时返回 `false`，避免关完经根路径重定向后再被打开。非活动页签会在返回前完成清理；关闭活动页签时，当前页会保留到宿主确认已经离开被关页，这次跳转使用 replace。尾斜杠或编码差异仍视为同一页；已经离开被关页则提交删除，不要求回传字符串精确等于下一页。宿主不可用或导航同步失败时不会提前删除当前页。
 

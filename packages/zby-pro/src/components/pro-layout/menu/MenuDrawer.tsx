@@ -1,5 +1,5 @@
 import { ToolOutlined } from '@ant-design/icons'
-import { preloadRoute } from '@zby/router-core'
+import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
@@ -14,6 +14,7 @@ import {
 import type { RouterCoreState } from '@zby/router-core'
 import type { CSSProperties } from 'react'
 import type { ProLayoutRoute } from '../types'
+import { isVisibleRoute } from './isVisibleRoute'
 import { createMenuDrawerLayout } from './menuLayout'
 import type { NativeScrollbarSize } from './menuLayout'
 
@@ -213,6 +214,14 @@ function MenuDrawer(props: MenuDrawerProps) {
 
     // 外链由原生 a 标签完成打开；这里仅同步关闭 Drawer。
     if (route._blank) {
+      onClose()
+      return
+    }
+
+    if (!isConcreteRoutePath(route.path)) {
+      void messageApi.info(
+        intl.getMessage('zby.pro.layout.menu.needConcretePath', '请从列表进入该页面'),
+      )
       onClose()
       return
     }
@@ -643,13 +652,6 @@ function preloadVisibleRoute(
 ) {
   if (router.registry.isPageRoute(route))
     preloadRoute(route)
-}
-
-/** 只有自身可操作或至少存在一个可见后代的路由，才属于可见菜单树。 */
-function isVisibleRoute(route: ProLayoutRoute): boolean {
-  return !route.ignore && Boolean(
-    route.element || route.prompt || route._blank || route.routes?.some(isVisibleRoute),
-  )
 }
 
 export default memo(MenuDrawer, (prev, next) =>

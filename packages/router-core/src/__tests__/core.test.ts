@@ -433,6 +433,7 @@ describe('createRouterCore', () => {
   /** 没有具体参数值的动态 pattern 不能直接交给浏览器导航。 */
   it('does not navigate an unresolved dynamic route pattern', () => {
     const navigate = vi.fn()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const router = createRouterCore({ routes, storageAdapter: false })
     router.bindHost({ navigate })
 
@@ -440,6 +441,9 @@ describe('createRouterCore', () => {
 
     expect(navigate).not.toHaveBeenCalled()
     expect(router.getState().tabs).toEqual([])
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]?.[0])).toContain('/project/:id')
+    warn.mockRestore()
   })
 
   /** 固定的共享动态页签必须借助持久化映射恢复最后真实地址。 */

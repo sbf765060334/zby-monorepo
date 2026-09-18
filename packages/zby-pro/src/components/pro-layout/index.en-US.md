@@ -160,6 +160,7 @@ A first-level menu entry must be either a page or a directory:
 - Set `element` for an entry that navigates directly to a page; do not also set `routes`.
 - Set `routes` for an entry that opens a multilevel menu; do not also set `element`.
 - `ignore` hides the current branch from menus and global search without changing router-core registration.
+- Page paths with `:param` or wildcards are omitted from first-level and leaf menus. A directory that only contains such pages is also omitted. Concrete addresses such as `/orders/79` still open the page.
 - `_blank` uses a native link; internal links retain the React Router basename.
 - `prompt` represents an unavailable entry. A string value becomes the message text.
 
