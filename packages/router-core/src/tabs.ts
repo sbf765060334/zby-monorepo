@@ -99,7 +99,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     string,
     (location: RouterLocationEventPayload) => void
   >()
-  // 防止用户连续点击关闭时，同一个页签并发执行两套异步守卫和清理事务。
+  // 防止同一页签并发关闭。活动页在宿主确认已经离开被关页之前都占着这把锁。
   const closingTabKeys = new Set<string>()
   // 活动页签必须等宿主确认已经离开被关页后再删除，避免导航被阻止时丢失当前页面。
   let pendingTabClose: {
@@ -361,6 +361,7 @@ export function createRouterTabs<Route extends RouterRoute>(
       return
 
     pendingTabClose = null
+    closingTabKeys.delete(pending.tabKey)
     if (!commitTabClose(pending.tabKey))
       return
 
@@ -461,8 +462,9 @@ export function createRouterTabs<Route extends RouterRoute>(
       notifyTabClose(tabKey, { pathname: closedPathname })
       return result
     } finally {
-      // 无论守卫拒绝、抛错还是关闭成功，都必须释放并发锁，允许用户稍后重试。
-      closingTabKeys.delete(tabKey)
+      // 仍在等宿主确认时不要放锁，避免连点或交错的 closeThisTabOpenNewOne 盖掉 pending。
+      if (pendingTabClose?.tabKey !== tabKey)
+        closingTabKeys.delete(tabKey)
     }
   }
 

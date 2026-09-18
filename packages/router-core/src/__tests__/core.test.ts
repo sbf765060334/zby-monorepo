@@ -1338,6 +1338,42 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
   })
 
+  /** 活动页关闭在宿主确认前保持锁，第二次关闭不能再发跳转或覆盖 pending。 */
+  it('rejects a second close of the same active tab before the host confirms', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+    expect(await router.closeTab('/settings/profile')).toBe(false)
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).toBe(false)
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+    ])
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
+    expect(await router.closeTab('/project/:id')).toBe(true)
+  })
+
   /** 守卫抛错要保留页签，同时释放并发锁让用户可以再次关闭。 */
   it('keeps the tab and releases the closing lock when a close guard throws', async () => {
     const navigate = vi.fn()

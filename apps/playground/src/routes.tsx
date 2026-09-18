@@ -7,6 +7,7 @@ const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/Acti
 const CloseConfirmDemo = createLazyRouteComponent(() => import('./pages/CloseConfirmDemo'))
 const QueryReencodeDemo = createLazyRouteComponent(() => import('./pages/QueryReencodeDemo'))
 const ListenerThrowDemo = createLazyRouteComponent(() => import('./pages/ListenerThrowDemo'))
+const PendingLockDemo = createLazyRouteComponent(() => import('./pages/PendingLockDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -86,6 +87,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: 'listener 抛错',
         tag: { text: 'Demo', color: 'warning' },
         element: ListenerThrowDemo,
+      },
+      {
+        path: '/workbench/pending-lock',
+        title: '关闭锁和 pending',
+        tag: { text: 'Demo', color: 'warning' },
+        element: PendingLockDemo,
       },
       {
         path: '/workbench/content-container',
