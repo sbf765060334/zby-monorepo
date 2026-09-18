@@ -95,6 +95,7 @@ export default function SharedTabOrderDetailPage() {
         </Space>
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
           页面实例 ID 在组件挂载时生成。关页再开后 location 会换成新单号。
+          关掉本页签回到列表后，再点「按 pattern 打开详情」不会跳回来：真实地址缓存已经清掉。
         </Typography.Paragraph>
       </Space>
     </PlaygroundPage>
