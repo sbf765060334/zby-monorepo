@@ -8,6 +8,7 @@ const CloseConfirmDemo = createLazyRouteComponent(() => import('./pages/CloseCon
 const QueryReencodeDemo = createLazyRouteComponent(() => import('./pages/QueryReencodeDemo'))
 const ListenerThrowDemo = createLazyRouteComponent(() => import('./pages/ListenerThrowDemo'))
 const PendingLockDemo = createLazyRouteComponent(() => import('./pages/PendingLockDemo'))
+const InactiveReplaceDemo = createLazyRouteComponent(() => import('./pages/InactiveReplaceDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -93,6 +94,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '关闭锁和 pending',
         tag: { text: 'Demo', color: 'warning' },
         element: PendingLockDemo,
+      },
+      {
+        path: '/workbench/inactive-replace',
+        title: '非活动页组合关闭',
+        tag: { text: 'Demo', color: 'warning' },
+        element: InactiveReplaceDemo,
       },
       {
         path: '/workbench/content-container',

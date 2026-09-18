@@ -384,9 +384,9 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   toggleFixed: (tabKey: string) => boolean
   /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */
   toggleFavoriteRoute: (path: string) => boolean
-  /** 运行关闭守卫；最后一个页签不会关闭。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。非活动页签立即清理。关页跳转使用 replace。 */
+  /** 运行关闭守卫；最后一个页签不会关闭。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理，若该页签在导航中已成为活动页则不再删除。关页跳转使用 replace。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
-  /** 请求新地址，并在宿主确认已经离开旧页后关闭活动旧页签；整个过程只产生一次最终导航，且使用 replace。 */
+  /** 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。整个过程只产生一次最终导航，且使用 replace。 */
   closeThisTabOpenNewOne: (
     data: { oldPath: string, newPath: string },
     options?: RouterCloseOptions,

@@ -1527,6 +1527,112 @@ describe('createRouterCore', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
+  /** 非活动页组合关闭在跳转抛错时必须保住旧页签，不能先删再失败。 */
+  it('keeps an inactive tab when composite navigation throws', async () => {
+    const error = new Error('host navigate failed')
+    const onTabClose = vi.fn()
+    const navigate = vi.fn(() => {
+      throw error
+    })
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({ onTabClose })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    await expect(
+      router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).rejects.toBe(error)
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(onTabClose).not.toHaveBeenCalled()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+    expect(router.getState().currentPathname).toBe('/dashboard')
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    expect(router.getState().navigationStatus).toBe('settled')
+  })
+
+  /** 非活动页组合关闭成功后，旧页签在命令返回时已经清掉，新页等宿主确认再建。 */
+  it('clears an inactive tab only after composite navigation succeeds', async () => {
+    const navigate = vi.fn()
+    const onTabClose = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.configureRuntime({ onTabClose })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).toBe(true)
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
+    expect(onTabClose).toHaveBeenCalledOnce()
+    expect(onTabClose).toHaveBeenCalledWith('/settings/profile', {
+      pathname: '/settings/profile',
+    })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(router.getState().currentPathname).toBe('/dashboard')
+
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
+  })
+
+  /** 同步宿主落到同一共享页签时，不能把刚刚激活的那一页再删掉。 */
+  it('does not delete an inactive shared tab that a sync host already activated', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const onTabClose = vi.fn()
+    router.bindHost({
+      navigate: (target) => {
+        router.syncLocation({
+          pathname: typeof target === 'string' ? target : target.pathname,
+          search: '',
+          hash: '',
+        })
+      },
+    })
+    router.configureRuntime({ onTabClose })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.setTabLabel('/project/:id', 'Project 42')
+    expect(router.toggleFixed('/project/:id')).toBe(true)
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/project/42',
+        newPath: '/project/99',
+      }),
+    ).toBe(true)
+
+    const state = router.getState()
+    expect(onTabClose).not.toHaveBeenCalled()
+    expect(state.currentPathname).toBe('/project/99')
+    expect(state.activePage).toBe('/project/:id')
+    expect(state.tabs.some((tab) => tab.key === '/project/:id')).toBe(true)
+    expect(state.tabs.find((tab) => tab.key === '/project/:id')?.label).toBe('Project 42')
+    expect(state.fixedSet).toEqual(['/project/:id'])
+    expect(state.pages.find((page) => page.key === '/project/:id')?.pathname)
+      .toBe('/project/99')
+  })
+
   /** 最终导航必须早于关闭通知，避免通知回调解绑宿主后导航丢失。 */
   it('navigates before onTabClose can unbind the host', async () => {
     const events: string[] = []

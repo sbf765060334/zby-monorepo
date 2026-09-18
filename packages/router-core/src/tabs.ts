@@ -30,7 +30,7 @@ import type { RouterUrlCache } from './urlState'
 export interface CloseTabTransaction {
   /** 守卫完成后、提交删除前再次确认外部条件仍成立。 */
   canCommit?: () => boolean
-  /** 组合命令提供的最终导航；活动页签会等宿主确认已经离开被关页后再删除。 */
+  /** 组合命令提供的最终导航。活动页签等宿主离开被关页后再删；非活动页签先跳，成功后再删。 */
   navigation?: {
     getPathname: () => string
     execute: () => boolean
@@ -455,12 +455,33 @@ export function createRouterTabs<Route extends RouterRoute>(
         }
       }
 
+      // 后台页当场关即可。还要跳新地址时先跳，成功了再删，避免跳失败页签已经没了。
+      if (!navigation) {
+        if (!commitTabClose(tabKey))
+          return false
+        notifyTabClose(tabKey, { pathname: closedPathname })
+        return true
+      }
+
+      try {
+        const result = navigation.execute()
+        if (!result)
+          return false
+      } catch (error) {
+        setState((current) => current.navigationStatus === 'settled'
+          ? current
+          : { ...current, navigationStatus: 'settled' })
+        throw error
+      }
+
+      // 同步宿主可能在 execute 里已经把同一共享页签激活成当前页，不能再删。
+      if (getState().activeTabKey === tabKey)
+        return true
+
       if (!commitTabClose(tabKey))
         return false
-      const result = navigation?.execute() ?? true
-      // 非活动页签可以立即删除；组合导航仍先执行，再允许回调解绑宿主。
       notifyTabClose(tabKey, { pathname: closedPathname })
-      return result
+      return true
     } finally {
       // 仍在等宿主确认时不要放锁，避免连点或交错的 closeThisTabOpenNewOne 盖掉 pending。
       if (pendingTabClose?.tabKey !== tabKey)
