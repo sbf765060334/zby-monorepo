@@ -1170,14 +1170,14 @@ describe('createRouterCore', () => {
       }),
     ).toBe(true)
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    expect(navigate).toHaveBeenCalledWith('/settings/profile', { replace: true })
 
     router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
     expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/settings/profile'])
     expect(router.getState().activePage).toBe('/settings/profile')
   })
 
-  /** 关闭活动页发起的回退导航也必须等待宿主 location 确认后才 settled。 */
+  /** 关闭活动页发起的回退导航必须 replace，并等待宿主确认后才 settled。 */
   it('tracks close-tab navigation until the host confirms its location', async () => {
     const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -1188,7 +1188,7 @@ describe('createRouterCore', () => {
 
     expect(await router.closeTab('/settings/profile')).toBe(true)
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/dashboard')
+    expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true })
     expect(router.getState().navigationStatus).toBe('navigating')
     expect(router.getState().activeTabKey).toBe('/settings/profile')
     expect(router.getState().activePage).toBe('/settings/profile')
@@ -1290,7 +1290,7 @@ describe('createRouterCore', () => {
     ).toBe(true)
 
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary')
+    expect(navigate).toHaveBeenCalledWith('/project/42?tab=detail#summary', { replace: true })
     expect(router.getState().activePage).toBe('/settings/profile')
     expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
 
@@ -1329,7 +1329,7 @@ describe('createRouterCore', () => {
     ).toBe(true)
 
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/project/99')
+    expect(navigate).toHaveBeenCalledWith('/project/99', { replace: true })
     expect(guard).toHaveBeenCalledOnce()
 
     router.syncLocation({ pathname: '/project/99', search: '', hash: '' })
@@ -1427,7 +1427,7 @@ describe('createRouterCore', () => {
     ).toBe(true)
 
     expect(navigate).toHaveBeenCalledOnce()
-    expect(navigate).toHaveBeenCalledWith('/project/42')
+    expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
     expect(events).toEqual(['navigate'])
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
     expect(events).toEqual(['navigate', 'onTabClose'])
@@ -1482,7 +1482,7 @@ describe('createRouterCore', () => {
         }),
       ).toBe(true)
       expect(navigate).toHaveBeenCalledOnce()
-      expect(navigate).toHaveBeenCalledWith('/project/42')
+      expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
       router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
       expect(consoleError).toHaveBeenCalledWith(
         '[RouterCore] onTabClose callback failed.',
@@ -1517,7 +1517,7 @@ describe('createRouterCore', () => {
         }),
       ).toBe(true)
       expect(navigate).toHaveBeenCalledOnce()
-      expect(navigate).toHaveBeenCalledWith('/project/42')
+      expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
       router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
       await vi.waitFor(() => {
         expect(consoleError).toHaveBeenCalledWith(

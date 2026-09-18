@@ -6,7 +6,7 @@
  */
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
   BrowserRouter,
   MemoryRouter,
@@ -207,6 +207,79 @@ describe('RouterCoreReactRouterAdapter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'back' }))
     await waitFor(() => {
       // smartNavigate 替换的是 /project/42 记录；回退应直接返回最初的 /home。
+      expect(screen.getByTestId('location').textContent).toBe('/home')
+      expect(router.getState().currentPathname).toBe('/home')
+    })
+  })
+
+  /** 关闭活动页签必须 replace 当前地址，后退不能把已关页签救活。 */
+  it('replaces close-tab navigation so Back cannot revive the closed location', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+
+    render(
+      <MemoryRouter initialEntries={['/home']}>
+        <RouterCoreProvider router={router}>
+          <RouterCoreReactRouterAdapter>
+            <NavigationProbe router={router} />
+          </RouterCoreReactRouterAdapter>
+        </RouterCoreProvider>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'jump' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toBe('/project/42')
+      expect(router.getState().activePage).toBe('/project/:id')
+    })
+
+    await act(async () => {
+      expect(await router.closeTab('/project/:id')).toBe(true)
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toBe('/home')
+      expect(router.getState().tabs.some((tab) => tab.key === '/project/:id')).toBe(false)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'back' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toBe('/home')
+      expect(router.getState().currentPathname).toBe('/home')
+      expect(router.getState().tabs.some((tab) => tab.key === '/project/:id')).toBe(false)
+    })
+  })
+
+  /** 关旧开新同样覆盖当前历史，后退应回到更早的页面，而不是旧详情。 */
+  it('replaces closeThisTabOpenNewOne so Back skips the closed pathname', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+
+    render(
+      <MemoryRouter initialEntries={['/home']}>
+        <RouterCoreProvider router={router}>
+          <RouterCoreReactRouterAdapter>
+            <NavigationProbe router={router} />
+          </RouterCoreReactRouterAdapter>
+        </RouterCoreProvider>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'jump' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toBe('/project/42')
+    })
+
+    await act(async () => {
+      expect(await router.closeThisTabOpenNewOne({
+        oldPath: '/project/42',
+        newPath: '/project/99',
+      })).toBe(true)
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('location').textContent).toBe('/project/99')
+      expect(router.getState().currentPathname).toBe('/project/99')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'back' }))
+    await waitFor(() => {
       expect(screen.getByTestId('location').textContent).toBe('/home')
       expect(router.getState().currentPathname).toBe('/home')
     })

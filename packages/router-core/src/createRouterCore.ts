@@ -580,7 +580,7 @@ export function createRouterCore<Route extends RouterRoute>(
         canCommit: () => runtime.host === host,
         navigation: {
           getPathname: () => parseUrl(buildNavigationTarget(target)).pathname,
-          execute: () => executeNavigationPlan(target),
+          execute: () => executeNavigationPlan(target, { replace: true }),
         },
       })
     }

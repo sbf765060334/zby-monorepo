@@ -285,7 +285,11 @@ export function createRouterTabs<Route extends RouterRoute>(
     }
   }
 
-  /** 请求宿主切换关闭后的地址；真正删除活动页签由 location 确认流程完成。 */
+  /**
+   * 请求宿主切换关闭后的地址；真正删除活动页签由 location 确认流程完成。
+   *
+   * 必须 replace：关页不是新开一条历史，否则后退会回到已关地址并把页签救活。
+   */
   function requestCloseNavigation(target: string) {
     const host = getHost()
     if (!host)
@@ -295,7 +299,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     setState((state) => state.navigationStatus === 'navigating'
       ? state
       : { ...state, navigationStatus: 'navigating' })
-    host.navigate(target)
+    host.navigate(target, { replace: true })
     return true
   }
 
