@@ -7,7 +7,7 @@
 import type { StoreApi } from 'zustand/vanilla'
 
 import { enforceKeepAlive, shouldRefreshTouchedAt } from './keepAlive'
-import type { RouteRegistry } from './registry'
+import { normalizeRoutePath, type RouteRegistry } from './registry'
 import {
   areStringArraysEqual,
   sanitizeFavoriteRoutePaths,
@@ -30,11 +30,26 @@ import type { RouterUrlCache } from './urlState'
 export interface CloseTabTransaction {
   /** 守卫完成后、提交删除前再次确认外部条件仍成立。 */
   canCommit?: () => boolean
-  /** 组合命令提供的最终导航；活动页签会等该 pathname 被宿主确认后再删除。 */
+  /** 组合命令提供的最终导航；活动页签会等宿主确认已经离开被关页后再删除。 */
   navigation?: {
     getPathname: () => string
     execute: () => boolean
   }
+}
+
+/** 关页确认把尾斜杠和百分号编码当成同一页，避免 /dashboard 和 /dashboard/ 对不上。 */
+function areClosePathnamesEqual(left: string, right: string) {
+  return canonicalizeClosePathname(left) === canonicalizeClosePathname(right)
+}
+
+function canonicalizeClosePathname(pathname: string) {
+  let decoded = pathname
+  try {
+    decoded = decodeURIComponent(pathname)
+  } catch {
+    decoded = pathname
+  }
+  return normalizeRoutePath(decoded)
 }
 
 /** 创建页签控制器所需的同一 RouterCore 实例内部依赖。 */
@@ -86,11 +101,10 @@ export function createRouterTabs<Route extends RouterRoute>(
   >()
   // 防止用户连续点击关闭时，同一个页签并发执行两套异步守卫和清理事务。
   const closingTabKeys = new Set<string>()
-  // 活动页签必须等宿主确认目标 pathname 后再删除，避免导航被阻止时丢失当前页面。
+  // 活动页签必须等宿主确认已经离开被关页后再删除，避免导航被阻止时丢失当前页面。
   let pendingTabClose: {
     tabKey: string
     closedPathname: string
-    confirmationPathname: string
   } | null = null
 
   /** 确保 pathname 对应的页签存在，并按需要创建或刷新页面实例。 */
@@ -335,16 +349,18 @@ export function createRouterTabs<Route extends RouterRoute>(
     return true
   }
 
-  /** 只在宿主回传了本次关闭请求的目标 pathname 时提交删除，并返回延后通知。 */
+  /**
+   * 宿主已经离开被关页时提交删除，并返回延后通知。
+   *
+   * 还停在被关页（含尾斜杠、编码差异）时继续等待。已经离开则提交，不要求回传
+   * 字符串精确等于当初记下的下一页。
+   */
   function confirmPendingTabClose(pathname: string) {
     const pending = pendingTabClose
-    if (!pending || pathname === pending.closedPathname)
+    if (!pending || areClosePathnamesEqual(pathname, pending.closedPathname))
       return
 
     pendingTabClose = null
-    if (pathname !== pending.confirmationPathname)
-      return
-
     if (!commitTabClose(pending.tabKey))
       return
 
@@ -418,10 +434,10 @@ export function createRouterTabs<Route extends RouterRoute>(
 
         const confirmationPathname = navigation.getPathname()
         // 相同 pathname 不会产生新的宿主确认，不能把页面留在永久 pending 状态。
-        if (confirmationPathname === closedPathname)
+        if (areClosePathnamesEqual(confirmationPathname, closedPathname))
           return false
 
-        const pending = { tabKey, closedPathname, confirmationPathname }
+        const pending = { tabKey, closedPathname }
         pendingTabClose = pending
         try {
           const result = navigation.execute()

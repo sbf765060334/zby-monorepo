@@ -4,6 +4,7 @@ import { createLazyRouteComponent, type ProLayoutRoute } from '@zby/pro'
 const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/ActionIconPlayground'))
 const ActionRevealPlayground = createLazyRouteComponent(() => import('./pages/ActionRevealPlayground'))
 const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/ActionTextPlayground'))
+const CloseConfirmDemo = createLazyRouteComponent(() => import('./pages/CloseConfirmDemo'))
 const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
 const ErrorPage = createLazyRouteComponent(() => import('./pages/ErrorPage'))
 const InputNumberRangePlayground = createLazyRouteComponent(
@@ -65,6 +66,12 @@ export const appRouters: ProLayoutRoute[ ] = [
         title: '关闭拦截',
         tag: { text: 'Hook', color: 'warning' },
         element: DemoPage,
+      },
+      {
+        path: '/workbench/close-confirm',
+        title: '关闭确认',
+        tag: { text: 'Demo', color: 'warning' },
+        element: CloseConfirmDemo,
       },
       {
         path: '/workbench/content-container',

@@ -1201,6 +1201,64 @@ describe('createRouterCore', () => {
     expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
   })
 
+  /** 宿主回传只差尾斜杠时也应提交关闭，不能把 pending 扔掉。 */
+  it('commits an active-tab close when the host confirms a trailing-slash pathname', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    router.syncLocation({ pathname: '/dashboard/', search: '', hash: '' })
+
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+    expect(router.getState().activePage).toBe('/dashboard')
+    expect(router.getState().currentPathname).toBe('/dashboard/')
+  })
+
+  /** 还停在被关页时即使多一个斜杠也不能删，pending 要留到真正离开。 */
+  it('keeps a pending close while the host remains on the closed page', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    router.syncLocation({ pathname: '/settings/profile/', search: '', hash: '' })
+
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+    expect(router.getState().activePage).toBe('/settings/profile')
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+    expect(router.getState().activePage).toBe('/dashboard')
+  })
+
+  /** 组合命令的新地址带尾斜杠回传时，旧页签同样要删。 */
+  it('closes the old tab when closeThisTabOpenNewOne is confirmed with a trailing slash', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(
+      await router.closeThisTabOpenNewOne({
+        oldPath: '/settings/profile',
+        newPath: '/project/42',
+      }),
+    ).toBe(true)
+    router.syncLocation({ pathname: '/project/42/', search: '', hash: '' })
+
+    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+    expect(router.getState().activePage).toBe('/project/:id')
+    expect(router.getState().currentPathname).toBe('/project/42/')
+  })
+
   /** 没有可用宿主或宿主同步抛错时，活动页签不能被提前删除且必须允许重试。 */
   it('keeps the active tab when close navigation cannot be completed', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })
