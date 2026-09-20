@@ -33,6 +33,61 @@ describe('createProTableController', () => {
     })
   })
 
+  it('configure updates the request wiring without resetting the current query', async () => {
+    const queryRequest = vi.fn(async (query: Query) => ({
+      data: [{ id: String(query.page), status: query.status ?? 'all' }],
+      total: 20,
+    }))
+    const nextQueryRequest = vi.fn(async (query: Query) => ({
+      data: [{ id: String(query.page), status: query.status ?? 'all' }],
+      total: 20,
+    }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { page: 1, pageSize: 10 },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    await controller.submitQuery()
+    await controller.setPage(2)
+    controller.setQueryField('status', 'pending')
+
+    controller.configure({
+      defaultQuery: { page: 1, pageSize: 10 },
+      queryRequest: nextQueryRequest,
+    })
+
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'pending', page: 2, pageSize: 10 },
+      committedQuery: { page: 2, pageSize: 10 },
+      defaultQuery: { page: 1, pageSize: 10 },
+      currentPage: 2,
+    })
+
+    await controller.reload()
+    expect(nextQueryRequest).toHaveBeenCalledWith(
+      { page: 2, pageSize: 10 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+    expect(queryRequest).toHaveBeenCalledTimes(2)
+  })
+
+  it('resetQuery applies the latest defaultQuery from configure', () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { page: 1, pageSize: 10, status: 'all' },
+      rowKey: 'id',
+    })
+
+    controller.setQueryField('status', 'pending')
+    controller.configure({
+      defaultQuery: { page: 1, pageSize: 10, status: 'done' },
+    })
+
+    expect(controller.getState().query.status).toBe('pending')
+    controller.resetQuery()
+    expect(controller.getState().query).toEqual({ page: 1, pageSize: 10, status: 'done' })
+  })
+
   it('keeps selected rows and supports row patching', () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: { page: 1, pageSize: 10 },

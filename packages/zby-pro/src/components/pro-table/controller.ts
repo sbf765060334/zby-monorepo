@@ -94,6 +94,21 @@ function isQueryPatchEqual<Query>(query: Query, patch: Partial<Query>) {
   )
 }
 
+function isQueryEqual<Query>(left: Query, right: Query) {
+  if (Object.is(left, right)) {
+    return true
+  }
+
+  if (!left || !right || typeof left !== 'object' || typeof right !== 'object') {
+    return false
+  }
+
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)])
+  return Array.from(keys).every((key) => isSearchValueEqual(leftRecord[key], rightRecord[key]))
+}
+
 function getPageValue<Query>(query: Query, key: string, fallback: number) {
   const value = (query as Record<string, unknown>)?.[key]
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
@@ -419,7 +434,7 @@ export function createProTableController<
       }),
     configure: (nextConfig) => {
       store.setState((state) => {
-        const mergedDefaultQuery =
+        const nextDefaultQuery =
           nextConfig.defaultQuery === undefined
             ? state.defaultQuery
             : mergeQueryPatch(
@@ -437,19 +452,29 @@ export function createProTableController<
                   ),
                 } as Partial<Query>,
               )
+        const nextQueryRequest = nextConfig.queryRequest ?? state.queryRequest
+        const nextSummaryRequest = nextConfig.summaryRequest ?? state.summaryRequest
+        const nextRowKey = nextConfig.rowKey ?? state.rowKey
+        const nextRequestReady = Boolean(nextQueryRequest)
+
+        if (
+          isQueryEqual(state.defaultQuery, nextDefaultQuery) &&
+          nextQueryRequest === state.queryRequest &&
+          nextSummaryRequest === state.summaryRequest &&
+          Object.is(nextRowKey, state.rowKey) &&
+          nextRequestReady === state.requestReady
+        ) {
+          return state
+        }
 
         return {
-          defaultQuery: cloneQuery(mergedDefaultQuery),
-          query:
-            nextConfig.defaultQuery === undefined ? state.query : cloneQuery(mergedDefaultQuery),
-          committedQuery:
-            nextConfig.defaultQuery === undefined
-              ? state.committedQuery
-              : cloneQuery(mergedDefaultQuery),
-          queryRequest: nextConfig.queryRequest ?? state.queryRequest,
-          requestReady: Boolean(nextConfig.queryRequest ?? state.queryRequest),
-          summaryRequest: nextConfig.summaryRequest ?? state.summaryRequest,
-          rowKey: nextConfig.rowKey ?? state.rowKey,
+          defaultQuery: isQueryEqual(state.defaultQuery, nextDefaultQuery)
+            ? state.defaultQuery
+            : cloneQuery(nextDefaultQuery),
+          queryRequest: nextQueryRequest,
+          requestReady: nextRequestReady,
+          summaryRequest: nextSummaryRequest,
+          rowKey: nextRowKey,
         }
       })
     },
