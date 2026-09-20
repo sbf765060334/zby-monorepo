@@ -1,4 +1,4 @@
-import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Breadcrumb, Space } from 'antd'
@@ -37,12 +37,13 @@ const BreadcrumbView = (props: LayoutBreadcrumbProps) => {
   const pathnameDescriptionMap = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.pathnameDescriptionMap,
   )
+  const { resolve: resolveTitle, viewKey } = useRouterTitle()
   const items = useMemo<NonNullable<BreadcrumbProps['items']>>(
     () => currentRoutes.map((item, index) => {
       const Icon = item.route.icon
       const isCurrent = index === currentRoutes.length - 1 || item.realPath === currentPathname
       const clickable = !isCurrent && router.registry.isPageRoute(item.route)
-      const title = pathnameDescriptionMap[item.realPath] || item.route.title
+      const title = resolveTitle(pathnameDescriptionMap[item.realPath] || item.route.title)
 
       return {
         key: `${item.route.path}-${index}`,
@@ -65,7 +66,17 @@ const BreadcrumbView = (props: LayoutBreadcrumbProps) => {
         className: clickable ? `${prefixCls}-breadcrumb-item-clickable` : undefined,
       }
     }),
-    [createHref, currentPathname, currentRoutes, pathnameDescriptionMap, prefixCls, router],
+    // viewKey 必须在依赖里：切换语言时 resolveTitle 引用不变，只有它能让文案重算。
+    [
+      createHref,
+      currentPathname,
+      currentRoutes,
+      pathnameDescriptionMap,
+      prefixCls,
+      resolveTitle,
+      router,
+      viewKey,
+    ],
   )
 
   if (!items.length)

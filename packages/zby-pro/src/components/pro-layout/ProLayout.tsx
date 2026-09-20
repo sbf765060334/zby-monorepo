@@ -1,4 +1,4 @@
-import { useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { Layout } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useEffect, useMemo, useState } from 'react'
@@ -47,10 +47,12 @@ function ProLayout(props: ProLayoutProps) {
     useProLayoutStyles(prefixCls)
   const pathnameDescriptionMap = useRouterCoreSelector((state) => state.pathnameDescriptionMap)
   const currentPathname = useRouterCoreSelector((state) => state.currentPathname)
+  const { resolve: resolveTitle } = useRouterTitle()
   const [pageScrolled, setPageScrolled] = useState(false)
   const currentRoute = currentRoutes[currentRoutes.length - 1]
+  // 描述符每次渲染才被解释成文本，因此语言切换后 document.title 会自动跟上。
   const currentPageTitle = currentRoute
-    ? pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title
+    ? resolveTitle(pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title)
     : ''
   const shouldShowBreadcrumb = Boolean(showBreadcrumb && currentRoute)
   const layoutContextValue = useMemo(

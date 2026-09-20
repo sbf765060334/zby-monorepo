@@ -1,6 +1,6 @@
 import { PlusOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { Button, Dropdown, Empty, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
@@ -27,6 +27,7 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
   const favoritePaths = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.favoriteRoutePaths,
   )
+  const { resolve: resolveTitle } = useRouterTitle()
   const [open, setOpen] = useState(false)
 
   const visibleFavorites = useMemo(() => favoritePaths.flatMap((path) => {
@@ -51,54 +52,58 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         ) : null}
-        {visibleFavorites.map(({ path, route }) => (
-          <div
-            key={path}
-            className={clsx(`${prefixCls}-collection-item`, {
-              [`${prefixCls}-collection-item-active`]: currentPathname === path,
-            })}
-          >
-            <button
-              type="button"
-              className={`${prefixCls}-collection-item-main`}
-              title={route.title}
-              onClick={() => {
-                if (path === currentPathname)
-                  return
-                router.jumpTo(path)
-                setOpen(false)
-              }}
+        {visibleFavorites.map(({ path, route }) => {
+          const title = resolveTitle(route.title)
+
+          return (
+            <div
+              key={path}
+              className={clsx(`${prefixCls}-collection-item`, {
+                [`${prefixCls}-collection-item-active`]: currentPathname === path,
+              })}
             >
-              {route.title}
-            </button>
-            <button
-              type="button"
-              className={`${prefixCls}-collection-remove`}
-              aria-label={intl.getMessage(
-                'zby.pro.layout.favorites.remove',
-                '取消收藏：{{title}}',
-                { title: route.title },
-              )}
-              title={intl.getMessage(
-                'zby.pro.layout.favorites.remove',
-                '取消收藏：{{title}}',
-                { title: route.title },
-              )}
-              onClick={() => {
-                if (router.toggleFavoriteRoute(path)) {
-                  void messageApi.success(
-                    intl.getMessage(
-                      'zby.pro.layout.favorites.uncollectSuccess',
-                      '取消收藏成功',
-                    ),
-                  )
-                }
-              }}
-            >
-              <StarFilled />
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                className={`${prefixCls}-collection-item-main`}
+                title={title}
+                onClick={() => {
+                  if (path === currentPathname)
+                    return
+                  router.jumpTo(path)
+                  setOpen(false)
+                }}
+              >
+                {title}
+              </button>
+              <button
+                type="button"
+                className={`${prefixCls}-collection-remove`}
+                aria-label={intl.getMessage(
+                  'zby.pro.layout.favorites.remove',
+                  '取消收藏：{{title}}',
+                  { title },
+                )}
+                title={intl.getMessage(
+                  'zby.pro.layout.favorites.remove',
+                  '取消收藏：{{title}}',
+                  { title },
+                )}
+                onClick={() => {
+                  if (router.toggleFavoriteRoute(path)) {
+                    void messageApi.success(
+                      intl.getMessage(
+                        'zby.pro.layout.favorites.uncollectSuccess',
+                        '取消收藏成功',
+                      ),
+                    )
+                  }
+                }}
+              >
+                <StarFilled />
+              </button>
+            </div>
+          )
+        })}
       </div>
       <div className={`${prefixCls}-collection-footer`}>
         <StarOutlined className={`${prefixCls}-collection-footer-icon`} />

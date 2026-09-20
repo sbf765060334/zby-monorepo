@@ -1,8 +1,8 @@
 import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
-import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
-import { Layout, message, Tooltip } from 'antd'
+import { Layout, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -62,6 +62,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
   const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
+  const { resolve: resolveTitle } = useRouterTitle()
   const [messageApi, messageContextHolder] = message.useMessage()
 
   // currentSelectedPath 是从一级到当前页面的完整路径，用于真实选中态和默认 Drawer 内容。
@@ -128,9 +129,9 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
     if (route.prompt) {
       // prompt 路由没有可进入页面：显示自定义文案或统一的“暂未开放”提示，然后收起菜单。
       void messageApi.info(
-        typeof route.prompt === 'string'
-          ? route.prompt
-          : intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放'),
+        route.prompt === true
+          ? intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放')
+          : resolveTitle(route.prompt),
       )
       closeDrawer()
       return
@@ -196,6 +197,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                 {routes.map((route) => {
                   // icon 是可选配置；没有 icon 时仍保留标题和稳定的菜单项尺寸。
                   const Icon = route.icon
+                  const title = resolveTitle(route.title)
 
                   // active 表示真实路由命中；hovered 只表示当前打开的 Drawer 正在展示该目录。
                   const active = selectedPath.includes(route.path)
@@ -212,7 +214,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                     <dl>
                       <dt>{Icon ? <Icon /> : null}</dt>
                       <dd>
-                        <span className={`${prefixCls}-sider-item-title`}>{route.title}</span>
+                        <span className={`${prefixCls}-sider-item-title`}>{title}</span>
                       </dd>
                     </dl>
                   )
@@ -238,49 +240,47 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                   }
 
                   // 无 prompt 的外链保留原生链接语义；其余路由由 RouterCore 统一处理点击和键盘操作。
-                  return (
-                    <Tooltip key={route.path} placement="right" {...route.tooltipProps}>
-                      {route._blank && !route.prompt ? (
-                        <a
-                          href={createHref(route.path)}
-                          target={route.target || '_blank'}
-                          rel={
-                            // 新窗口外链必须隔离 opener；显式使用其他 target 时不强加该策略。
-                            (route.target || '_blank') === '_blank'
-                              ? 'noopener noreferrer'
-                              : undefined
-                          }
-                          className={className}
-                          title={route.title}
-                          onFocus={() => preloadVisibleRoute(route, router)}
-                          onMouseEnter={handlePreloadAndHover}
-                          onMouseLeave={cancelHoverIntent}
-                        >
-                          {content}
-                        </a>
-                      ) : (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          className={className}
-                          title={route.title}
-                          onClick={() => handleRoute(route)}
-                          onFocus={() => preloadVisibleRoute(route, router)}
-                          onMouseEnter={handlePreloadAndHover}
-                          onMouseLeave={cancelHoverIntent}
-                          onKeyDown={(event) => {
-                            // div 模拟按钮时只响应原生按钮对应的 Enter 和 Space 键。
-                            if (event.key !== 'Enter' && event.key !== ' ') return
+                  return route._blank && !route.prompt ? (
+                    <a
+                      key={route.path}
+                      href={createHref(route.path)}
+                      target={route.target || '_blank'}
+                      rel={
+                        // 新窗口外链必须隔离 opener；显式使用其他 target 时不强加该策略。
+                        (route.target || '_blank') === '_blank'
+                          ? 'noopener noreferrer'
+                          : undefined
+                      }
+                      className={className}
+                      title={title}
+                      onFocus={() => preloadVisibleRoute(route, router)}
+                      onMouseEnter={handlePreloadAndHover}
+                      onMouseLeave={cancelHoverIntent}
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <div
+                      key={route.path}
+                      role="button"
+                      tabIndex={0}
+                      className={className}
+                      title={title}
+                      onClick={() => handleRoute(route)}
+                      onFocus={() => preloadVisibleRoute(route, router)}
+                      onMouseEnter={handlePreloadAndHover}
+                      onMouseLeave={cancelHoverIntent}
+                      onKeyDown={(event) => {
+                        // div 模拟按钮时只响应原生按钮对应的 Enter 和 Space 键。
+                        if (event.key !== 'Enter' && event.key !== ' ') return
 
-                            // 阻止 Space 触发页面滚动，再复用与鼠标点击相同的确定性操作入口。
-                            event.preventDefault()
-                            handleRoute(route)
-                          }}
-                        >
-                          {content}
-                        </div>
-                      )}
-                    </Tooltip>
+                        // 阻止 Space 触发页面滚动，再复用与鼠标点击相同的确定性操作入口。
+                        event.preventDefault()
+                        handleRoute(route)
+                      }}
+                    >
+                      {content}
+                    </div>
                   )
                 })}
               </nav>

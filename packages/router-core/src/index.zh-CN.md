@@ -139,7 +139,7 @@ export function App() {
 | 字段 | 类型 | 必填 | 默认值 | 说明 |
 | --- | --- | --- | --- | --- |
 | `path` | `string` | 是 | 无 | 静态路径、`:param` 参数 pattern 或末尾 `*` 通配符。 |
-| `title` | `string` | 是 | 无 | 新页签的默认标题，也可供菜单/面包屑使用。 |
+| `title` | `RouterTitle`（即 `unknown`） | 是 | 无 | 新页签的默认标题描述符，也可供菜单/面包屑使用。core 只存不解释；详见「标题是描述符，不是文案」。 |
 | `routes` | `RouterRoute[]` | 否 | 无 | 子路由；目录和页面都可以继续拥有子节点。业务扩展类型应把它收窄成自己的 `Route[]`。 |
 | `auth` | `string` | 否 | 无 | 交给 `hasAuth` 判断的权限码。 |
 | `supportMultipleTabs` | `boolean` | 否 | `false` | `true` 时动态路由的每个真实 pathname 创建独立页签；否则共用 pattern 页签。 |
@@ -164,7 +164,7 @@ routes.push({ /* ... */ })        // 不影响 core：数组已被复制
 routes[0].tag.text = '改过的'     // ⚠️ 会影响 core：tag 是嵌套对象，与 Registry 共享引用
 ```
 
-`tag`、`tooltipProps`、`icon` 等嵌套对象，以及 Registry 返回的路由对象本身（未冻结）都属于「改了会生效」的范围。不要依赖复制行为来做隔离。
+`tag`、`icon` 等嵌套对象，以及 Registry 返回的路由对象本身（未冻结）都属于「改了会生效」的范围。不要依赖复制行为来做隔离。
 
 另外，Registry 返回的路由对象与你传入的**不是同一个对象**，判断是否同一个路由请比较 `path`，不要用引用相等：
 
@@ -173,6 +173,25 @@ const target = routes[1]
 currentRoutes.at(-1)?.route === target          // 永远为 false
 currentRoutes.at(-1)?.route.path === target.path // 正确写法
 ```
+
+### 标题是描述符，不是文案
+
+`route.title`、`tab.label` 和 `pathnameDescriptionMap` 的类型都是 `RouterTitle`，也就是 `unknown`。core 只负责存放和原样传递，**从不读取、拼接或翻译它的内容**，具体形状由渲染层决定。
+
+因为路由树在创建时固定，一旦把已经翻译好的文案塞进去，它就会被冻结在当时那个语言里，后续切换语言无法更新。正确做法是存「怎么得到文案」，在渲染时才解释：
+
+```ts
+// ❌ 成品文案：切换语言后页签仍是中文
+{ path: '/orders', title: '订单管理' }
+
+// ✅ 描述符：渲染时才翻译
+{ path: '/orders', title: 'app.menu.orders' }
+{ path: '/orders', title: { key: 'app.menu.orders', defaultMessage: '订单管理' } }
+```
+
+渲染层通过 `@zby/router-core/react` 的 `RouterTitleProvider` 注入解释规则，菜单、页签、面包屑等组件用 `useRouterTitle()` 取用。切换语言只更新这个 Context，不产生任何 core 状态变更，因此已打开的页签和 KeepAlive 页面实例都不会被重建。
+
+使用 `@zby/pro` 的 `ProLayout` 时，这层 Provider 已经内置并接好 `@zby/intl`，业务只要把 `title` 写成语言包 key 即可。
 
 以 `/orders/:id` 为例：
 
@@ -190,6 +209,7 @@ currentRoutes.at(-1)?.route.path === target.path // 正确写法
 | `hasAuth` | `(code: string) => boolean` | 否 | 始终返回 `true` | 用路由的 `auth` 字段询问当前用户有没有权限，并据此生成权限快照。 |
 | `defaultRedirectPath` | `string` | 否 | 第一个有权限的具体页面 | 用户访问 `/` 时优先跳到哪里。无效、无权限或仍带参数占位符时会自动回退。 |
 | `isPageRoute` | `(route: Route) => boolean` | 否 | 检查 `route.element` 是否存在 | 告诉 Core 哪些节点是真页面，哪些只是目录。 |
+| `isSameTitle` | `(left: RouterTitle, right: RouterTitle) => boolean` | 否 | `Object.is` | 判断两个标题描述符算不算同一个，决定 `setTabLabel`／`setPathnameDescription` 要不要发布新状态。描述符是对象时**必须**提供，否则每次调用都是新引用，会让整条页签栏白重渲染。 |
 | `keepAlive` | `boolean \| RouterKeepAliveConfig<Route>` | 否 | `true` | `false` 表示只留活动页；`true` 表示保留全部已打开页面；对象表示按规则保留。 |
 | `storageAdapter` | `false \| RouterStorageAdapter` | 否 | 内置 IndexedDB Adapter | `false` 完全关闭持久化；传对象可以接远程接口或其它存储。 |
 | `storageKey` | `string` | 否 | `default` | 存储命名空间。不同用户或不同平台应使用不同 key，避免数据串用。 |
@@ -238,8 +258,8 @@ currentRoutes.at(-1)?.route.path === target.path // 正确写法
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | 把真实地址转换成稳定页签身份；未知地址返回 `null`。 |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | 返回从根到叶子的匹配链，适合菜单和面包屑。 |
 | `reorderTabs(keys)` | `readonly string[]` | `boolean` | 参数必须包含当前全部页签且不重复；固定组不能排到普通组后面。 |
-| `setTabLabel(key, label)` | 两个 `string` | `void` | 把一个已打开页签的默认标题改成业务标题。 |
-| `setPathnameDescription(map)` | `Record<string, string>` | `void` | 增量合并真实地址的描述文本，相同值不会重复发布状态。 |
+| `setTabLabel(key, label)` | `string, RouterTitle` | `void` | 把一个已打开页签的默认标题换成业务标题描述符；用 `isSameTitle` 判重，相同值不会重复发布状态。 |
+| `setPathnameDescription(map)` | `Record<string, RouterTitle>` | `void` | 增量合并真实地址的描述符，同样用 `isSameTitle` 判重。 |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
 | `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 按注册顺序串行执行关闭守卫，遇到第一个不是 `true` 的立刻拒绝；只剩一个页签时返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
@@ -341,7 +361,7 @@ currentRoutes.at(-1)?.route.path === target.path // 正确写法
 | `RouterCurrentRoute<Route>` | `route` | `Route` | Registry 内部路由快照。 |
 | `RouterCurrentRoute<Route>` | `realPath` | `string` | 已把当前参数代入的真实层级路径。 |
 | `RouterTab` | `key` | `string` | 稳定页签身份。 |
-| `RouterTab` | `label` | `string` | 当前显示标题。 |
+| `RouterTab` | `label` | `RouterTitle` | 当前标题描述符，默认复制自 `route.title`，不是已渲染好的文本。 |
 | `RouterTab` | `labelCustomized` | `boolean` | 是否被 `setTabLabel` 覆盖过。 |
 | `RouterPage<Route>` | `key` | `string` | 与页签共用的稳定身份。 |
 | `RouterPage<Route>` | `pathname` | `string` | 页面实例最后对应的真实 pathname。 |
@@ -381,6 +401,37 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 
 `page` 依赖的 `RouterPage<Route>` 字段已列在“状态字段依赖类型”表中。
 
+### `RouterTitleProvider` Props
+
+把「标题描述符怎么变成文本」交给渲染层。core 自身不依赖任何 i18n 库。
+
+| Prop | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `resolve` | `(title: RouterTitle) => string` | 是 | 把描述符解释成当前语言的纯文本。返回 `string` 而不是 `ReactNode`，因为 `document.title`、`aria-label` 和搜索索引都只能用纯文本。需要在同一个 `viewKey` 内保持稳定引用。 |
+| `viewKey` | `string` | 是 | 当前渲染视图的缓存键，通常直接传当前语言。标题不在 Store 里，依赖标题的 `useMemo` 必须把它写进依赖数组才会在切换语言时重算。 |
+| `children` | `ReactNode` | 是 | 需要解释标题的 React 子树。 |
+
+```tsx
+import { RouterTitleProvider, useRouterTitle } from '@zby/router-core/react'
+
+function TitleBoundary({ children }) {
+  const intl = useIntl()
+  // intl 实例在切换语言时引用不变，所以 resolve 稳定，靠 viewKey 通知下游失效。
+  const resolve = useCallback(
+    (title: RouterTitle) => (typeof title === 'string' ? intl.getMessage(title) : ''),
+    [intl],
+  )
+
+  return (
+    <RouterTitleProvider resolve={resolve} viewKey={intl.locale}>
+      {children}
+    </RouterTitleProvider>
+  )
+}
+```
+
+`@zby/pro` 的 `ProLayout` 已经内置这层 Provider 并接好 `@zby/intl`，使用它时不需要自己装配。
+
 ### React Hooks 参数
 
 | Hook | 参数 | 返回值 | 说明 |
@@ -389,6 +440,7 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 | `useRouterCoreSelector(selector, equalityFn?)` | 状态选择函数、可选比较函数 | `Selected` | 只订阅全局状态中真正关心的结果。 |
 | `useRouterPage<Route>()` | 无 | `RouterPageContextValue<Route>` | 读取当前页面完整 Context；PageProvider 外调用会抛错。 |
 | `useRouterPageSelector(selector, equalityFn?)` | 页面 Context 选择函数、可选比较函数 | `Selected` | 只订阅当前页面的某一部分。 |
+| `useRouterTitle()` | 无 | `RouterTitleContextValue` | 读取 `{ resolve, viewKey }`，把标题描述符解释成文本。没有 Provider 时返回只认字符串的兜底实现，不会抛错。 |
 
 `equalityFn` 类型为 `(left: Selected, right: Selected) => boolean`；返回 `true` 表示两次结果等价，可以复用旧引用。
 
@@ -407,11 +459,13 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 import {
   useRouterCore,
   useRouterCoreSelector,
+  useRouterTitle,
 } from '@zby/router-core/react'
 import type { RouterCoreState } from '@zby/router-core'
 
 function TabBar() {
   const router = useRouterCore<AppRoute>()
+  const { resolve } = useRouterTitle()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<AppRoute>) => state.tabs,
   )
@@ -425,7 +479,8 @@ function TabBar() {
       aria-pressed={tab.key === activeKey}
       onClick={() => router.jumpTo(tab.key)}
     >
-      {tab.label}
+      {/* label 是描述符，必须先解释成文本才能渲染。 */}
+      {resolve(tab.label)}
     </button>
   ))
 }
@@ -434,6 +489,7 @@ function TabBar() {
 - `RouterCoreProvider` 提供稳定 core、同步运行时回调并启动 hydration。
 - `useRouterCore` 返回 core 实例和命令。
 - `useRouterCoreSelector` 精确订阅选中的全局状态。
+- `RouterTitleProvider` 和 `useRouterTitle` 负责把标题描述符解释成当前语言的文本。
 - `RouterPageProvider` 包裹自定义 KeepAlive UI 渲染的每个页面。
 - `useRouterPage` 和 `useRouterPageSelector` 读取页面自己的 pathname、active 和 location。
 

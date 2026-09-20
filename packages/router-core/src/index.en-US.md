@@ -139,7 +139,7 @@ Do not call `createRouterCore` directly on every component render. If module-lev
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `path` | `string` | yes | none | Static path, `:param` pattern, or trailing `*` wildcard. |
-| `title` | `string` | yes | none | Default new-tab title, also suitable for menus and breadcrumbs. |
+| `title` | `RouterTitle` (i.e. `unknown`) | yes | none | Default new-tab title descriptor, also suitable for menus and breadcrumbs. The core stores it without interpreting it; see "Titles are descriptors, not strings". |
 | `routes` | `RouterRoute[]` | no | none | Child routes; directories and pages may both have children. Business route types should narrow this to their own `Route[]`. |
 | `auth` | `string` | no | none | Permission code passed to `hasAuth`. |
 | `supportMultipleTabs` | `boolean` | no | `false` | Creates one tab per concrete dynamic pathname when true; otherwise shares the pattern tab. |
@@ -164,7 +164,7 @@ routes.push({ /* ... */ })        // No effect: the array was copied
 routes[0].tag.text = 'Changed'    // ⚠️ Does affect the core: tag is shared by reference
 ```
 
-Nested objects such as `tag`, `tooltipProps`, and `icon` — plus the Registry's own route objects, which are not frozen — all fall into the "mutation takes effect" category. Do not rely on the copy as an isolation boundary.
+Nested objects such as `tag` and `icon` — plus the Registry's own route objects, which are not frozen — all fall into the "mutation takes effect" category. Do not rely on the copy as an isolation boundary.
 
 Registry route objects are also **not the same objects** you passed in. Compare `path` rather than object identity:
 
@@ -173,6 +173,25 @@ const target = routes[1]
 currentRoutes.at(-1)?.route === target           // Always false
 currentRoutes.at(-1)?.route.path === target.path // Correct
 ```
+
+### Titles are descriptors, not strings
+
+`route.title`, `tab.label`, and `pathnameDescriptionMap` are all typed as `RouterTitle`, which is `unknown`. The core only stores and forwards them; it **never reads, concatenates, or translates** their content. The rendering layer decides their shape.
+
+Because the route tree is fixed at creation, a already-translated string placed here is frozen in that language and cannot follow a later locale switch. Store *how to obtain the text* instead, and resolve it at render time:
+
+```ts
+// ❌ Finished copy: the tab stays in the original language after a locale switch
+{ path: '/orders', title: 'Orders' }
+
+// ✅ Descriptor: translated at render time
+{ path: '/orders', title: 'app.menu.orders' }
+{ path: '/orders', title: { key: 'app.menu.orders', defaultMessage: 'Orders' } }
+```
+
+The rendering layer injects the resolution rule through `RouterTitleProvider` from `@zby/router-core/react`, and menus, tabs, and breadcrumbs read it with `useRouterTitle()`. A locale switch only updates that context and produces no core state change, so opened tabs and KeepAlive page instances are never rebuilt.
+
+When using `ProLayout` from `@zby/pro`, this provider is already built in and wired to `@zby/intl`; business code only needs to write `title` as a message key.
 
 For a dynamic route such as `/orders/:id`:
 
@@ -190,6 +209,7 @@ These options are fixed for the lifetime of a core instance:
 | `hasAuth` | `(code: string) => boolean` | no | always `true` | Checks each route's `auth` code while creating the authorized snapshot. |
 | `defaultRedirectPath` | `string` | no | first accessible concrete page | Preferred target for `/`. Invalid, unauthorized, or unresolved patterns fall back automatically. |
 | `isPageRoute` | `(route: Route) => boolean` | no | checks `route.element` | Tells the core which nodes are pages and which are directories only. |
+| `isSameTitle` | `(left: RouterTitle, right: RouterTitle) => boolean` | no | `Object.is` | Decides whether two title descriptors are equivalent, which controls whether `setTabLabel` / `setPathnameDescription` publish new state. **Required** when descriptors are objects; otherwise every call is a new reference and re-renders the whole tab bar. |
 | `keepAlive` | `boolean \| RouterKeepAliveConfig<Route>` | no | `true` | `false` keeps only the active page, `true` keeps all opened pages, and an object applies rules. |
 | `storageAdapter` | `false \| RouterStorageAdapter` | no | built-in IndexedDB adapter | `false` disables persistence; provide an object for a remote or custom storage backend. |
 | `storageKey` | `string` | no | `default` | Persistence namespace. Use different keys for different users or platforms. |
@@ -238,8 +258,8 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | Converts a concrete URL into a stable tab identity. |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | Returns the root-to-leaf route chain for menus and breadcrumbs. |
 | `reorderTabs(keys)` | `readonly string[]` | `boolean` | Requires every current tab exactly once and keeps fixed tabs before normal tabs. |
-| `setTabLabel(key, label)` | two `string`s | `void` | Replaces an open tab's default title with a business title. |
-| `setPathnameDescription(map)` | `Record<string, string>` | `void` | Incrementally merges concrete-path descriptions; repeated values do not publish state. |
+| `setTabLabel(key, label)` | `string, RouterTitle` | `void` | Replaces an open tab's default title with a business title descriptor; deduplicated through `isSameTitle`, so equal values do not publish state. |
+| `setPathnameDescription(map)` | `Record<string, RouterTitle>` | `void` | Incrementally merges concrete-path descriptors, also deduplicated through `isSameTitle`. |
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | Fixes/unfixes an open tab; returns `false` for unknown tabs or a reached limit. |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | Favorites/unfavorites a registered page and canonicalizes dynamic paths to route patterns. |
 | `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | Runs close guards in registration order and rejects at the first result that is not `true`; the last remaining tab is not closed. Inactive tabs clear immediately, unless a composite close still needs to navigate: that navigation runs first and the tab is cleared only after it succeeds. The active tab waits until the host has left the closed page. A second close of that same tab returns `false` until the host confirms. Close navigation uses replace so Back cannot revive the closed tab. |
@@ -341,7 +361,7 @@ Every field in `RouterCoreState<Route>` is listed below:
 | `RouterCurrentRoute<Route>` | `route` | `Route` | Registry-owned route snapshot. |
 | `RouterCurrentRoute<Route>` | `realPath` | `string` | Concrete hierarchy path with current parameters inserted. |
 | `RouterTab` | `key` | `string` | Stable tab identity. |
-| `RouterTab` | `label` | `string` | Currently displayed title. |
+| `RouterTab` | `label` | `RouterTitle` | Current title descriptor, copied from `route.title` by default. Not rendered text. |
 | `RouterTab` | `labelCustomized` | `boolean` | Whether `setTabLabel` replaced the default title. |
 | `RouterPage<Route>` | `key` | `string` | Stable identity shared with the tab. |
 | `RouterPage<Route>` | `pathname` | `string` | Last concrete pathname represented by the page instance. |
@@ -381,6 +401,38 @@ The Provider does not accept fixed options such as `routes`, `keepAlive`, or `st
 
 The dependent `RouterPage<Route>` fields are listed in “State field dependent types.”
 
+### `RouterTitleProvider` Props
+
+Hands "how a title descriptor becomes text" to the rendering layer. The core itself depends on no i18n library.
+
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resolve` | `(title: RouterTitle) => string` | yes | Resolves a descriptor into plain text for the current locale. Returns `string` rather than `ReactNode` because `document.title`, `aria-label`, and search indexes accept plain text only. Keep its reference stable within one `viewKey`. |
+| `viewKey` | `string` | yes | Cache key of the current render view, usually the current locale. Titles do not live in the store, so any `useMemo` that depends on a title must include it to recompute after a locale switch. |
+| `children` | `ReactNode` | yes | React subtree that needs to resolve titles. |
+
+```tsx
+import { RouterTitleProvider, useRouterTitle } from '@zby/router-core/react'
+
+function TitleBoundary({ children }) {
+  const intl = useIntl()
+  // The intl instance keeps its reference across locale switches, so resolve stays
+  // stable and viewKey is what invalidates downstream derived results.
+  const resolve = useCallback(
+    (title: RouterTitle) => (typeof title === 'string' ? intl.getMessage(title) : ''),
+    [intl],
+  )
+
+  return (
+    <RouterTitleProvider resolve={resolve} viewKey={intl.locale}>
+      {children}
+    </RouterTitleProvider>
+  )
+}
+```
+
+`ProLayout` from `@zby/pro` already mounts this provider wired to `@zby/intl`, so no manual setup is needed there.
+
 ### React Hook parameters
 
 | Hook | Parameters | Return | Description |
@@ -389,6 +441,7 @@ The dependent `RouterPage<Route>` fields are listed in “State field dependent 
 | `useRouterCoreSelector(selector, equalityFn?)` | state selector and optional comparator | `Selected` | Subscribes only to the selected global result. |
 | `useRouterPage<Route>()` | none | `RouterPageContextValue<Route>` | Reads the complete current-page Context; throws outside PageProvider. |
 | `useRouterPageSelector(selector, equalityFn?)` | page-context selector and optional comparator | `Selected` | Subscribes only to part of the current page. |
+| `useRouterTitle()` | none | `RouterTitleContextValue` | Reads `{ resolve, viewKey }` to turn title descriptors into text. Without a provider it returns a string-only fallback instead of throwing. |
 
 `equalityFn` is `(left: Selected, right: Selected) => boolean`; returning `true` means the results are equivalent and the previous reference can be reused.
 
@@ -407,11 +460,13 @@ The dependent `RouterPage<Route>` fields are listed in “State field dependent 
 import {
   useRouterCore,
   useRouterCoreSelector,
+  useRouterTitle,
 } from '@zby/router-core/react'
 import type { RouterCoreState } from '@zby/router-core'
 
 function TabBar() {
   const router = useRouterCore<AppRoute>()
+  const { resolve } = useRouterTitle()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<AppRoute>) => state.tabs,
   )
@@ -425,7 +480,8 @@ function TabBar() {
       aria-pressed={tab.key === activeKey}
       onClick={() => router.jumpTo(tab.key)}
     >
-      {tab.label}
+      {/* label is a descriptor and must be resolved into text before rendering. */}
+      {resolve(tab.label)}
     </button>
   ))
 }
@@ -436,6 +492,7 @@ function TabBar() {
 - `useRouterCoreSelector` precisely subscribes to selected global state.
 - `RouterPageProvider` wraps each page rendered by a custom KeepAlive UI.
 - `useRouterPage` and `useRouterPageSelector` read page-specific pathname, active state, and location.
+- `RouterTitleProvider` and `useRouterTitle` resolve title descriptors into text for the current locale.
 
 A custom page renderer can iterate `state.pages`:
 

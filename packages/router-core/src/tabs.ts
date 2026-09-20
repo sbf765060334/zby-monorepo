@@ -23,6 +23,7 @@ import type {
   RouterLocationEventPayload,
   RouterRoute,
   RouterRuntimeOptions,
+  RouterTitle,
 } from './types'
 import { buildUrl, parseUrl } from './urlState'
 import type { RouterUrlCache } from './urlState'
@@ -60,6 +61,8 @@ interface CreateRouterTabsOptions<Route extends RouterRoute> {
   cache: RouterUrlCache
   /** 创建 Core 时固定的页面保留规则。 */
   keepAlive: boolean | RouterKeepAliveConfig<Route>
+  /** 创建 Core 时固定的标题描述符相等判断。 */
+  isSameTitle: (left: RouterTitle, right: RouterTitle) => boolean
   /** 始终读取最新 Store 快照。 */
   getState: () => RouterCoreState<Route>
   /** 提交页签和页面领域状态。 */
@@ -84,6 +87,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     registry,
     cache,
     keepAlive,
+    isSameTitle,
     getState,
     setState,
     getHost,
@@ -229,10 +233,11 @@ export function createRouterTabs<Route extends RouterRoute>(
   }
 
   /** 覆盖一个已经打开页签的标题；相同自定义标题不会重复发布状态。 */
-  function setTabLabel(key: string, label: string) {
+  function setTabLabel(key: string, label: RouterTitle) {
     setState((state) => {
       const hit = state.tabs.find((tab) => tab.key === key)
-      if (!hit || (hit.label === label && hit.labelCustomized))
+      // 描述符可能是每次新建的对象，必须用创建期注入的规则比较，不能只比引用。
+      if (!hit || (isSameTitle(hit.label, label) && hit.labelCustomized))
         return state
       return {
         ...state,

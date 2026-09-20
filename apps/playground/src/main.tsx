@@ -3,6 +3,7 @@ import { theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
 import {
+  isSameProLayoutTitle,
   ProLocaleSwitch,
   ProRouteSearch,
   ProThemeSwitch,
@@ -32,6 +33,8 @@ const routers = createRouterCore<ProLayoutRoute>({
   storageKey: 'zby-playground:pro-layout',
   maxFixedTabCount: 4,
   hasAuth: (code) => perssmiosn.includes(code),
+  // setTabLabel 传的是每次新建的描述符对象，没有这个比较器会让页签栏反复重渲染。
+  isSameTitle: isSameProLayoutTitle,
 })
 
 const playgroundLocales = {

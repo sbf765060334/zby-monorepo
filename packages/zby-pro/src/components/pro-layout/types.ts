@@ -1,5 +1,6 @@
 import type { RouterCore, RouterRoute, RouterRuntimeOptions } from '@zby/router-core'
-import type { SpinProps, TagProps, TooltipProps } from 'antd'
+import type { FormatValues } from '@zby/intl'
+import type { SpinProps, TagProps } from 'antd'
 import type {
   ComponentType,
   CSSProperties,
@@ -15,9 +16,31 @@ export interface ProLayoutRouteIconProps {
   style?: CSSProperties
 }
 
+/** 标题描述符的对象形式，用于需要兜底文案或插值参数的场景。 */
+export interface ProLayoutTitleDescriptor {
+  /** 语言包中的文案 key，例如 `app.menu.dashboard`。 */
+  key: string
+  /** 语言包缺失该 key 时显示的文案；省略时回退为 key 本身。 */
+  defaultMessage?: string
+  /** 插值参数，对应语言包模板中的 `{{name}}` 占位符。 */
+  values?: FormatValues
+}
+
+/**
+ * ProLayout 的路由标题。
+ *
+ * 两种写法：直接给一个语言包 key 字符串，或者给一个带 `defaultMessage`、`values`
+ * 的描述符对象。两者都在渲染时才被翻译，因此切换语言不需要重建 RouterCore，已经
+ * 打开的页签也会跟着更新。
+ *
+ * 存进来的必须是「怎么得到文案」，不能是已经翻译好的成品文案。
+ */
+export type ProLayoutTitle = string | ProLayoutTitleDescriptor
+
 /** 菜单路由旁的状态标签。 */
 export interface ProLayoutRouteTagConfig {
-  text: string
+  /** 标签文案描述符；与 `title` 一样在渲染时才翻译。 */
+  text: ProLayoutTitle
   color?: TagProps['color']
 }
 
@@ -40,14 +63,15 @@ export type ProLayoutRouteComponent =
  * 通用路由模型。
  */
 export interface ProLayoutRoute extends RouterRoute {
+  title: ProLayoutTitle
   routes?: ProLayoutRoute[]
   element?: ProLayoutRouteComponent
   icon?: ComponentType<ProLayoutRouteIconProps>
-  tooltipProps?: TooltipProps
   _blank?: boolean
   target?: '_blank' | '_self' | string
   ignore?: boolean
-  prompt?: true | string
+  /** 该路由没有页面，点击只弹提示；`true` 使用内置文案，其余按标题描述符解释。 */
+  prompt?: true | ProLayoutTitle
   tag?: string | ProLayoutRouteTagConfig
 }
 

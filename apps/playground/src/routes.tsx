@@ -31,29 +31,39 @@ const ProTablePlayground = createLazyRouteComponent(() => import('./pages/ProTab
 const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
 const EmptyPage = () => null
 
-const createMenuPage = (path: string, title: string): ProLayoutRoute => ({
+/**
+ * 路由标题只写语言包 key，不写成品文案。
+ *
+ * 菜单、页签、面包屑和全局搜索都会在渲染时才把 key 翻译成当前语言，因此切换语言
+ * 不需要重建 RouterCore，已经打开的页签也会同步更新。key 漏配时会原样显示成
+ * `playground.menu.xxx`，在界面上一眼可见。
+ */
+const menuTitle = (key: string) => `playground.menu.${key}`
+
+const createMenuPage = (path: string, titleKey: string): ProLayoutRoute => ({
   path,
-  title,
+  title: menuTitle(titleKey),
   element: DemoPage,
 })
 
 export const appRouters: ProLayoutRoute[ ] = [
   {
     path: '/dashboard',
-    title: '首页',
+    // 对象形式：语言包缺失时回退到 defaultMessage，而不是显示裸 key。
+    title: { key: menuTitle('dashboard'), defaultMessage: '首页' },
     icon: HomeOutlined,
     element: DemoPage,
   },
   {
     path: '/orders',
-    title: '共享页签',
+    title: menuTitle('orders.title'),
     icon: FileTextOutlined,
     tag: { text: 'Demo', color: 'warning' },
     element: SharedTabOrderList,
     routes: [
       {
         path: '/orders/:id',
-        title: '订单详情',
+        title: menuTitle('orders.detail'),
         ignore: true,
         element: SharedTabOrderDetail,
       },
@@ -61,331 +71,369 @@ export const appRouters: ProLayoutRoute[ ] = [
   },
   {
     path: '/workbench',
-    title: '工作台',
+    title: menuTitle('workbench.title'),
     icon: DashboardOutlined,
     routes: [
       {
         path: '/records/:id',
-        title: '记录详情',
+        title: menuTitle('workbench.records'),
         supportMultipleTabs: true,
         element: DemoPage,
       },
       {
         path: '/workbench/dirty',
-        title: '关闭门禁',
+        title: menuTitle('workbench.dirty'),
         tag: { text: 'Demo', color: 'warning' },
         element: CloseGuardDemo,
       },
       {
         path: '/workbench/close-confirm',
-        title: '关闭确认',
+        title: menuTitle('workbench.closeConfirm'),
         tag: { text: 'Demo', color: 'warning' },
         element: CloseConfirmDemo,
       },
       {
         path: '/workbench/query-reencode',
-        title: '查询串重编码',
+        title: menuTitle('workbench.queryReencode'),
         tag: { text: 'Demo', color: 'warning' },
         element: QueryReencodeDemo,
       },
       {
         path: '/workbench/listener-throw',
-        title: 'listener 抛错',
+        title: menuTitle('workbench.listenerThrow'),
         tag: { text: 'Demo', color: 'warning' },
         element: ListenerThrowDemo,
       },
       {
         path: '/workbench/pending-lock',
-        title: '关闭锁和 pending',
+        title: menuTitle('workbench.pendingLock'),
         tag: { text: 'Demo', color: 'warning' },
         element: PendingLockDemo,
       },
       {
         path: '/workbench/inactive-replace',
-        title: '非活动页组合关闭',
+        title: menuTitle('workbench.inactiveReplace'),
         tag: { text: 'Demo', color: 'warning' },
         element: InactiveReplaceDemo,
       },
       {
         path: '/workbench/idb-load-race',
-        title: 'IndexedDB 读写排队',
+        title: menuTitle('workbench.idbLoadRace'),
         tag: { text: 'Demo', color: 'warning' },
         element: IdbLoadRaceDemo,
       },
       {
         path: '/workbench/parallel-close-guards',
-        title: '关闭守卫串行',
+        title: menuTitle('workbench.parallelCloseGuards'),
         tag: { text: 'Demo', color: 'warning' },
         element: ParallelCloseGuardsDemo,
       },
       {
         path: '/workbench/content-container',
-        title: '内容区布局',
+        title: menuTitle('workbench.contentContainer'),
         tag: { text: 'New', color: 'success' },
         element: DemoPage,
       },
       {
         path: '/workbench/hidden',
-        title: '隐藏菜单',
+        title: menuTitle('workbench.hidden'),
         ignore: true,
         element: EmptyPage,
       },
       {
         path: '/workbench/wip',
-        title: '开发中页面',
-        prompt: '该页面暂未开放。',
+        title: menuTitle('workbench.wip'),
+        // true 表示使用 ProLayout 内置的多语言“暂未开放”提示。
+        prompt: true,
+      },
+      {
+        path: '/workbench/enterprise-report',
+        title: menuTitle('workbench.enterpriseReport'),
+        // tag.text 和 prompt 与 title 共用一套描述符规则，切换语言时一起更新。
+        tag: { text: menuTitle('workbench.enterpriseReportTag'), color: 'gold' },
+        prompt: {
+          key: menuTitle('workbench.enterpriseReportPrompt'),
+          values: { contact: 'support@zby.dev' },
+        },
       },
       {
         path: 'https://www.baidu.com',
-        title: '外部系统',
+        title: menuTitle('workbench.external'),
         _blank: true,
         target: '_blank',
         icon: LinkOutlined,
       },
-      createMenuPage('/workbench/direct-shortcut', '二级直达菜单'),
-      createMenuPage('/workbench/direct-risk', '风险待办'),
+      createMenuPage('/workbench/direct-shortcut', 'workbench.directShortcut'),
+      createMenuPage('/workbench/direct-risk', 'workbench.directRisk'),
       {
         path: '/workbench/customer',
-        title: '三级菜单组',
+        title: menuTitle('workbench.customer.title'),
         routes: [
-          createMenuPage('/workbench/customer/profile', '客户画像'),
-          createMenuPage('/workbench/customer/segment', '客群分层'),
-          createMenuPage('/workbench/customer/reach', '触达计划'),
-          createMenuPage('/workbench/customer/retention', '复购留存'),
+          createMenuPage('/workbench/customer/profile', 'workbench.customer.profile'),
+          createMenuPage('/workbench/customer/segment', 'workbench.customer.segment'),
+          createMenuPage('/workbench/customer/reach', 'workbench.customer.reach'),
+          createMenuPage('/workbench/customer/retention', 'workbench.customer.retention'),
         ],
       },
       {
         path: '/workbench/product',
-        title: '商品中心',
+        title: menuTitle('workbench.product.title'),
         routes: [
-          createMenuPage('/workbench/product/list', '商品列表'),
-          createMenuPage('/workbench/product/category', '类目管理'),
-          createMenuPage('/workbench/product/price', '价格策略'),
-          createMenuPage('/workbench/product/stock', '库存预警'),
+          createMenuPage('/workbench/product/list', 'workbench.product.list'),
+          createMenuPage('/workbench/product/category', 'workbench.product.category'),
+          createMenuPage('/workbench/product/price', 'workbench.product.price'),
+          createMenuPage('/workbench/product/stock', 'workbench.product.stock'),
         ],
       },
       {
         path: '/workbench/material',
-        title: '四级菜单组',
+        title: menuTitle('workbench.material.title'),
         routes: [
           {
             path: '/workbench/material/assets',
-            title: '素材资产',
+            title: menuTitle('workbench.material.assets.title'),
             routes: [
               {
                 path: '/workbench/material/assets/voices',
-                title: '语音素材',
+                title: menuTitle('workbench.material.assets.voices'),
                 tag: { text: 'New', color: 'success' },
                 element: DemoPage,
               },
-              createMenuPage('/workbench/material/assets/images', '图片素材图片素材图片素材'),
-              createMenuPage('/workbench/material/assets/videos', '视频素材'),
-              createMenuPage('/workbench/material/assets/copywriting', '文案素材'),
+              createMenuPage(
+                '/workbench/material/assets/images',
+                'workbench.material.assets.images',
+              ),
+              createMenuPage(
+                '/workbench/material/assets/videos',
+                'workbench.material.assets.videos',
+              ),
+              createMenuPage(
+                '/workbench/material/assets/copywriting',
+                'workbench.material.assets.copywriting',
+              ),
             ],
           },
           {
             path: '/workbench/material/audit',
-            title: '素材审核',
+            title: menuTitle('workbench.material.audit.title'),
             routes: [
-              createMenuPage('/workbench/material/audit/pending', '待审核'),
-              createMenuPage('/workbench/material/audit/rejected', '驳回记录'),
+              createMenuPage(
+                '/workbench/material/audit/pending',
+                'workbench.material.audit.pending',
+              ),
+              createMenuPage(
+                '/workbench/material/audit/rejected',
+                'workbench.material.audit.rejected',
+              ),
             ],
           },
         ],
       },
       {
         path: '/workbench/campaign',
-        title: '广告投放',
+        title: menuTitle('workbench.campaign.title'),
         routes: [
           {
             path: '/workbench/campaign/manage',
-            title: '活动管理',
+            title: menuTitle('workbench.campaign.manage.title'),
             routes: [
-              createMenuPage('/workbench/campaign/manage/list', '活动列表'),
-              createMenuPage('/workbench/campaign/manage/budget', '预算调整'),
-              createMenuPage('/workbench/campaign/manage/creative', '创意绑定'),
+              createMenuPage('/workbench/campaign/manage/list', 'workbench.campaign.manage.list'),
+              createMenuPage(
+                '/workbench/campaign/manage/budget',
+                'workbench.campaign.manage.budget',
+              ),
+              createMenuPage(
+                '/workbench/campaign/manage/creative',
+                'workbench.campaign.manage.creative',
+              ),
             ],
           },
-          createMenuPage('/workbench/campaign/strategy', '投放策略'),
-          createMenuPage('/workbench/campaign/diagnosis', '投放诊断'),
+          createMenuPage('/workbench/campaign/strategy', 'workbench.campaign.strategy'),
+          createMenuPage('/workbench/campaign/diagnosis', 'workbench.campaign.diagnosis'),
         ],
       },
       {
         path: '/workbench/data',
-        title: '数据诊断',
+        title: menuTitle('workbench.data.title'),
         routes: [
-          createMenuPage('/workbench/data/realtime', '实时指标'),
-          createMenuPage('/workbench/data/funnel', '转化漏斗'),
-          createMenuPage('/workbench/data/compare', '多维对比'),
-          createMenuPage('/workbench/data/export', '数据导出'),
+          createMenuPage('/workbench/data/realtime', 'workbench.data.realtime'),
+          createMenuPage('/workbench/data/funnel', 'workbench.data.funnel'),
+          createMenuPage('/workbench/data/compare', 'workbench.data.compare'),
+          createMenuPage('/workbench/data/export', 'workbench.data.export'),
         ],
       },
       {
         path: '/workbench/delivery',
-        title: '履约管理',
+        title: menuTitle('workbench.delivery.title'),
         routes: [
-          createMenuPage('/workbench/delivery/order', '订单履约'),
-          createMenuPage('/workbench/delivery/logistics', '物流跟踪'),
-          createMenuPage('/workbench/delivery/exception', '异常处理'),
+          createMenuPage('/workbench/delivery/order', 'workbench.delivery.order'),
+          createMenuPage('/workbench/delivery/logistics', 'workbench.delivery.logistics'),
+          createMenuPage('/workbench/delivery/exception', 'workbench.delivery.exception'),
         ],
       },
       {
         path: '/workbench/finance',
-        title: '财务结算',
+        title: menuTitle('workbench.finance.title'),
         routes: [
-          createMenuPage('/workbench/finance/bill', '账单管理'),
-          createMenuPage('/workbench/finance/invoice', '发票管理'),
-          createMenuPage('/workbench/finance/reconcile', '对账中心'),
-          createMenuPage('/workbench/finance/refund', '退款记录'),
+          createMenuPage('/workbench/finance/bill', 'workbench.finance.bill'),
+          createMenuPage('/workbench/finance/invoice', 'workbench.finance.invoice'),
+          createMenuPage('/workbench/finance/reconcile', 'workbench.finance.reconcile'),
+          createMenuPage('/workbench/finance/refund', 'workbench.finance.refund'),
         ],
       },
       {
         path: '/workbench/permission',
-        title: '权限配置',
+        title: menuTitle('workbench.permission.title'),
         routes: [
-          createMenuPage('/workbench/permission/role', '角色管理'),
-          createMenuPage('/workbench/permission/member', '成员管理'),
-          createMenuPage('/workbench/permission/audit', '权限审计'),
+          createMenuPage('/workbench/permission/role', 'workbench.permission.role'),
+          createMenuPage('/workbench/permission/member', 'workbench.permission.member'),
+          createMenuPage('/workbench/permission/audit', 'workbench.permission.audit'),
         ],
       },
       {
         path: '/workbench/tools',
-        title: '系统工具',
+        title: menuTitle('workbench.tools.title'),
         routes: [
-          createMenuPage('/workbench/tools/import', '批量导入'),
-          createMenuPage('/workbench/tools/task', '任务中心'),
-          createMenuPage('/workbench/tools/webhook', '回调配置'),
-          createMenuPage('/workbench/tools/log', '操作日志'),
+          createMenuPage('/workbench/tools/import', 'workbench.tools.import'),
+          createMenuPage('/workbench/tools/task', 'workbench.tools.task'),
+          createMenuPage('/workbench/tools/webhook', 'workbench.tools.webhook'),
+          createMenuPage('/workbench/tools/log', 'workbench.tools.log'),
         ],
       },
       {
         path: '/workbench/automation',
-        title: '自动化任务',
+        title: menuTitle('workbench.automation.title'),
         routes: [
-          createMenuPage('/workbench/automation/rules', '规则编排'),
-          createMenuPage('/workbench/automation/schedule', '定时任务'),
-          createMenuPage('/workbench/automation/history', '执行历史'),
+          createMenuPage('/workbench/automation/rules', 'workbench.automation.rules'),
+          createMenuPage('/workbench/automation/schedule', 'workbench.automation.schedule'),
+          createMenuPage('/workbench/automation/history', 'workbench.automation.history'),
         ],
       },
       {
         path: '/workbench/quality',
-        title: '质检中心',
+        title: menuTitle('workbench.quality.title'),
         routes: [
-          createMenuPage('/workbench/quality/sample', '抽检样本'),
-          createMenuPage('/workbench/quality/rule', '质检规则'),
-          createMenuPage('/workbench/quality/report', '质检报告'),
+          createMenuPage('/workbench/quality/sample', 'workbench.quality.sample'),
+          createMenuPage('/workbench/quality/rule', 'workbench.quality.rule'),
+          createMenuPage('/workbench/quality/report', 'workbench.quality.report'),
         ],
       },
       {
         path: '/workbench/large-menu-background',
-        title: '大批量菜单组 - 后台',
+        title: menuTitle('workbench.largeBackground.title'),
         routes: [
-          createMenuPage('/workbench/large-menu-background/ticket', '工单列表'),
-          createMenuPage('/workbench/large-menu-background/knowledge', '知识库'),
-          createMenuPage('/workbench/large-menu-background/sla1', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla2', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla3', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla4', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla5', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla6', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla7', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla8', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla9', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla10', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla11', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla12', 'SLA 配置'),
-          createMenuPage('/workbench/large-menu-background/sla13', 'SLA 配置'),
-          // createMenuPage('/workbench/large-menu-background/sla14', 'SLA 配置'),
-          // createMenuPage('/workbench/large-menu-background/sla15', 'SLA 配置'),
-          // createMenuPage('/workbench/large-menu-background/sla16', 'SLA 配置'),
+          createMenuPage(
+            '/workbench/large-menu-background/ticket',
+            'workbench.largeBackground.ticket',
+          ),
+          createMenuPage(
+            '/workbench/large-menu-background/knowledge',
+            'workbench.largeBackground.knowledge',
+          ),
+          // 这批菜单只用来撑满分列布局，标题相同因此共用同一个 key。
+          createMenuPage('/workbench/large-menu-background/sla1', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla2', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla3', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla4', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla5', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla6', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla7', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla8', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla9', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla10', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla11', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla12', 'workbench.largeBackground.sla'),
+          createMenuPage('/workbench/large-menu-background/sla13', 'workbench.largeBackground.sla'),
         ],
       },
       {
         path: '/workbench/large-menu-ops',
-        title: '大批量菜单组 - 运营',
+        title: menuTitle('workbench.largeOps.title'),
         routes: [
-          createMenuPage('/workbench/large-menu-ops/calendar', '运营日历'),
-          createMenuPage('/workbench/large-menu-ops/event', '事件中心'),
-          createMenuPage('/workbench/large-menu-ops/review', '复盘记录'),
+          createMenuPage('/workbench/large-menu-ops/calendar', 'workbench.largeOps.calendar'),
+          createMenuPage('/workbench/large-menu-ops/event', 'workbench.largeOps.event'),
+          createMenuPage('/workbench/large-menu-ops/review', 'workbench.largeOps.review'),
         ],
       },
       {
         path: '/workbench/large-menu-service',
-        title: '大批量菜单组 - 服务',
+        title: menuTitle('workbench.largeService.title'),
         routes: [
-          createMenuPage('/workbench/large-menu-service/ticket', '工单列表'),
-          createMenuPage('/workbench/large-menu-service/knowledge', '知识库'),
-          createMenuPage('/workbench/large-menu-service/sla', 'SLA 配置'),
+          createMenuPage('/workbench/large-menu-service/ticket', 'workbench.largeService.ticket'),
+          createMenuPage(
+            '/workbench/large-menu-service/knowledge',
+            'workbench.largeService.knowledge',
+          ),
+          createMenuPage('/workbench/large-menu-service/sla', 'workbench.largeService.sla'),
         ],
       },
     ],
   },
   {
     path: '/reports',
-    title: '报表',
+    title: menuTitle('reports.title'),
     icon: LineChartOutlined,
     routes: [
       {
         path: '/reports/overview',
-        title: '报表总览',
+        title: menuTitle('reports.overview'),
         element: DemoPage,
       },
       {
         path: '/reports/live',
-        title: '实时监控',
+        title: menuTitle('reports.live'),
         tag: { text: 'Beta', color: 'processing' },
-        tooltipProps: { title: '该页不会进入 keepAlive 缓存' },
         element: DemoPage,
       },
     ],
   },
   {
     path: '/demo',
-    title: '示例页面',
+    title: menuTitle('demo.title'),
     icon: ClearOutlined,
     routes: [
       {
         path: '/demo/ui',
-        title: 'UI示例组',
+        title: menuTitle('demo.ui.title'),
         routes: [
           {
             path: '/demo/ui/action-icon',
-            title: '动作图标',
+            title: menuTitle('demo.ui.actionIcon'),
             element: ActionIconPlayground,
           },
           {
             path: '/demo/ui/action-reveal',
-            title: '动作展开',
+            title: menuTitle('demo.ui.actionReveal'),
             element: ActionRevealPlayground,
           },
           {
             path: '/demo/ui/action-text',
-            title: '动作文本',
+            title: menuTitle('demo.ui.actionText'),
             element: ActionTextPlayground,
           },
           {
             path: '/demo/ui/input-range-input',
-            title: '数字范围',
+            title: menuTitle('demo.ui.inputRange'),
             element: InputNumberRangePlayground,
           },
           {
             path: '/demo/ui/scroll-area',
-            title: '滚动组件',
+            title: menuTitle('demo.ui.scrollArea'),
             element: ScrollAreaPlayground,
           },
           {
             path: '/demo/ui/table',
-            title: '表格',
+            title: menuTitle('demo.ui.table'),
             element: TablePlayground,
           },
           {
             path: '/demo/ui/pro-table',
-            title: '高级表格',
+            title: menuTitle('demo.ui.proTable'),
             element: ProTablePlayground,
           },
           {
             path: '/demo/ui/pro-view-management',
-            title: '视图管理',
+            title: menuTitle('demo.ui.proViewManagement'),
             icon: AppstoreOutlined,
             element: ProViewManagementPlayground,
           },
@@ -393,11 +441,11 @@ export const appRouters: ProLayoutRoute[ ] = [
       },
       {
         path: '/demo/error',
-        title: '错误实例组',
+        title: menuTitle('demo.error.title'),
         routes: [
           {
             path: '/demo/error/404',
-            title: '404页面',
+            title: menuTitle('demo.error.notFound'),
             element: ErrorPage,
           },
         ],

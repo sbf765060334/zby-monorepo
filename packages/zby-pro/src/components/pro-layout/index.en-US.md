@@ -162,9 +162,30 @@ A first-level menu entry must be either a page or a directory:
 - `ignore` hides the current branch from menus and global search without changing router-core registration.
 - Page paths with `:param` or wildcards are omitted from first-level and leaf menus. A directory that only contains such pages is also omitted. Concrete addresses such as `/orders/79` still open the page.
 - `_blank` uses a native link; internal links retain the React Router basename.
-- `prompt` represents an unavailable entry. A string value becomes the message text.
+- `prompt` marks an entry that has no page; clicking it only shows a message. `true` uses the built-in copy, anything else is read as a title descriptor.
 
 Use router-core commands for navigation. Call `router.jumpTo(path)` for full page navigation and `router.smartNavigate(...)` when only the current page's search or hash changes.
+
+## Menu Copy and Localization
+
+`title`, `tag.text`, and `prompt` hold **copy descriptors**, not translated strings. Translation happens at render time, so switching locales never rebuilds the `RouterCore`; open tabs, breadcrumbs, favorites, and search results all update in place.
+
+```tsx
+// String: used directly as a locale key; displayed as-is when the key is missing
+{ path: '/dashboard', title: 'app.menu.dashboard' }
+
+// Object: use it when you need fallback copy or interpolation values
+{
+  path: '/reports/gmv',
+  title: { key: 'app.menu.reports.gmv', defaultMessage: 'GMV report' },
+  tag: { text: 'app.menu.tag.beta', color: 'processing' },
+  prompt: { key: 'app.menu.reports.gmvPrompt', values: { contact: 'ops@example.com' } },
+}
+```
+
+Keep the copy in the application's existing locale pack and hand it to `ZbyConfigProvider` together with page copy; routes need no separate localization mechanism. `prompt: true` uses ProLayout's built-in "unavailable" copy.
+
+Plain literals still work: `tag: 'Beta'` matches nothing in the locale pack and renders as `Beta`.
 
 ## Global Search
 
@@ -261,19 +282,27 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
 | path | Registered path supporting static segments, `:param`, and a trailing `*` | `string` | Required |
-| title | Default menu, tab, and breadcrumb title | `string` | Required |
+| title | Default menu, tab, and breadcrumb title | `ProLayoutTitle` | Required |
 | routes | Child routes | `ProLayoutRoute[]` | - |
 | auth | Permission code passed to the `hasAuth` function configured in `createRouterCore` | `string` | - |
 | supportMultipleTabs | Create a separate tab for each real pathname of a dynamic route | `boolean` | `false` |
 | element | Page component, component with static `preload`, or React Element | `ProLayoutRouteComponent` | - |
 | preload | Route-level preloader; takes priority over `element.preload` | `() => void \| Promise<void>` | - |
 | icon | Icon component used by menus and breadcrumbs | `ComponentType<ProLayoutRouteIconProps>` | - |
-| tooltipProps | Menu Tooltip configuration | `TooltipProps` | - |
 | _blank | Open through a native link | `boolean` | `false` |
 | target | Native link target | `'_blank' \| '_self' \| string` | `'_blank'` |
 | ignore | Hide this branch from ProLayout's visible menu tree and search | `boolean` | `false` |
-| prompt | Show an unavailable message; a string supplies custom text | `true \| string` | - |
-| tag | Menu status tag | `string \| { text: string; color?: TagProps['color'] }` | - |
+| prompt | Show a message instead of opening a page; `true` uses the built-in copy, anything else is read as a title descriptor | `true \| ProLayoutTitle` | - |
+| tag | Menu status tag; `text` is read as a title descriptor | `string \| { text: ProLayoutTitle; color?: TagProps['color'] }` | - |
+
+### ProLayoutTitle
+
+Shared by `title`, `tag.text`, and any `prompt` other than `true`. All of them are translated at render time.
+
+| Form | Description |
+| --- | --- |
+| `string` | Locale key; displayed as-is when no message matches |
+| `{ key, defaultMessage?, values? }` | `defaultMessage` covers a missing key; `values` fills the `{{name}}` placeholders in the template |
 
 ### createLazyRouteComponent
 

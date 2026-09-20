@@ -1,6 +1,11 @@
 import { Button, Descriptions, Space, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
-import { useRouterCore, useRouterCoreSelector, useRouterPage } from '@zby/router-core/react'
+import {
+  useRouterCore,
+  useRouterCoreSelector,
+  useRouterPage,
+  useRouterTitle,
+} from '@zby/router-core/react'
 
 import { PlaygroundPage } from '../../components/ComponentPlayground'
 import { getMockOrder, getNextMockOrderId } from './orders'
@@ -21,10 +26,17 @@ export default function SharedTabOrderDetailPage() {
   const isFixed = useRouterCoreSelector((state: RouterCoreState) =>
     state.fixedSet.includes(page.tabKey),
   )
+  const { resolve: resolveTitle } = useRouterTitle()
 
   useEffect(() => {
-    if (order)
-      router.setTabLabel(page.tabKey, `订单 ${order.id}`)
+    // 存描述符而不是拼好的文案：订单号前缀、空格、# 号全部由语言包模板决定，
+    // 切换语言时页签会跟着变，core 侧不需要知道这里到底渲染成什么样。
+    if (order) {
+      router.setTabLabel(page.tabKey, {
+        key: 'playground.menu.orders.tabLabel',
+        values: { id: order.id },
+      })
+    }
   }, [order, page.tabKey, router])
 
   async function replaceWith(newPath: string, successText: string) {
@@ -54,7 +66,7 @@ export default function SharedTabOrderDetailPage() {
           items={[
             { label: '页签 key', children: page.tabKey },
             { label: '真实 pathname', children: page.pathname },
-            { label: '页签标题', children: tab?.label ?? '-' },
+            { label: '页签标题', children: tab ? resolveTitle(tab.label) : '-' },
             { label: '是否固定', children: isFixed ? '是' : '否' },
             { label: '页面实例 ID', children: mountId },
             { label: 'location', children: `${page.location?.pathname ?? ''}${page.location?.search ?? ''}${page.location?.hash ?? ''}` },

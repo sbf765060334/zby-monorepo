@@ -10,9 +10,9 @@ import { analyzeRoutePattern } from './matcher'
 /**
  * 逐节点复制路由树，得到 Registry 自己持有的那一份。
  *
- * 只复制每个节点自身的字段和 `routes` 数组。`tag`、`tooltipProps`、`icon` 等嵌套
- * 对象仍与调用方共享同一个引用，原地修改它们会直接反映到 Registry。返回值也没有
- * 被冻结。因此这里不是隔离层，调用方必须遵守「创建 core 后不再修改路由配置」的约定。
+ * 只复制每个节点自身的字段和 `routes` 数组。`tag`、`icon` 等嵌套对象仍与调用方共享
+ * 同一个引用，原地修改它们会直接反映到 Registry。返回值也没有被冻结。因此这里不是
+ * 隔离层，调用方必须遵守「创建 core 后不再修改路由配置」的约定。
  */
 export function snapshotRoutes<Route extends RouterRoute>(routes: Route[]): Route[] {
   // 新建每层数组和节点对象，使调用方后续增删节点或改节点自身字段不影响 Registry。

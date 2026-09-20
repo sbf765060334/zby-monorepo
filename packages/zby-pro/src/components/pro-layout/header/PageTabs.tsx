@@ -1,5 +1,5 @@
 import { preloadRoute } from '@zby/router-core'
-import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { Flex, message } from 'antd'
@@ -43,6 +43,7 @@ function PageTabs(props: PageTabsProps) {
     (state: RouterCoreState<ProLayoutRoute>) =>
       state.storageHydrated || state.storageLoadError !== undefined,
   )
+  const { resolve: resolveTitle, viewKey } = useRouterTitle()
   const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
   const pagePathnameMap = useMemo(
     () => new Map(pages.map((page) => [page.key, page.pathname])),
@@ -52,12 +53,14 @@ function PageTabs(props: PageTabsProps) {
     () => tabs.map((tab) => {
       const fixed = fixedKeySet.has(tab.key)
       const PinIcon = fixed ? PushpinFilled : PushpinOutlined
+      // tab.label 是描述符而不是成品文案，必须先解释再参与拼接和展示。
+      const tabTitle = resolveTitle(tab.label)
       const pinLabel = fixed
         ? intl.getMessage('zby.pro.layout.tabs.unpin', '取消固定页签：{{title}}', {
-            title: tab.label,
+            title: tabTitle,
           })
         : intl.getMessage('zby.pro.layout.tabs.pin', '固定页签：{{title}}', {
-            title: tab.label,
+            title: tabTitle,
           })
       const label = (
         <Flex
@@ -113,9 +116,9 @@ function PageTabs(props: PageTabsProps) {
               [`${prefixCls}-tab-label-fixed`]: fixed,
               [`${prefixCls}-tab-label-unfixed`]: !fixed,
             })}
-            title={tab.label}
+            title={tabTitle}
           >
-            {tab.label}
+            {tabTitle}
           </span>
         </Flex>
       )
@@ -126,7 +129,19 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    [fixedKeySet, fixedKeys.length, intl, maxFixedTabCount, messageApi, prefixCls, router, tabs],
+    // viewKey 必须在依赖里：切换语言时 intl 与 resolveTitle 的引用都不变。
+    [
+      fixedKeySet,
+      fixedKeys.length,
+      intl,
+      maxFixedTabCount,
+      messageApi,
+      prefixCls,
+      resolveTitle,
+      router,
+      tabs,
+      viewKey,
+    ],
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {

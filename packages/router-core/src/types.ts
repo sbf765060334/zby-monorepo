@@ -15,19 +15,30 @@ import type { RouteRegistry } from './registry/types'
  */
 
 /**
+ * 面向用户的标题描述符。
+ *
+ * core 只负责存放和原样传递，永远不读取、不拼接、不翻译它的内容。具体形状由渲染层
+ * 决定：可以是一个 i18n key 字符串，也可以是带插值参数的对象，甚至是别的约定。
+ *
+ * 重要：不要把「已经翻译好的文案」放进来。成品文案一旦进入状态就无法随语言更新，
+ * 应当存放「怎么得到文案」的描述，由渲染层在每次渲染时解释成当前语言的文本。
+ */
+export type RouterTitle = unknown
+
+/**
  * ZBY 平台路由树节点。
  *
- * core 只消费路径、标题、权限和多页签等路由语义；icon、tag、element 等额外元数据
- * 会被路由快照原样保留，供上层 UI 使用。
+ * core 只消费路径、权限和多页签等路由语义；title、icon、tag、element 等元数据会被
+ * 路由快照原样保留，供上层 UI 解释和渲染。
  *
- * 创建 core 后不要再修改路由配置，包括 `tag`、`tooltipProps` 这类嵌套对象——它们
- * 与 Registry 共享引用，改动会直接影响已有实例。需要改变路由时请创建新的 core。
+ * 创建 core 后不要再修改路由配置，包括 `tag`、`icon` 这类嵌套对象——它们与 Registry
+ * 共享引用，改动会直接影响已有实例。需要改变路由时请创建新的 core。
  */
 export interface RouterRoute {
   /** 注册路径，支持静态段、`:param` 参数段和末尾 `*` 通配符。 */
   path: string
-  /** 页签、菜单或面包屑使用的默认标题。 */
-  title: string
+  /** 页签、菜单或面包屑使用的默认标题描述符；core 不解释其内容。 */
+  title: RouterTitle
   /** 子路由；目录和页面都可以继续拥有子节点。 */
   routes?: RouterRoute[]
   /** 交给 `hasAuth` 判断的权限码。 */
@@ -76,8 +87,13 @@ export interface RouterKeepAliveConfig<
 export interface RouterTab {
   /** 稳定页签身份；共享动态路由通常使用注册 pattern。 */
   readonly key: string
-  /** 当前显示标题，默认来自 route.title。 */
-  readonly label: string
+  /**
+   * 当前标题描述符，默认原样复制自 route.title，不是已经渲染好的文本。
+   *
+   * 渲染层负责把它解释成当前语言的文案；因为存的是描述符而不是成品文案，语言切换
+   * 后已经打开的页签也能跟着变。
+   */
+  readonly label: RouterTitle
   /** 是否已由业务调用 `setTabLabel` 覆盖默认标题。 */
   readonly labelCustomized: boolean
 }
@@ -231,6 +247,14 @@ export interface CreateRouterCoreOptions<
   defaultRedirectPath?: string
   /** 页面路由判断规则；默认以 element 是否存在为准。 */
   isPageRoute?: (route: Route) => boolean
+  /**
+   * 标题描述符的相等判断；默认 `Object.is`。
+   *
+   * `setTabLabel` 和 `setPathnameDescription` 用它决定要不要发布新状态。描述符是
+   * 字符串时默认实现已经够用；使用 `{ key, values }` 这类对象时必须提供自己的实现，
+   * 否则每次调用都是新引用，会让页签栏反复重渲染。
+   */
+  isSameTitle?: (left: RouterTitle, right: RouterTitle) => boolean
   /** 固定的页面实例缓存策略；省略时等同于 true。 */
   keepAlive?: boolean | RouterKeepAliveConfig<Route>
   /** 固定的持久化驱动；false 表示本实例仅使用内存状态。 */
@@ -300,8 +324,8 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   readonly fixedSet: readonly string[]
   /** 当前收藏的注册页面路由 path，顺序与收藏菜单显示顺序一致。 */
   readonly favoriteRoutePaths: readonly string[]
-  /** 真实 pathname 到业务描述文本的增量映射。 */
-  readonly pathnameDescriptionMap: Readonly<Record<string, string>>
+  /** 真实 pathname 到业务描述符的增量映射；与 label 一样交给渲染层解释。 */
+  readonly pathnameDescriptionMap: Readonly<Record<string, RouterTitle>>
   /** 实例创建时固定的持久化命名空间。 */
   readonly storageKey: string
   /** 实例创建时固定的页签固定上限；已经规范化为有限非负整数。 */
@@ -381,10 +405,10 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
    * 不修改页签、活动页面或持久化数据。
    */
   reorderTabs: (tabKeys: readonly string[]) => boolean
-  /** 由业务覆盖指定页签标题。 */
-  setTabLabel: (key: string, label: string) => void
-  /** 增量合并真实 pathname 的业务描述。 */
-  setPathnameDescription: (map: Record<string, string>) => void
+  /** 由业务覆盖指定页签标题；传入描述符而不是已翻译文案。 */
+  setTabLabel: (key: string, label: RouterTitle) => void
+  /** 增量合并真实 pathname 的业务描述符。 */
+  setPathnameDescription: (map: Record<string, RouterTitle>) => void
   /** 固定或取消固定页签；页签未打开或超过数量限制时返回 false。 */
   toggleFixed: (tabKey: string) => boolean
   /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */

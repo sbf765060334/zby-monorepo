@@ -34,6 +34,12 @@ export type {
 } from './metrics'
 export { ProRouteSearch } from './search'
 export type { ProRouteSearchProps } from './search'
+export {
+  isSameProLayoutTitle,
+  ProLayoutTitleProvider,
+  resolveProLayoutTitle,
+} from './title'
+export type { ProLayoutTitleProviderProps } from './title'
 export { ProThemeSwitch, useThemePreference } from './theme'
 export type {
   ProThemeAppearance,
@@ -59,5 +65,7 @@ export type {
   ProLayoutSemanticName,
   ProLayoutStyles,
   ProLayoutSystemItem,
+  ProLayoutTitle,
+  ProLayoutTitleDescriptor,
   ReactRouterProLayoutProps,
 } from './types'

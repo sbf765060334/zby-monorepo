@@ -3,31 +3,330 @@ import type { ZbyLocalePack } from '@zby/ui'
 export type PlaygroundLocale = 'zh-CN' | 'en-US'
 
 /**
- * RouterCore 会在创建时冻结路由标题，因此路由文案不能在 React render 中原地修改。
- * Playground 为两种语言分别创建稳定 router，这份配置负责提供各自的静态路由标题。
+ * 路由菜单文案。
+ *
+ * routes.tsx 里的 `title` 只存这里的 key，翻译发生在渲染时，所以这份文案和普通页面
+ * 文案没有区别，一起交给 ZbyConfigProvider 即可，不需要为路由单独准备一套机制。
  */
-const routeCopies = {
-  'zh-CN': {
-    appTitle: 'ZBY 数字化平台',
-    overview: '平台概览',
-    components: '组件预览',
-    routing: '路由能力',
-    routerCore: '路由状态',
-    orderDetail: '订单详情',
+const menuZhCN = {
+  dashboard: '首页',
+  orders: {
+    title: '共享页签',
+    detail: '订单详情',
+    // {{id}} 由 setTabLabel 传入；订单号前面要不要加 # 完全由这句模板决定。
+    tabLabel: '订单 #{{id}}',
   },
-  'en-US': {
-    appTitle: 'ZBY Digital Platform',
-    overview: 'Overview',
-    components: 'Components',
-    routing: 'Routing',
-    routerCore: 'Router state',
-    orderDetail: 'Order details',
+  workbench: {
+    title: '工作台',
+    records: '记录详情',
+    dirty: '关闭门禁',
+    closeConfirm: '关闭确认',
+    queryReencode: '查询串重编码',
+    listenerThrow: 'listener 抛错',
+    pendingLock: '关闭锁和 pending',
+    inactiveReplace: '非活动页组合关闭',
+    idbLoadRace: 'IndexedDB 读写排队',
+    parallelCloseGuards: '关闭守卫串行',
+    contentContainer: '内容区布局',
+    hidden: '隐藏菜单',
+    wip: '开发中页面',
+    enterpriseReport: '高级报表',
+    enterpriseReportTag: '企业版',
+    // {{contact}} 由 prompt 描述符的 values 传入。
+    enterpriseReportPrompt: '高级报表属于企业版功能，请联系 {{contact}} 开通。',
+    external: '外部系统',
+    directShortcut: '二级直达菜单',
+    directRisk: '风险待办',
+    customer: {
+      title: '三级菜单组',
+      profile: '客户画像',
+      segment: '客群分层',
+      reach: '触达计划',
+      retention: '复购留存',
+    },
+    product: {
+      title: '商品中心',
+      list: '商品列表',
+      category: '类目管理',
+      price: '价格策略',
+      stock: '库存预警',
+    },
+    material: {
+      title: '四级菜单组',
+      assets: {
+        title: '素材资产',
+        voices: '语音素材',
+        // 超长文案用于验证 Drawer 分列测量，切换语言后需要重新测高。
+        images: '图片素材图片素材图片素材',
+        videos: '视频素材',
+        copywriting: '文案素材',
+      },
+      audit: {
+        title: '素材审核',
+        pending: '待审核',
+        rejected: '驳回记录',
+      },
+    },
+    campaign: {
+      title: '广告投放',
+      manage: {
+        title: '活动管理',
+        list: '活动列表',
+        budget: '预算调整',
+        creative: '创意绑定',
+      },
+      strategy: '投放策略',
+      diagnosis: '投放诊断',
+    },
+    data: {
+      title: '数据诊断',
+      realtime: '实时指标',
+      funnel: '转化漏斗',
+      compare: '多维对比',
+      export: '数据导出',
+    },
+    delivery: {
+      title: '履约管理',
+      order: '订单履约',
+      logistics: '物流跟踪',
+      exception: '异常处理',
+    },
+    finance: {
+      title: '财务结算',
+      bill: '账单管理',
+      invoice: '发票管理',
+      reconcile: '对账中心',
+      refund: '退款记录',
+    },
+    permission: {
+      title: '权限配置',
+      role: '角色管理',
+      member: '成员管理',
+      audit: '权限审计',
+    },
+    tools: {
+      title: '系统工具',
+      import: '批量导入',
+      task: '任务中心',
+      webhook: '回调配置',
+      log: '操作日志',
+    },
+    automation: {
+      title: '自动化任务',
+      rules: '规则编排',
+      schedule: '定时任务',
+      history: '执行历史',
+    },
+    quality: {
+      title: '质检中心',
+      sample: '抽检样本',
+      rule: '质检规则',
+      report: '质检报告',
+    },
+    largeBackground: {
+      title: '大批量菜单组 - 后台',
+      ticket: '工单列表',
+      knowledge: '知识库',
+      sla: 'SLA 配置',
+    },
+    largeOps: {
+      title: '大批量菜单组 - 运营',
+      calendar: '运营日历',
+      event: '事件中心',
+      review: '复盘记录',
+    },
+    largeService: {
+      title: '大批量菜单组 - 服务',
+      ticket: '工单列表',
+      knowledge: '知识库',
+      sla: 'SLA 配置',
+    },
   },
-} as const
+  reports: {
+    title: '报表',
+    overview: '报表总览',
+    live: '实时监控',
+  },
+  demo: {
+    title: '示例页面',
+    ui: {
+      title: 'UI示例组',
+      actionIcon: '动作图标',
+      actionReveal: '动作展开',
+      actionText: '动作文本',
+      inputRange: '数字范围',
+      scrollArea: '滚动组件',
+      table: '表格',
+      proTable: '高级表格',
+      proViewManagement: '视图管理',
+    },
+    error: {
+      title: '错误实例组',
+      notFound: '404页面',
+    },
+  },
+}
+
+const menuEnUS = {
+  dashboard: 'Home',
+  orders: {
+    title: 'Shared tabs',
+    detail: 'Order details',
+    tabLabel: 'Order #{{id}}',
+  },
+  workbench: {
+    title: 'Workbench',
+    records: 'Record details',
+    dirty: 'Close guard',
+    closeConfirm: 'Close confirmation',
+    queryReencode: 'Query re-encoding',
+    listenerThrow: 'Listener throw',
+    pendingLock: 'Close lock and pending',
+    inactiveReplace: 'Inactive batch close',
+    idbLoadRace: 'IndexedDB read/write queue',
+    parallelCloseGuards: 'Serialized close guards',
+    contentContainer: 'Content layout',
+    hidden: 'Hidden menu',
+    wip: 'Work in progress',
+    enterpriseReport: 'Advanced reports',
+    enterpriseReportTag: 'Enterprise',
+    enterpriseReportPrompt: 'Advanced reports require the Enterprise plan. Contact {{contact}} to enable it.',
+    external: 'External system',
+    directShortcut: 'Direct shortcut',
+    directRisk: 'Risk to-do',
+    customer: {
+      title: 'Third-level group',
+      profile: 'Customer profile',
+      segment: 'Segmentation',
+      reach: 'Outreach plan',
+      retention: 'Repurchase retention',
+    },
+    product: {
+      title: 'Product center',
+      list: 'Product list',
+      category: 'Category management',
+      price: 'Pricing strategy',
+      stock: 'Stock alerts',
+    },
+    material: {
+      title: 'Fourth-level group',
+      assets: {
+        title: 'Material assets',
+        voices: 'Voice assets',
+        images: 'Image assets image assets image assets',
+        videos: 'Video assets',
+        copywriting: 'Copy assets',
+      },
+      audit: {
+        title: 'Material review',
+        pending: 'Pending review',
+        rejected: 'Rejected records',
+      },
+    },
+    campaign: {
+      title: 'Ad campaigns',
+      manage: {
+        title: 'Campaign management',
+        list: 'Campaign list',
+        budget: 'Budget adjustment',
+        creative: 'Creative binding',
+      },
+      strategy: 'Delivery strategy',
+      diagnosis: 'Delivery diagnosis',
+    },
+    data: {
+      title: 'Data diagnosis',
+      realtime: 'Real-time metrics',
+      funnel: 'Conversion funnel',
+      compare: 'Multi-dimension comparison',
+      export: 'Data export',
+    },
+    delivery: {
+      title: 'Fulfillment',
+      order: 'Order fulfillment',
+      logistics: 'Logistics tracking',
+      exception: 'Exception handling',
+    },
+    finance: {
+      title: 'Finance settlement',
+      bill: 'Bill management',
+      invoice: 'Invoice management',
+      reconcile: 'Reconciliation center',
+      refund: 'Refund records',
+    },
+    permission: {
+      title: 'Permission settings',
+      role: 'Role management',
+      member: 'Member management',
+      audit: 'Permission audit',
+    },
+    tools: {
+      title: 'System tools',
+      import: 'Bulk import',
+      task: 'Task center',
+      webhook: 'Webhook settings',
+      log: 'Operation logs',
+    },
+    automation: {
+      title: 'Automation',
+      rules: 'Rule orchestration',
+      schedule: 'Scheduled jobs',
+      history: 'Execution history',
+    },
+    quality: {
+      title: 'Quality center',
+      sample: 'Inspection samples',
+      rule: 'Quality rules',
+      report: 'Quality reports',
+    },
+    largeBackground: {
+      title: 'Large menu group - Backend',
+      ticket: 'Ticket list',
+      knowledge: 'Knowledge base',
+      sla: 'SLA settings',
+    },
+    largeOps: {
+      title: 'Large menu group - Operations',
+      calendar: 'Operations calendar',
+      event: 'Event center',
+      review: 'Retrospectives',
+    },
+    largeService: {
+      title: 'Large menu group - Service',
+      ticket: 'Ticket list',
+      knowledge: 'Knowledge base',
+      sla: 'SLA settings',
+    },
+  },
+  reports: {
+    title: 'Reports',
+    overview: 'Report overview',
+    live: 'Live monitoring',
+  },
+  demo: {
+    title: 'Example pages',
+    ui: {
+      title: 'UI examples',
+      actionIcon: 'Action icon',
+      actionReveal: 'Action reveal',
+      actionText: 'Action text',
+      inputRange: 'Number range',
+      scrollArea: 'Scroll area',
+      table: 'Table',
+      proTable: 'Pro table',
+      proViewManagement: 'View management',
+    },
+    error: {
+      title: 'Error examples',
+      notFound: '404 page',
+    },
+  },
+}
 
 export const playgroundZhCN = {
   locale: 'zh-CN',
   playground: {
+    menu: menuZhCN,
     proLayout: {
       badge: 'ProLayout 预览',
       switchLanguage: '切换为 English',
@@ -83,6 +382,7 @@ export const playgroundZhCN = {
 export const playgroundEnUS = {
   locale: 'en-US',
   playground: {
+    menu: menuEnUS,
     proLayout: {
       badge: 'ProLayout preview',
       switchLanguage: 'Switch to 中文',
@@ -134,7 +434,3 @@ export const playgroundEnUS = {
     },
   },
 } satisfies ZbyLocalePack
-
-export function getPlaygroundRouteCopy(locale: PlaygroundLocale) {
-  return routeCopies[locale]
-}

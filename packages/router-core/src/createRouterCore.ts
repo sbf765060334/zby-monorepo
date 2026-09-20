@@ -117,6 +117,8 @@ export function createRouterCore<Route extends RouterRoute>(
     defaultRedirectPath: options.defaultRedirectPath,
     isPageRoute: options.isPageRoute,
   })
+  // 标题描述符的语义归渲染层所有，core 只需要知道「两个描述符算不算同一个」。
+  const isSameTitle = options.isSameTitle ?? Object.is
   // KeepAlive 对象中的数组同样复制，避免调用方原地修改后偷偷改变页面淘汰规则。
   const keepAlive = snapshotKeepAlive(options.keepAlive ?? true)
   const storageAdapter = resolveStorageAdapter(options.storageAdapter)
@@ -184,6 +186,7 @@ export function createRouterCore<Route extends RouterRoute>(
     registry,
     cache,
     keepAlive,
+    isSameTitle,
     getState,
     setState,
     getHost: () => runtime.host,
@@ -620,7 +623,7 @@ export function createRouterCore<Route extends RouterRoute>(
     setPathnameDescription: (map) =>
       setState((state) => {
         const hasChanged = Object.keys(map).some(
-          (pathname) => state.pathnameDescriptionMap[pathname] !== map[pathname],
+          (pathname) => !isSameTitle(state.pathnameDescriptionMap[pathname], map[pathname]),
         )
 
         // Zustand 以 state 引用判断是否需要通知订阅者；空输入或重复描述没有领域变化，

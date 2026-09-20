@@ -1,9 +1,9 @@
 import { ToolOutlined } from '@ant-design/icons'
 import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
-import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
-import { Drawer, message, Tag, theme as antdTheme, Tooltip } from 'antd'
+import { Drawer, message, Tag, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
@@ -59,6 +59,7 @@ function MenuDrawer(props: MenuDrawerProps) {
     (state: RouterCoreState<ProLayoutRoute>) => state.favoriteRoutePaths,
   )
   const favoritePathSet = useMemo(() => new Set(favoritePaths), [favoritePaths])
+  const { resolve: resolveTitle, viewKey } = useRouterTitle()
 
   const toggleFavorite = (path: string) => {
     const favorite = !favoritePathSet.has(path)
@@ -115,8 +116,9 @@ function MenuDrawer(props: MenuDrawerProps) {
   )
 
   // key 将测量结果绑定到当前菜单集合。切换一级菜单时，即使旧测量状态仍在，
-  // 也不会把上一套菜单的高度误用于新菜单。
-  const measurementKey = menuSections.map((section) => section.key).join('\u0000')
+  // 也不会把上一套菜单的高度误用于新菜单。viewKey 参与其中是因为切换语言会改变
+  // 文案长度和换行，旧语言测得的高度不能继续用于新语言的分列。
+  const measurementKey = [viewKey, ...menuSections.map((section) => section.key)].join('\u0000')
   const measureRef = useRef<HTMLDivElement | null>(null)
   const [measurements, setMeasurements] = useState<MenuSectionMeasurements | null>(null)
   const scrollbarSize = useNativeScrollbarSize()
@@ -204,9 +206,9 @@ function MenuDrawer(props: MenuDrawerProps) {
   const handleSelect = (route: ProLayoutRoute) => {
     if (route.prompt) {
       void messageApi.info(
-        typeof route.prompt === 'string'
-          ? route.prompt
-          : intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放'),
+        route.prompt === true
+          ? intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放')
+          : resolveTitle(route.prompt),
       )
       onClose()
       return
@@ -376,6 +378,7 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
     route,
     selectedPath,
   } = props
+  const { resolve: resolveTitle } = useRouterTitle()
   const indent = level <= 1
     ? undefined
     : `calc(var(--${prefixCls}-menu-indent) * ${level - 1})`
@@ -406,7 +409,7 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
           {isFavoriteRoute(route) ? (
             <MenuFavoriteButton
               prefixCls={prefixCls}
-              title={route.title}
+              title={resolveTitle(route.title)}
               favorite={favorite}
               onToggle={() => onToggleFavorite(route.path)}
             />
@@ -418,8 +421,8 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
 
   return (
     <div style={{ paddingInlineStart: indent }}>
-      <div className={`${prefixCls}-menu-title`} title={route.title}>
-        {route.title}
+      <div className={`${prefixCls}-menu-title`} title={resolveTitle(route.title)}>
+        {resolveTitle(route.title)}
       </div>
       {children.map((child) => (
         <MenuRouteTree
@@ -441,22 +444,24 @@ function MenuRouteControl(props: {
   onSelect: () => void
 }) {
   const { createHref, onPreload, onSelect, prefixCls, route } = props
+  const { resolve: resolveTitle } = useRouterTitle()
+  const title = resolveTitle(route.title)
   const tag = typeof route.tag === 'string' ? { text: route.tag } : route.tag
   const content = (
     <>
-      <span className={`${prefixCls}-menu-button-title`}>{route.title}</span>
+      <span className={`${prefixCls}-menu-button-title`}>{title}</span>
       {route.prompt ? <ToolOutlined /> : null}
-      {tag ? <Tag className={`${prefixCls}-menu-tag`} color={tag.color}>{tag.text}</Tag> : null}
+      {tag ? <Tag className={`${prefixCls}-menu-tag`} color={tag.color}>{resolveTitle(tag.text)}</Tag> : null}
     </>
   )
-  const control = route._blank && !route.prompt
+  return route._blank && !route.prompt
     ? (
         <a
           href={createHref(route.path)}
           target={route.target || '_blank'}
           rel={(route.target || '_blank') === '_blank' ? 'noopener noreferrer' : undefined}
           className={`${prefixCls}-menu-button`}
-          title={route.title}
+          title={title}
           onClick={onSelect}
           onFocus={() => onPreload(route)}
           onMouseEnter={() => onPreload(route)}
@@ -468,7 +473,7 @@ function MenuRouteControl(props: {
         <button
           type="button"
           className={`${prefixCls}-menu-button`}
-          title={route.title}
+          title={title}
           onClick={onSelect}
           onFocus={() => onPreload(route)}
           onMouseEnter={() => onPreload(route)}
@@ -476,10 +481,6 @@ function MenuRouteControl(props: {
           {content}
         </button>
       )
-
-  return route.tooltipProps
-    ? <Tooltip placement="topLeft" {...route.tooltipProps}>{control}</Tooltip>
-    : control
 }
 
 function useViewportSize(active: boolean) {

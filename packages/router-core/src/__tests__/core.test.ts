@@ -736,6 +736,41 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /**
+   * 标题是对象描述符时，默认的引用比较判不出内容相同，会重复发布状态。
+   *
+   * core 不认识描述符的形状，所以必须由创建方注入结构比较；否则每次 setTabLabel
+   * 都会产生一次新引用，让整条页签栏白重渲染一遍。
+   */
+  it('deduplicates object tab labels through the injected isSameTitle', () => {
+    const openDashboard = (isSameTitle?: (left: unknown, right: unknown) => boolean) => {
+      const router = createRouterCore({ routes, storageAdapter: false, isSameTitle })
+      router.bindHost({ navigate: vi.fn() })
+      router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+      const subscriber = vi.fn()
+      router.subscribe(subscriber)
+      // 两次传入内容完全相同、引用不同的描述符。
+      router.setTabLabel('/dashboard', { key: 'tab.order', values: { id: 79 } })
+      router.setTabLabel('/dashboard', { key: 'tab.order', values: { id: 79 } })
+      return { router, subscriber }
+    }
+
+    const byReference = openDashboard()
+    expect(byReference.subscriber).toHaveBeenCalledTimes(2)
+
+    const byStructure = openDashboard(
+      (left, right) => JSON.stringify(left) === JSON.stringify(right),
+    )
+    expect(byStructure.subscriber).toHaveBeenCalledTimes(1)
+
+    // 去重不能改写标题本身：core 始终原样保存调用方给的描述符。
+    expect(byStructure.router.getState().tabs[0]?.label).toEqual({
+      key: 'tab.order',
+      values: { id: 79 },
+    })
+  })
+
   /** 可以导航到受限地址展示 403，但不能为无权限路由创建页面实例。 */
   it('keeps the confirmed page active until an unauthorized location arrives', () => {
     const navigate = vi.fn()

@@ -163,9 +163,30 @@ function PlatformLayout() {
 - `ignore` 会从菜单和全局搜索中隐藏当前分支，但不会改变 router-core 的路由注册结果。
 - 带 `:param` 或通配符的页面路径不会出现在一级或叶子菜单中；只含这类子页面的目录也会被收起。仍可通过 `/orders/79` 这类具体地址进入。
 - `_blank` 使用原生链接打开；站内地址会保留 React Router 的 basename。
-- `prompt` 用于“暂未开放”入口，字符串值会作为提示文案。
+- `prompt` 用于没有页面的入口，点击只弹提示：`true` 使用内置文案，其余按文案描述符解释。
 
 页面导航应使用 router-core 命令。完整页面跳转使用 `router.jumpTo(path)`；仅更新当前页面 search 或 hash 时使用 `router.smartNavigate(...)`。
+
+## 菜单文案与多语言
+
+`title`、`tag.text` 和 `prompt` 存放的是**文案描述符**，不是已经翻译好的成品文案。翻译发生在渲染时，因此切换语言不需要重建 `RouterCore`，已经打开的页签、面包屑、收藏和搜索结果都会同步更新。
+
+```tsx
+// 字符串：直接当语言包 key 用；语言包里没有时原样显示这个字符串
+{ path: '/dashboard', title: 'app.menu.dashboard' }
+
+// 对象：需要兜底文案或插值参数时使用
+{
+  path: '/reports/gmv',
+  title: { key: 'app.menu.reports.gmv', defaultMessage: 'GMV 报表' },
+  tag: { text: 'app.menu.tag.beta', color: 'processing' },
+  prompt: { key: 'app.menu.reports.gmvPrompt', values: { contact: 'ops@example.com' } },
+}
+```
+
+文案本身放进应用原有的语言包，和页面文案一起交给 `ZbyConfigProvider` 即可，路由不需要单独的多语言机制。`prompt: true` 使用 ProLayout 内置的“暂未开放”文案。
+
+不带 key 语义的字面量可以照常写：`tag: 'Beta'` 在语言包里匹配不到，界面上仍然显示 `Beta`。
 
 ## 全局搜索
 
@@ -262,19 +283,27 @@ export function OrderPage() {
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | path | 注册路径，支持静态段、`:param` 和末尾 `*` | `string` | 必填 |
-| title | 菜单、页签和面包屑默认标题 | `string` | 必填 |
+| title | 菜单、页签和面包屑默认标题 | `ProLayoutTitle` | 必填 |
 | routes | 子路由 | `ProLayoutRoute[]` | - |
 | auth | 交给 `createRouterCore` 的 `hasAuth` 判断的权限码 | `string` | - |
 | supportMultipleTabs | 动态路由的真实 pathname 是否分别创建页签 | `boolean` | `false` |
 | element | 页面组件、带静态 `preload` 的组件或 React Element | `ProLayoutRouteComponent` | - |
 | preload | 路由级预加载函数；存在时优先于 `element.preload` | `() => void \| Promise<void>` | - |
 | icon | 菜单和面包屑图标组件 | `ComponentType<ProLayoutRouteIconProps>` | - |
-| tooltipProps | 菜单 Tooltip 配置 | `TooltipProps` | - |
 | _blank | 是否使用原生链接打开 | `boolean` | `false` |
 | target | 原生链接 target | `'_blank' \| '_self' \| string` | `'_blank'` |
 | ignore | 从 ProLayout 可见菜单树和搜索中隐藏该分支 | `boolean` | `false` |
-| prompt | 显示“暂未开放”提示；字符串作为自定义文案 | `true \| string` | - |
-| tag | 菜单状态标签 | `string \| { text: string; color?: TagProps['color'] }` | - |
+| prompt | 点击时提示且不进入页面；`true` 使用内置文案，其余按标题描述符解释 | `true \| ProLayoutTitle` | - |
+| tag | 菜单状态标签；`text` 按标题描述符解释 | `string \| { text: ProLayoutTitle; color?: TagProps['color'] }` | - |
+
+### ProLayoutTitle
+
+`title`、`tag.text` 以及 `true` 之外的 `prompt` 统一使用该类型，均在渲染时才翻译。
+
+| 写法 | 说明 |
+| --- | --- |
+| `string` | 语言包 key；匹配不到时原样显示该字符串 |
+| `{ key, defaultMessage?, values? }` | `defaultMessage` 在 key 缺失时兜底；`values` 对应模板里的 `{{name}}` 占位符 |
 
 ### createLazyRouteComponent
 
