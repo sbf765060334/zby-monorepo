@@ -147,7 +147,32 @@ Do not call `createRouterCore` directly on every component render. If module-lev
 | `preload` | `() => void \| Promise<void>` | no | none | Route-level resource preloader; `preloadRoute` gives it priority. |
 | additional fields | `unknown` | no | none | Business metadata such as icon or tag is retained for UI and utilities. |
 
-Additional metadata is preserved in the route snapshot for the UI layer. `preloadRoute` also recognizes a function-valued `route.preload` or a `route.element` with a `preload` method. The core recursively snapshots routes during creation; mutating the original route objects later does not update an existing instance.
+Additional metadata is preserved in the route snapshot for the UI layer. `preloadRoute` also recognizes a function-valued `route.preload` or a `route.element` with a `preload` method.
+
+### Route config is fixed once the core is created
+
+The core copies the route tree node by node at creation time, and the Registry only uses its own copy afterwards. **Do not modify the route config after creating a core**; create a new core instance when routes need to change.
+
+This is a convention the caller must honor — the core does not enforce it. The copy only covers each node's own fields plus the `routes` array, so the actual behavior is:
+
+```ts
+const routes = [{ path: '/workbench', title: 'Workbench', element: Page, tag: { text: 'New' } }]
+const router = createRouterCore({ routes })
+
+routes[0].title = 'Changed'       // No effect: title is an own field and was copied
+routes.push({ /* ... */ })        // No effect: the array was copied
+routes[0].tag.text = 'Changed'    // ⚠️ Does affect the core: tag is shared by reference
+```
+
+Nested objects such as `tag`, `tooltipProps`, and `icon` — plus the Registry's own route objects, which are not frozen — all fall into the "mutation takes effect" category. Do not rely on the copy as an isolation boundary.
+
+Registry route objects are also **not the same objects** you passed in. Compare `path` rather than object identity:
+
+```ts
+const target = routes[1]
+currentRoutes.at(-1)?.route === target           // Always false
+currentRoutes.at(-1)?.route.path === target.path // Correct
+```
 
 For a dynamic route such as `/orders/:id`:
 
@@ -161,7 +186,7 @@ These options are fixed for the lifetime of a core instance:
 
 | Prop | Type | Required | Default | Plain-language description |
 | --- | --- | --- | --- | --- |
-| `routes` | `Route[]` | yes | none | Business route tree. It is recursively copied; mutating the input later does not change this core. |
+| `routes` | `Route[]` | yes | none | Business route tree. Do not modify it after creation, including nested objects; see "Route config is fixed once the core is created". |
 | `hasAuth` | `(code: string) => boolean` | no | always `true` | Checks each route's `auth` code while creating the authorized snapshot. |
 | `defaultRedirectPath` | `string` | no | first accessible concrete page | Preferred target for `/`. Invalid, unauthorized, or unresolved patterns fall back automatically. |
 | `isPageRoute` | `(route: Route) => boolean` | no | checks `route.element` | Tells the core which nodes are pages and which are directories only. |
@@ -516,7 +541,7 @@ Router-core persists fixed-tab keys, the concrete pathname mapping needed by sha
 
 | Utility | Parameters | Return / Description |
 | --- | --- | --- |
-| `snapshotRoutes(routes)` | `Route[]` | Recursively copies a route tree. |
+| `snapshotRoutes(routes)` | `Route[]` | Copies a route tree node by node. Only own fields and the `routes` array are copied; nested objects such as `tag` stay shared by reference, and the result is not frozen. |
 | `filterAuthorizedRoutes(routes, hasAuth?, isPageRoute?)` | route tree and two predicates | Returns a new authorized tree. |
 | `matchRoutePath(pattern, pathname)` | two `string`s | Matches static, `:param`, and trailing `*` patterns. |
 | `normalizeRoutePath(path)` | `string` | Removes query/hash and redundant trailing slashes; empty input becomes `/`. |

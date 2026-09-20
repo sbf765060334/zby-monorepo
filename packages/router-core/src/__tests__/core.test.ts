@@ -157,7 +157,12 @@ describe('route registry', () => {
     expect(registry.getTabKey('/task/1')).toBe('/task/1')
   })
 
-  /** 创建后修改调用方原对象不能影响 Registry 内部已经固定的路由事实。 */
+  /**
+   * 创建后增删数组元素或修改节点自身字段不影响 Registry。
+   *
+   * 复制只到这一层：`tag` 等嵌套对象仍与调用方共享引用，由「创建后不修改路由配置」
+   * 的调用约定负责，core 不做强制隔离。
+   */
   it('owns a route-tree snapshot instead of the caller objects', () => {
     const input: RouterRoute[] = [
       { path: '/home', title: 'Before', element: {} },

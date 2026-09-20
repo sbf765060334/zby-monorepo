@@ -18,7 +18,10 @@ import type { RouteRegistry } from './registry/types'
  * ZBY 平台路由树节点。
  *
  * core 只消费路径、标题、权限和多页签等路由语义；icon、tag、element 等额外元数据
- * 会被路由快照原样保留，供上层 UI 使用。创建 core 后不要再修改传入的路由对象。
+ * 会被路由快照原样保留，供上层 UI 使用。
+ *
+ * 创建 core 后不要再修改路由配置，包括 `tag`、`tooltipProps` 这类嵌套对象——它们
+ * 与 Registry 共享引用，改动会直接影响已有实例。需要改变路由时请创建新的 core。
  */
 export interface RouterRoute {
   /** 注册路径，支持静态段、`:param` 参数段和末尾 `*` 通配符。 */
@@ -220,7 +223,7 @@ export interface RouterStorageAdapter {
 export interface CreateRouterCoreOptions<
   Route extends RouterRoute = RouterRoute,
 > {
-  /** 用于生成完整索引与权限索引的路由树；创建时递归复制为内部快照。 */
+  /** 用于生成完整索引与权限索引的路由树；创建后不要再修改，含其中的嵌套对象。 */
   routes: Route[]
   /** 创建权限路由快照时使用的权限判断函数。 */
   hasAuth?: (code: string) => boolean

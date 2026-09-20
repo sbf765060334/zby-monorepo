@@ -147,7 +147,32 @@ export function App() {
 | `preload` | `() => void \| Promise<void>` | 否 | 无 | 路由级资源预加载入口；`preloadRoute` 会优先调用它。 |
 | 其它字段 | `unknown` | 否 | 无 | icon、tag 等业务元数据会被快照保留，供 UI 和工具使用。 |
 
-额外元数据会保留在路由快照中供 UI 使用。`preloadRoute` 会额外识别函数形式的 `route.preload`，或带 `preload` 方法的 `route.element`。Core 创建时会递归复制路由树，后续修改原始路由对象不会更新已有实例。
+额外元数据会保留在路由快照中供 UI 使用。`preloadRoute` 会额外识别函数形式的 `route.preload`，或带 `preload` 方法的 `route.element`。
+
+### 路由配置创建后不可修改
+
+Core 创建时会逐节点复制路由树，Registry 之后只使用自己这一份。**创建 core 后请不要再修改路由配置**，需要改变路由时应创建新的 core 实例。
+
+这条约定需要调用方自觉遵守，core 不做强制校验。复制只覆盖每个节点自身的字段和 `routes` 数组，所以实际行为是：
+
+```ts
+const routes = [{ path: '/workbench', title: '工作台', element: Page, tag: { text: 'New' } }]
+const router = createRouterCore({ routes })
+
+routes[0].title = '改过的'        // 不影响 core：title 是节点自身字段，已被复制
+routes.push({ /* ... */ })        // 不影响 core：数组已被复制
+routes[0].tag.text = '改过的'     // ⚠️ 会影响 core：tag 是嵌套对象，与 Registry 共享引用
+```
+
+`tag`、`tooltipProps`、`icon` 等嵌套对象，以及 Registry 返回的路由对象本身（未冻结）都属于「改了会生效」的范围。不要依赖复制行为来做隔离。
+
+另外，Registry 返回的路由对象与你传入的**不是同一个对象**，判断是否同一个路由请比较 `path`，不要用引用相等：
+
+```ts
+const target = routes[1]
+currentRoutes.at(-1)?.route === target          // 永远为 false
+currentRoutes.at(-1)?.route.path === target.path // 正确写法
+```
 
 以 `/orders/:id` 为例：
 
@@ -161,7 +186,7 @@ export function App() {
 
 | Prop | 类型 | 必填 | 默认值 | 大白话说明 |
 | --- | --- | --- | --- | --- |
-| `routes` | `Route[]` | 是 | 无 | 业务路由树。创建时会深度复制；之后修改原数组不会改变当前 Core。 |
+| `routes` | `Route[]` | 是 | 无 | 业务路由树。创建后不要再修改，含其中的嵌套对象；详见「路由配置创建后不可修改」。 |
 | `hasAuth` | `(code: string) => boolean` | 否 | 始终返回 `true` | 用路由的 `auth` 字段询问当前用户有没有权限，并据此生成权限快照。 |
 | `defaultRedirectPath` | `string` | 否 | 第一个有权限的具体页面 | 用户访问 `/` 时优先跳到哪里。无效、无权限或仍带参数占位符时会自动回退。 |
 | `isPageRoute` | `(route: Route) => boolean` | 否 | 检查 `route.element` 是否存在 | 告诉 Core 哪些节点是真页面，哪些只是目录。 |
@@ -516,7 +541,7 @@ Router-core 只持久化固定页签 key、恢复共享动态页签所需的真�
 
 | 工具 | 参数 | 返回值 / 说明 |
 | --- | --- | --- |
-| `snapshotRoutes(routes)` | `Route[]` | 递归复制路由树，返回不受原对象后续修改影响的新树。 |
+| `snapshotRoutes(routes)` | `Route[]` | 逐节点复制路由树。只复制节点自身字段和 `routes` 数组，`tag` 等嵌套对象仍共享引用，返回值也未冻结。 |
 | `filterAuthorizedRoutes(routes, hasAuth?, isPageRoute?)` | 路由树和两个判断函数 | 返回过滤后的新权限树。 |
 | `matchRoutePath(pattern, pathname)` | 两个 `string` | 判断静态、`:param` 或末尾 `*` pattern 是否匹配。 |
 | `normalizeRoutePath(path)` | `string` | 去掉 query/hash 和多余尾斜杠；空值变 `/`。 |

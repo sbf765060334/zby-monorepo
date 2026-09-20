@@ -14,7 +14,12 @@ export interface ResolvedRoute<Route extends RouterRoute = RouterRoute> {
   route: Route
 }
 
-/** 创建时固定的路由查询能力。返回的路由对象都属于内部快照。 */
+/**
+ * 创建时固定的路由查询能力。
+ *
+ * 返回的路由对象由 Registry 持有，调用方只读不改；它们与传入的路由配置不是同一个
+ * 对象，请用 `path` 而不是引用相等来判断是不是同一个路由。
+ */
 export interface RouteRegistry<Route extends RouterRoute = RouterRoute> {
   /** 创建时复制的完整路由树，包含当前用户无权限的节点。 */
   readonly routes: readonly Route[]
@@ -49,7 +54,7 @@ export interface RouteRegistry<Route extends RouterRoute = RouterRoute> {
 export interface CreateRouteRegistryOptions<
   Route extends RouterRoute = RouterRoute,
 > {
-  /** 要复制、校验和建立索引的业务路由树。 */
+  /** 要复制、校验和建立索引的业务路由树；创建后不要再修改，含其中的嵌套对象。 */
   routes: Route[]
   /** 权限码判断函数；省略时不会主动删除有 auth 的节点。 */
   hasAuth?: (code: string) => boolean

@@ -1,15 +1,21 @@
 /**
  * 文件职责：复制、按权限过滤并校验调用方提供的路由树。
  *
- * 创建 Core 时先经过这里，把外部可变对象变成内部快照，并尽早拒绝重复路径、重复参
- * 数名或会匹配同一地址的冲突 pattern，避免运行到导航阶段才出现模糊结果。
+ * 创建 Core 时先经过这里，建立 Registry 自己持有的那份路由树，并尽早拒绝重复路径、
+ * 重复参数名或会匹配同一地址的冲突 pattern，避免运行到导航阶段才出现模糊结果。
  */
 import type { RouterRoute } from '../types'
 import { analyzeRoutePattern } from './matcher'
 
-/** 创建一份不再受调用方后续数组或对象修改影响的路由树快照。 */
+/**
+ * 逐节点复制路由树，得到 Registry 自己持有的那一份。
+ *
+ * 只复制每个节点自身的字段和 `routes` 数组。`tag`、`tooltipProps`、`icon` 等嵌套
+ * 对象仍与调用方共享同一个引用，原地修改它们会直接反映到 Registry。返回值也没有
+ * 被冻结。因此这里不是隔离层，调用方必须遵守「创建 core 后不再修改路由配置」的约定。
+ */
 export function snapshotRoutes<Route extends RouterRoute>(routes: Route[]): Route[] {
-  // 每层都创建新数组和新对象，确保调用方之后原地修改不会偷偷改变 Registry。
+  // 新建每层数组和节点对象，使调用方后续增删节点或改节点自身字段不影响 Registry。
   return (Array.isArray(routes) ? routes : []).map((route) => ({
     ...route,
     ...(Array.isArray(route.routes)
