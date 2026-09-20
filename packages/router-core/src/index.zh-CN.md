@@ -191,7 +191,25 @@ currentRoutes.at(-1)?.route.path === target.path // 正确写法
 
 描述符怎么变成文本完全由渲染层决定，core 不提供也不要求任何解释机制。切换语言不产生任何 core 状态变更，因此已打开的页签和 KeepAlive 页面实例都不会被重建，重新翻译只发生在读取标题的组件内部。
 
-使用 `@zby/pro` 的 `ProLayout` 时解释规则已经接好 `@zby/intl`，业务只要把 `title` 写成语言包 key 即可。
+#### 语言变化不会触发 core 的任何更新
+
+上一段的「切换语言不产生任何 core 状态变更」是性能优势，但它同时意味着一件必须记住的事：**core 永远不会通知你「该重新翻译了」。**
+
+原因是状态里存的始终是描述符。`'app.menu.orders'` 这个值在中英文之间一个字节都不会变，变的只是渲染层对它的解释方式，而 core 既不依赖 i18n 库也感知不到语言的存在。因此语言切换时，`useRouterCoreSelector` 不会触发——它订阅的是 core 状态，语言不在其中。
+
+结论是：**任何「依赖标题、并且被缓存过」的派生结果，都必须把当前语言显式写进依赖。**
+
+```tsx
+// ❌ 菜单永远停留在首次渲染时的语言
+const items = useMemo(() => buildMenuItems(router), [router])
+
+// ✅ 语言变化时重新解释描述符
+const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
+```
+
+漏掉这条依赖不会有任何提示：类型检查通过、lint 通过、测试通过、页面渲染也完全正常，只在切换语言时暴露成「页签变了、菜单没变」这类局部不同步，排查时很难联想到依赖数组。
+
+使用 `@zby/pro` 的 `ProLayout` 时解释规则已经接好 `@zby/intl`，业务只要把 `title` 写成语言包 key 即可；`ProLayout` 内部所有依赖标题的缓存都已经带上 `intl.locale`，不需要自己处理这件事。
 
 以 `/orders/:id` 为例：
 

@@ -191,7 +191,25 @@ Because the route tree is fixed at creation, a already-translated string placed 
 
 How a descriptor becomes text is entirely up to the rendering layer; the core neither provides nor requires any resolution mechanism. A locale switch produces no core state change, so opened tabs and KeepAlive page instances are never rebuilt — re-translation happens only inside the components that read titles.
 
-When using `ProLayout` from `@zby/pro`, the resolution rule is already wired to `@zby/intl`; business code only needs to write `title` as a message key.
+#### A locale switch triggers no core update at all
+
+"A locale switch produces no core state change" is a performance win, but it also carries one thing you must remember: **the core will never tell you that it is time to re-translate.**
+
+The reason is that state always holds descriptors. The value `'app.menu.orders'` does not change by a single byte between Chinese and English — only the rendering layer's interpretation of it changes, and the core neither depends on an i18n library nor knows that languages exist. Consequently `useRouterCoreSelector` does not fire on a locale switch: it subscribes to core state, and the locale is not part of it.
+
+The rule that follows: **any derived result that depends on titles and is memoized must include the current locale in its dependencies.**
+
+```tsx
+// ❌ The menu stays in the language of its first render forever
+const items = useMemo(() => buildMenuItems(router), [router])
+
+// ✅ Descriptors are re-resolved whenever the locale changes
+const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
+```
+
+Omitting that dependency produces no warning of any kind: typecheck passes, lint passes, tests pass, and the page renders correctly. It only surfaces on a locale switch as partial desynchronization — the tabs update while the menu does not — which is hard to trace back to a dependency array.
+
+When using `ProLayout` from `@zby/pro`, the resolution rule is already wired to `@zby/intl`; business code only needs to write `title` as a message key. Every title-dependent memo inside `ProLayout` already carries `intl.locale`, so you do not need to handle this yourself.
 
 For a dynamic route such as `/orders/:id`:
 
