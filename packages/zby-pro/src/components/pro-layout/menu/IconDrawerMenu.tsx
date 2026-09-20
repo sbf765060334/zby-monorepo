@@ -1,5 +1,5 @@
 import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
-import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
 import { useIntl } from '@zby/intl'
 import { Layout, message } from 'antd'
@@ -14,6 +14,7 @@ import type {
   ProLayoutStyles,
   ProLayoutSystemItem,
 } from '../types'
+import { resolveProLayoutTitle } from '../title'
 import { isVisibleRoute } from './isVisibleRoute'
 import MenuDrawer from './MenuDrawer'
 import SystemSwitcher from './SystemSwitcher'
@@ -62,7 +63,6 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
   const intl = useIntl()
   const router = useRouterCore<ProLayoutRoute>()
   const createHref = useRouterCoreCreateHref()
-  const { resolve: resolveTitle } = useRouterTitle()
   const [messageApi, messageContextHolder] = message.useMessage()
 
   // currentSelectedPath 是从一级到当前页面的完整路径，用于真实选中态和默认 Drawer 内容。
@@ -131,7 +131,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
       void messageApi.info(
         route.prompt === true
           ? intl.getMessage('zby.pro.layout.menu.unavailable', '功能暂未开放')
-          : resolveTitle(route.prompt),
+          : resolveProLayoutTitle(intl, route.prompt),
       )
       closeDrawer()
       return
@@ -197,7 +197,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                 {routes.map((route) => {
                   // icon 是可选配置；没有 icon 时仍保留标题和稳定的菜单项尺寸。
                   const Icon = route.icon
-                  const title = resolveTitle(route.title)
+                  const title = resolveProLayoutTitle(intl, route.title)
 
                   // active 表示真实路由命中；hovered 只表示当前打开的 Drawer 正在展示该目录。
                   const active = selectedPath.includes(route.path)

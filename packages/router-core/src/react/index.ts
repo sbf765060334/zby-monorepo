@@ -12,16 +12,6 @@ export {
 } from './RouterCoreProvider'
 export type { RouterCoreProviderProps } from './RouterCoreProvider'
 
-/** 把标题描述符解释成文本的中性 Context；core 自身不依赖任何 i18n 库。 */
-export {
-  RouterTitleProvider,
-  useRouterTitle,
-} from './RouterTitleProvider'
-export type {
-  RouterTitleContextValue,
-  RouterTitleProviderProps,
-} from './RouterTitleProvider'
-
 /** 单个 KeepAlive 页面实例的 Context、生命周期与 location 订阅能力。 */
 export {
   RouterPageProvider,

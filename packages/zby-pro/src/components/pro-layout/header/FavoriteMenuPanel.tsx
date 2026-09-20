@@ -1,11 +1,12 @@
 import { PlusOutlined, StarFilled, StarOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { Button, Dropdown, Empty, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo, useState } from 'react'
 
 import { isFavoriteMenuRoute } from '../favorites'
+import { resolveProLayoutTitle } from '../title'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
@@ -27,7 +28,6 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
   const favoritePaths = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.favoriteRoutePaths,
   )
-  const { resolve: resolveTitle } = useRouterTitle()
   const [open, setOpen] = useState(false)
 
   const visibleFavorites = useMemo(() => favoritePaths.flatMap((path) => {
@@ -53,7 +53,7 @@ function FavoriteMenuPanel(props: FavoriteMenuPanelProps) {
           />
         ) : null}
         {visibleFavorites.map(({ path, route }) => {
-          const title = resolveTitle(route.title)
+          const title = resolveProLayoutTitle(intl, route.title)
 
           return (
             <div

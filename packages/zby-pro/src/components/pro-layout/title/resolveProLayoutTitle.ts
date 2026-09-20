@@ -2,7 +2,7 @@
  * 文件职责：定义 ProLayout 这一侧「标题描述符长什么样、怎么翻译、怎么比较」。
  *
  * router-core 对 title 完全不透明，所以形状和解释规则都由本文件决定。业务想换成
- * 别的约定时，只要自行提供 RouterTitleProvider 和 isSameTitle 即可，不必改 core。
+ * 别的约定时，替换这里的两个函数即可，不必改 core。
  */
 import type { IntlShape } from '@zby/intl'
 import type { RouterTitle } from '@zby/router-core'

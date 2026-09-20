@@ -1,10 +1,12 @@
 import { preloadRoute } from '@zby/router-core'
-import { useRouterCore, useRouterCoreSelector, useRouterTitle } from '@zby/router-core/react'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { Flex, message } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useMemo } from 'react'
+
+import { resolveProLayoutTitle } from '../title'
 
 import type { RouterCoreState } from '@zby/router-core'
 import type { TabsProps } from 'antd'
@@ -43,7 +45,6 @@ function PageTabs(props: PageTabsProps) {
     (state: RouterCoreState<ProLayoutRoute>) =>
       state.storageHydrated || state.storageLoadError !== undefined,
   )
-  const { resolve: resolveTitle, viewKey } = useRouterTitle()
   const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
   const pagePathnameMap = useMemo(
     () => new Map(pages.map((page) => [page.key, page.pathname])),
@@ -54,7 +55,7 @@ function PageTabs(props: PageTabsProps) {
       const fixed = fixedKeySet.has(tab.key)
       const PinIcon = fixed ? PushpinFilled : PushpinOutlined
       // tab.label 是描述符而不是成品文案，必须先解释再参与拼接和展示。
-      const tabTitle = resolveTitle(tab.label)
+      const tabTitle = resolveProLayoutTitle(intl, tab.label)
       const pinLabel = fixed
         ? intl.getMessage('zby.pro.layout.tabs.unpin', '取消固定页签：{{title}}', {
             title: tabTitle,
@@ -129,18 +130,17 @@ function PageTabs(props: PageTabsProps) {
         closable: true,
       }
     }),
-    // viewKey 必须在依赖里：切换语言时 intl 与 resolveTitle 的引用都不变。
+    // intl.locale 必须在依赖里：切换语言时 intl 本身的引用不变，只有它会变化。
     [
       fixedKeySet,
       fixedKeys.length,
       intl,
+      intl.locale,
       maxFixedTabCount,
       messageApi,
       prefixCls,
-      resolveTitle,
       router,
       tabs,
-      viewKey,
     ],
   )
 

@@ -189,9 +189,9 @@ Because the route tree is fixed at creation, a already-translated string placed 
 { path: '/orders', title: { key: 'app.menu.orders', defaultMessage: 'Orders' } }
 ```
 
-The rendering layer injects the resolution rule through `RouterTitleProvider` from `@zby/router-core/react`, and menus, tabs, and breadcrumbs read it with `useRouterTitle()`. A locale switch only updates that context and produces no core state change, so opened tabs and KeepAlive page instances are never rebuilt.
+How a descriptor becomes text is entirely up to the rendering layer; the core neither provides nor requires any resolution mechanism. A locale switch produces no core state change, so opened tabs and KeepAlive page instances are never rebuilt — re-translation happens only inside the components that read titles.
 
-When using `ProLayout` from `@zby/pro`, this provider is already built in and wired to `@zby/intl`; business code only needs to write `title` as a message key.
+When using `ProLayout` from `@zby/pro`, the resolution rule is already wired to `@zby/intl`; business code only needs to write `title` as a message key.
 
 For a dynamic route such as `/orders/:id`:
 
@@ -401,38 +401,6 @@ The Provider does not accept fixed options such as `routes`, `keepAlive`, or `st
 
 The dependent `RouterPage<Route>` fields are listed in “State field dependent types.”
 
-### `RouterTitleProvider` Props
-
-Hands "how a title descriptor becomes text" to the rendering layer. The core itself depends on no i18n library.
-
-| Prop | Type | Required | Description |
-| --- | --- | --- | --- |
-| `resolve` | `(title: RouterTitle) => string` | yes | Resolves a descriptor into plain text for the current locale. Returns `string` rather than `ReactNode` because `document.title`, `aria-label`, and search indexes accept plain text only. Keep its reference stable within one `viewKey`. |
-| `viewKey` | `string` | yes | Cache key of the current render view, usually the current locale. Titles do not live in the store, so any `useMemo` that depends on a title must include it to recompute after a locale switch. |
-| `children` | `ReactNode` | yes | React subtree that needs to resolve titles. |
-
-```tsx
-import { RouterTitleProvider, useRouterTitle } from '@zby/router-core/react'
-
-function TitleBoundary({ children }) {
-  const intl = useIntl()
-  // The intl instance keeps its reference across locale switches, so resolve stays
-  // stable and viewKey is what invalidates downstream derived results.
-  const resolve = useCallback(
-    (title: RouterTitle) => (typeof title === 'string' ? intl.getMessage(title) : ''),
-    [intl],
-  )
-
-  return (
-    <RouterTitleProvider resolve={resolve} viewKey={intl.locale}>
-      {children}
-    </RouterTitleProvider>
-  )
-}
-```
-
-`ProLayout` from `@zby/pro` already mounts this provider wired to `@zby/intl`, so no manual setup is needed there.
-
 ### React Hook parameters
 
 | Hook | Parameters | Return | Description |
@@ -441,7 +409,6 @@ function TitleBoundary({ children }) {
 | `useRouterCoreSelector(selector, equalityFn?)` | state selector and optional comparator | `Selected` | Subscribes only to the selected global result. |
 | `useRouterPage<Route>()` | none | `RouterPageContextValue<Route>` | Reads the complete current-page Context; throws outside PageProvider. |
 | `useRouterPageSelector(selector, equalityFn?)` | page-context selector and optional comparator | `Selected` | Subscribes only to part of the current page. |
-| `useRouterTitle()` | none | `RouterTitleContextValue` | Reads `{ resolve, viewKey }` to turn title descriptors into text. Without a provider it returns a string-only fallback instead of throwing. |
 
 `equalityFn` is `(left: Selected, right: Selected) => boolean`; returning `true` means the results are equivalent and the previous reference can be reused.
 
@@ -457,16 +424,15 @@ function TitleBoundary({ children }) {
 | `location` | `RouterLocationEventPayload \| null` | Last complete location received by this tab; `null` before host synchronization. |
 
 ```tsx
-import {
-  useRouterCore,
-  useRouterCoreSelector,
-  useRouterTitle,
-} from '@zby/router-core/react'
-import type { RouterCoreState } from '@zby/router-core'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import type { RouterCoreState, RouterTitle } from '@zby/router-core'
+
+// How a descriptor becomes text is up to the rendering layer; this example uses
+// the simplest possible convention where a string is already the copy.
+const resolve = (title: RouterTitle) => (typeof title === 'string' ? title : '')
 
 function TabBar() {
   const router = useRouterCore<AppRoute>()
-  const { resolve } = useRouterTitle()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<AppRoute>) => state.tabs,
   )
@@ -492,7 +458,6 @@ function TabBar() {
 - `useRouterCoreSelector` precisely subscribes to selected global state.
 - `RouterPageProvider` wraps each page rendered by a custom KeepAlive UI.
 - `useRouterPage` and `useRouterPageSelector` read page-specific pathname, active state, and location.
-- `RouterTitleProvider` and `useRouterTitle` resolve title descriptors into text for the current locale.
 
 A custom page renderer can iterate `state.pages`:
 

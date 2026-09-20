@@ -3,7 +3,6 @@ import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { memo } from 'react'
 
 import ProLayout from './ProLayout'
-import { ProLayoutTitleProvider } from './title'
 import type { ReactRouterProLayoutProps } from './types'
 
 /**
@@ -22,10 +21,7 @@ export function ReactRouterProLayout(props: ReactRouterProLayoutProps) {
       onTabClose={onTabClose}
     >
       <RouterCoreReactRouterAdapter>
-        {/* 标题解释能力由布局自带，业务只需保证 ProLayout 处在 ZbyConfigProvider 内。 */}
-        <ProLayoutTitleProvider>
-          <ProLayout {...layoutProps} />
-        </ProLayoutTitleProvider>
+        <ProLayout {...layoutProps} />
       </RouterCoreReactRouterAdapter>
     </RouterCoreProvider>
   )

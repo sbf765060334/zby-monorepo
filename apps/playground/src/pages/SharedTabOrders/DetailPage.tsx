@@ -1,10 +1,11 @@
 import { Button, Descriptions, Space, Typography, message } from 'antd'
 import { useEffect, useState } from 'react'
+import { useIntl } from '@zby/intl'
+import { resolveProLayoutTitle } from '@zby/pro'
 import {
   useRouterCore,
   useRouterCoreSelector,
   useRouterPage,
-  useRouterTitle,
 } from '@zby/router-core/react'
 
 import { PlaygroundPage } from '../../components/ComponentPlayground'
@@ -26,7 +27,7 @@ export default function SharedTabOrderDetailPage() {
   const isFixed = useRouterCoreSelector((state: RouterCoreState) =>
     state.fixedSet.includes(page.tabKey),
   )
-  const { resolve: resolveTitle } = useRouterTitle()
+  const intl = useIntl()
 
   useEffect(() => {
     // 存描述符而不是拼好的文案：订单号前缀、空格、# 号全部由语言包模板决定，
@@ -66,7 +67,7 @@ export default function SharedTabOrderDetailPage() {
           items={[
             { label: '页签 key', children: page.tabKey },
             { label: '真实 pathname', children: page.pathname },
-            { label: '页签标题', children: tab ? resolveTitle(tab.label) : '-' },
+            { label: '页签标题', children: tab ? resolveProLayoutTitle(intl, tab.label) : '-' },
             { label: '是否固定', children: isFixed ? '是' : '否' },
             { label: '页面实例 ID', children: mountId },
             { label: 'location', children: `${page.location?.pathname ?? ''}${page.location?.search ?? ''}${page.location?.hash ?? ''}` },

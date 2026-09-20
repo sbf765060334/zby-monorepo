@@ -1,14 +1,16 @@
 import { CloseCircleFilled, CloseOutlined, SearchOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { useRouterCore, useRouterTitle } from '@zby/router-core/react'
+import { useRouterCore } from '@zby/router-core/react'
 import { Empty, Modal } from 'antd'
 import { clsx } from 'clsx'
 import { Command } from 'cmdk'
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
+import { resolveProLayoutTitle } from '../title'
 import useRouteSearchStyles from './style'
 
+import type { IntlShape } from '@zby/intl'
 import type { ReactNode } from 'react'
 import type { RouterCore } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
@@ -77,12 +79,11 @@ function RouteSearch(props: ProRouteSearchProps) {
   // undefined 使 SSR 与客户端首次渲染保持一致；挂载后再读取真实视口高度。
   const [bodyMaxHeight, setBodyMaxHeight] = useState<number>()
 
-  const { resolve: resolveTitle, viewKey } = useRouterTitle()
   // 权限路由树在 RouterCore 生命周期内固定，但索引里的标题文本跟随语言变化，
-  // 因此 viewKey 也是这份派生结果的输入。每种语言只会重建一次。
+  // 因此 intl.locale 也是这份派生结果的输入。每种语言只会重建一次。
   const searchableRoutes = useMemo(
-    () => collectSearchableRoutes(router, resolveTitle),
-    [resolveTitle, router, viewKey],
+    () => collectSearchableRoutes(router, intl),
+    [intl, intl.locale, router],
   )
   // 最近记录只保存 pathname，展示数据始终从最新权限路由表中恢复。
   const routeMap = useMemo(
@@ -401,7 +402,7 @@ function RouteSearch(props: ProRouteSearchProps) {
  */
 function collectSearchableRoutes(
   router: RouterCore<ProLayoutRoute>,
-  resolveTitle: (title: ProLayoutRoute['title']) => string,
+  intl: IntlShape,
 ): SearchableRoute[] {
   const items: SearchableRoute[] = []
 
@@ -412,7 +413,7 @@ function collectSearchableRoutes(
       if (route.ignore)
         return
 
-      const titlePath = [...parentTitles, resolveTitle(route.title)]
+      const titlePath = [...parentTitles, resolveProLayoutTitle(intl, route.title)]
       if (isSearchableRoute(router, route)) {
         const joinedTitlePath = titlePath.join(' / ')
         // 展示数据和搜索数据一次生成，输入过程中只做轻量 includes 匹配。

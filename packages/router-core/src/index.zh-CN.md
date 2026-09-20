@@ -189,9 +189,9 @@ currentRoutes.at(-1)?.route.path === target.path // 正确写法
 { path: '/orders', title: { key: 'app.menu.orders', defaultMessage: '订单管理' } }
 ```
 
-渲染层通过 `@zby/router-core/react` 的 `RouterTitleProvider` 注入解释规则，菜单、页签、面包屑等组件用 `useRouterTitle()` 取用。切换语言只更新这个 Context，不产生任何 core 状态变更，因此已打开的页签和 KeepAlive 页面实例都不会被重建。
+描述符怎么变成文本完全由渲染层决定，core 不提供也不要求任何解释机制。切换语言不产生任何 core 状态变更，因此已打开的页签和 KeepAlive 页面实例都不会被重建，重新翻译只发生在读取标题的组件内部。
 
-使用 `@zby/pro` 的 `ProLayout` 时，这层 Provider 已经内置并接好 `@zby/intl`，业务只要把 `title` 写成语言包 key 即可。
+使用 `@zby/pro` 的 `ProLayout` 时解释规则已经接好 `@zby/intl`，业务只要把 `title` 写成语言包 key 即可。
 
 以 `/orders/:id` 为例：
 
@@ -401,37 +401,6 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 
 `page` 依赖的 `RouterPage<Route>` 字段已列在“状态字段依赖类型”表中。
 
-### `RouterTitleProvider` Props
-
-把「标题描述符怎么变成文本」交给渲染层。core 自身不依赖任何 i18n 库。
-
-| Prop | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| `resolve` | `(title: RouterTitle) => string` | 是 | 把描述符解释成当前语言的纯文本。返回 `string` 而不是 `ReactNode`，因为 `document.title`、`aria-label` 和搜索索引都只能用纯文本。需要在同一个 `viewKey` 内保持稳定引用。 |
-| `viewKey` | `string` | 是 | 当前渲染视图的缓存键，通常直接传当前语言。标题不在 Store 里，依赖标题的 `useMemo` 必须把它写进依赖数组才会在切换语言时重算。 |
-| `children` | `ReactNode` | 是 | 需要解释标题的 React 子树。 |
-
-```tsx
-import { RouterTitleProvider, useRouterTitle } from '@zby/router-core/react'
-
-function TitleBoundary({ children }) {
-  const intl = useIntl()
-  // intl 实例在切换语言时引用不变，所以 resolve 稳定，靠 viewKey 通知下游失效。
-  const resolve = useCallback(
-    (title: RouterTitle) => (typeof title === 'string' ? intl.getMessage(title) : ''),
-    [intl],
-  )
-
-  return (
-    <RouterTitleProvider resolve={resolve} viewKey={intl.locale}>
-      {children}
-    </RouterTitleProvider>
-  )
-}
-```
-
-`@zby/pro` 的 `ProLayout` 已经内置这层 Provider 并接好 `@zby/intl`，使用它时不需要自己装配。
-
 ### React Hooks 参数
 
 | Hook | 参数 | 返回值 | 说明 |
@@ -440,7 +409,6 @@ function TitleBoundary({ children }) {
 | `useRouterCoreSelector(selector, equalityFn?)` | 状态选择函数、可选比较函数 | `Selected` | 只订阅全局状态中真正关心的结果。 |
 | `useRouterPage<Route>()` | 无 | `RouterPageContextValue<Route>` | 读取当前页面完整 Context；PageProvider 外调用会抛错。 |
 | `useRouterPageSelector(selector, equalityFn?)` | 页面 Context 选择函数、可选比较函数 | `Selected` | 只订阅当前页面的某一部分。 |
-| `useRouterTitle()` | 无 | `RouterTitleContextValue` | 读取 `{ resolve, viewKey }`，把标题描述符解释成文本。没有 Provider 时返回只认字符串的兜底实现，不会抛错。 |
 
 `equalityFn` 类型为 `(left: Selected, right: Selected) => boolean`；返回 `true` 表示两次结果等价，可以复用旧引用。
 
@@ -456,16 +424,14 @@ function TitleBoundary({ children }) {
 | `location` | `RouterLocationEventPayload \| null` | 页签最后收到的完整地址；宿主尚未同步时为 `null`。 |
 
 ```tsx
-import {
-  useRouterCore,
-  useRouterCoreSelector,
-  useRouterTitle,
-} from '@zby/router-core/react'
-import type { RouterCoreState } from '@zby/router-core'
+import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
+import type { RouterCoreState, RouterTitle } from '@zby/router-core'
+
+// 描述符怎么变成文本由渲染层自己决定，这里示例最简单的「字符串即文案」约定。
+const resolve = (title: RouterTitle) => (typeof title === 'string' ? title : '')
 
 function TabBar() {
   const router = useRouterCore<AppRoute>()
-  const { resolve } = useRouterTitle()
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<AppRoute>) => state.tabs,
   )
@@ -489,7 +455,6 @@ function TabBar() {
 - `RouterCoreProvider` 提供稳定 core、同步运行时回调并启动 hydration。
 - `useRouterCore` 返回 core 实例和命令。
 - `useRouterCoreSelector` 精确订阅选中的全局状态。
-- `RouterTitleProvider` 和 `useRouterTitle` 负责把标题描述符解释成当前语言的文本。
 - `RouterPageProvider` 包裹自定义 KeepAlive UI 渲染的每个页面。
 - `useRouterPage` 和 `useRouterPageSelector` 读取页面自己的 pathname、active 和 location。
 
