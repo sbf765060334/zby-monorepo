@@ -1,9 +1,11 @@
 import { useIntl } from '@zby/intl'
+import { Button } from 'antd'
 import { ErrorBoundary } from 'react-error-boundary'
 
 import type { ReactNode } from 'react'
 import type {
   ErrorBoundaryProps,
+  FallbackProps,
   OnErrorCallback,
 } from 'react-error-boundary'
 import ExceptionPage from './ExceptionPage'
@@ -24,12 +26,16 @@ interface PageErrorBoundaryProps {
  *
  * react-error-boundary 只在已捕获错误后响应 resetKeys 变化，因此共享动态页签的正常
  * 参数切换仍保留组件实例；错误态则会在 pathname/element 变化提交后自动重新尝试。
+ * 用户也可以在 fallback 上点重试；KeepAlive 的 onReset 会先清掉失败的 lazy 缓存。
  */
 export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
   return (
     <ErrorBoundary
-      fallbackRender={() => (
-        <PageErrorFallback prefixCls={props.prefixCls} />
+      fallbackRender={({ resetErrorBoundary }: FallbackProps) => (
+        <PageErrorFallback
+          prefixCls={props.prefixCls}
+          onRetry={resetErrorBoundary}
+        />
       )}
       resetKeys={props.resetKeys}
       onError={props.onError}
@@ -41,7 +47,10 @@ export default function PageErrorBoundary(props: PageErrorBoundaryProps) {
 }
 
 /** 用户只看到稳定的错误提示，原始异常和组件栈不会进入 DOM。 */
-function PageErrorFallback(props: { prefixCls: string }) {
+function PageErrorFallback(props: {
+  prefixCls: string
+  onRetry: () => void
+}) {
   const intl = useIntl()
 
   return (
@@ -56,6 +65,11 @@ function PageErrorFallback(props: { prefixCls: string }) {
       description={intl.getMessage(
         'zby.pro.layout.pageError.description',
         '页面暂时无法显示，请联系管理员。',
+      )}
+      extra={(
+        <Button type="primary" autoInsertSpace={false} onClick={props.onRetry}>
+          {intl.getMessage('zby.pro.layout.pageError.retry', '重试')}
+        </Button>
       )}
     />
   )

@@ -63,6 +63,7 @@ const enUS = {
   pageError: {
     title: 'Page failed to load',
     description: 'This page is temporarily unavailable. Contact an administrator.',
+    retry: 'Retry',
   },
 }
 

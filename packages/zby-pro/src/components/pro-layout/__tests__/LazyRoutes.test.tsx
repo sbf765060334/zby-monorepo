@@ -3,7 +3,7 @@
 import { createRouterCore } from '@zby/router-core'
 import { RouterCoreProvider } from '@zby/router-core/react'
 import { ZbyIntlProvider } from '@zby/intl'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import NProgress from 'nprogress'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -141,7 +141,7 @@ describe('lazyPage', () => {
     })
     await flushMicrotasks()
     expect(screen.getByRole('alert')).toBeTruthy()
-    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByRole('button', { name: '重试' })).toBeTruthy()
     expect(NProgress.done).toHaveBeenCalledOnce()
 
     act(() => {
@@ -158,6 +158,70 @@ describe('lazyPage', () => {
     })
     await flushMicrotasks()
     expect(screen.getByTestId('recovered-page').textContent).toBe('Recovered page')
+    expect(NProgress.done).toHaveBeenCalledTimes(2)
+    consoleError.mockRestore()
+  })
+
+  it('retries a failed lazy page from the error fallback', async () => {
+    vi.useFakeTimers()
+    const error = new Error('first render failed')
+    const module = createPageModule('retried-page', 'Retried page')
+    let rejectFirst!: (error: Error) => void
+    let resolveSecond!: (value: ProLayoutLazyPageModule) => void
+    let attempt = 0
+    const loader = vi.fn(() => {
+      attempt += 1
+      return new Promise<ProLayoutLazyPageModule>((resolve, reject) => {
+        if (attempt === 1)
+          rejectFirst = reject
+        else
+          resolveSecond = resolve
+      })
+    })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    const LazyPage = lazyPage(loader)
+    const router = createPageRouter('/retry-click', LazyPage)
+    router.syncLocation({ pathname: '/retry-click', search: '', hash: '' })
+
+    render(
+      <ZbyIntlProvider
+        locale="zh-CN"
+        fallbackLocale="zh-CN"
+        resources={zbyProIntlResources}
+      >
+        <PageLoadingProgressProvider>
+          <MemoryRouter initialEntries={['/retry-click']}>
+            <RouterCoreProvider router={router}>
+              <PageContent prefixCls="test-layout" />
+            </RouterCoreProvider>
+          </MemoryRouter>
+        </PageLoadingProgressProvider>
+      </ZbyIntlProvider>,
+    )
+    await flushMicrotasks()
+    act(() => vi.advanceTimersByTime(150))
+
+    await act(async () => {
+      rejectFirst(error)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByRole('alert')).toBeTruthy()
+    expect(loader).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(2)
+    act(() => vi.advanceTimersByTime(150))
+    expect(NProgress.start).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      resolveSecond(module)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByTestId('retried-page').textContent).toBe('Retried page')
     expect(NProgress.done).toHaveBeenCalledTimes(2)
     consoleError.mockRestore()
   })

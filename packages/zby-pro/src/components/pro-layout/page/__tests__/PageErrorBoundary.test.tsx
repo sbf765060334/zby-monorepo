@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ZbyIntlProvider } from '@zby/intl'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,7 +36,7 @@ describe('PageErrorBoundary', () => {
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toContain('页面加载失败')
     expect(alert.textContent).toContain('页面暂时无法显示，请联系管理员。')
-    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByRole('button', { name: '重试' })).toBeTruthy()
     expect(document.body.textContent).not.toContain('internal-token')
     expect(document.body.textContent).not.toContain('secret-value')
 
@@ -74,6 +74,22 @@ describe('PageErrorBoundary', () => {
     ))
     expect(screen.getByTestId('page-instance').textContent).toBe('instance-1')
     expect(instanceCount).toBe(1)
+  })
+
+  it('点击重试后重新挂载业务页面', async () => {
+    let shouldThrow = true
+    function FlakyPage() {
+      if (shouldThrow)
+        throw new Error('transient render error')
+      return <div data-testid="recovered-page">recovered</div>
+    }
+
+    renderBoundary(<FlakyPage />, ['/flaky'])
+    await screen.findByText('页面加载失败')
+
+    shouldThrow = false
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect((await screen.findByTestId('recovered-page')).textContent).toBe('recovered')
   })
 })
 

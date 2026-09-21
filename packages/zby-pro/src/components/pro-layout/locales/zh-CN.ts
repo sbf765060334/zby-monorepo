@@ -63,6 +63,7 @@ const zhCN = {
   pageError: {
     title: '页面加载失败',
     description: '页面暂时无法显示，请联系管理员。',
+    retry: '重试',
   },
 }
 
