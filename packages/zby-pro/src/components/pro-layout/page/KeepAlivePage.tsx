@@ -17,7 +17,7 @@ import type {
   ProLayoutRoute,
   ProLayoutRouteComponent,
 } from '../types'
-import { resetLazyRouteComponent } from '../createLazyRouteComponent'
+import { resetLazyPage } from '../lazyPage'
 import { PageLoadingProgressFallback } from '../page-loading-progress'
 import PageErrorBoundary from './PageErrorBoundary'
 
@@ -120,7 +120,7 @@ function KeepAlivePage(props: KeepAlivePageProps) {
         <PageErrorBoundary
           prefixCls={prefixCls}
           resetKeys={resetKeys}
-          onReset={() => resetLazyRouteComponent(page.route.element)}
+          onReset={() => resetLazyPage(page.route.element)}
           onError={onPageError
             ? (error, info) => onPageError(error, info, { pathname: page.pathname })
             : undefined}

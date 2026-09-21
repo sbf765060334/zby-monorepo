@@ -79,15 +79,15 @@ export function App() {
 
 ## 路由懒加载
 
-使用 `createLazyRouteComponent` 创建可预加载的 `React.lazy` 页面，并把组件引用直接传给 `element`：
+使用 `lazyPage` 创建可预加载的 `React.lazy` 页面，并把组件引用直接传给 `element`：
 
 ```tsx
 import {
-  createLazyRouteComponent,
+  lazyPage,
   type ProLayoutRoute,
 } from '@zby/pro/pro-layout'
 
-const OrderListPage = createLazyRouteComponent(
+const OrderListPage = lazyPage(
   () => import('./pages/OrderListPage'),
 )
 
@@ -305,9 +305,9 @@ export function OrderPage() {
 | `string` | 语言包 key；匹配不到时原样显示该字符串 |
 | `{ key, defaultMessage?, values? }` | `defaultMessage` 在 key 缺失时兜底；`values` 对应模板里的 `{{name}}` 占位符 |
 
-### createLazyRouteComponent
+### lazyPage
 
-`createLazyRouteComponent(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件，并带有 `preload(): Promise<void>`。同一组件会去重进行中的请求并复用成功结果；预加载失败会向直接调用方返回 rejection，但菜单、页签通过 `preloadRoute` 触发时会隔离错误，不会阻止正常导航。
+`lazyPage(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件，并带有 `preload(): Promise<void>`。同一组件会去重进行中的请求并复用成功结果；预加载失败会向直接调用方返回 rejection，但菜单、页签通过 `preloadRoute` 触发时会隔离错误，不会阻止正常导航。
 
 ### ProLayoutPageLoading
 

@@ -78,15 +78,15 @@ export function App() {
 
 ## Lazy Route Loading
 
-Use `createLazyRouteComponent` to create a preloadable `React.lazy` page, then pass the component reference directly to `element`:
+Use `lazyPage` to create a preloadable `React.lazy` page, then pass the component reference directly to `element`:
 
 ```tsx
 import {
-  createLazyRouteComponent,
+  lazyPage,
   type ProLayoutRoute,
 } from '@zby/pro/pro-layout'
 
-const OrderListPage = createLazyRouteComponent(
+const OrderListPage = lazyPage(
   () => import('./pages/OrderListPage'),
 )
 
@@ -304,9 +304,9 @@ Shared by `title`, `tag.text`, and any `prompt` other than `true`. All of them a
 | `string` | Locale key; displayed as-is when no message matches |
 | `{ key, defaultMessage?, values? }` | `defaultMessage` covers a missing key; `values` fills the `{{name}}` placeholders in the template |
 
-### createLazyRouteComponent
+### lazyPage
 
-`createLazyRouteComponent(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element` with `preload(): Promise<void>`. It deduplicates in-flight requests and reuses successful results. A direct preload call receives a rejection, while menu and tab preloads go through `preloadRoute`, which isolates failures so navigation remains available.
+`lazyPage(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element` with `preload(): Promise<void>`. It deduplicates in-flight requests and reuses successful results. A direct preload call receives a rejection, while menu and tab preloads go through `preloadRoute`, which isolates failures so navigation remains available.
 
 ### ProLayoutPageLoading
 

@@ -112,7 +112,7 @@ export type {
   ZbyThemeTransitionOrigin,
 } from '@zby/hooks'
 export {
-  createLazyRouteComponent,
+  lazyPage,
   isSameProLayoutTitle,
   ProLocaleSwitch,
   ProLayoutContentContainer,
@@ -145,9 +145,9 @@ export type {
   ProLayoutContentContainerProps,
   ProLayoutContextValue,
   ProLayoutHeaderConfig,
-  ProLayoutLazyRouteComponent,
-  ProLayoutLazyRouteLoader,
-  ProLayoutLazyRouteModule,
+  ProLayoutLazyPage,
+  ProLayoutLazyPageLoader,
+  ProLayoutLazyPageModule,
   ProLayoutMetrics,
   ProLayoutPageLoading,
   ProLayoutProps,

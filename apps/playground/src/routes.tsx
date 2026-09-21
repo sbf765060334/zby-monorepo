@@ -1,20 +1,20 @@
 import { AppstoreOutlined, ClearOutlined, DashboardOutlined, HomeOutlined, LinkOutlined } from '@ant-design/icons'
-import { createLazyRouteComponent, type ProLayoutRoute, type ProLayoutTitleDescriptor } from '@zby/pro'
+import { lazyPage, type ProLayoutRoute, type ProLayoutTitleDescriptor } from '@zby/pro'
 
-const ActionIconPlayground = createLazyRouteComponent(() => import('./pages/ActionIconPlayground'))
-const ActionRevealPlayground = createLazyRouteComponent(() => import('./pages/ActionRevealPlayground'))
-const ActionTextPlayground = createLazyRouteComponent(() => import('./pages/ActionTextPlayground'))
-const DemoPage = createLazyRouteComponent(() => import('./pages/DemoPage'))
-const InputNumberRangePlayground = createLazyRouteComponent(
+const ActionIconPlayground = lazyPage(() => import('./pages/ActionIconPlayground'))
+const ActionRevealPlayground = lazyPage(() => import('./pages/ActionRevealPlayground'))
+const ActionTextPlayground = lazyPage(() => import('./pages/ActionTextPlayground'))
+const DemoPage = lazyPage(() => import('./pages/DemoPage'))
+const InputNumberRangePlayground = lazyPage(
   () => import('./pages/InputNumberRangePlayground'),
 )
-const ProViewManagementPlayground = createLazyRouteComponent(
+const ProViewManagementPlayground = lazyPage(
   () => import('./pages/ProViewManagementPlayground'),
 )
-const ScrollAreaPlayground = createLazyRouteComponent(() => import('./pages/ScrollAreaPlayground'))
-const ProTablePlayground = createLazyRouteComponent(() => import('./pages/ProTablePlayground'))
-const TablePlayground = createLazyRouteComponent(() => import('./pages/TablePlayground'))
-const WorkbenchMenuFixture = createLazyRouteComponent(
+const ScrollAreaPlayground = lazyPage(() => import('./pages/ScrollAreaPlayground'))
+const ProTablePlayground = lazyPage(() => import('./pages/ProTablePlayground'))
+const TablePlayground = lazyPage(() => import('./pages/TablePlayground'))
+const WorkbenchMenuFixture = lazyPage(
   () => import('./pages/WorkbenchMenuFixture'),
 )
 

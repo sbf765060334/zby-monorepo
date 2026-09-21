@@ -8,11 +8,11 @@ import { MemoryRouter } from 'react-router-dom'
 import NProgress from 'nprogress'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createLazyRouteComponent } from '../createLazyRouteComponent'
+import { lazyPage } from '../lazyPage'
 import PageContent from '../page/PageContent'
 import PageLoadingProgressProvider from '../page-loading-progress'
 import { zbyProIntlResources } from '../../../locale/intl-resources'
-import type { ProLayoutLazyRouteModule } from '../createLazyRouteComponent'
+import type { ProLayoutLazyPageModule } from '../lazyPage'
 import type { ProLayoutRoute } from '../types'
 
 vi.mock('nprogress', () => ({
@@ -31,16 +31,16 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('createLazyRouteComponent', () => {
+describe('lazyPage', () => {
   it('reuses one module request across preload and React rendering', async () => {
     const module = createPageModule('lazy-page', 'Lazy page')
-    let resolveModule!: (value: ProLayoutLazyRouteModule) => void
+    let resolveModule!: (value: ProLayoutLazyPageModule) => void
     const loader = vi.fn(
-      () => new Promise<ProLayoutLazyRouteModule>((resolve) => {
+      () => new Promise<ProLayoutLazyPageModule>((resolve) => {
         resolveModule = resolve
       }),
     )
-    const LazyPage = createLazyRouteComponent(loader)
+    const LazyPage = lazyPage(loader)
 
     const firstPreload = LazyPage.preload()
     const secondPreload = LazyPage.preload()
@@ -74,7 +74,7 @@ describe('createLazyRouteComponent', () => {
         throw error
       return Promise.resolve(module)
     })
-    const LazyPage = createLazyRouteComponent(loader)
+    const LazyPage = lazyPage(loader)
 
     await expect(LazyPage.preload()).rejects.toBe(error)
     expect(loader).toHaveBeenCalledOnce()
@@ -98,11 +98,11 @@ describe('createLazyRouteComponent', () => {
     const error = new Error('first render failed')
     const module = createPageModule('recovered-page', 'Recovered page')
     let rejectFirst!: (error: Error) => void
-    let resolveSecond!: (value: ProLayoutLazyRouteModule) => void
+    let resolveSecond!: (value: ProLayoutLazyPageModule) => void
     let attempt = 0
     const loader = vi.fn(() => {
       attempt += 1
-      return new Promise<ProLayoutLazyRouteModule>((resolve, reject) => {
+      return new Promise<ProLayoutLazyPageModule>((resolve, reject) => {
         if (attempt === 1)
           rejectFirst = reject
         else
@@ -111,7 +111,7 @@ describe('createLazyRouteComponent', () => {
     })
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     window.addEventListener('error', preventExpectedWindowError)
-    const LazyPage = createLazyRouteComponent(loader)
+    const LazyPage = lazyPage(loader)
     const router = createPageRouter('/retry-render/:id', LazyPage)
     router.syncLocation({ pathname: '/retry-render/1', search: '', hash: '' })
 
@@ -164,13 +164,13 @@ describe('createLazyRouteComponent', () => {
 
   it('uses the configured Suspense fallback and retains a loaded page across navigation', async () => {
     const module = createPageModule('retained-page', 'Retained page')
-    let resolveModule!: (value: ProLayoutLazyRouteModule) => void
+    let resolveModule!: (value: ProLayoutLazyPageModule) => void
     const loader = vi.fn(
-      () => new Promise<ProLayoutLazyRouteModule>((resolve) => {
+      () => new Promise<ProLayoutLazyPageModule>((resolve) => {
         resolveModule = resolve
       }),
     )
-    const LazyPage = createLazyRouteComponent(loader)
+    const LazyPage = lazyPage(loader)
     const routes: ProLayoutRoute[] = [
       { path: '/lazy', title: 'Lazy', element: LazyPage },
       { path: '/other', title: 'Other', element: OtherPage },
@@ -222,8 +222,8 @@ describe('createLazyRouteComponent', () => {
 
   it('hides the Suspense placeholder but still tracks loading when pageLoading is false', () => {
     vi.useFakeTimers()
-    const LazyPage = createLazyRouteComponent(
-      () => new Promise<ProLayoutLazyRouteModule>(() => undefined),
+    const LazyPage = lazyPage(
+      () => new Promise<ProLayoutLazyPageModule>(() => undefined),
     )
     const router = createPageRouter('/lazy', LazyPage)
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
@@ -245,9 +245,9 @@ describe('createLazyRouteComponent', () => {
   it('stops for a pending KeepAlive page while inactive and resumes when it reactivates', async () => {
     vi.useFakeTimers()
     const module = createPageModule('pending-page', 'Pending page')
-    let resolveModule!: (value: ProLayoutLazyRouteModule) => void
-    const LazyPage = createLazyRouteComponent(
-      () => new Promise<ProLayoutLazyRouteModule>((resolve) => {
+    let resolveModule!: (value: ProLayoutLazyPageModule) => void
+    const LazyPage = lazyPage(
+      () => new Promise<ProLayoutLazyPageModule>((resolve) => {
         resolveModule = resolve
       }),
     )
@@ -298,8 +298,8 @@ describe('createLazyRouteComponent', () => {
     const onPageError = vi.fn()
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     window.addEventListener('error', preventExpectedWindowError)
-    const LazyPage = createLazyRouteComponent(
-      () => new Promise<ProLayoutLazyRouteModule>((_resolve, reject) => {
+    const LazyPage = lazyPage(
+      () => new Promise<ProLayoutLazyPageModule>((_resolve, reject) => {
         rejectModule = reject
       }),
     )
@@ -339,7 +339,7 @@ describe('createLazyRouteComponent', () => {
   })
 })
 
-function createPageModule(testId: string, content: string): ProLayoutLazyRouteModule {
+function createPageModule(testId: string, content: string): ProLayoutLazyPageModule {
   return {
     default: () => <div data-testid={testId}>{content}</div>,
   }
