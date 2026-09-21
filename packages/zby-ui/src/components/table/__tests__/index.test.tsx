@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { _rs } from '@rc-component/resize-observer'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { ZbyIntlProvider } from '@zby/intl'
 import ConfigProvider from 'antd/es/config-provider'
@@ -43,6 +44,49 @@ function flushResizeObservers() {
     resizeObserverCallbacks.forEach((callback) =>
       callback([], {} as ResizeObserver),
     )
+  })
+}
+
+function mockTableBoxWidth(width: number) {
+  return vi
+    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    .mockImplementation(function getBoundingClientRect(this: HTMLElement) {
+      if (this.dataset.tableColumnWidthMeasure !== undefined) {
+        return originalGetBoundingClientRect.call(this)
+      }
+
+      const isTableBox =
+        this.classList.contains('ant-table') ||
+        this.classList.contains('ant-table-content')
+      const boxWidth = isTableBox ? width : 150
+
+      return {
+        x: 0,
+        y: 0,
+        width: boxWidth,
+        height: 40,
+        top: 0,
+        left: 0,
+        right: boxWidth,
+        bottom: 40,
+        toJSON: () => ({}),
+      }
+    })
+}
+
+async function flushObservedTableResize(container: HTMLElement) {
+  const targets = [
+    container.querySelector('.ant-table'),
+    container.querySelector('.ant-table-content'),
+  ].filter((element): element is HTMLElement => element instanceof HTMLElement)
+
+  if (!_rs) {
+    throw new Error('expected @rc-component/resize-observer _rs in tests')
+  }
+
+  await act(async () => {
+    _rs(targets.map((target) => ({ target }) as ResizeObserverEntry))
+    await Promise.resolve()
   })
 }
 
@@ -973,6 +1017,231 @@ describe('Table', () => {
     expect(
       container.querySelectorAll('.ant-table-cell-resize-filler'),
     ).toHaveLength(3)
+  })
+
+  it('keeps the column resize filler when an ancestor is display none', async () => {
+    const { container, rerender } = render(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+    expect(container.querySelector<HTMLElement>('col:nth-child(3)')?.style.width).toBe(
+      '320px',
+    )
+
+    rerender(
+      <div style={{ display: 'none' }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    const table = container.querySelector<HTMLElement>('.ant-table')
+    const content = container.querySelector<HTMLElement>('.ant-table-content')
+    setElementSize(table, 'offsetWidth', 0)
+    setElementSize(content, 'offsetWidth', 0)
+    setElementSize(content, 'clientWidth', 0)
+    mockTableBoxWidth(0)
+    await flushObservedTableResize(container)
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+    expect(container.querySelector<HTMLElement>('col:nth-child(3)')?.style.width).toBe(
+      '320px',
+    )
+  })
+
+  it('applies the post-hide viewport in the same update after the table is shown again', async () => {
+    const { container, rerender } = render(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    rerender(
+      <div style={{ display: 'none' }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+    mockTableBoxWidth(0)
+    await flushObservedTableResize(container)
+
+    rerender(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+    mockTableBoxWidth(800)
+    const table = container.querySelector<HTMLElement>('.ant-table')
+    const content = container.querySelector<HTMLElement>('.ant-table-content')
+    setElementSize(table, 'offsetWidth', 800)
+    setElementSize(content, 'offsetWidth', 800)
+    setElementSize(content, 'clientWidth', 800)
+    await flushObservedTableResize(container)
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+    expect(container.querySelector<HTMLElement>('col:nth-child(3)')?.style.width).toBe(
+      '520px',
+    )
+  })
+
+  it('applies a new viewport after hide even if no hidden resize event was delivered', async () => {
+    const { container, rerender } = render(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    rerender(
+      <div style={{ display: 'none' }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    rerender(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+    mockTableBoxWidth(800)
+    const table = container.querySelector<HTMLElement>('.ant-table')
+    const content = container.querySelector<HTMLElement>('.ant-table-content')
+    setElementSize(table, 'offsetWidth', 800)
+    setElementSize(content, 'offsetWidth', 800)
+    setElementSize(content, 'clientWidth', 800)
+    await flushObservedTableResize(container)
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+    expect(container.querySelector<HTMLElement>('col:nth-child(3)')?.style.width).toBe(
+      '520px',
+    )
+  })
+
+  it('applies a new viewport after ancestor display is restored without a resize event', async () => {
+    const { container, rerender } = render(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    rerender(
+      <div style={{ display: 'none' }}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    mockTableBoxWidth(800)
+    const table = container.querySelector<HTMLElement>('.ant-table')
+    const content = container.querySelector<HTMLElement>('.ant-table-content')
+    setElementSize(table, 'offsetWidth', 800)
+    setElementSize(content, 'offsetWidth', 800)
+    setElementSize(content, 'clientWidth', 800)
+
+    rerender(
+      <div>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+          columns={columns}
+          dataSource={data}
+        />
+      </div>,
+    )
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+    expect(container.querySelector<HTMLElement>('col:nth-child(3)')?.style.width).toBe(
+      '520px',
+    )
+  })
+
+  it('still removes the column resize filler when a visible viewport shrinks below the column sum', async () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+
+    mockTableBoxWidth(200)
+    const table = container.querySelector<HTMLElement>('.ant-table')
+    const content = container.querySelector<HTMLElement>('.ant-table-content')
+    setElementSize(table, 'offsetWidth', 200)
+    setElementSize(content, 'offsetWidth', 200)
+    setElementSize(content, 'clientWidth', 200)
+    await flushObservedTableResize(container)
+
+    expect(container.querySelector('.ant-table-cell-resize-filler')).toBeNull()
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(2)
   })
 
   it('derives a non-virtual fill body height from the owned layout nodes', () => {

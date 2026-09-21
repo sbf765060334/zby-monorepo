@@ -37,6 +37,7 @@ import {
   warning,
 } from '@rc-component/util';
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import Body from './Body';
 import ColGroup from './ColGroup';
 import { EXPAND_COLUMN, INTERNAL_HOOKS } from './constant';
@@ -93,6 +94,22 @@ const EMPTY_DATA = [];
 
 // Used for customize scroll
 const EMPTY_SCROLL_TARGET = {};
+
+function isNotLaidOut(element: HTMLElement | null) {
+  if (!element?.isConnected) {
+    return true;
+  }
+
+  let current: HTMLElement | null = element;
+  while (current) {
+    if (getComputedStyle(current).display === 'none') {
+      return true;
+    }
+    current = current.parentElement;
+  }
+
+  return false;
+}
 
 export type SemanticName = 'section' | 'title' | 'footer' | 'content';
 export type ComponentsSemantic = 'wrapper' | 'cell' | 'row';
@@ -588,49 +605,96 @@ const Table = <RecordType extends DefaultRecordType>(
     }
   };
 
-  const onFullTableResize = (offsetWidth?: number) => {
-    stickyRef.current?.checkScrollBarVisible();
+  const readMeasuredWidths = useEvent(() => {
+    if (isNotLaidOut(fullTableRef.current)) {
+      return null;
+    }
+
     let mergedWidth =
-      offsetWidth ||
       fullTableRef.current?.offsetWidth ||
       Math.floor(fullTableRef.current?.getBoundingClientRect().width ?? 0);
     if (useInternalHooks && getContainerWidth && fullTableRef.current) {
       mergedWidth = getContainerWidth(fullTableRef.current, mergedWidth) || mergedWidth;
     }
 
-    const mergedViewportWidth = resolveResizeViewportWidth(mergedWidth);
-
-    if (mergedWidth !== componentWidth) {
-      triggerOnScroll();
-      setComponentWidth(mergedWidth);
-    }
-
-    if (mergedViewportWidth !== resizeViewportWidth) {
-      setResizeViewportWidth(mergedViewportWidth);
-    }
-  };
-
-  const onResizeViewportResize = useEvent((offsetWidth: number, element: HTMLElement) => {
-    const nextViewportWidth =
-      element.clientWidth ||
-      componentWidth ||
-      Math.floor(offsetWidth) ||
-      Math.floor(element.getBoundingClientRect().width) ||
-      0;
-
-    if (nextViewportWidth !== resizeViewportWidth) {
-      setResizeViewportWidth(nextViewportWidth);
-    }
-
-    triggerOnScroll();
+    return {
+      mergedWidth,
+      mergedViewportWidth: resolveResizeViewportWidth(mergedWidth),
+    };
   });
 
-  // fix https://github.com/ant-design/ant-design/issues/49279
+  const commitMeasuredWidths = useEvent(() => {
+    const measured = readMeasuredWidths();
+    if (!measured) {
+      return;
+    }
+
+    stickyRef.current?.checkScrollBarVisible();
+
+    if (measured.mergedWidth !== componentWidth) {
+      triggerOnScroll();
+      setComponentWidth(measured.mergedWidth);
+    }
+
+    if (measured.mergedViewportWidth !== resizeViewportWidth) {
+      setResizeViewportWidth(measured.mergedViewportWidth);
+    }
+  });
+
+  const scheduleViewportMeasure = useEvent((element?: HTMLElement | null) => {
+    if (isNotLaidOut(element ?? fullTableRef.current)) {
+      return;
+    }
+
+    const measured = readMeasuredWidths();
+    if (
+      measured &&
+      measured.mergedWidth === componentWidth &&
+      measured.mergedViewportWidth === resizeViewportWidth
+    ) {
+      return;
+    }
+
+    // Visible box no longer matches the last commit (KeepAlive restore, window
+    // resize). Commit before the next paint, same as first-mount layout.
+    flushSync(() => {
+      commitMeasuredWidths();
+    });
+  });
+
+  // First mount measures before paint. Hidden `display: none` is ignored so filler stays.
   useLayoutEffect(() => {
     if (horizonScroll || columnResizeEnabled) {
-      onFullTableResize();
+      commitMeasuredWidths();
     }
-  }, [columnResizeEnabled, horizonScroll, visualHorizontalScroll]);
+  }, [columnResizeEnabled, commitMeasuredWidths, horizonScroll, visualHorizontalScroll]);
+
+  // KeepAlive toggles ancestor `display` without re-rendering Table. Catch that
+  // mutation in the same turn and measure before paint; ResizeObserver can be late.
+  useLayoutEffect(() => {
+    const element = fullTableRef.current;
+    if (!element || !(horizonScroll || columnResizeEnabled)) {
+      return;
+    }
+
+    const observers: MutationObserver[] = [];
+    let current = element.parentElement;
+    while (current && current !== document.body && current !== document.documentElement) {
+      const observer = new MutationObserver(() => {
+        scheduleViewportMeasure(element);
+      });
+      observer.observe(current, {
+        attributes: true,
+        attributeFilter: ['style', 'hidden'],
+      });
+      observers.push(observer);
+      current = current.parentElement;
+    }
+
+    return () => {
+      observers.forEach(observer => observer.disconnect());
+    };
+  }, [columnResizeEnabled, horizonScroll, scheduleViewportMeasure]);
   useLayoutEffect(() => {
     if (!visualHorizontalScroll) {
       setShadowStart(false);
@@ -826,9 +890,7 @@ const Table = <RecordType extends DefaultRecordType>(
     if (columnResizeEnabled && React.isValidElement(bodyContent)) {
       bodyContent = (
         <ResizeObserver
-          onResize={({ offsetWidth }, element) =>
-            onResizeViewportResize(offsetWidth, element)
-          }
+          onResize={(_size, element) => scheduleViewportMeasure(element)}
         >
           {bodyContent}
         </ResizeObserver>
@@ -979,7 +1041,7 @@ const Table = <RecordType extends DefaultRecordType>(
 
   if (horizonScroll) {
     fullTable = (
-      <ResizeObserver onResize={({ offsetWidth }) => onFullTableResize(offsetWidth)}>
+      <ResizeObserver onResize={() => scheduleViewportMeasure(fullTableRef.current)}>
         {fullTable}
       </ResizeObserver>
     );
