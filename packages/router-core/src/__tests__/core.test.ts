@@ -907,7 +907,7 @@ describe('createRouterCore', () => {
     expect(router.getState().activePage).toBe('/dashboard')
     expect(router.getState().navigationStatus).toBe('redirecting')
 
-    // StrictMode 重放或 Adapter 重复通知同一目录时不得重复导航。
+    // StrictMode 重放或 Provider 重复通知同一目录时不得重复导航。
     router.syncLocation({ pathname: '/settings', search: '?source=menu', hash: '' })
     expect(navigate).toHaveBeenCalledOnce()
 

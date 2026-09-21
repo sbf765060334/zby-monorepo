@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import { createRouterCore } from '@zby/router-core'
-import { RouterCoreProvider } from '@zby/router-core/react'
 import { ConfigProvider } from 'antd'
 import { StrictMode } from 'react'
 import { act, cleanup, render } from '@testing-library/react'
@@ -150,11 +149,9 @@ describe('PageLoadingProgress', () => {
     router.syncLocation({ pathname: '/first', search: '', hash: '' })
 
     render(
-      <RouterCoreProvider router={router}>
-        <PageLoadingProgressProvider>
-          <div />
-        </PageLoadingProgressProvider>
-      </RouterCoreProvider>,
+      <PageLoadingProgressProvider>
+        <div />
+      </PageLoadingProgressProvider>,
     )
 
     act(() => {

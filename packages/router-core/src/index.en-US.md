@@ -6,9 +6,11 @@ English | [简体中文](./index.zh-CN.md)
 
 Routing, tabs, KeepAlive, and persistence primitives for ZBY digital platforms.
 
+**Baseline: `@zby/router-core` exists only for the internal `ProLayout`.** It is not a standalone router package for external publication, and it does not support Vue or other frameworks. Applications should enter through `ReactRouterProLayout` from `@zby/pro`; do not take this package as a public product dependency.
+
 ## What does router-core do?
 
-A normal browser router mainly answers “which component belongs to this URL?” A platform application also needs to know which tab owns a page, whether concrete dynamic URLs share a tab, whether closing can be blocked, which inactive pages stay mounted, which fixed tabs and favorites return after a reload, and which routes are still accessible after authorization is applied. `@zby/router-core` keeps these platform rules in one UI-independent domain core.
+A normal browser router mainly answers “which component belongs to this URL?” A platform application also needs to know which tab owns a page, whether concrete dynamic URLs share a tab, whether closing can be blocked, which inactive pages stay mounted, which fixed tabs and favorites return after a reload, and which routes are still accessible after authorization is applied. `@zby/router-core` keeps these platform rules as the internal domain core of `ProLayout`.
 
 It is responsible for:
 
@@ -16,12 +18,12 @@ It is responsible for:
 - Resolving stable tab keys and managing tabs, active pages, and KeepAlive page descriptions.
 - Caching each tab's search/hash plus the last concrete pathname of a shared dynamic tab.
 - Managing fixed tabs, route favorites, close guards, close notifications, and persistence hydration.
-- Providing thin React and React Router bindings for precise subscriptions and real navigation.
+- Providing a React binding so `ProLayout` can subscribe precisely and Core can request real React Router navigation.
 
 It is not responsible for:
 
 - Calling `window.history` directly. A host such as React Router changes the real URL.
-- Rendering menus, tabs, 403/404 screens, or page containers. ProLayout or the application owns UI.
+- Rendering menus, tabs, 403/404 screens, or page containers. ProLayout owns that UI.
 - Choosing the source of authorization. It only calls the supplied `hasAuth` during creation.
 - Persisting arbitrary form state. KeepAlive only describes which pages should remain rendered.
 
@@ -29,7 +31,7 @@ For a beginner, one navigation can be read as four steps:
 
 1. Business code calls `router.jumpTo('/orders/42')`.
 2. RouterCore validates the route, authorization, and tab identity, then asks the host to change URL.
-3. React Router confirms the new location and the adapter calls `router.syncLocation(...)`.
+3. React Router confirms the new location and `RouterCoreProvider` calls `router.syncLocation(...)`.
 4. RouterCore updates the route chain, tabs, page descriptions, and page-level location; subscribed UI rerenders.
 
 ## Features
@@ -42,25 +44,24 @@ For a beginner, one navigation can be read as four steps:
 - KeepAlive page descriptions with include, exclude, and LRU limits.
 - Search, hash, and concrete dynamic-path restoration.
 - IndexedDB persistence by default, or a custom storage adapter.
-- Framework-neutral core plus React and React Router bindings.
+- An internal ProLayout core plus a React binding that connects React Router.
 
 ## Entry Points
 
 | Entry | Purpose |
 | --- | --- |
 | `@zby/router-core` | Core factory, registry helpers, storage adapters, and domain types |
-| `@zby/router-core/react` | Core and page providers plus selector hooks |
-| `@zby/router-core/react-router` | React Router host adapter and basename-aware href hook |
+| `@zby/router-core/react` | Provider, page context, selector hooks, and basename-aware href |
 
 ## Installation
 
-```bash
-pnpm add @zby/router-core
-```
+This package lives only inside the company monorepo and is consumed by ProLayout in `@zby/pro`. Do not install it on its own, and do not publish it as a standalone package.
 
-React bindings require React 18 or later. The React Router adapter supports React Router 6 and later.
+React bindings require React 18 or later and must run inside React Router 6 or later.
 
 ## Quick Start
+
+Application code should follow the `ProLayout` docs and use `ReactRouterProLayout`. The rest of this page describes core itself for ProLayout maintainers.
 
 Create the router once, outside the React render path:
 
@@ -107,7 +108,6 @@ Connect that stable instance to React and React Router:
 ```tsx
 // App.tsx
 import { RouterCoreProvider } from '@zby/router-core/react'
-import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { BrowserRouter } from 'react-router-dom'
 
 import { router } from './router'
@@ -121,9 +121,7 @@ export function App() {
           console.error(info.phase, error)
         }}
       >
-        <RouterCoreReactRouterAdapter>
-          <AppShell />
-        </RouterCoreReactRouterAdapter>
+        <AppShell />
       </RouterCoreProvider>
     </BrowserRouter>
   )
@@ -267,7 +265,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `store` | `RouterReadableStore<Route>` | property | Read-only Zustand store for selectors; it intentionally has no `setState`. |
 | `getState()` | none | `RouterCoreState<Route>` | Immediately reads the complete current state snapshot. |
 | `subscribe(listener)` | Zustand state listener | `() => void` | Notifies on real Store changes and returns an unsubscribe function. |
-| `bindHost(host)` | `RouterHost \| null` | `void` | Binds the real URL-changing host; `null` means unmounted. React Router users normally do not call it. |
+| `bindHost(host)` | `RouterHost \| null` | `void` | Binds the real URL-changing host; `null` means unmounted. `RouterCoreProvider` calls this automatically. |
 | `configureRuntime(options)` | `RouterRuntimeOptions` | `void` | Updates close/storage callbacks without publishing Store state. |
 | `hydrateStorage()` | none | `Promise<void>` | Loads fixed tabs, dynamic pathnames, and favorites. Concurrent calls share one task. |
 | `syncLocation(location)` | `RouterLocation` | `void` | Accepts the final host-confirmed URL. This is the only URL-to-Core entry. |
@@ -286,7 +284,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | Removes one guard, or every guard when `handler` is omitted. |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | Subscribes one retained page; immediately replays the current location when available. A throwing listener is logged and does not interrupt `syncLocation` or close notifications. |
 
-`jumpTo` and `smartNavigate` require a bound host. With React Router, `RouterCoreReactRouterAdapter` manages `bindHost` and `syncLocation` automatically. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning. A string target keeps `URL.search` as-is and does not re-encode it with `URLSearchParams`.
+`jumpTo` and `smartNavigate` require a bound host. `RouterCoreProvider` manages `bindHost` and `syncLocation` automatically, so it must sit inside React Router. A pathname request only enters `navigating`; it does not change `currentPathname`, `activeTabKey`, or `activePage` early. Only a host-confirmed `syncLocation` activates the target tab and page. An unresolved pattern without a cached concrete pathname does not navigate and writes a console warning. A string target keeps `URL.search` as-is and does not re-encode it with `URLSearchParams`.
 
 `closeTab` returning `true` means the close request was accepted. The last remaining tab returns `false` so it cannot bounce through `/` and reopen. An inactive tab is cleared before the call returns, unless a composite close still needs to navigate: that navigation runs first, and the tab is not cleared if it becomes active during execute. When closing the active tab, the current page remains until the host has left the closed page, and that navigation uses replace. A second close of the same tab is rejected until the host confirms, so a double-click or overlapping `closeThisTabOpenNewOne` cannot overwrite the pending close. A trailing slash or encoding difference still counts as the same page; leaving the closed page commits the close even if the confirmed string is not an exact match. An unavailable host or synchronous navigation failure never deletes the current page early.
 
@@ -407,7 +405,7 @@ Use commands to mutate domain state. The exposed Zustand store is read-only and 
 | `onTabClose` | `RouterRuntimeOptions['onTabClose']` | no | Notification after closing and required navigation complete; see “Close and callback types.” |
 | `onStorageError` | `RouterRuntimeOptions['onStorageError']` | no | Hydration/save failure notification; see “Close and callback types.” |
 
-The Provider does not accept fixed options such as `routes`, `keepAlive`, or `storageKey`; pass those only to `createRouterCore`.
+The Provider does not accept fixed options such as `routes`, `keepAlive`, or `storageKey`; pass those only to `createRouterCore`. The Provider must sit inside React Router: it injects `navigate` and forwards the confirmed location to `syncLocation`. Root and directory redirects run in an effect so they do not race BrowserRouter's history listener.
 
 ### `RouterPageProvider` Props
 
@@ -424,6 +422,7 @@ The dependent `RouterPage<Route>` fields are listed in “State field dependent 
 | Hook | Parameters | Return | Description |
 | --- | --- | --- | --- |
 | `useRouterCore<Route>()` | none | `RouterCore<Route>` | Reads the global Core; throws outside the Provider. |
+| `useRouterCoreCreateHref()` | none | `(path: string) => string` | Builds a native href with the basename / Hash prefix. |
 | `useRouterCoreSelector(selector, equalityFn?)` | state selector and optional comparator | `Selected` | Subscribes only to the selected global result. |
 | `useRouterPage<Route>()` | none | `RouterPageContextValue<Route>` | Reads the complete current-page Context; throws outside PageProvider. |
 | `useRouterPageSelector(selector, equalityFn?)` | page-context selector and optional comparator | `Selected` | Subscribes only to part of the current page. |
@@ -471,7 +470,7 @@ function TabBar() {
 }
 ```
 
-- `RouterCoreProvider` supplies a stable core, synchronizes runtime callbacks, and starts hydration.
+- `RouterCoreProvider` supplies a stable core, synchronizes runtime callbacks, starts hydration, and connects React Router.
 - `useRouterCore` returns the core instance and its commands.
 - `useRouterCoreSelector` precisely subscribes to selected global state.
 - `RouterPageProvider` wraps each page rendered by a custom KeepAlive UI.
@@ -509,29 +508,12 @@ function Pages() {
 }
 ```
 
-## React Router Binding
+## `useRouterCoreCreateHref`
 
-### `RouterCoreReactRouterAdapter` Props
-
-| Prop | Type | Required | Description |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | yes | Business subtree inside both React Router and `RouterCoreProvider`. The adapter adds no DOM. |
-
-### `useRouterCoreCreateHref`
-
-This Hook has no arguments and returns `(path: string) => string`. An application path beginning with `/` receives the BrowserRouter basename or HashRouter prefix. External URLs and other strings not beginning with `/` are returned unchanged.
-
-`RouterCoreReactRouterAdapter` must be inside both a React Router and `RouterCoreProvider`. It:
-
-1. Binds React Router's `navigate` as the core host.
-2. Sends every confirmed pathname, search, and hash to `syncLocation`.
-3. Performs root and directory redirects in an effect, after React Router installs its history listener.
-4. Unbinds the host on unmount; an uncommitted redirect is retried when a new host binds.
-
-`useRouterCoreCreateHref` returns a render-time function for native links. It preserves BrowserRouter basenames and HashRouter prefixes:
+This Hook has no arguments and returns `(path: string) => string`. An application path beginning with `/` receives the BrowserRouter basename or HashRouter prefix. External URLs and other strings not beginning with `/` are returned unchanged. It is a render-time capability and does not wait for Provider to bind navigate:
 
 ```tsx
-import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
+import { useRouterCoreCreateHref } from '@zby/router-core/react'
 
 function NativeLink() {
   const createHref = useRouterCoreCreateHref()

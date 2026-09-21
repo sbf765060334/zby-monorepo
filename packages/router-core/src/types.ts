@@ -10,8 +10,8 @@ import type { RouteRegistry } from './registry/types'
 /**
  * router-core 的公共领域类型。
  *
- * 本文件只描述平台路由、页签、页面实例和持久化契约，不引用 React、React Router
- * 或任何 UI 组件库。React 层和 ProLayout 后续都应通过这些类型与 core 交互。
+ * 本文件只描述平台路由、页签、页面实例和持久化契约，不引用 React 或任何 UI 组件库。
+ * React 层和 ProLayout 通过这些类型与 core 交互。
  */
 
 /**
@@ -136,7 +136,7 @@ export type RouterNavigateTarget =
   | string
   | { pathname: string, search?: string, hash?: string }
 
-/** 宿主导航函数；React Router Adapter 后续会实现该契约。 */
+/** 宿主导航函数；RouterCoreProvider 会把 React Router 的 navigate 注入进来。 */
 export type RouterNavigate = (
   target: RouterNavigateTarget,
   options?: { replace?: boolean },
@@ -145,7 +145,8 @@ export type RouterNavigate = (
 /**
  * 真正负责改变 URL 的宿主能力。
  *
- * Core 只会发出导航请求，不假设浏览器或具体框架；React Router Adapter 会实现它。
+ * Core 只会发出导航请求，不直接调用 React Router。RouterCoreProvider 在 React 树内
+ * 注入 navigate，并把确认后的 location 回传。
  */
 export interface RouterHost {
   /** core 执行最终地址变更时调用的底层导航能力。 */
@@ -153,7 +154,8 @@ export interface RouterHost {
   /**
    * 根路径或目录落点使用的重定向能力。
    *
-   * React Adapter 会把它转换为 effect 中的导航；其它宿主可以省略并复用 navigate。
+   * Provider 会把它转换为 effect 中的导航，避免早于 BrowserRouter 的 history 监听。
+   * 测试里可以省略并复用 navigate。
    */
   redirect?: RouterNavigate
 }
@@ -378,7 +380,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   hydrateStorage: () => Promise<void>
   /**
    * 接收宿主最新地址，并统一处理根路径/目录落点、路由层级、URL Cache、页签和页面实例。
-   * Adapter 不需要也不应分别触发内部 bootstrap 或 pathname 状态确认流程。
+   * 调用方不需要也不应分别触发内部 bootstrap 或 pathname 状态确认流程。
    */
   syncLocation: (location: RouterLocation) => void
   /** 请求完整平台导航；页签和页面只在宿主通过 syncLocation 确认后激活。未具体化且无缓存的 pattern 会被忽略。字符串查询串按 URL.search 保留。 */

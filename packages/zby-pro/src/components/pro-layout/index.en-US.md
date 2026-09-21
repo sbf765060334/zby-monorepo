@@ -9,7 +9,7 @@ description: An application shell for menus, global tabs, breadcrumbs, retained 
 
 Use ProLayout when a back-office application needs a consistent navigation shell. It provides an icon sider, multilevel drawer menus, global tabs, pinning and drag sorting, menu favorites, breadcrumbs, retained pages, exception pages, and browser-title synchronization.
 
-`ReactRouterProLayout` is the recommended entry point. Create one stable `RouterCore` outside the React tree, then pass that instance to the layout. Route registration, authorization, tab state, KeepAlive, and persistence belong to `@zby/router-core`. ProLayout is responsible only for React Router composition, UI, and browser effects.
+`ReactRouterProLayout` is the recommended entry point. Create one stable `RouterCore` outside the React tree, then pass that instance to the layout. `@zby/router-core` is ProLayout's internal engine and is not published as a standalone package. Route registration, authorization, tab state, KeepAlive, and persistence belong to it; ProLayout owns UI and browser effects.
 
 ## Basic Usage
 
@@ -74,7 +74,7 @@ export function App() {
 }
 ```
 
-`ReactRouterProLayout` already installs `RouterCoreProvider` and `RouterCoreReactRouterAdapter`. Do not install either provider again around it.
+`ReactRouterProLayout` already installs `RouterCoreProvider`. Do not wrap another provider around it.
 
 ## Lazy Route Loading
 

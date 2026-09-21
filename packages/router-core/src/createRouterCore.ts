@@ -84,13 +84,13 @@ interface ExecuteNavigationPlanOptions {
 interface RouterRuntime {
   /** 实际执行地址变化的宿主；未绑定时业务导航安全 no-op。 */
   host: RouterHost | null
-  /** 最近一次完成落点判断的 pathname，用于过滤 StrictMode 与 Adapter 的重复通知。 */
+  /** 最近一次完成落点判断的 pathname，用于过滤 StrictMode 与 Provider 的重复通知。 */
   lastBootstrappedPathname: string | null
   /**
    * 最近一次由宿主确认的标准化 location。
    *
    * 页面实例可能晚于首次 syncLocation 创建；保留该快照后，新订阅的页面 listener
-   * 可以立即补收当前地址，而不要求 Adapter 额外重放一次 location。
+   * 可以立即补收当前地址，而不要求 Provider 额外重放一次 location。
    */
   latestLocation: RouterLocationEventPayload | null
   /** 始终使用最新引用的页签关闭回调。 */
@@ -210,11 +210,11 @@ export function createRouterCore<Route extends RouterRoute>(
     toggleFixed,
   } = tabs
 
-  /** 由宿主 Adapter 在挂载/卸载时绑定或清除底层导航能力。 */
+  /** 由 RouterCoreProvider 在挂载/卸载时绑定或清除底层导航能力。 */
   function bindHost(host: RouterHost | null) {
     runtime.host = host
     if (!host && getState().navigationStatus !== 'settled') {
-      // redirect effect 提交前卸载时，请求只存在于旧 Adapter。清除去重标记，使新 Host
+      // redirect effect 提交前卸载时，请求只存在于旧 Provider。清除去重标记，使新 Host
       // 对同一入口 pathname 的首次同步可以重新产生重定向请求。
       runtime.lastBootstrappedPathname = null
       setNavigationStatus('bootstrapping')
@@ -233,8 +233,8 @@ export function createRouterCore<Route extends RouterRoute>(
   /**
    * 请求宿主执行根路径或目录重定向。
    *
-   * React Host 使用专用 redirect 把真实导航延后到 effect；其它 Host 继续兼容原有
-   * navigate 契约。replace 避免默认落点在浏览器历史中留下无法停留的中间记录。
+   * React 绑定使用专用 redirect 把真实导航延后到 effect；测试里可以只提供 navigate。
+   * replace 避免默认落点在浏览器历史中留下无法停留的中间记录。
    */
   function requestRedirect(pathname: string) {
     const host = runtime.host
@@ -280,8 +280,8 @@ export function createRouterCore<Route extends RouterRoute>(
   function bootstrapByPathname(pathname: string): BootstrapResult {
     if (pathname === '/') {
       if (registry.defaultRoute !== '/') {
-        // Core 可以早于宿主 Adapter 创建。此时不能把未执行的默认页导航记为已完成，
-        // 否则 host 绑定后再次同步相同根路径也不会重试。
+      // Core 可以早于 Provider 创建。此时不能把未执行的默认页导航记为已完成，
+      // 否则 host 绑定后再次同步相同根路径也不会重试。
         if (!runtime.host)
           return 'deferred'
 
@@ -359,7 +359,7 @@ export function createRouterCore<Route extends RouterRoute>(
     }
 
     // currentPathname 会在 bootstrap 前写入 Store，因此不能用 Store 字段判断本次落点
-    // 是否已经处理；私有标记只过滤 StrictMode、重复 Adapter 通知以及单纯 search/hash
+    // 是否已经处理；私有标记只过滤 StrictMode、重复 Provider 通知以及单纯 search/hash
     // 变化，同时允许浏览器离开后再次进入同一路径时重新处理落点。
     if (runtime.lastBootstrappedPathname !== pathname) {
       const bootstrapResult = bootstrapByPathname(pathname)

@@ -10,7 +10,7 @@ description: 面向中后台应用的菜单、全局页签、面包屑、页面�
 
 ProLayout 适用于需要统一导航框架的中后台应用。它提供左侧图标菜单、多级 Drawer 菜单、全局页签、固定与拖拽排序、菜单收藏、面包屑、页面保活、异常页和浏览器标题同步。
 
-`ReactRouterProLayout` 是推荐入口。业务先在 React 树外创建稳定的 `RouterCore`，再把实例交给布局。路由注册、权限、页签状态、KeepAlive 和持久化由 `@zby/router-core` 管理；ProLayout 只负责 React Router 装配、界面与浏览器副作用。
+`ReactRouterProLayout` 是推荐入口。业务先在 React 树外创建稳定的 `RouterCore`，再把实例交给布局。`@zby/router-core` 是 ProLayout 的内部引擎，不对外单独发布；路由注册、权限、页签状态、KeepAlive 和持久化由它管理，ProLayout 负责界面与浏览器副作用。
 
 ## 基础用法
 
@@ -75,7 +75,7 @@ export function App() {
 }
 ```
 
-`ReactRouterProLayout` 内部已经装配 `RouterCoreProvider` 和 `RouterCoreReactRouterAdapter`。不要在外层重复装配这两个 Provider。
+`ReactRouterProLayout` 内部已经装配 `RouterCoreProvider`。不要在外层再包一层 Provider。
 
 ## 路由懒加载
 

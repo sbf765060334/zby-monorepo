@@ -7,9 +7,11 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { RouterRoute } from '../../types'
+import type { ReactNode } from 'react'
+import type { RouterCore, RouterRoute, RouterRuntimeOptions } from '../../types'
 import { createRouterCore } from '../../createRouterCore'
 import {
   RouterCoreProvider,
@@ -37,6 +39,27 @@ afterEach(() => {
   cleanup()
 })
 
+/** Provider 必须位于 React Router 内，才能注入 navigate 并同步 location。 */
+function renderWithProvider<Route extends RouterRoute>(
+  router: RouterCore<Route>,
+  ui: ReactNode,
+  options?: {
+    initialEntries?: string[]
+    onTabClose?: RouterRuntimeOptions['onTabClose']
+  },
+) {
+  return render(
+    <MemoryRouter initialEntries={options?.initialEntries ?? ['/']}>
+      <RouterCoreProvider
+        router={router}
+        onTabClose={options?.onTabClose}
+      >
+        {ui}
+      </RouterCoreProvider>
+    </MemoryRouter>,
+  )
+}
+
 /** 验证全局 Provider 只负责连接稳定实例和订阅，不偷偷重建 Core。 */
 describe('RouterCoreProvider', () => {
   /** Provider 应原样提供实例，并把新增或移除的运行时回调同步给 Core。 */
@@ -58,14 +81,7 @@ describe('RouterCoreProvider', () => {
       return null
     }
 
-    const view = render(
-      <RouterCoreProvider
-        router={router}
-        onTabClose={onTabClose}
-      >
-        <Probe />
-      </RouterCoreProvider>,
-    )
+    const view = renderWithProvider(router, <Probe />, { onTabClose })
 
     expect(receivedRouter).toBe(router)
     expect(configureRuntime).toHaveBeenLastCalledWith({
@@ -75,9 +91,11 @@ describe('RouterCoreProvider', () => {
     await waitFor(() => expect(hydrateStorage).toHaveBeenCalled())
 
     view.rerender(
-      <RouterCoreProvider router={router}>
-        <Probe />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/']}>
+        <RouterCoreProvider router={router}>
+          <Probe />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
 
     // 移除回调 prop 时仍显式传入 undefined，core 才能清理旧回调引用。
@@ -103,11 +121,7 @@ describe('RouterCoreProvider', () => {
       return <span>{value}</span>
     }
 
-    const view = render(
-      <RouterCoreProvider router={router}>
-        <Probe source="pathname" />
-      </RouterCoreProvider>,
-    )
+    const view = renderWithProvider(router, <Probe source="pathname" />)
 
     act(() => {
       router.syncLocation({ pathname: '/home', search: '', hash: '' })
@@ -122,9 +136,11 @@ describe('RouterCoreProvider', () => {
 
     // Store 快照没有再次变化，但 selector 捕获的 source 已变化，结果必须立即重算。
     view.rerender(
-      <RouterCoreProvider router={router}>
-        <Probe source="storageKey" />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/']}>
+        <RouterCoreProvider router={router}>
+          <Probe source="storageKey" />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
     expect(screen.getByText('default')).toBeTruthy()
   })
@@ -160,12 +176,14 @@ describe('RouterPageProvider', () => {
     const firstPage = router.getState().pages[0]
     expect(firstPage).toBeDefined()
 
-    const view = render(
-      <RouterCoreProvider router={router}>
+    const view = renderWithProvider(
+      router,
+      (
         <RouterPageProvider page={firstPage!} active>
           <PageProbe />
         </RouterPageProvider>
-      </RouterCoreProvider>,
+      ),
+      { initialEntries: ['/project/1?tab=base#detail'] },
     )
 
     expect(
@@ -178,11 +196,13 @@ describe('RouterPageProvider', () => {
     const nextPage = router.getState().pages[0]
 
     view.rerender(
-      <RouterCoreProvider router={router}>
-        <RouterPageProvider page={nextPage!} active={false}>
-          <PageProbe />
-        </RouterPageProvider>
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/project/1?tab=base#detail']}>
+        <RouterCoreProvider router={router}>
+          <RouterPageProvider page={nextPage!} active={false}>
+            <PageProbe />
+          </RouterPageProvider>
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
 
     expect(
@@ -225,8 +245,16 @@ describe('RouterPageProvider', () => {
       )
     }
 
-    const view = render(<PageTree show={false} />)
-    view.rerender(<PageTree show />)
+    const view = render(
+      <MemoryRouter initialEntries={['/project/1?tab=base#detail']}>
+        <PageTree show={false} />
+      </MemoryRouter>,
+    )
+    view.rerender(
+      <MemoryRouter initialEntries={['/project/1?tab=base#detail']}>
+        <PageTree show />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByText('true:/project/1?tab=base#detail')).toBeTruthy()
     const renderCountAfterMount = probeRenderCount
@@ -244,9 +272,8 @@ describe('RouterPageProvider', () => {
 
   /** 关页再开到新真实地址后，页面 Context 必须拿到确认后的 location。 */
   it('updates page location after close-and-open replacement', async () => {
-    const navigate = vi.fn()
     const router = createRouterCore({ routes, storageAdapter: false })
-    router.bindHost({ navigate })
+    router.bindHost({ navigate: vi.fn() })
     router.syncLocation({
       pathname: '/project/1',
       search: '',
@@ -281,11 +308,7 @@ describe('RouterPageProvider', () => {
       )
     }
 
-    render(
-      <RouterCoreProvider router={router}>
-        <Pages />
-      </RouterCoreProvider>,
-    )
+    renderWithProvider(router, <Pages />, { initialEntries: ['/project/1'] })
     expect(screen.getByText('/project/1:/project/1')).toBeTruthy()
 
     await act(async () => {

@@ -24,7 +24,6 @@ export default defineConfig({
     alias: [
       { find: '@zby/hooks', replacement: sourcePath('../../packages/hooks/index.ts') },
       { find: '@zby/intl', replacement: sourcePath('../../packages/zby-intl/src/index.ts') },
-      { find: '@zby/router-core/react-router', replacement: sourcePath('../../packages/router-core/src/react-router/index.ts') },
       { find: '@zby/router-core/react', replacement: sourcePath('../../packages/router-core/src/react/index.ts') },
       { find: '@zby/router-core', replacement: sourcePath('../../packages/router-core/src/index.ts') },
       { find: /^@zby\/pro\/locale\/(.*)$/, replacement: sourcePath('../../packages/zby-pro/src/locale/$1.ts') },

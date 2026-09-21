@@ -4,6 +4,7 @@ import { createRouterCore } from '@zby/router-core'
 import { RouterCoreProvider } from '@zby/router-core/react'
 import { ZbyIntlProvider } from '@zby/intl'
 import { act, cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import NProgress from 'nprogress'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -52,9 +53,11 @@ describe('createLazyRouteComponent', () => {
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
 
     render(
-      <RouterCoreProvider router={router}>
-        <PageContent prefixCls="test-layout" />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/lazy']}>
+        <RouterCoreProvider router={router}>
+          <PageContent prefixCls="test-layout" />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
 
     expect((await screen.findByTestId('lazy-page')).textContent).toBe('Lazy page')
@@ -79,9 +82,11 @@ describe('createLazyRouteComponent', () => {
     const router = createPageRouter('/retry', LazyPage)
     router.syncLocation({ pathname: '/retry', search: '', hash: '' })
     render(
-      <RouterCoreProvider router={router}>
-        <PageContent prefixCls="test-layout" />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/retry']}>
+        <RouterCoreProvider router={router}>
+          <PageContent prefixCls="test-layout" />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
 
     expect((await screen.findByTestId('retry-page')).textContent).toBe('Retry page')
@@ -117,9 +122,11 @@ describe('createLazyRouteComponent', () => {
         resources={zbyProIntlResources}
       >
         <PageLoadingProgressProvider>
-          <RouterCoreProvider router={router}>
-            <PageContent prefixCls="test-layout" />
-          </RouterCoreProvider>
+          <MemoryRouter initialEntries={['/retry-render/1']}>
+            <RouterCoreProvider router={router}>
+              <PageContent prefixCls="test-layout" />
+            </RouterCoreProvider>
+          </MemoryRouter>
         </PageLoadingProgressProvider>
       </ZbyIntlProvider>,
     )
@@ -171,16 +178,18 @@ describe('createLazyRouteComponent', () => {
     const router = createRouterCore({ routes, storageAdapter: false, keepAlive: true })
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
     const { container } = render(
-      <RouterCoreProvider router={router}>
-        <PageContent
-          prefixCls="test-layout"
-          pageLoading={{
-            render: ({ pathname }) => (
-              <div data-testid="custom-loading">Loading {pathname}</div>
-            ),
-          }}
-        />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/lazy']}>
+        <RouterCoreProvider router={router}>
+          <PageContent
+            prefixCls="test-layout"
+            pageLoading={{
+              render: ({ pathname }) => (
+                <div data-testid="custom-loading">Loading {pathname}</div>
+              ),
+            }}
+          />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
 
     expect(screen.getByTestId('custom-loading').textContent).toBe('Loading /lazy')
@@ -220,9 +229,11 @@ describe('createLazyRouteComponent', () => {
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
     const { container } = render(
       <PageLoadingProgressProvider>
-        <RouterCoreProvider router={router}>
-          <PageContent prefixCls="test-layout" pageLoading={false} />
-        </RouterCoreProvider>
+        <MemoryRouter initialEntries={['/lazy']}>
+          <RouterCoreProvider router={router}>
+            <PageContent prefixCls="test-layout" pageLoading={false} />
+          </RouterCoreProvider>
+        </MemoryRouter>
       </PageLoadingProgressProvider>,
     )
 
@@ -251,9 +262,11 @@ describe('createLazyRouteComponent', () => {
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
     render(
       <PageLoadingProgressProvider>
-        <RouterCoreProvider router={router}>
-          <PageContent prefixCls="test-layout" />
-        </RouterCoreProvider>
+        <MemoryRouter initialEntries={['/lazy']}>
+          <RouterCoreProvider router={router}>
+            <PageContent prefixCls="test-layout" />
+          </RouterCoreProvider>
+        </MemoryRouter>
       </PageLoadingProgressProvider>,
     )
     await flushMicrotasks()
@@ -299,12 +312,14 @@ describe('createLazyRouteComponent', () => {
         resources={zbyProIntlResources}
       >
         <PageLoadingProgressProvider>
-          <RouterCoreProvider router={router}>
-            <PageContent
-              prefixCls="test-layout"
-              onPageError={onPageError}
-            />
-          </RouterCoreProvider>
+          <MemoryRouter initialEntries={['/lazy']}>
+            <RouterCoreProvider router={router}>
+              <PageContent
+                prefixCls="test-layout"
+                onPageError={onPageError}
+              />
+            </RouterCoreProvider>
+          </MemoryRouter>
         </PageLoadingProgressProvider>
       </ZbyIntlProvider>,
     )

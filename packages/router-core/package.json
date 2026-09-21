@@ -1,7 +1,7 @@
 {
   "name": "@zby/router-core",
   "version": "0.1.0",
-  "description": "Routing, tabs, keep-alive and persistence core for ZBY digital platforms.",
+  "description": "Internal routing, tabs, keep-alive and persistence core for ZBY ProLayout. Not a standalone public package.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -16,11 +16,6 @@
       "types": "./dist/react/index.d.mts",
       "import": "./dist/react/index.mjs",
       "require": "./dist/react/index.cjs"
-    },
-    "./react-router": {
-      "types": "./dist/react-router/index.d.mts",
-      "import": "./dist/react-router/index.mjs",
-      "require": "./dist/react-router/index.cjs"
     },
     "./package.json": "./package.json"
   },

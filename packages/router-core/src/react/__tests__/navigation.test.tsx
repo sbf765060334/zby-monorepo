@@ -1,5 +1,5 @@
 /**
- * 文件职责：验证 React Router Adapter 的地址同步、重定向、history 与宿主解绑行为。
+ * 文件职责：验证 RouterCoreProvider 与 React Router 的地址同步、重定向、history 与宿主解绑。
  *
  * 这些测试从真实 React 组件边界观察 Core 和 React Router 是否形成闭环，防止只在单元
  * 函数层面正确、挂到 BrowserRouter 或 MemoryRouter 后却出现时序问题。
@@ -17,14 +17,13 @@ import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRouterCore } from '../../createRouterCore'
-import { RouterCoreProvider } from '../../react'
-import type { RouterRoute, RouterStorageAdapter } from '../../types'
 import {
-  RouterCoreReactRouterAdapter,
+  RouterCoreProvider,
   useRouterCoreCreateHref,
 } from '../index'
+import type { RouterRoute, RouterStorageAdapter } from '../../types'
 
-/** Adapter 场景共用的静态首页与共享动态项目页。 */
+/** Provider 导航场景共用的静态首页与共享动态项目页。 */
 const routes: RouterRoute[] = [
   { path: '/home', title: '首页', element: 'home' },
   { path: '/project/:id', title: '项目', element: 'project' },
@@ -37,7 +36,7 @@ afterEach(() => {
 })
 
 /** 这一组验证 Core 命令和 React Router 地址能形成完整的双向同步。 */
-describe('RouterCoreReactRouterAdapter', () => {
+describe('RouterCoreProvider navigation', () => {
   /** StrictMode 首屏根路径重定向应只提交一次，并最终等待 `/home` 落定。 */
   it('settles an initial root redirect after BrowserRouter starts listening', async () => {
     window.history.replaceState(null, '', '/')
@@ -53,9 +52,7 @@ describe('RouterCoreReactRouterAdapter', () => {
       <StrictMode>
         <BrowserRouter>
           <RouterCoreProvider router={router}>
-            <RouterCoreReactRouterAdapter>
-              <NavigationProbe router={router} />
-            </RouterCoreReactRouterAdapter>
+            <NavigationProbe router={router} />
           </RouterCoreProvider>
         </BrowserRouter>
       </StrictMode>,
@@ -114,9 +111,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     render(
       <MemoryRouter initialEntries={['/project/1']}>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <span>content</span>
-          </RouterCoreReactRouterAdapter>
+          <span>content</span>
         </RouterCoreProvider>
       </MemoryRouter>,
     )
@@ -146,9 +141,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     render(
       <BrowserRouter>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <NavigationProbe router={router} />
-          </RouterCoreReactRouterAdapter>
+          <NavigationProbe router={router} />
         </RouterCoreProvider>
       </BrowserRouter>,
     )
@@ -164,7 +157,7 @@ describe('RouterCoreReactRouterAdapter', () => {
       expect(screen.getByTestId('location').textContent).toBe('/project/42')
       expect(router.getState().currentPathname).toBe('/project/42')
     })
-    // 普通 BrowserRouter 的 useNavigate 引用会随 pathname 变化；Adapter 应只更新
+    // 普通 BrowserRouter 的 useNavigate 引用会随 pathname 变化；Provider 应只更新
     // navigateRef，不能把同一个 RouterCore 宿主重复解绑和绑定。
     expect(bindHost).toHaveBeenCalledTimes(1)
 
@@ -184,9 +177,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     render(
       <MemoryRouter initialEntries={['/home']}>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <NavigationProbe router={router} />
-          </RouterCoreReactRouterAdapter>
+          <NavigationProbe router={router} />
         </RouterCoreProvider>
       </MemoryRouter>,
     )
@@ -217,9 +208,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     render(
       <MemoryRouter initialEntries={['/home']}>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <NavigationProbe router={router} />
-          </RouterCoreReactRouterAdapter>
+          <NavigationProbe router={router} />
         </RouterCoreProvider>
       </MemoryRouter>,
     )
@@ -253,9 +242,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     render(
       <MemoryRouter initialEntries={['/home']}>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <NavigationProbe router={router} />
-          </RouterCoreReactRouterAdapter>
+          <NavigationProbe router={router} />
         </RouterCoreProvider>
       </MemoryRouter>,
     )
@@ -283,7 +270,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     })
   })
 
-  /** 原生 href 首屏就包含 basename，Adapter 卸载时还必须清除失效宿主。 */
+  /** 原生 href 首屏就包含 basename，Provider 卸载时还必须清除失效宿主。 */
   it('derives render-time href from basename and unbinds the navigation host', () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const bindHost = vi.spyOn(router, 'bindHost')
@@ -291,9 +278,7 @@ describe('RouterCoreReactRouterAdapter', () => {
     const view = render(
       <MemoryRouter basename="/platform" initialEntries={['/platform/home']}>
         <RouterCoreProvider router={router}>
-          <RouterCoreReactRouterAdapter>
-            <HrefProbe />
-          </RouterCoreReactRouterAdapter>
+          <HrefProbe />
         </RouterCoreProvider>
       </MemoryRouter>,
     )

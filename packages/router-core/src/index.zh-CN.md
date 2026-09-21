@@ -6,9 +6,11 @@
 
 面向 ZBY 数字化平台的路由、页签、KeepAlive 与持久化基础能力。
 
+**基线：`@zby/router-core` 只给公司内部的 `ProLayout` 使用。** 它不是可单独发布的通用路由包，也不接 Vue 或其它框架。业务请通过 `@zby/pro` 的 `ReactRouterProLayout` 接入；不要把它当成独立产品依赖。
+
 ## router-core 是做什么的？
 
-普通浏览器路由器主要解决“URL 对应哪个组件”。后台平台还会遇到更多问题：一个页面对应哪个页签、动态参数页是否共用页签、关闭前能不能拦截、切走后页面是否保留、固定页签和收藏下次打开是否恢复，以及权限变化后哪些路由还能访问。`@zby/router-core` 把这些平台级规则集中到一个与 UI 框架无关的领域核心中。
+普通浏览器路由器主要解决“URL 对应哪个组件”。后台平台还会遇到更多问题：一个页面对应哪个页签、动态参数页是否共用页签、关闭前能不能拦截、切走后页面是否保留、固定页签和收藏下次打开是否恢复，以及权限变化后哪些路由还能访问。`@zby/router-core` 把这些平台级规则集中起来，作为 `ProLayout` 的内部领域核心。
 
 它负责：
 
@@ -16,12 +18,12 @@
 - 根据真实 pathname 计算稳定页签 key，并管理页签、活动页面和 KeepAlive 页面描述。
 - 缓存每个页签自己的 search、hash，以及共享动态页签最后使用的真实 pathname。
 - 管理固定页签、收藏路由、关闭守卫、关闭通知和持久化 hydration。
-- 给 React 和 React Router 提供薄适配层，让 UI 能精确订阅状态、让 Core 能请求真实导航。
+- 给 `ProLayout` 提供 React 绑定，让布局能精确订阅状态，并把 React Router 的真实导航交给 Core。
 
 它不负责：
 
 - 不直接调用 `window.history`，真实 URL 由 React Router 等宿主修改。
-- 不渲染菜单、页签、403/404 或页面容器，这些 UI 由 ProLayout 或业务应用实现。
+- 不渲染菜单、页签、403/404 或页面容器，这些 UI 由 ProLayout 实现。
 - 不替业务决定权限来源，只在创建时调用传入的 `hasAuth`。
 - 不保存任意页面表单状态；KeepAlive 只维护仍应渲染哪些页面的描述。
 
@@ -29,7 +31,7 @@
 
 1. 业务调用 `router.jumpTo('/orders/42')`。
 2. RouterCore 校验路由、权限和页签身份，再请求宿主改变 URL。
-3. React Router 确认新地址，并通过 Adapter 调用 `router.syncLocation(...)`。
+3. React Router 确认新地址，`RouterCoreProvider` 调用 `router.syncLocation(...)`。
 4. RouterCore 更新菜单链、页签、页面描述和页面级 location，UI 订阅后重新渲染。
 
 ## 支持能力
@@ -42,25 +44,24 @@
 - 支持 include、exclude 与 LRU 上限的 KeepAlive 页面描述。
 - search、hash 和动态真实 pathname 恢复。
 - 默认 IndexedDB 持久化，也可传入自定义存储适配器。
-- 与框架无关的 core，以及 React、React Router 绑定层。
+- 仅作为 ProLayout 内部核心，以及把 React Router 接进 Core 的 React 绑定层。
 
 ## 包入口
 
 | 入口 | 作用 |
 | --- | --- |
 | `@zby/router-core` | Core 工厂、路由查询、存储适配器和领域类型 |
-| `@zby/router-core/react` | Core/Page Provider 与精确订阅 Hook |
-| `@zby/router-core/react-router` | React Router 宿主适配器与 basename-aware href Hook |
+| `@zby/router-core/react` | Provider、页面 Context、精确订阅 Hook，以及 basename-aware href |
 
 ## 安装
 
-```bash
-pnpm add @zby/router-core
-```
+本包只存在于公司 monorepo 内部，由 `@zby/pro` 的 ProLayout 依赖。不要单独安装，也不要作为独立包发布给外部使用。
 
-React 绑定要求 React 18 及以上版本；React Router 适配层支持 React Router 6 及以上版本。
+React 绑定要求 React 18 及以上版本，并且必须位于 React Router 6 及以上版本的 Router 内部。
 
 ## 快速开始
+
+业务接入请看 `ProLayout` 文档，使用 `ReactRouterProLayout`。下面只描述 core 自身能力，供 ProLayout 维护者阅读。
 
 在 React 渲染流程之外只创建一次 router：
 
@@ -107,7 +108,6 @@ export const router = createRouterCore({
 ```tsx
 // App.tsx
 import { RouterCoreProvider } from '@zby/router-core/react'
-import { RouterCoreReactRouterAdapter } from '@zby/router-core/react-router'
 import { BrowserRouter } from 'react-router-dom'
 
 import { router } from './router'
@@ -121,9 +121,7 @@ export function App() {
           console.error(info.phase, error)
         }}
       >
-        <RouterCoreReactRouterAdapter>
-          <AppShell />
-        </RouterCoreReactRouterAdapter>
+        <AppShell />
       </RouterCoreProvider>
     </BrowserRouter>
   )
@@ -267,7 +265,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `store` | `RouterReadableStore<Route>` | 属性 | 给 React selector 使用的只读 Zustand Store，不包含 `setState`。 |
 | `getState()` | 无 | `RouterCoreState<Route>` | 立即读取当前完整状态快照。 |
 | `subscribe(listener)` | Zustand 状态 listener | `() => void` | 每次 Store 真正变化时通知；返回取消订阅函数。 |
-| `bindHost(host)` | `RouterHost \| null` | `void` | 绑定真正能改变 URL 的宿主；传 `null` 表示宿主卸载。React Router 用户通常不用手动调用。 |
+| `bindHost(host)` | `RouterHost \| null` | `void` | 绑定真正能改变 URL 的宿主；传 `null` 表示宿主卸载。`RouterCoreProvider` 会自动调用，业务通常不必手动调用。 |
 | `configureRuntime(options)` | `RouterRuntimeOptions` | `void` | 更新允许随 React render 变化的关闭/存储错误回调，不会发布 Store 状态。 |
 | `hydrateStorage()` | 无 | `Promise<void>` | 加载固定页签、动态 pathname 和收藏；并发调用共享同一个任务。 |
 | `syncLocation(location)` | `RouterLocation` | `void` | 接收宿主最终确认的地址，这是浏览器地址进入 Core 的唯一入口。 |
@@ -286,7 +284,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
 | `subscribePageLocation(tabKey, listener)` | `string, (location) => void` | `() => void` | 订阅一个保留页面自己的完整地址；若已有当前地址，会立即补发一次。listener 抛错只记日志，不会打断 `syncLocation` 或关页通知。 |
 
-`jumpTo` 和 `smartNavigate` 需要先绑定宿主。使用 React Router 时，`RouterCoreReactRouterAdapter` 会自动管理 `bindHost` 和 `syncLocation`。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。字符串形式的查询串按 `URL.search` 保留，不再经 `URLSearchParams` 重编码。
+`jumpTo` 和 `smartNavigate` 需要先绑定宿主。`RouterCoreProvider` 会自动管理 `bindHost` 和 `syncLocation`，因此必须位于 React Router 内部。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。字符串形式的查询串按 `URL.search` 保留，不再经 `URLSearchParams` 重编码。
 
 `closeTab` 返回 `true` 表示关闭请求已被接受。只剩一个页签时返回 `false`，避免关完经根路径重定向后再被打开。非活动页签普通关闭会在返回前完成清理；若组合命令还要跳转，则先导航，成功后再删。导航过程中该页签若已成为活动页则不再删除。关闭活动页签时，当前页会保留到宿主确认已经离开被关页，这次跳转使用 replace。宿主确认前同一页签不能再关一次，避免连点或交错的 `closeThisTabOpenNewOne` 覆盖 pending。尾斜杠或编码差异仍视为同一页；已经离开被关页则提交删除，不要求回传字符串精确等于下一页。宿主不可用或导航同步失败时不会提前删除当前页。
 
@@ -407,7 +405,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `onTabClose` | `RouterRuntimeOptions['onTabClose']` | 否 | 页签已经关闭并完成必要导航后的通知；详细参数见前面的“关闭与回调类型”。 |
 | `onStorageError` | `RouterRuntimeOptions['onStorageError']` | 否 | hydration 或保存失败通知；详细参数见前面的“关闭与回调类型”。 |
 
-Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这些 Props 只能传给 `createRouterCore`。
+Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这些 Props 只能传给 `createRouterCore`。Provider 必须位于 React Router 内部：它会注入 `navigate`，并把确认后的 location 交给 `syncLocation`。首屏根路径或目录重定向会排到 effect 中执行，避免早于 BrowserRouter 的 history 监听。
 
 ### `RouterPageProvider` Props
 
@@ -424,6 +422,7 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 | Hook | 参数 | 返回值 | 说明 |
 | --- | --- | --- | --- |
 | `useRouterCore<Route>()` | 无 | `RouterCore<Route>` | 读取当前全局 Core；Provider 外调用会抛错。 |
+| `useRouterCoreCreateHref()` | 无 | `(path: string) => string` | 生成带 basename / Hash 前缀的原生 href。 |
 | `useRouterCoreSelector(selector, equalityFn?)` | 状态选择函数、可选比较函数 | `Selected` | 只订阅全局状态中真正关心的结果。 |
 | `useRouterPage<Route>()` | 无 | `RouterPageContextValue<Route>` | 读取当前页面完整 Context；PageProvider 外调用会抛错。 |
 | `useRouterPageSelector(selector, equalityFn?)` | 页面 Context 选择函数、可选比较函数 | `Selected` | 只订阅当前页面的某一部分。 |
@@ -470,7 +469,7 @@ function TabBar() {
 }
 ```
 
-- `RouterCoreProvider` 提供稳定 core、同步运行时回调并启动 hydration。
+- `RouterCoreProvider` 提供稳定 core、同步运行时回调、启动 hydration，并把 React Router 接到 Core。
 - `useRouterCore` 返回 core 实例和命令。
 - `useRouterCoreSelector` 精确订阅选中的全局状态。
 - `RouterPageProvider` 包裹自定义 KeepAlive UI 渲染的每个页面。
@@ -508,29 +507,12 @@ function Pages() {
 }
 ```
 
-## React Router 适配层
+## `useRouterCoreCreateHref`
 
-### `RouterCoreReactRouterAdapter` Props
-
-| Prop | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | 是 | 同时位于 React Router 和 `RouterCoreProvider` 内部的业务子树。Adapter 不生成额外 DOM。 |
-
-### `useRouterCoreCreateHref`
-
-该 Hook 没有参数，返回 `(path: string) => string`。传入以 `/` 开头的应用内路径时会补上 BrowserRouter basename 或 HashRouter 前缀；传入外部 URL 等非 `/` 开头字符串时保持原值。
-
-`RouterCoreReactRouterAdapter` 必须同时位于 React Router 和 `RouterCoreProvider` 内部。它负责：
-
-1. 把 React Router 的 `navigate` 绑定为 core 宿主。
-2. 将最终确认的 pathname、search 和 hash 交给 `syncLocation`。
-3. 在 effect 中执行根路径和目录重定向，避免早于 React Router 的 history 监听。
-4. Adapter 卸载时解绑宿主；未提交的重定向会在新宿主挂载后重试。
-
-`useRouterCoreCreateHref` 返回用于原生链接的渲染期函数，并保留 BrowserRouter basename 和 HashRouter 前缀：
+该 Hook 没有参数，返回 `(path: string) => string`。传入以 `/` 开头的应用内路径时会补上 BrowserRouter basename 或 HashRouter 前缀；传入外部 URL 等非 `/` 开头字符串时保持原值。它属于渲染期能力，不必等待 Provider 绑定 navigate：
 
 ```tsx
-import { useRouterCoreCreateHref } from '@zby/router-core/react-router'
+import { useRouterCoreCreateHref } from '@zby/router-core/react'
 
 function NativeLink() {
   const createHref = useRouterCoreCreateHref()

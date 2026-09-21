@@ -86,18 +86,12 @@ describe('ReactRouterProLayout', () => {
     const router = createTestRouter()
 
     render(
-      <RouterCoreProvider router={router}>
-        <PageContent prefixCls="zby-pro-layout" />
-      </RouterCoreProvider>,
+      <MemoryRouter initialEntries={['/missing']}>
+        <RouterCoreProvider router={router}>
+          <PageContent prefixCls="zby-pro-layout" />
+        </RouterCoreProvider>
+      </MemoryRouter>,
     )
-
-    expect(router.getState().navigationStatus).toBe('bootstrapping')
-    expect(screen.queryByText('403')).toBeNull()
-    expect(screen.queryByText('404')).toBeNull()
-
-    act(() => {
-      router.syncLocation({ pathname: '/missing', search: '', hash: '' })
-    })
 
     expect(router.getState().navigationStatus).toBe('settled')
     expect(screen.getByText('404')).toBeTruthy()
@@ -468,9 +462,11 @@ describe('ReactRouterProLayout', () => {
     })
     const renderSearch = (router: RouterCore<ProLayoutRoute>) => (
       <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
-        <RouterCoreProvider router={router}>
-          <ProRouteSearch />
-        </RouterCoreProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <RouterCoreProvider router={router}>
+            <ProRouteSearch />
+          </RouterCoreProvider>
+        </MemoryRouter>
       </ZbyIntlProvider>
     )
     const view = testingLibraryRender(renderSearch(firstRouter))

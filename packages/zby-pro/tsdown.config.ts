@@ -25,7 +25,6 @@ export default defineConfig({
       '@zby/intl',
       '@zby/router-core',
       '@zby/router-core/react',
-      '@zby/router-core/react-router',
       '@zby/ui',
       '@ant-design/icons',
       '@dnd-kit/core',
