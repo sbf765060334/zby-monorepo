@@ -4,50 +4,6 @@ import * as React from 'react'
 
 const { Text, Title } = Typography
 
-const PlaygroundHeavyContext = React.createContext(false)
-
-function PlaygroundDeferredMount(props: {
-  children: React.ReactNode
-  minHeight: number
-}) {
-  const { children, minHeight } = props
-  const ref = React.useRef<HTMLDivElement>(null)
-  const [mounted, setMounted] = React.useState(
-    () => typeof IntersectionObserver === 'undefined',
-  )
-
-  React.useLayoutEffect(() => {
-    const node = ref.current
-    if (!node || typeof IntersectionObserver === 'undefined') {
-      setMounted(true)
-      return undefined
-    }
-
-    const margin = 480
-    const syncVisible = () => {
-      const rect = node.getBoundingClientRect()
-      return rect.bottom > -margin && rect.top < window.innerHeight + margin
-    }
-
-    setMounted(syncVisible())
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setMounted(entry.isIntersecting)
-      },
-      { rootMargin: `${margin}px 0px`, threshold: 0 },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <div ref={ref} style={{ minHeight: mounted ? undefined : minHeight }}>
-      {mounted ? children : null}
-    </div>
-  )
-}
-
 export interface PlaygroundPageProps {
   title: string
   description: React.ReactNode
@@ -121,21 +77,19 @@ export function PlaygroundGrid(props: PlaygroundGridProps) {
   const { children, columns = 3, style } = props
 
   return (
-    <PlaygroundHeavyContext.Provider value={columns === 1}>
-      <div
-        style={{
-          display: 'grid',
-          width: '100%',
-          gridTemplateColumns:
-            columns === 1 ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))',
-          gap: 16,
-          alignItems: 'start',
-          ...style,
-        }}
-      >
-        {children}
-      </div>
-    </PlaygroundHeavyContext.Provider>
+    <div
+      style={{
+        display: 'grid',
+        width: '100%',
+        gridTemplateColumns:
+          columns === 1 ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))',
+        gap: 16,
+        alignItems: 'start',
+        ...style,
+      }}
+    >
+      {children}
+    </div>
   )
 }
 
@@ -149,7 +103,6 @@ export interface PlaygroundCaseProps {
 export function PlaygroundCase(props: PlaygroundCaseProps) {
   const { title, description, children, style } = props
   const { token } = theme.useToken()
-  const deferHeavyExample = React.useContext(PlaygroundHeavyContext)
 
   return (
     <article
@@ -170,11 +123,7 @@ export function PlaygroundCase(props: PlaygroundCaseProps) {
         <Text strong>{title}</Text>
         {description ? <Text type="secondary">{description}</Text> : null}
       </div>
-      {deferHeavyExample ? (
-        <PlaygroundDeferredMount minHeight={360}>{children}</PlaygroundDeferredMount>
-      ) : (
-        children
-      )}
+      {children}
     </article>
   )
 }

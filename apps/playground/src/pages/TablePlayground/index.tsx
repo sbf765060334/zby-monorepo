@@ -24,9 +24,6 @@ import SortFilterExample from './examples/SortFilterExample'
 import StickyHeaderExample from './examples/StickyHeaderExample'
 import SummaryExample from './examples/SummaryExample'
 import UncontrolledHighlightExample from './examples/UncontrolledHighlightExample'
-import VirtualFillTableExample from './examples/VirtualFillTableExample'
-import VirtualRowSpanExample from './examples/VirtualRowSpanExample'
-import VirtualTableExample from './examples/VirtualTableExample'
 
 export default function TablePlayground() {
   return (
@@ -36,20 +33,18 @@ export default function TablePlayground() {
     >
       <PlaygroundSection
         title="渲染与布局"
-        description="普通、Fill、虚拟、虚拟 Fill，以及填充高度与分页的组合。"
+        description="普通表格、Fill 高度，以及填充高度与分页的组合。"
       >
         <PlaygroundGrid columns={1}>
           <BasicTableExample />
           <FillTableExample />
           <FillPaginationExample />
-          <VirtualTableExample />
-          <VirtualFillTableExample />
         </PlaygroundGrid>
       </PlaygroundSection>
 
       <PlaygroundSection
         title="ZBY 扩展能力"
-        description="列宽拖拽、当前行高亮、列增强、复制和虚拟 rowSpan。"
+        description="列宽拖拽、当前行高亮、列增强和复制。"
       >
         <PlaygroundGrid columns={1}>
           <ColumnResizeExample />
@@ -61,7 +56,6 @@ export default function TablePlayground() {
           <CopyableConfigExample />
           <ColumnBodyEllipsisExample />
           <ColumnHeaderFilterExample />
-          <VirtualRowSpanExample />
         </PlaygroundGrid>
       </PlaygroundSection>
 

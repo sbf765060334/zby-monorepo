@@ -29,8 +29,6 @@ export function createOrderRecord(id: number): OrderRecord {
 export const normalData = Array.from({ length: 18 }, (_, index) =>
   createOrderRecord(index + 1))
 export const fillData = normalData.slice(0, 3)
-export const virtualData = Array.from({ length: 3000 }, (_, index) =>
-  createOrderRecord(index + 1))
 export const longTextData = normalData.slice(0, 5).map((record) => ({
   ...record,
   customer: `${record.customer}（华东区重点客户，名称较长用于观察省略效果）`,
