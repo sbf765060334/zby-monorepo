@@ -79,7 +79,7 @@ export function App() {
 
 ## 路由懒加载
 
-使用 `lazyPage` 创建可预加载的 `React.lazy` 页面，并把组件引用直接传给 `element`：
+使用 `lazyPage` 创建点击后才加载的 `React.lazy` 页面，并把组件引用直接传给 `element`：
 
 ```tsx
 import {
@@ -100,7 +100,7 @@ const routes: ProLayoutRoute[] = [
 ]
 ```
 
-不要写成 `element: <OrderListPage />`。菜单和页签会从组件引用读取静态 `preload()`；预先加载和真实渲染共享同一个进行中或已成功的模块请求。推测性预加载失败后会清理失败缓存，后续导航可以重试。导航本身不会等待预加载完成，未完成的请求由页面级 `Suspense` 承接。
+不要写成 `element: <OrderListPage />`。首次进入该路由时才下载页面 chunk，由页面级 `Suspense` 承接加载中状态；KeepAlive 仍打开时再次进入不会重新下载。菜单和页签不会在悬停或聚焦时预加载。
 
 ## 顶部扩展
 
@@ -307,7 +307,7 @@ export function OrderPage() {
 
 ### lazyPage
 
-`lazyPage(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件，并带有 `preload(): Promise<void>`。同一组件会去重进行中的请求并复用成功结果；预加载失败会向直接调用方返回 rejection，但菜单、页签通过 `preloadRoute` 触发时会隔离错误，不会阻止正常导航。
+`lazyPage(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件。首次渲染时开始加载模块；同一组件会去重进行中的请求并复用成功结果。加载失败后会清理失败缓存，错误边界重试或再次进入时可以重新请求。组件上仍有 `preload(): Promise<void>`，供业务自行提前加载，ProLayout 默认不会在菜单或页签悬停时调用。
 
 ### ProLayoutPageLoading
 

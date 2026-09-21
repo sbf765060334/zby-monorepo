@@ -78,7 +78,7 @@ export function App() {
 
 ## Lazy Route Loading
 
-Use `lazyPage` to create a preloadable `React.lazy` page, then pass the component reference directly to `element`:
+Use `lazyPage` to create a `React.lazy` page that loads on first visit, then pass the component reference directly to `element`:
 
 ```tsx
 import {
@@ -99,7 +99,7 @@ const routes: ProLayoutRoute[] = [
 ]
 ```
 
-Do not use `element: <OrderListPage />`. Menus and tabs read the static `preload()` method from the component reference. Preloading and rendering share the same in-flight or fulfilled module request. A failed speculative preload is removed so a later navigation can retry. Navigation remains immediate; page-level `Suspense` handles any unfinished request.
+Do not use `element: <OrderListPage />`. The page chunk downloads on first visit; page-level `Suspense` covers the in-flight request. Re-entering a page that KeepAlive still holds does not download again. Menus and tabs do not preload on hover or focus.
 
 ## Header Extensions
 
@@ -306,7 +306,7 @@ Shared by `title`, `tag.text`, and any `prompt` other than `true`. All of them a
 
 ### lazyPage
 
-`lazyPage(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element` with `preload(): Promise<void>`. It deduplicates in-flight requests and reuses successful results. A direct preload call receives a rejection, while menu and tab preloads go through `preloadRoute`, which isolates failures so navigation remains available.
+`lazyPage(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element`. The module request starts on first render. It deduplicates in-flight requests and reuses successful results. A failed request is cleared so an error-boundary retry or a later visit can fetch again. The returned component still exposes `preload(): Promise<void>` for callers that want to prefetch themselves; ProLayout does not call it from menu or tab hover.
 
 ### ProLayoutPageLoading
 

@@ -24,7 +24,7 @@ export function resetLazyPage(component: unknown) {
   }
 }
 
-/** 创建可被 ProLayout 渲染、也可由菜单和页签提前加载的懒页面组件。 */
+/** 创建可被 ProLayout 渲染的懒页面组件；首次进入时才加载模块。 */
 export function lazyPage(
   loader: ProLayoutLazyPageLoader,
 ): ProLayoutLazyPage {

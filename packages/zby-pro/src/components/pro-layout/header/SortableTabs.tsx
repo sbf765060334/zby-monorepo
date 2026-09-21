@@ -30,7 +30,6 @@ export interface SortableTabsProps extends Omit<TabsProps, 'items' | 'renderTabB
   fixedKeys: readonly string[]
   onReorder: (keys: string[]) => boolean
   onReorderRejected?: (reason: TabReorderRejection) => void
-  onPreload?: (key: string) => void
 }
 
 /** 使用 dnd-kit 为 antd Tabs 增加键盘和指针可访问的横向排序。 */
@@ -39,7 +38,6 @@ export default function SortableTabs(props: SortableTabsProps) {
     activeKey,
     fixedKeys,
     items,
-    onPreload,
     onReorder,
     onReorderRejected,
     prefixCls,
@@ -102,7 +100,6 @@ export default function SortableTabs(props: SortableTabsProps) {
               active={String(activeKey) === String(node.key)}
               activePrevious={previousKey === String(node.key)}
               activeNext={nextKey === String(node.key)}
-              onPreload={onPreload}
             >
               {node}
             </SortableTabNode>
@@ -128,7 +125,6 @@ function SortableTabNode(props: {
   active: boolean
   activePrevious: boolean
   activeNext: boolean
-  onPreload?: (key: string) => void
   children: ReactNode
 }) {
   const {
@@ -137,7 +133,6 @@ function SortableTabNode(props: {
     activePrevious,
     children,
     id,
-    onPreload,
     prefixCls,
   } = props
   const {
@@ -172,8 +167,6 @@ function SortableTabNode(props: {
           ),
           transition,
         }}
-        onFocus={() => onPreload?.(id)}
-        onMouseEnter={() => onPreload?.(id)}
         onPointerDown={(event) => {
           if (!isNestedInteractiveControl(event.target))
             listeners?.onPointerDown?.(event)

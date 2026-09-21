@@ -1,4 +1,4 @@
-import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
+import { isConcreteRoutePath } from '@zby/router-core'
 import { useRouterCore, useRouterCoreCreateHref, useRouterCoreSelector } from '@zby/router-core/react'
 import { useIntl } from '@zby/intl'
 import { Layout, message } from 'antd'
@@ -218,11 +218,8 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                     </dl>
                   )
 
-                  // mouseenter 既承担可用页面的预加载，也负责安排一级目录的延迟切换。
-                  const handlePreloadAndHover = () => {
-                    // 预加载不应被 hover 延迟拖慢；它不会产生可见状态变化，可以立即执行。
-                    preloadVisibleRoute(route, router)
-
+                  // mouseenter 只负责一级目录的延迟切换；页面 chunk 等到点击后再由 lazyPage 加载。
+                  const handleHoverIntent = () => {
                     // 新图标接管 hover intent 前先清除旧 timer，保证不会发生过期目录的延迟回写。
                     cancelHoverIntent()
 
@@ -252,8 +249,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                       }
                       className={className}
                       title={title}
-                      onFocus={() => preloadVisibleRoute(route, router)}
-                      onMouseEnter={handlePreloadAndHover}
+                      onMouseEnter={handleHoverIntent}
                       onMouseLeave={cancelHoverIntent}
                     >
                       {content}
@@ -266,8 +262,7 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
                       className={className}
                       title={title}
                       onClick={() => handleRoute(route)}
-                      onFocus={() => preloadVisibleRoute(route, router)}
-                      onMouseEnter={handlePreloadAndHover}
+                      onMouseEnter={handleHoverIntent}
                       onMouseLeave={cancelHoverIntent}
                       onKeyDown={(event) => {
                         // div 模拟按钮时只响应原生按钮对应的 Enter 和 Space 键。
@@ -308,21 +303,6 @@ const IconDrawerMenu = (props: IconDrawerMenuProps) => {
 }
 
 IconDrawerMenu.displayName = 'IconDrawerMenu'
-
-/**
- * 预加载可直接访问的一级页面。
- *
- * 目录路由本身没有页面 element，它的子页面会在用户打开 Drawer 后按各自交互继续预加载，
- * 因此这里不能把目录错误地当作页面提交给 `preloadRoute`。
- */
-function preloadVisibleRoute(
-  route: ProLayoutRoute,
-  router: ReturnType<typeof useRouterCore<ProLayoutRoute>>,
-) {
-  // registry 是页面路由判定的唯一来源，避免仅凭 element 字段遗漏框架支持的页面形态。
-  if (router.registry.isPageRoute(route))
-    preloadRoute(route)
-}
 
 /** 判断目录是否至少包含一个符合展示规则的直接或间接后代。 */
 function hasVisibleChildren(route: ProLayoutRoute) {

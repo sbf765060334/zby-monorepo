@@ -1,4 +1,3 @@
-import { preloadRoute } from '@zby/router-core'
 import { useRouterCore, useRouterCoreSelector } from '@zby/router-core/react'
 import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
@@ -29,9 +28,6 @@ function PageTabs(props: PageTabsProps) {
   const tabs = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.tabs,
   )
-  const pages = useRouterCoreSelector(
-    (state: RouterCoreState<ProLayoutRoute>) => state.pages,
-  )
   const activeKey = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.activeTabKey,
   )
@@ -46,10 +42,6 @@ function PageTabs(props: PageTabsProps) {
       state.storageHydrated || state.storageLoadError !== undefined,
   )
   const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
-  const pagePathnameMap = useMemo(
-    () => new Map(pages.map((page) => [page.key, page.pathname])),
-    [pages],
-  )
   const items = useMemo<NonNullable<TabsProps['items']>>(
     () => tabs.map((tab) => {
       const fixed = fixedKeySet.has(tab.key)
@@ -159,12 +151,6 @@ function PageTabs(props: PageTabsProps) {
     })
   }
 
-  const handlePreload = (tabKey: string) => {
-    const pathname = pagePathnameMap.get(tabKey) || tabKey
-    const leaf = router.registry.resolveLeafRoute(pathname, { withinAuth: true })
-    preloadRoute(leaf?.route)
-  }
-
   const tabType = items.length <= 1 ? 'card' : 'editable-card'
 
   if (!storageSettled)
@@ -189,7 +175,6 @@ function PageTabs(props: PageTabsProps) {
         removeIcon={<CloseOutlined onPointerDown={stopEvent} />}
         onChange={(key) => router.jumpTo(key)}
         onEdit={handleEdit}
-        onPreload={handlePreload}
         onReorder={(keys) => router.reorderTabs(keys)}
         onReorderRejected={(reason) => {
           void messageApi.info(

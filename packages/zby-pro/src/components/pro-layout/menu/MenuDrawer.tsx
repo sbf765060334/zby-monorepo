@@ -1,5 +1,5 @@
 import { ToolOutlined } from '@ant-design/icons'
-import { isConcreteRoutePath, preloadRoute } from '@zby/router-core'
+import { isConcreteRoutePath } from '@zby/router-core'
 import { useRouterCore, useRouterCoreCreateHref, useRouterCoreSelector } from '@zby/router-core/react'
 import { useIntl } from '@zby/intl'
 import { Drawer, message, Tag, theme as antdTheme } from 'antd'
@@ -252,7 +252,6 @@ function MenuDrawer(props: MenuDrawerProps) {
           favoritePaths={favoritePathSet}
           isFavoriteRoute={(item) => isFavoriteMenuRoute(router, item)}
           onToggleFavorite={toggleFavorite}
-          onPreload={(item) => preloadVisibleRoute(router, item)}
           onSelect={handleSelect}
         />
       </div>
@@ -360,7 +359,6 @@ interface MenuRouteTreeProps {
   favoritePaths: ReadonlySet<string>
   isFavoriteRoute: (route: ProLayoutRoute) => boolean
   onToggleFavorite: (path: string) => void
-  onPreload: (route: ProLayoutRoute) => void
   onSelect: (route: ProLayoutRoute) => void
 }
 
@@ -370,7 +368,6 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
     favoritePaths,
     isFavoriteRoute,
     level,
-    onPreload,
     onSelect,
     onToggleFavorite,
     prefixCls,
@@ -401,7 +398,6 @@ function MenuRouteTree(props: MenuRouteTreeProps) {
               prefixCls={prefixCls}
               route={route}
               createHref={createHref}
-              onPreload={onPreload}
               onSelect={() => onSelect(route)}
             />
           </div>
@@ -439,10 +435,9 @@ function MenuRouteControl(props: {
   prefixCls: string
   route: ProLayoutRoute
   createHref: (path: string) => string
-  onPreload: (route: ProLayoutRoute) => void
   onSelect: () => void
 }) {
-  const { createHref, onPreload, onSelect, prefixCls, route } = props
+  const { createHref, onSelect, prefixCls, route } = props
   const intl = useIntl()
   const title = resolveProLayoutTitle(intl, route.title)
   const tag = typeof route.tag === 'string' ? { text: route.tag } : route.tag
@@ -462,8 +457,6 @@ function MenuRouteControl(props: {
           className={`${prefixCls}-menu-button`}
           title={title}
           onClick={onSelect}
-          onFocus={() => onPreload(route)}
-          onMouseEnter={() => onPreload(route)}
         >
           {content}
         </a>
@@ -474,8 +467,6 @@ function MenuRouteControl(props: {
           className={`${prefixCls}-menu-button`}
           title={title}
           onClick={onSelect}
-          onFocus={() => onPreload(route)}
-          onMouseEnter={() => onPreload(route)}
         >
           {content}
         </button>
@@ -644,14 +635,6 @@ function isMenuControlRoute(route: ProLayoutRoute) {
 function areNumberArraysEqual(left: readonly number[], right: readonly number[]) {
   return left.length === right.length &&
     left.every((value, index) => Math.abs(value - (right[index] ?? 0)) <= 0.01)
-}
-
-function preloadVisibleRoute(
-  router: ReturnType<typeof useRouterCore<ProLayoutRoute>>,
-  route: ProLayoutRoute,
-) {
-  if (router.registry.isPageRoute(route))
-    preloadRoute(route)
 }
 
 export default memo(MenuDrawer, (prev, next) =>
