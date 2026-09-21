@@ -76,4 +76,5 @@ export type {
   ProTableQueryFieldRenderContext,
   ProTableQueryGroup,
   ProTableColumnsStateConfig,
+  ProTableColumnSettingConfig,
 } from './interface'

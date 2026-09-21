@@ -6,7 +6,8 @@ import type { ProTableColumnDefinition } from '../utils/columns'
 import { resolveColumnPreferences } from '../utils/field-config'
 
 type UseColumnsStateParams = {
-  columnsState: false | ProTableColumnsStateConfig
+  columnSetting: false | ProTableColumnsStateConfig
+  preferencesEnabled: boolean
   viewStore: ProTableViewStore
   columnDefinitions: ProTableColumnDefinition[]
   viewInitializationReady: boolean
@@ -61,13 +62,13 @@ export function reconcileColumnPreferences(
 }
 
 export function useColumnsState({
-  columnsState,
+  columnSetting,
+  preferencesEnabled,
   viewStore,
   columnDefinitions,
   viewInitializationReady,
 }: UseColumnsStateParams) {
-  const columnsStateEnabled = Boolean(columnsState)
-  const newColumnPolicy = columnsState ? columnsState.newColumnPolicy : undefined
+  const newColumnPolicy = columnSetting ? columnSetting.newColumnPolicy : undefined
   const columnSchemaSignature = useMemo(
     () => createColumnSchemaSignature(columnDefinitions),
     [columnDefinitions],
@@ -81,7 +82,7 @@ export function useColumnsState({
 
     const actions = viewStore.getState()
 
-    if (!columnsStateEnabled) {
+    if (!preferencesEnabled) {
       if (!actions.columnsReady) {
         actions.setColumnsReady(true)
       }
@@ -114,8 +115,8 @@ export function useColumnsState({
   }, [
     columnDefinitions,
     columnSchemaSignature,
-    columnsStateEnabled,
     newColumnPolicy,
+    preferencesEnabled,
     viewInitializationReady,
     viewStore,
   ])

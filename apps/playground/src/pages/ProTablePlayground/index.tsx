@@ -314,10 +314,8 @@ export default function ProTablePlayground() {
         persistenceKey="playground-pro-table"
         queryRequest={queryOrders}
         columns={columns}
-        views={{}}
-        columnsState={{}}
+        views
         columnResize
-        fullscreen
         rowSelection={{}}
         rowHighlight
         pagination={{

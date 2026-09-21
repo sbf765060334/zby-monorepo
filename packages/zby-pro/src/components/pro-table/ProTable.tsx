@@ -72,12 +72,10 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     search = false,
     views,
     toolbar,
-    columnsState,
     columnResize,
     persistenceKey,
     heightMode,
     autoRequest,
-    fullscreen,
     layout,
     emptyState,
     onTableChange,
@@ -100,11 +98,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     search,
     views,
     toolbar,
-    columnsState,
     columnResize,
     heightMode,
     autoRequest,
-    fullscreen,
     layout,
     emptyState,
     className,
@@ -206,8 +202,8 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     persistenceKey,
     searchFields,
     columnDefinitions,
-    newColumnPolicy: resolvedConfig.mergedColumnsState
-      ? resolvedConfig.mergedColumnsState.newColumnPolicy
+    newColumnPolicy: resolvedConfig.mergedColumnSetting
+      ? resolvedConfig.mergedColumnSetting.newColumnPolicy
       : undefined,
   })
 
@@ -228,12 +224,14 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   })
 
   const columnsStateActions = useColumnsState({
-    columnsState: resolvedConfig.mergedColumnsState,
+    columnSetting: resolvedConfig.mergedColumnSetting,
+    preferencesEnabled: resolvedConfig.columnPreferencesEnabled,
     viewStore,
     columnDefinitions,
     viewInitializationReady: viewInitialization.ready,
   })
   const viewsEnabled = resolvedConfig.mergedViews !== false
+  const columnSettingEnabled = resolvedConfig.mergedColumnSetting !== false
   const shouldWaitForViewInitialization = viewsEnabled && !viewInitialization.ready
   const viewInitializationError = viewInitialization.error
   const [viewLoadingVisible, setViewLoadingVisible] = useState(false)
@@ -311,7 +309,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               <ToolbarRegion
                 controller={controller}
                 toolbar={resolvedConfig.mergedToolbar}
-                columnsState={resolvedConfig.mergedColumnsState}
+                columnSettingEnabled={columnSettingEnabled}
                 fullscreenEnabled={resolvedConfig.fullscreenEnabled}
                 viewStore={viewStore}
                 prefixCls={resolvedConfig.prefixCls}
@@ -337,11 +335,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               controller={controller}
               columns={resolvedColumns}
               columnDefinitions={columnDefinitions}
-              columnsStateEnabled={Boolean(resolvedConfig.mergedColumnsState)}
+              columnsStateEnabled={resolvedConfig.columnPreferencesEnabled}
               columnResize={resolvedConfig.mergedColumnResize}
-              columnResizeDefaultPersist={
-                viewsEnabled || Boolean(resolvedConfig.mergedColumnsState)
-              }
+              columnResizeDefaultPersist={resolvedConfig.columnPreferencesEnabled}
               viewStore={viewStore}
               emptyState={resolvedConfig.mergedEmptyState}
               columnEmptyText={columnEmptyText}
@@ -367,9 +363,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       controller,
       loading,
       onTableChange,
+      resolvedConfig.columnPreferencesEnabled,
       resolvedConfig.fullscreenEnabled,
       resolvedConfig.mergedColumnResize,
-      resolvedConfig.mergedColumnsState,
       resolvedConfig.mergedEmptyState,
       columnEmptyText,
       resolvedConfig.mergedExpandable,
@@ -389,7 +385,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       rowKey,
       resolvedColumns,
       stableTableProps,
-      viewsEnabled,
+      columnSettingEnabled,
       viewStore,
     ],
   )
@@ -447,12 +443,12 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       style={rootStyle}
     >
       {searchRegion}
-      {resolvedConfig.mergedColumnsState && (
+      {columnSettingEnabled && resolvedConfig.mergedColumnSetting && (
         <ColumnsModalMount
           viewStore={viewStore}
           definitions={columnDefinitions}
-          maxVisible={resolvedConfig.mergedColumnsState.maxVisible}
-          maxFixed={resolvedConfig.mergedColumnsState.maxFixed}
+          maxVisible={resolvedConfig.mergedColumnSetting.maxVisible}
+          maxFixed={resolvedConfig.mergedColumnSetting.maxFixed}
           onApply={columnsStateActions.applyColumnsState}
           prefixCls={resolvedConfig.prefixCls}
           modalProps={resolvedConfig.columnsModalProps}

@@ -16,13 +16,13 @@ const FULLSCREEN_EXIT_ICON = <FullscreenExitOutlined />
 
 type ToolbarConfigValue<RecordType, Query extends Record<string, unknown>, Summary> = Exclude<
   ProTableProps<RecordType, Query, Summary>['toolbar'],
-  false | undefined
+  boolean | undefined
 >
 
 type ToolbarRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   toolbar: ToolbarConfigValue<RecordType, Query, Summary>
-  columnsState: ProTableProps<RecordType, Query, Summary>['columnsState']
+  columnSettingEnabled: boolean
   fullscreenEnabled: boolean
   viewStore: ProTableViewStore
   prefixCls: string
@@ -117,7 +117,7 @@ ToolbarFullscreenButton.displayName = 'ProTableToolbarFullscreenButton'
 function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
   toolbar,
-  columnsState,
+  columnSettingEnabled,
   fullscreenEnabled,
   viewStore,
   prefixCls,
@@ -160,11 +160,11 @@ function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, S
       </>
     ) : null
   const right = resolveNode(toolbar.extra, actions)
-  const showRefresh = toolbar.showRefresh !== false
-  const showColumnsState = toolbar.showColumnsState !== false && Boolean(columnsState)
-  const showFullscreen = fullscreenEnabled && toolbar.showFullscreen !== false
+  const showRefresh = toolbar.refresh !== false
+  const showColumnSetting = columnSettingEnabled
+  const showFullscreen = fullscreenEnabled && toolbar.fullscreen !== false
 
-  if (!left && !right && !showRefresh && !showColumnsState && !showFullscreen) {
+  if (!left && !right && !showRefresh && !showColumnSetting && !showFullscreen) {
     return null
   }
 
@@ -176,7 +176,7 @@ function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, S
         {showRefresh && (
           <ToolbarRefreshButton controller={controller} loading={toolbarState.loading} />
         )}
-        {showColumnsState && <ToolbarColumnsStateButton viewStore={viewStore} />}
+        {showColumnSetting && <ToolbarColumnsStateButton viewStore={viewStore} />}
         {showFullscreen && <ToolbarFullscreenButton viewStore={viewStore} />}
       </div>
     </div>

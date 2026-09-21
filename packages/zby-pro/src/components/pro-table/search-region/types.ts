@@ -10,6 +10,7 @@ import type {
   ProTableController,
   ProTableProps,
   ProTableViewSnapshot,
+  ProTableViewsConfig,
 } from '../interface'
 
 export type SearchConfigValue<RecordType, Query extends Record<string, unknown>, Summary> = Exclude<
@@ -17,10 +18,7 @@ export type SearchConfigValue<RecordType, Query extends Record<string, unknown>,
   false | undefined
 >
 
-export type ViewsConfigValue<Query extends Record<string, unknown>> = Exclude<
-  ProTableProps<any, Query, any>['views'],
-  false | undefined
->
+export type ViewsConfigValue<Query extends Record<string, unknown>> = ProTableViewsConfig<Query>
 
 export type ModalScopeProps = {
   className?: string

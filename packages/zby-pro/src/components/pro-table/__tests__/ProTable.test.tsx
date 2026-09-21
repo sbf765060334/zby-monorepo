@@ -190,7 +190,7 @@ describe('ProTable', () => {
     expect(screen.queryByText('查询')).toBeNull()
   })
 
-  it('hides columns through field default preferences when column state is enabled', async () => {
+  it('hides columns through field default preferences when column setting is enabled', async () => {
     const controller = createProTableController<Row, Query>({ rowKey: 'id' })
     renderProTable(
       <ProTable<Row, Query>
@@ -199,8 +199,7 @@ describe('ProTable', () => {
           { key: 'id', title: 'ID' },
           { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
         ]}
-        toolbar={{}}
-        columnsState={{}}
+        toolbar
       />,
     )
 
@@ -223,6 +222,184 @@ describe('ProTable', () => {
       screen.getByRole('button', { name: '确定' }).click()
     })
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
+  })
+
+  it('enables views when true and shows toolbar icons when toolbar is true', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        toolbar
+        views
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(screen.getByLabelText('刷新')).toBeTruthy()
+    expect(screen.getByLabelText('列设置')).toBeTruthy()
+    expect(screen.getByLabelText('全屏')).toBeTruthy()
+  })
+
+  it('applies view column preferences without showing the column setting button', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
+        ]}
+        views
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
+    expect(screen.getByText('默认视图')).toBeTruthy()
+    expect(screen.queryByLabelText('列设置')).toBeNull()
+  })
+
+  it('keeps column preferences in memory only when views are off', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const { unmount } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
+        ]}
+        toolbar
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
+    act(() => {
+      screen.getByLabelText('列设置').click()
+    })
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
+    act(() => {
+      screen.getByRole('checkbox', { name: '名称' }).click()
+    })
+    act(() => {
+      screen.getByRole('button', { name: '确定' }).click()
+    })
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
+    unmount()
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={createProTableController<Row, Query>({ rowKey: 'id' })}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
+        ]}
+        toolbar
+      />,
+    )
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
+  })
+
+  it('does not apply column preferences when columnSetting is false', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
+        ]}
+        toolbar={{ columnSetting: false }}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
+    expect(screen.queryByLabelText('列设置')).toBeNull()
+    expect(screen.getByLabelText('刷新')).toBeTruthy()
+  })
+
+  it('hides refresh, column settings and fullscreen through toolbar flags', () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        toolbar={{ refresh: false }}
+      />,
+    )
+    expect(screen.queryByLabelText('刷新')).toBeNull()
+    expect(screen.getByLabelText('列设置')).toBeTruthy()
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            toolbar={{ columnSetting: false }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+    expect(screen.getByLabelText('刷新')).toBeTruthy()
+    expect(screen.queryByLabelText('列设置')).toBeNull()
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            toolbar={{ fullscreen: false }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+    expect(screen.getByLabelText('刷新')).toBeTruthy()
+    expect(screen.queryByLabelText('全屏')).toBeNull()
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            toolbar
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+    expect(screen.getByLabelText('全屏')).toBeTruthy()
+  })
+
+  it('keeps reset on the default view after column settings change', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称' },
+        ]}
+        toolbar
+        views
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    act(() => {
+      screen.getByLabelText('列设置').click()
+    })
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
+    act(() => {
+      screen.getByRole('checkbox', { name: '名称' }).click()
+    })
+    act(() => {
+      screen.getByRole('button', { name: '确定' }).click()
+    })
+    await waitFor(() => expect(screen.getByRole('button', { name: /重\s*置/ })).toBeTruthy())
+    expect(screen.getByRole('button', { name: /保存/ })).toBeTruthy()
   })
 
   it('renders view management and applies a custom view snapshot', async () => {

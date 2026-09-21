@@ -104,6 +104,7 @@ export type {
   ProTableColumnState,
   ProTableColumnsState,
   ProTableColumnsStateConfig,
+  ProTableColumnSettingConfig,
 } from './components/pro-table'
 export type {
   UseThemeModeTransitionOptions,

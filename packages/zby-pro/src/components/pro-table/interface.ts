@@ -230,11 +230,14 @@ export type ProTableActionColumnConfig<
 
 export type ProTableNewColumnPolicy = 'prepend' | 'append' | 'default-order'
 
+/** 列设置约束。`toolbar.columnSetting` 不传或为 `true` 时走这份默认（无可见/固定上限）。 */
 export interface ProTableColumnsStateConfig {
   maxVisible?: number
   maxFixed?: number
   newColumnPolicy?: ProTableNewColumnPolicy
 }
+
+export type ProTableColumnSettingConfig = ProTableColumnsStateConfig
 
 export type ProTableColumnResizeKey = string | number
 export type ProTableColumnWidthMap = Record<ProTableColumnResizeKey, number>
@@ -394,9 +397,14 @@ export interface ProTableToolbarConfig<
     >)
   actions?: ReactNode | ((context: ProTableToolbarContext<RecordType, Query, Summary>) => ReactNode)
   extra?: ReactNode | ((context: ProTableToolbarContext<RecordType, Query, Summary>) => ReactNode)
-  showRefresh?: boolean
-  showColumnsState?: boolean
-  showFullscreen?: boolean
+  /** 刷新。工具栏开启后默认显示；`false` 隐藏。 */
+  refresh?: boolean
+  /**
+   * 列设置。工具栏开启后默认显示；`false` 隐藏齿轮；对象覆盖 `maxVisible` 等约束。
+   */
+  columnSetting?: boolean | ProTableColumnSettingConfig
+  /** 全屏。工具栏开启后默认显示并启用能力；`false` 关闭。 */
+  fullscreen?: boolean
 }
 
 export interface ProTablePaginationConfig
@@ -577,13 +585,13 @@ export interface ProTableProps<
   actionColumn?: false | ProTableActionColumnConfig<RecordType, Query, Summary>
   rowKey?: TableProps<RecordType>['rowKey']
   search?: false | ProTableSearchConfig<Query, RecordType, Summary>
-  views?: false | ProTableViewsConfig<Query>
-  toolbar?: false | ProTableToolbarConfig<RecordType, Query, Summary>
-  columnsState?: false | ProTableColumnsStateConfig
+  /** `true` 开默认视图；`false` / 缺省关闭；对象为配置。 */
+  views?: boolean | ProTableViewsConfig<Query>
+  /** `true` 出刷新 / 列设置 / 全屏；`false` / 缺省关闭；对象为工具栏配置。 */
+  toolbar?: boolean | ProTableToolbarConfig<RecordType, Query, Summary>
   columnResize?: boolean | ProTableColumnResizeConfig<RecordType>
   persistenceKey?: string
   heightMode?: 'fill' | 'content'
-  fullscreen?: boolean | { enabled?: boolean }
   layout?: ProTableLayoutConfig
   emptyState?: ProTableEmptyStateConfig
   columnEmptyText?: ReactNode | false
@@ -613,13 +621,11 @@ export interface ProTableConfig<
   styles?: ProTableStylesType
   heightMode?: ProTableProps<RecordType, Query, Summary>['heightMode']
   autoRequest?: ProTableProps<RecordType, Query, Summary>['autoRequest']
-  fullscreen?: ProTableProps<RecordType, Query, Summary>['fullscreen']
   layout?: Partial<ProTableLayoutConfig>
   emptyState?: Partial<ProTableEmptyStateConfig>
   search?: false | Partial<ProTableSearchConfig<Query, RecordType, Summary>>
-  views?: false | Partial<ProTableViewsConfig<Query>>
-  toolbar?: false | Partial<ProTableToolbarConfig<RecordType, Query, Summary>>
-  columnsState?: false | Partial<ProTableColumnsStateConfig>
+  views?: boolean | Partial<ProTableViewsConfig<Query>>
+  toolbar?: boolean | Partial<ProTableToolbarConfig<RecordType, Query, Summary>>
   columnResize?: ProTableProps<RecordType, Query, Summary>['columnResize']
   pagination?: ProTableProps<RecordType, Query, Summary>['pagination']
   scroll?: ProTableProps<RecordType, Query, Summary>['scroll']

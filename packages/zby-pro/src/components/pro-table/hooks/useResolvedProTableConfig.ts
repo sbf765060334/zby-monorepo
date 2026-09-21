@@ -4,21 +4,63 @@ import { ConfigProvider } from 'antd'
 
 import type {
   ProTableClassNamesType,
+  ProTableColumnSettingConfig,
   ProTableConfig,
   ProTableProps,
   ProTableStylesType,
+  ProTableToolbarConfig,
+  ProTableViewsConfig,
 } from '../interface'
-import type { ModalScopeProps, SearchConfigValue } from '../search-region/types'
+import type { ModalScopeProps, SearchConfigValue, ViewsConfigValue } from '../search-region/types'
 import useStyle from '../style'
 
 type SemanticProps = Record<string, unknown>
 type SemanticClassNames = Record<string, string | undefined>
 type SemanticStyles = Record<string, React.CSSProperties | undefined>
 
-type ViewsConfigValue<Query extends Record<string, unknown>> = Exclude<
-  ProTableProps<any, Query, any>['views'],
-  false | undefined
->
+/**
+ * `true` 开默认能力，`false` / 缺省关闭，对象才是配置。
+ * 解析后下游只认 `false | config`。
+ */
+function resolveToggleConfig<T extends object>(
+  value: boolean | T | undefined,
+): false | T {
+  if (value === true) {
+    return {} as T
+  }
+  if (value === false || value == null) {
+    return false
+  }
+  return value
+}
+
+function resolveToolbarConfig<RecordType, Query extends Record<string, unknown>, Summary>(
+  toolbar: ProTableProps<RecordType, Query, Summary>['toolbar'],
+): false | ProTableToolbarConfig<RecordType, Query, Summary> {
+  if (toolbar === true) {
+    return {}
+  }
+  if (toolbar === false || toolbar == null) {
+    return false
+  }
+  return toolbar
+}
+
+function resolveColumnSetting(
+  toolbar: false | ProTableToolbarConfig<any, any, any>,
+): false | ProTableColumnSettingConfig {
+  if (toolbar === false) {
+    return false
+  }
+  const value = toolbar.columnSetting
+  if (value === false) {
+    return false
+  }
+  if (value === true || value == null) {
+    return {}
+  }
+  return value
+}
 
 const DEFAULT_PREFIX_CLS = 'zby-pro-table'
 
@@ -79,10 +121,9 @@ export interface ResolvedProTableConfig<
 > {
   mergedSearch: false | SearchConfigValue<RecordType, Query, Summary>
   mergedViews: false | ViewsConfigValue<Query>
-  mergedToolbar: false | Exclude<ProTableProps<RecordType, Query, Summary>['toolbar'], undefined>
-  mergedColumnsState:
-    | false
-    | Exclude<ProTableProps<RecordType, Query, Summary>['columnsState'], undefined>
+  mergedToolbar: false | ProTableToolbarConfig<RecordType, Query, Summary>
+  mergedColumnSetting: false | ProTableColumnSettingConfig
+  columnPreferencesEnabled: boolean
   mergedColumnResize: ProTableProps<RecordType, Query, Summary>['columnResize']
   mergedLayout: ProTableConfig<RecordType, Query, Summary>['layout']
   mergedEmptyState: ProTableConfig<RecordType, Query, Summary>['emptyState']
@@ -90,7 +131,6 @@ export interface ResolvedProTableConfig<
   mergedExpandable: ProTableProps<RecordType, Query, Summary>['expandable']
   mergedPagination: ProTableProps<RecordType, Query, Summary>['pagination']
   mergedScroll: ProTableProps<RecordType, Query, Summary>['scroll']
-  mergedFullscreen: ProTableProps<RecordType, Query, Summary>['fullscreen']
   mergedHeightMode: NonNullable<ProTableProps<RecordType, Query, Summary>['heightMode']>
   mergedAutoRequest: boolean
   mergedClassName: string | undefined
@@ -117,10 +157,8 @@ export function useResolvedProTableConfig<
   const {
     search = false,
     views: viewsProp,
-    toolbar = false,
-    columnsState = false,
+    toolbar,
     heightMode = 'content',
-    fullscreen = false,
     layout,
     emptyState,
     prefixCls: customizePrefixCls,
@@ -143,9 +181,10 @@ export function useResolvedProTableConfig<
     }
     return normalizeSearchConfig(search)
   }, [search])
-  const mergedViews = (viewsProp ?? false) as false | ViewsConfigValue<Query>
-  const mergedToolbar = (toolbar ?? false) as typeof toolbar
-  const mergedColumnsState = (columnsState ?? false) as typeof columnsState
+  const mergedViews = resolveToggleConfig<ProTableViewsConfig<Query>>(viewsProp)
+  const mergedToolbar = resolveToolbarConfig(toolbar)
+  const mergedColumnSetting = resolveColumnSetting(mergedToolbar)
+  const columnPreferencesEnabled = mergedViews !== false || mergedColumnSetting !== false
   const mergedColumnResize = columnResize ?? true
   const mergedLayout = layout
   const mergedEmptyState = emptyState
@@ -153,22 +192,21 @@ export function useResolvedProTableConfig<
   const mergedExpandable = expandable
   const mergedPagination = pagination
   const mergedScroll = scroll
-  const mergedFullscreen = (fullscreen ?? false) as typeof fullscreen
   const mergedHeightMode = heightMode ?? 'content'
   const mergedAutoRequest = autoRequest ?? true
   const mergedStyle = React.useMemo(() => mergeInlineStyles(style), [style])
   const prefixCls = getPrefixCls('pro-table', customizePrefixCls ?? DEFAULT_PREFIX_CLS)
   const [hashId, cssVarCls] = useStyle(prefixCls)
   const rootStyleClassName = clsx(hashId, cssVarCls)
+  const fullscreenEnabled = mergedToolbar !== false && mergedToolbar.fullscreen !== false
   const mergedResolvedProps = React.useMemo<SemanticProps>(
     () => ({
       ...stableProps,
       className,
-      columnsState: mergedColumnsState,
       columnResize: mergedColumnResize,
       emptyState: mergedEmptyState,
       expandable: mergedExpandable,
-      fullscreen: mergedFullscreen,
+      fullscreen: fullscreenEnabled,
       heightMode: mergedHeightMode,
       autoRequest: mergedAutoRequest,
       layout: mergedLayout,
@@ -182,15 +220,16 @@ export function useResolvedProTableConfig<
       styles,
       toolbar: mergedToolbar,
       views: mergedViews,
+      columnSetting: mergedColumnSetting,
     }),
     [
       className,
+      fullscreenEnabled,
       mergedAutoRequest,
       mergedColumnResize,
-      mergedColumnsState,
+      mergedColumnSetting,
       mergedEmptyState,
       mergedExpandable,
-      mergedFullscreen,
       mergedHeightMode,
       mergedLayout,
       mergedPagination,
@@ -214,9 +253,6 @@ export function useResolvedProTableConfig<
     () => mergeSemanticStyles(resolveSemanticValue(styles as ProTableStylesType | undefined, mergedResolvedProps)),
     [mergedResolvedProps, styles],
   )
-  const fullscreenEnabled =
-    mergedFullscreen !== false &&
-    (typeof mergedFullscreen !== 'object' || mergedFullscreen.enabled !== false)
   const columnsModalProps = React.useMemo(
     () =>
       ({
@@ -231,7 +267,8 @@ export function useResolvedProTableConfig<
     mergedSearch,
     mergedViews,
     mergedToolbar,
-    mergedColumnsState,
+    mergedColumnSetting,
+    columnPreferencesEnabled,
     mergedColumnResize,
     mergedLayout,
     mergedEmptyState,
@@ -239,7 +276,6 @@ export function useResolvedProTableConfig<
     mergedExpandable,
     mergedPagination,
     mergedScroll,
-    mergedFullscreen,
     mergedHeightMode,
     mergedAutoRequest,
     mergedClassName: className,
