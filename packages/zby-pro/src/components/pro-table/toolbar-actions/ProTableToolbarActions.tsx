@@ -6,7 +6,11 @@ import { useIntl } from '@zby/intl'
 import type { ProTableController, ProTableToolbarActionItem, ProTableToolbarActionInfo } from '../interface'
 import { ProTableBatchActions } from '../batch-actions'
 
-export interface ProTableToolbarActionsProps<RecordType = Record<string, unknown>, Query = Record<string, unknown>, Summary = unknown> {
+export interface ProTableToolbarActionsProps<
+  RecordType = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
+  Summary = unknown,
+> {
   actions: Array<ProTableToolbarActionItem<RecordType, Query, Summary> | false | null | undefined>
   controller?: ProTableController<RecordType, Query, Summary>
   loading?: boolean
@@ -16,11 +20,11 @@ export interface ProTableToolbarActionsProps<RecordType = Record<string, unknown
   moreText?: React.ReactNode
 }
 
-function isBatchAction<RecordType, Query, Summary>(item: ProTableToolbarActionItem<RecordType, Query, Summary>): item is Extract<ProTableToolbarActionItem<RecordType, Query, Summary>, { type: 'batch' }> {
+function isBatchAction<RecordType, Query extends Record<string, unknown>, Summary>(item: ProTableToolbarActionItem<RecordType, Query, Summary>): item is Extract<ProTableToolbarActionItem<RecordType, Query, Summary>, { type: 'batch' }> {
   return item.type === 'batch'
 }
 
-export function ProTableToolbarActions<RecordType, Query, Summary>({ actions, controller, loading, selectedRowKeys, selectedRows, maxVisible = 3, moreText }: ProTableToolbarActionsProps<RecordType, Query, Summary>) {
+export function ProTableToolbarActions<RecordType, Query extends Record<string, unknown>, Summary>({ actions, controller, loading, selectedRowKeys, selectedRows, maxVisible = 3, moreText }: ProTableToolbarActionsProps<RecordType, Query, Summary>) {
   const intl = useIntl()
   const resolvedMoreText = moreText ?? intl.getMessage('zby.pro.table.more', '更多')
   const items = actions.filter((item): item is ProTableToolbarActionItem<RecordType, Query, Summary> => Boolean(item && !item.hidden))

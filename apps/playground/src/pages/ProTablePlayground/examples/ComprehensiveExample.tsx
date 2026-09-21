@@ -39,12 +39,7 @@ type PlaygroundRow = {
   remark: string
 }
 
-type PlaygroundQuery = {
-  page: number
-  pageSize: number
-  sortBy?: string
-  sortOrder?: 'ascend' | 'descend'
-}
+type PlaygroundQuery = Record<string, unknown>
 
 const OWNERS = ['张敏', '李想', '周宁', '王雪', '陈舟']
 const CUSTOMERS = ['星河贸易', '北辰物流', '青云供应链', '远航进出口', '临港仓储']
@@ -95,13 +90,13 @@ function wait(ms: number) {
   })
 }
 
-const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async (query) => {
+const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async (params) => {
   await wait(3000)
 
   const rows = ALL_ROWS.slice()
-  if (query.sortBy && query.sortOrder) {
-    const direction = query.sortOrder === 'ascend' ? 1 : -1
-    const key = query.sortBy as keyof PlaygroundRow
+  if (params.sortBy && params.sortOrder) {
+    const direction = params.sortOrder === 'ascend' ? 1 : -1
+    const key = params.sortBy as keyof PlaygroundRow
     rows.sort((left, right) => {
       const leftValue = left[key]
       const rightValue = right[key]
@@ -110,12 +105,10 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
     })
   }
 
-  const page = query.page || 1
-  const pageSize = query.pageSize || 5
-  const start = (page - 1) * pageSize
+  const start = (params.page - 1) * params.pageSize
 
   return {
-    data: rows.slice(start, start + pageSize),
+    data: rows.slice(start, start + params.pageSize),
     total: rows.length,
   }
 }
@@ -334,7 +327,6 @@ export default function ComprehensiveExample() {
           rowKey="id"
           heightMode="fill"
           persistenceKey="playground-pro-table"
-          defaultQuery={{ page: 1, pageSize: 10 }}
           queryRequest={queryRequest}
           columns={columns}
           views={{}}

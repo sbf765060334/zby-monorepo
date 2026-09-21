@@ -5,33 +5,30 @@ import type {
   ProTableController,
   ProTableControllerConfig,
   ProTableControllerState,
+  ProTableRequestParams,
   ProTableViewSorter,
 } from './interface'
 import { isSearchValueEqual } from './utils/search'
 
 const CANCEL_REQUESTS = Symbol('ProTableCancelRequests')
 
-type InternalControllerState<RecordType, Query, Summary> = ProTableControllerState<
+type InternalControllerState<
   RecordType,
-  Query,
-  Summary
-> & {
+  Query extends Record<string, unknown>,
+  Summary,
+> = ProTableControllerState<RecordType, Query, Summary> & {
   selectedRowMap: Map<Key, RecordType>;
   requestSeq: number;
   queryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['queryRequest'];
   summaryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['summaryRequest'];
   rowKey?: ProTableControllerConfig<RecordType, Query, Summary>['rowKey'];
-  pageKey: string;
-  pageSizeKey: string;
-  sortByKey: string;
-  sortOrderKey: string;
 }
 
-type AbortableProTableController<RecordType, Query, Summary> = ProTableController<
+type AbortableProTableController<
   RecordType,
-  Query,
-  Summary
-> & {
+  Query extends Record<string, unknown>,
+  Summary,
+> = ProTableController<RecordType, Query, Summary> & {
   [CANCEL_REQUESTS]?: () => void;
 }
 
@@ -109,59 +106,59 @@ function isQueryEqual<Query>(left: Query, right: Query) {
   return Array.from(keys).every((key) => isSearchValueEqual(leftRecord[key], rightRecord[key]))
 }
 
-function getPageValue<Query>(query: Query, key: string, fallback: number) {
-  const value = (query as Record<string, unknown>)?.[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-function buildPagePatch(pageKey: string, pageSizeKey: string, current: number, pageSize: number) {
-  return {
-    [pageKey]: current,
-    [pageSizeKey]: pageSize,
-  }
-}
-
 function isValidSortOrder(order: unknown): order is ProTableViewSorter['order'] {
   return order === 'ascend' || order === 'descend'
 }
 
-function applySortParams<Query extends Record<string, unknown>>(
-  query: Query,
-  state: Pick<
-    InternalControllerState<any, Query, any>,
-    'sortByKey' | 'sortField' | 'sortOrder' | 'sortOrderKey'
-  >,
-): Query {
-  const nextQuery = {
-    ...(query as Record<string, unknown>),
+function assembleRequestParams<Query extends Record<string, unknown>>(
+  filters: Query,
+  currentPage: number,
+  pageSize: number,
+  sortField: string | undefined,
+  sortOrder: 'ascend' | 'descend' | null | undefined,
+): ProTableRequestParams<Query> {
+  const params: Record<string, unknown> = {
+    ...(filters as Record<string, unknown>),
+    page: currentPage,
+    pageSize,
   }
 
-  if (state.sortField && isValidSortOrder(state.sortOrder)) {
-    nextQuery[state.sortByKey] = state.sortField
-    nextQuery[state.sortOrderKey] = state.sortOrder
+  if (sortField && isValidSortOrder(sortOrder)) {
+    params.sortBy = sortField
+    params.sortOrder = sortOrder
   } else {
-    delete nextQuery[state.sortByKey]
-    delete nextQuery[state.sortOrderKey]
+    delete params.sortBy
+    delete params.sortOrder
   }
 
-  return nextQuery as Query
+  return params as ProTableRequestParams<Query>
 }
 
-function omitSortParams<Query extends Record<string, unknown>>(
-  query: Query,
-  state: Pick<InternalControllerState<any, Query, any>, 'sortByKey' | 'sortOrderKey'>,
-): Query {
-  const nextQuery = {
-    ...(query as Record<string, unknown>),
+function toPublicState<RecordType, Query extends Record<string, unknown>, Summary>(
+  state: InternalControllerState<RecordType, Query, Summary>,
+): ProTableControllerState<RecordType, Query, Summary> {
+  return {
+    query: state.query,
+    committedQuery: state.committedQuery,
+    defaultQuery: state.defaultQuery,
+    latestParams: state.latestParams,
+    dataSource: state.dataSource,
+    total: state.total,
+    currentPage: state.currentPage,
+    pageSize: state.pageSize,
+    loading: state.loading,
+    requested: state.requested,
+    requestReady: state.requestReady,
+    inquired: state.inquired,
+    summary: state.summary,
+    selectedRowKeys: state.selectedRowKeys,
+    expandedRowKeys: state.expandedRowKeys,
+    sortField: state.sortField,
+    sortOrder: state.sortOrder,
   }
-
-  delete nextQuery[state.sortByKey]
-  delete nextQuery[state.sortOrderKey]
-
-  return nextQuery as Query
 }
 
-function collectSelectedRows<RecordType, Query, Summary>(
+function collectSelectedRows<RecordType, Query extends Record<string, unknown>, Summary>(
   state: InternalControllerState<RecordType, Query, Summary>,
 ) {
   return state.selectedRowKeys
@@ -218,18 +215,9 @@ export function createProTableController<
 >(
   config: ProTableControllerConfig<RecordType, Query, Summary> = {},
 ): ProTableController<RecordType, Query, Summary> {
-  const pageKey = config.pagination?.pageKey ?? 'page'
-  const pageSizeKey = config.pagination?.pageSizeKey ?? 'pageSize'
-  const sortByKey = config.sort?.sortByKey ?? 'sortBy'
-  const sortOrderKey = config.sort?.sortOrderKey ?? 'sortOrder'
   const defaultCurrent = config.pagination?.defaultCurrent ?? 1
   const defaultPageSize = config.pagination?.defaultPageSize ?? 10
-  const defaultQuery = mergeQueryPatch(
-    {
-      ...buildPagePatch(pageKey, pageSizeKey, defaultCurrent, defaultPageSize),
-    } as Query,
-    (config.defaultQuery ?? {}) as Partial<Query>,
-  )
+  const defaultQuery = cloneQuery((config.defaultQuery ?? {}) as Query)
 
   const store = createStore<InternalControllerState<RecordType, Query, Summary>>(() => ({
     query: cloneQuery(defaultQuery),
@@ -254,10 +242,6 @@ export function createProTableController<
     queryRequest: config.queryRequest,
     summaryRequest: config.summaryRequest,
     rowKey: config.rowKey,
-    pageKey,
-    pageSizeKey,
-    sortByKey,
-    sortOrderKey,
   }))
   let listAbortController: AbortController | null = null
   let summaryAbortController: AbortController | null = null
@@ -278,22 +262,35 @@ export function createProTableController<
     abortSummaryRequest()
   }
 
+  const resolveRequestFilters = (
+    state: InternalControllerState<RecordType, Query, Summary>,
+  ) => state.committedQuery
+
   const performRequest = async (
-    nextQuery: Query,
-    options: { resetPage?: boolean; useCommittedQueryForPaging?: boolean } = {},
+    filters: Query,
+    options: { commitFilters?: boolean; resetPage?: boolean } = {},
   ) => {
     const state = store.getState()
     const { queryRequest, summaryRequest } = state
+    const requestParams = assembleRequestParams(
+      filters,
+      state.currentPage,
+      state.pageSize,
+      state.sortField,
+      state.sortOrder,
+    )
+    const commitFilters = options.commitFilters === true
 
     if (!queryRequest) {
       abortAllRequests()
-      const resultQuery = cloneQuery(nextQuery)
       store.setState({
-        query: resultQuery,
-        committedQuery: cloneQuery(resultQuery),
-        latestParams: applySortParams(resultQuery, state),
-        currentPage: getPageValue(resultQuery, state.pageKey, defaultCurrent),
-        pageSize: getPageValue(resultQuery, state.pageSizeKey, defaultPageSize),
+        ...(commitFilters
+          ? {
+              query: cloneQuery(filters),
+              committedQuery: cloneQuery(filters),
+            }
+          : {}),
+        latestParams: requestParams,
       })
       return
     }
@@ -302,19 +299,19 @@ export function createProTableController<
     listAbortController = new AbortController()
     const listSignal = listAbortController.signal
     const requestSeq = state.requestSeq + 1
-    const resultQuery = cloneQuery(nextQuery)
-    const requestQuery = applySortParams(resultQuery, state)
 
     store.setState({
       loading: true,
       requested: true,
       requestReady: true,
       requestSeq,
-      query: cloneQuery(resultQuery),
-      committedQuery: cloneQuery(resultQuery),
-      latestParams: cloneQuery(requestQuery),
-      currentPage: getPageValue(resultQuery, state.pageKey, defaultCurrent),
-      pageSize: getPageValue(resultQuery, state.pageSizeKey, defaultPageSize),
+      ...(commitFilters
+        ? {
+            query: cloneQuery(filters),
+            committedQuery: cloneQuery(filters),
+          }
+        : {}),
+      latestParams: requestParams,
     })
 
     const shouldFetchSummary = options.resetPage !== false && typeof summaryRequest === 'function'
@@ -341,7 +338,7 @@ export function createProTableController<
       summarySignal = summaryAbortController.signal
       summarySeq = summaryRequestSeq + 1
       summaryRequestSeq = summarySeq
-      summaryPromise = summaryRequest(requestQuery, { signal: summarySignal }).catch((error) => {
+      summaryPromise = summaryRequest(requestParams, { signal: summarySignal }).catch((error) => {
         if (summarySignal && isAbortError(error, summarySignal)) {
           return undefined
         }
@@ -352,7 +349,7 @@ export function createProTableController<
     }
 
     try {
-      const listResult = await queryRequest(requestQuery, { signal: listSignal })
+      const listResult = await queryRequest(requestParams, { signal: listSignal })
 
       if (store.getState().requestSeq !== requestSeq) {
         return
@@ -367,8 +364,6 @@ export function createProTableController<
       store.setState((current) => ({
         dataSource: listResult.data ?? [],
         total: typeof listResult.total === 'number' ? listResult.total : current.total,
-        currentPage: getPageValue(resultQuery, current.pageKey, current.currentPage),
-        pageSize: getPageValue(resultQuery, current.pageSizeKey, current.pageSize),
         summary: summaryResult === undefined ? current.summary : summaryResult,
         loading: false,
         inquired: true,
@@ -387,71 +382,14 @@ export function createProTableController<
   }
 
   const controller: ProTableController<RecordType, Query, Summary> = {
-    getState: () => {
-      const state = store.getState()
-
-      return {
-        query: state.query,
-        committedQuery: state.committedQuery,
-        defaultQuery: state.defaultQuery,
-        latestParams: state.latestParams,
-        dataSource: state.dataSource,
-        total: state.total,
-        currentPage: state.currentPage,
-        pageSize: state.pageSize,
-        loading: state.loading,
-        requested: state.requested,
-        requestReady: state.requestReady,
-        inquired: state.inquired,
-        summary: state.summary,
-        selectedRowKeys: state.selectedRowKeys,
-        expandedRowKeys: state.expandedRowKeys,
-        sortField: state.sortField,
-        sortOrder: state.sortOrder,
-      }
-    },
-    subscribe: (listener) =>
-      store.subscribe((state) => {
-        listener({
-          query: state.query,
-          committedQuery: state.committedQuery,
-          defaultQuery: state.defaultQuery,
-          latestParams: state.latestParams,
-          dataSource: state.dataSource,
-          total: state.total,
-          currentPage: state.currentPage,
-          pageSize: state.pageSize,
-          loading: state.loading,
-          requested: state.requested,
-          requestReady: state.requestReady,
-          inquired: state.inquired,
-          summary: state.summary,
-          selectedRowKeys: state.selectedRowKeys,
-          expandedRowKeys: state.expandedRowKeys,
-          sortField: state.sortField,
-          sortOrder: state.sortOrder,
-        })
-      }),
+    getState: () => toPublicState(store.getState()),
+    subscribe: (listener) => store.subscribe((state) => listener(toPublicState(state))),
     configure: (nextConfig) => {
       store.setState((state) => {
         const nextDefaultQuery =
           nextConfig.defaultQuery === undefined
             ? state.defaultQuery
-            : mergeQueryPatch(
-                nextConfig.defaultQuery as Query,
-                {
-                  ...buildPagePatch(
-                    state.pageKey,
-                    state.pageSizeKey,
-                    getPageValue(nextConfig.defaultQuery as Query, state.pageKey, defaultCurrent),
-                    getPageValue(
-                      nextConfig.defaultQuery as Query,
-                      state.pageSizeKey,
-                      defaultPageSize,
-                    ),
-                  ),
-                } as Partial<Query>,
-              )
+            : cloneQuery(nextConfig.defaultQuery as Query)
         const nextQueryRequest = nextConfig.queryRequest ?? state.queryRequest
         const nextSummaryRequest = nextConfig.summaryRequest ?? state.summaryRequest
         const nextRowKey = nextConfig.rowKey ?? state.rowKey
@@ -489,11 +427,10 @@ export function createProTableController<
             ? sorter.order
             : null
           : state.sortOrder
-        const nextQuery = omitSortParams(query, state)
 
         return {
-          query: cloneQuery(nextQuery),
-          committedQuery: committed ? cloneQuery(nextQuery) : state.committedQuery,
+          query: cloneQuery(query),
+          committedQuery: committed ? cloneQuery(query) : state.committedQuery,
           sortField: nextSortField,
           sortOrder: nextSortOrder,
         }
@@ -527,54 +464,34 @@ export function createProTableController<
       }))
     },
     submitQuery: async (options) => {
-      const state = store.getState()
       const resetPage = options?.resetPage !== false
-      const nextQuery = resetPage
-        ? mergeQueryPatch(state.query, {
-            [state.pageKey]: 1,
-          } as Partial<Query>)
-        : state.query
+      const filters = store.getState().query
 
-      if (resetPage) {
-        store.setState((current) =>
-          current.selectedRowKeys.length === 0 ? current : { selectedRowKeys: [] },
-        )
-      }
+      store.setState((current) => ({
+        currentPage: resetPage ? 1 : current.currentPage,
+        selectedRowKeys:
+          resetPage && current.selectedRowKeys.length > 0 ? [] : current.selectedRowKeys,
+      }))
 
-      await performRequest(nextQuery, { resetPage })
+      await performRequest(filters, { commitFilters: true, resetPage })
     },
     reload: async () => {
       const state = store.getState()
-      const fallbackQuery = state.inquired ? state.committedQuery : state.query
-      const nextQuery = mergeQueryPatch(fallbackQuery, {
-        [state.pageKey]: getPageValue(state.query, state.pageKey, defaultCurrent),
-        [state.pageSizeKey]: getPageValue(state.query, state.pageSizeKey, defaultPageSize),
-      } as Partial<Query>)
-
-      await performRequest(nextQuery, { resetPage: false, useCommittedQueryForPaging: true })
+      await performRequest(resolveRequestFilters(state), { resetPage: false })
     },
     setPage: async (page) => {
+      store.setState({ currentPage: page })
       const state = store.getState()
-      const nextQuery = mergeQueryPatch(state.inquired ? state.committedQuery : state.query, {
-        [state.pageKey]: page,
-        [state.pageSizeKey]: getPageValue(state.query, state.pageSizeKey, defaultPageSize),
-      } as Partial<Query>)
-
-      store.setState({ query: cloneQuery(nextQuery) })
-      await performRequest(nextQuery, { resetPage: false, useCommittedQueryForPaging: true })
+      await performRequest(resolveRequestFilters(state), { resetPage: false })
     },
     setPageSize: async (pageSize) => {
-      const state = store.getState()
-      const nextQuery = mergeQueryPatch(state.inquired ? state.committedQuery : state.query, {
-        [state.pageKey]: 1,
-        [state.pageSizeKey]: pageSize,
-      } as Partial<Query>)
-
       store.setState((current) => ({
-        query: cloneQuery(nextQuery),
+        currentPage: 1,
+        pageSize,
         selectedRowKeys: current.selectedRowKeys.length === 0 ? current.selectedRowKeys : [],
       }))
-      await performRequest(nextQuery, { resetPage: true })
+      const state = store.getState()
+      await performRequest(resolveRequestFilters(state), { resetPage: true })
     },
     setSort: async (field, order) => {
       const nextSortOrder = isValidSortOrder(order) ? order : null
@@ -584,12 +501,14 @@ export function createProTableController<
         return
       }
 
-      store.setState({
+      store.setState((current) => ({
         sortField: field,
         sortOrder: nextSortOrder,
-      })
+        currentPage: 1,
+        selectedRowKeys: current.selectedRowKeys.length === 0 ? current.selectedRowKeys : [],
+      }))
 
-      await controller.submitQuery({ resetPage: true })
+      await performRequest(resolveRequestFilters(store.getState()), { resetPage: true })
     },
     setDataSource: (rows, total) => {
       store.setState({
@@ -646,6 +565,16 @@ export function createProTableController<
     collapseAllRows: () => {
       store.setState((state) =>
         state.expandedRowKeys.length === 0 ? state : { expandedRowKeys: [] },
+      )
+    },
+    getRequestParams: () => {
+      const state = store.getState()
+      return assembleRequestParams(
+        resolveRequestFilters(state),
+        state.currentPage,
+        state.pageSize,
+        state.sortField,
+        state.sortOrder,
       )
     },
   };

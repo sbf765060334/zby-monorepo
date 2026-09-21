@@ -48,7 +48,7 @@ export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   prefixCls?: string
 }
 
-export interface ProTableToolbarActionInfo<RecordType = Record<string, unknown>, Query = Record<string, unknown>, Summary = unknown> {
+export interface ProTableToolbarActionInfo<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> {
   key: Key
   controller?: ProTableController<RecordType, Query, Summary>
   loading?: boolean
@@ -56,7 +56,7 @@ export interface ProTableToolbarActionInfo<RecordType = Record<string, unknown>,
   selectedRows?: RecordType[]
 }
 
-export interface ProTableToolbarButtonActionItem<RecordType = Record<string, unknown>, Query = Record<string, unknown>, Summary = unknown> {
+export interface ProTableToolbarButtonActionItem<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> {
   key: Key
   label: ReactNode
   type?: 'primary' | 'default'
@@ -75,7 +75,7 @@ export interface ProTableToolbarBatchActionItem<RecordType = Record<string, unkn
   hidden?: boolean
 }
 
-export type ProTableToolbarActionItem<RecordType = Record<string, unknown>, Query = Record<string, unknown>, Summary = unknown> =
+export type ProTableToolbarActionItem<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> =
   | ProTableToolbarButtonActionItem<RecordType, Query, Summary>
   | ProTableToolbarBatchActionItem<RecordType>
 
@@ -194,7 +194,7 @@ export type ProTableColumns<RecordType = Record<string, unknown>> =
 
 export interface ProTableActionColumnContext<
   RecordType = Record<string, unknown>,
-  Query = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
 > {
   record: RecordType
@@ -204,7 +204,7 @@ export interface ProTableActionColumnContext<
 
 export type ProTableActionColumnActions<
   RecordType = Record<string, unknown>,
-  Query = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
 > =
   | Array<ProTableActionItem<RecordType> | false | null | undefined>
@@ -214,7 +214,7 @@ export type ProTableActionColumnActions<
 
 export type ProTableActionColumnConfig<
   RecordType = Record<string, unknown>,
-  Query = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
 > = Omit<
   ProTableColumnType<RecordType>,
@@ -261,7 +261,7 @@ export interface ProTableColumnResizeConfig<RecordType = Record<string, unknown>
 }
 
 export interface ProTableSearchFieldRenderContext<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType,
   Summary,
 > {
@@ -274,7 +274,7 @@ export interface ProTableSearchFieldRenderContext<
 }
 
 export interface ProTableSearchField<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType = Record<string, unknown>,
   Summary = unknown,
 > {
@@ -312,7 +312,7 @@ export type ProTableQuickFieldSubmitTrigger =
     wait?: number
   }
 
-export interface ProTableQuickFieldConfig<Query = Record<string, unknown>> {
+export interface ProTableQuickFieldConfig<Query extends Record<string, unknown> = Record<string, unknown>> {
   key: Extract<keyof Query, string> | string
   label?: boolean | ReactNode
   placeholder?: string
@@ -321,7 +321,7 @@ export interface ProTableQuickFieldConfig<Query = Record<string, unknown>> {
 }
 
 export interface ProTableSearchConfig<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType = Record<string, unknown>,
   Summary = unknown,
 > {
@@ -345,13 +345,13 @@ export interface ProTableViewSorter {
   order: 'ascend' | 'descend'
 }
 
-export interface ProTableViewSnapshot<Query = Record<string, unknown>> {
+export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Record<string, unknown>> {
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
   sorter?: ProTableViewSorter | null
 }
 
-export interface ProTableViewsConfig<Query = Record<string, unknown>> {
+export interface ProTableViewsConfig<Query extends Record<string, unknown> = Record<string, unknown>> {
   adapter?: false | ProViewManagementAdapter<ProTableViewSnapshot<Query>>
   onLoadError?: (
     error: unknown,
@@ -362,7 +362,11 @@ export interface ProTableViewsConfig<Query = Record<string, unknown>> {
   ) => void
 }
 
-export interface ProTableToolbarContext<RecordType, Query, Summary> {
+export interface ProTableToolbarContext<
+  RecordType,
+  Query extends Record<string, unknown>,
+  Summary,
+> {
   controller: ProTableController<RecordType, Query, Summary>
   loading: boolean
   selectedRowKeys: Key[]
@@ -370,7 +374,7 @@ export interface ProTableToolbarContext<RecordType, Query, Summary> {
 
 export interface ProTableToolbarConfig<
   RecordType = Record<string, unknown>,
-  Query = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
 > {
   actionItems?:
@@ -397,45 +401,53 @@ export interface ProTableToolbarConfig<
 
 export interface ProTablePaginationConfig
   extends Omit<TablePaginationConfig, 'current' | 'pageSize' | 'total'> {
-  pageKey?: string
-  pageSizeKey?: string
   defaultCurrent?: number
   defaultPageSize?: number
 }
 
-export interface ProTableSortConfig {
-  sortByKey?: string
-  sortOrderKey?: string
-}
+/** Assembled request payload: filters + page + pageSize + sort. */
+export type ProTableRequestParams<Query extends Record<string, unknown> = Record<string, unknown>> =
+  Query & {
+    page: number
+    pageSize: number
+    sortBy?: string
+    sortOrder?: 'ascend' | 'descend'
+  }
 
 export interface ProTableRequestContext {
   signal: AbortSignal
 }
 
-export type ProTableQueryRequest<RecordType, Query> = (
-  query: Query,
+export type ProTableQueryRequest<RecordType, Query extends Record<string, unknown>> = (
+  params: ProTableRequestParams<Query>,
   context: ProTableRequestContext,
 ) => Promise<{ data: RecordType[]; total?: number }>
 
-export type ProTableSummaryRequest<Query, Summary> = (
-  query: Query,
+export type ProTableSummaryRequest<Query extends Record<string, unknown>, Summary> = (
+  params: ProTableRequestParams<Query>,
   context: ProTableRequestContext,
 ) => Promise<Summary>
 
-export interface ProTableControllerConfig<RecordType, Query, Summary> {
+export interface ProTableControllerPaginationConfig {
+  defaultCurrent?: number
+  defaultPageSize?: number
+}
+
+export interface ProTableControllerConfig<RecordType, Query extends Record<string, unknown>, Summary> {
+  /** Filter defaults only. Page and sort are not part of Query. */
   defaultQuery?: Query
   rowKey?: TableProps<RecordType>['rowKey']
   queryRequest?: ProTableQueryRequest<RecordType, Query>
   summaryRequest?: ProTableSummaryRequest<Query, Summary>
-  pagination?: ProTablePaginationConfig
-  sort?: ProTableSortConfig
+  /** Create-time page defaults. Runtime page lives on controller state. */
+  pagination?: ProTableControllerPaginationConfig
 }
 
-export interface ProTableControllerState<RecordType, Query, Summary> {
+export interface ProTableControllerState<RecordType, Query extends Record<string, unknown>, Summary> {
   query: Query
   committedQuery: Query
   defaultQuery: Query
-  latestParams: Query | null
+  latestParams: ProTableRequestParams<Query> | null
   dataSource: RecordType[]
   total: number
   currentPage: number
@@ -451,7 +463,7 @@ export interface ProTableControllerState<RecordType, Query, Summary> {
   sortOrder?: 'ascend' | 'descend' | null
 }
 
-export interface ProTableController<RecordType, Query, Summary> {
+export interface ProTableController<RecordType, Query extends Record<string, unknown>, Summary> {
   getState: () => ProTableControllerState<RecordType, Query, Summary>
   subscribe: (
     listener: (state: ProTableControllerState<RecordType, Query, Summary>) => void,
@@ -481,6 +493,8 @@ export interface ProTableController<RecordType, Query, Summary> {
   setExpandedRowKeys: (keys: Key[]) => void
   expandAllRows: () => void
   collapseAllRows: () => void
+  /** Currently assembled request: committed filters + page + pageSize + sort. */
+  getRequestParams: () => ProTableRequestParams<Query>
 }
 
 export interface ProTableLayoutConfig {
@@ -524,7 +538,11 @@ export type ProTableStylesType = ResolvableSemantic<
   Readonly<ProTableSemanticStyles>
 >
 
-export interface ProTableRef<RecordType, Query, Summary> {
+export interface ProTableRef<
+  RecordType,
+  Query extends Record<string, unknown>,
+  Summary,
+> {
   controller: ProTableController<RecordType, Query, Summary>
 }
 
@@ -632,20 +650,20 @@ export type ProTableTableChange<RecordType> = NonNullable<
 
 /** @deprecated use ProTableSearchConfig */
 export type ProTableQueryConfig<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType = Record<string, unknown>,
   Summary = unknown,
 > = ProTableSearchConfig<Query, RecordType, Summary>
 
 /** @deprecated use ProTableSearchFieldRenderContext */
 export type ProTableQueryFieldRenderContext<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType = Record<string, unknown>,
   Summary = unknown,
 > = ProTableSearchFieldRenderContext<Query, RecordType, Summary>
 
 /** @deprecated use ProTableSearchGroup */
-export type ProTableQueryGroup<Query = Record<string, unknown>> =
+export type ProTableQueryGroup<Query extends Record<string, unknown> = Record<string, unknown>> =
   ProTableSearchGroup & {
     fields?: ProTableSearchField<Query>[]
   }

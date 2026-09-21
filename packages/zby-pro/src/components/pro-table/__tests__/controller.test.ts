@@ -3,18 +3,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProTableController } from '..'
 
 type Row = { id: string; status: string }
-type Query = { status?: string; page: number; pageSize: number }
+type Query = { status?: string }
 
 describe('createProTableController', () => {
-  it('submits queries and exposes the resulting table state', async () => {
-    const queryRequest = vi.fn(async (query: Query) => ({
-      data: [{ id: String(query.page), status: query.status ?? 'all' }],
+  it('keeps filters on query and only puts paging on the request params', async () => {
+    const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
+      data: [{ id: String(params.page), status: params.status ?? 'all' }],
       total: 1,
     }))
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10 },
+      defaultQuery: {},
       queryRequest,
       rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
     })
 
     controller.setQueryField('status', 'pending')
@@ -25,7 +26,12 @@ describe('createProTableController', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
     expect(controller.getState()).toMatchObject({
-      committedQuery: { status: 'pending', page: 1, pageSize: 10 },
+      query: { status: 'pending' },
+      committedQuery: { status: 'pending' },
+      defaultQuery: {},
+      latestParams: { status: 'pending', page: 1, pageSize: 10 },
+      currentPage: 1,
+      pageSize: 10,
       dataSource: [{ id: '1', status: 'pending' }],
       total: 1,
       loading: false,
@@ -33,64 +39,126 @@ describe('createProTableController', () => {
     })
   })
 
-  it('configure updates the request wiring without resetting the current query', async () => {
-    const queryRequest = vi.fn(async (query: Query) => ({
-      data: [{ id: String(query.page), status: query.status ?? 'all' }],
+  it('does not write page or sort into query when paging, sorting, or reloading', async () => {
+    const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
+      data: [{ id: String(params.page), status: params.status ?? 'all' }],
       total: 20,
     }))
-    const nextQueryRequest = vi.fn(async (query: Query) => ({
-      data: [{ id: String(query.page), status: query.status ?? 'all' }],
+    const nextQueryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
+      data: [{ id: String(params.page), status: params.status ?? 'all' }],
       total: 20,
     }))
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10 },
       queryRequest,
       rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
     })
 
+    controller.setQueryField('status', 'pending')
     await controller.submitQuery()
     await controller.setPage(2)
-    controller.setQueryField('status', 'pending')
+    controller.setQueryField('status', 'done')
+
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'done' },
+      committedQuery: { status: 'pending' },
+      currentPage: 2,
+      latestParams: { status: 'pending', page: 2, pageSize: 10 },
+    })
 
     controller.configure({
-      defaultQuery: { page: 1, pageSize: 10 },
+      defaultQuery: { status: 'all' },
       queryRequest: nextQueryRequest,
     })
 
     expect(controller.getState()).toMatchObject({
-      query: { status: 'pending', page: 2, pageSize: 10 },
-      committedQuery: { page: 2, pageSize: 10 },
-      defaultQuery: { page: 1, pageSize: 10 },
+      query: { status: 'done' },
+      committedQuery: { status: 'pending' },
+      defaultQuery: { status: 'all' },
       currentPage: 2,
     })
 
     await controller.reload()
     expect(nextQueryRequest).toHaveBeenCalledWith(
-      { page: 2, pageSize: 10 },
+      { status: 'pending', page: 2, pageSize: 10 },
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
     expect(queryRequest).toHaveBeenCalledTimes(2)
+
+    await controller.setSort('amount', 'ascend')
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'done' },
+      committedQuery: { status: 'pending' },
+      currentPage: 1,
+      sortField: 'amount',
+      sortOrder: 'ascend',
+      latestParams: {
+        status: 'pending',
+        page: 1,
+        pageSize: 10,
+        sortBy: 'amount',
+        sortOrder: 'ascend',
+      },
+    })
+    expect(controller.getRequestParams()).toEqual({
+      status: 'pending',
+      page: 1,
+      pageSize: 10,
+      sortBy: 'amount',
+      sortOrder: 'ascend',
+    })
   })
 
-  it('resetQuery applies the latest defaultQuery from configure', () => {
+  it('pages with committed filters and ignores the unsaved draft', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'all' }],
+      total: 20,
+    }))
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10, status: 'all' },
+      queryRequest,
       rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    controller.setQueryField('status', 'pending')
+    expect(controller.getRequestParams()).toEqual({ page: 1, pageSize: 10 })
+
+    await controller.setPage(2)
+
+    expect(queryRequest).toHaveBeenCalledWith(
+      { page: 2, pageSize: 10 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'pending' },
+      committedQuery: {},
+      currentPage: 2,
+      latestParams: { page: 2, pageSize: 10 },
+    })
+  })
+
+  it('resetQuery applies the latest defaultQuery from configure without touching page', () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      rowKey: 'id',
+      pagination: { defaultCurrent: 3, defaultPageSize: 8 },
     })
 
     controller.setQueryField('status', 'pending')
     controller.configure({
-      defaultQuery: { page: 1, pageSize: 10, status: 'done' },
+      defaultQuery: { status: 'done' },
     })
 
     expect(controller.getState().query.status).toBe('pending')
+    expect(controller.getState().currentPage).toBe(3)
+    expect(controller.getState().pageSize).toBe(8)
     controller.resetQuery()
-    expect(controller.getState().query).toEqual({ page: 1, pageSize: 10, status: 'done' })
+    expect(controller.getState().query).toEqual({ status: 'done' })
+    expect(controller.getState().currentPage).toBe(3)
   })
 
   it('keeps selected rows and supports row patching', () => {
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10 },
       rowKey: 'id',
     })
     controller.setDataSource([

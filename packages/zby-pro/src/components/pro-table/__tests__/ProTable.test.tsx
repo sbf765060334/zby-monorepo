@@ -49,10 +49,6 @@ vi.mock('@zby/ui', async (importOriginal) => {
 
 type Row = { id: string; name: string }
 type Query = {
-  page: number
-  pageSize: number
-  sortBy?: string
-  sortOrder?: string
   status?: string
   owner?: string
 }
@@ -110,19 +106,22 @@ describe('ProTable', () => {
     renderProTable(
       <ProTable<Row, Query>
         rowKey="id"
-        defaultQuery={{ page: 1, pageSize: 10 }}
         queryRequest={queryRequest}
         columns={[]}
       />,
     )
 
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledWith(
+      { page: 1, pageSize: 10 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
     expect(screen.getByTestId('rows').textContent).toBe('1')
   })
 
   it('uses external controller state and maps table events back to it', async () => {
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10 },
+      defaultQuery: {},
       rowKey: 'id',
     })
     controller.setDataSource([{ id: '1', name: 'A' }])
@@ -169,7 +168,7 @@ describe('ProTable', () => {
 
   it('does not render search fields while still supporting search snapshot fields for views', async () => {
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10, status: 'all' },
+      defaultQuery: { status: 'all' },
       rowKey: 'id',
     })
 
@@ -244,12 +243,12 @@ describe('ProTable', () => {
       ],
       activeViewId: 'custom-pending',
     })
-    const queryRequest = vi.fn(async (query: Query) => ({
-      data: [{ id: '1', name: query.status ?? 'all' }],
+    const queryRequest = vi.fn(async (params: Query & { page: number }) => ({
+      data: [{ id: '1', name: params.status ?? 'all' }],
       total: 1,
     }))
     const controller = createProTableController<Row, Query>({
-      defaultQuery: { page: 1, pageSize: 10, status: 'all' },
+      defaultQuery: { status: 'all' },
       queryRequest,
       rowKey: 'id',
     })

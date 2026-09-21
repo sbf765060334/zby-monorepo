@@ -125,17 +125,14 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       queryRequest,
       summaryRequest,
       rowKey,
-      ...(pagination && typeof pagination === 'object'
-        ? {
-            pagination: {
-              ...controllerConfig?.pagination,
-              pageKey: pagination.pageKey,
-              pageSizeKey: pagination.pageSizeKey,
-              defaultCurrent: pagination.defaultCurrent,
-              defaultPageSize: pagination.defaultPageSize,
-            },
-          }
-        : {}),
+      pagination: {
+        defaultCurrent:
+          (pagination && typeof pagination === 'object' ? pagination.defaultCurrent : undefined) ??
+          controllerConfig?.pagination?.defaultCurrent,
+        defaultPageSize:
+          (pagination && typeof pagination === 'object' ? pagination.defaultPageSize : undefined) ??
+          controllerConfig?.pagination?.defaultPageSize,
+      },
     })
   }
 
@@ -185,20 +182,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
         queryRequest,
         summaryRequest,
         rowKey,
-        ...(pagination && typeof pagination === 'object'
-          ? {
-              pagination: {
-                ...controllerConfig?.pagination,
-                pageKey: pagination.pageKey,
-                pageSizeKey: pagination.pageSizeKey,
-                defaultCurrent: pagination.defaultCurrent,
-                defaultPageSize: pagination.defaultPageSize,
-              },
-            }
-          : {}),
       })
     }
-  }, [controller, controllerConfig, controllerProp, defaultQuery, pagination, queryRequest, rowKey, summaryRequest])
+  }, [controller, controllerConfig, controllerProp, defaultQuery, queryRequest, rowKey, summaryRequest])
 
   useEffect(
     () => () => {

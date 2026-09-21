@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { ProTableSearchConfig, ProTableSearchField } from '../interface'
 
 export function flattenSearchFields<
-  Query,
+  Query extends Record<string, unknown>,
   RecordType = Record<string, unknown>,
   Summary = unknown,
 >(config: ProTableSearchConfig<Query, RecordType, Summary>) {
@@ -29,7 +29,7 @@ export function flattenSearchFields<
 
 const hasOwnProperty = Object.prototype.hasOwnProperty
 
-export function resolveSearchResetTarget<Query>(
+export function resolveSearchResetTarget<Query extends Record<string, unknown>>(
   field: ProTableSearchField<Query>,
   query: Query,
   defaultQuery?: Query,
@@ -59,7 +59,7 @@ export function resolveSearchResetTarget<Query>(
   }
 }
 
-export function resolveSearchResetValue<Query>(
+export function resolveSearchResetValue<Query extends Record<string, unknown>>(
   field: ProTableSearchField<Query>,
   query: Query,
   defaultQuery?: Query,
@@ -67,7 +67,7 @@ export function resolveSearchResetValue<Query>(
   return resolveSearchResetTarget(field, query, defaultQuery).value
 }
 
-export function resolveSearchTagText<Query>(
+export function resolveSearchTagText<Query extends Record<string, unknown>>(
   field: ProTableSearchField<Query>,
   value: unknown,
   query: Query,

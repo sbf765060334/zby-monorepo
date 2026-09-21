@@ -112,8 +112,6 @@ function toTablePagination(pagination: ProTableProps<any, any, any>['pagination'
     return pagination
   }
   const {
-    pageKey: _pageKey,
-    pageSizeKey: _pageSizeKey,
     defaultCurrent: _defaultCurrent,
     defaultPageSize: _defaultPageSize,
     ...tablePagination
