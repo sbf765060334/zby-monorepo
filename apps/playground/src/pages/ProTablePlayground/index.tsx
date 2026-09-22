@@ -4,6 +4,7 @@ import {
   ProLayoutContentContainer,
   ProTable,
   type ProTableColumnType,
+  type ProTableFilter,
   type ProTableQueryRequest,
 } from '@zby/pro'
 
@@ -327,6 +328,75 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
   },
 ]
 
+const filters: ProTableFilter<PlaygroundQuery>[] = [
+  {
+    key: 'customer',
+    label: '客户',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="客户名称"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'status',
+    label: '状态',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        showSearch
+        options={STATUS_OPTIONS}
+        placeholder="状态"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'createdAt',
+    label: '创建时间',
+    render: ({ value, setValue }) => {
+      const start = value?.[0]
+      const end = value?.[1]
+
+      return (
+        <DatePicker.RangePicker
+          allowClear
+          placeholder={['开始日期', '结束日期']}
+          value={start && end ? [dayjs(start), dayjs(end)] : null}
+          onChange={(_dates, dateStrings) => {
+            const [nextStart, nextEnd] = dateStrings ?? []
+            setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
+          }}
+        />
+      )
+    },
+  },
+  {
+    key: 'owner',
+    label: '负责人',
+    hidden: true,
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="负责人"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+]
+
 export default function ProTablePlayground() {
   const { message } = App.useApp()
 
@@ -338,77 +408,7 @@ export default function ProTablePlayground() {
         persistenceKey="playground-pro-table"
         queryRequest={queryOrders}
         columns={columns}
-        search={{
-          fields: [
-            {
-              key: 'customer',
-              label: '客户',
-              render: ({ value, setValue }) => (
-                <Input
-                  allowClear
-                  placeholder="客户名称"
-                  value={typeof value === 'string' ? value : ''}
-                  onChange={(event) => {
-                    const next = event.target.value
-                    setValue(next === '' ? undefined : next)
-                  }}
-                />
-              ),
-            },
-            {
-              key: 'status',
-              label: '状态',
-              render: ({ value, setValue }) => (
-                <Select
-                  allowClear
-                  showSearch
-                  options={STATUS_OPTIONS}
-                  placeholder="状态"
-                  popupMatchSelectWidth={false}
-                  value={typeof value === 'string' ? value : undefined}
-                  onChange={(next) => setValue(next)}
-                />
-              ),
-            },
-            {
-              key: 'createdAt',
-              label: '创建时间',
-              render: ({ value, setValue }) => {
-                const range = Array.isArray(value) ? value : undefined
-                const start = typeof range?.[0] === 'string' ? range[0] : undefined
-                const end = typeof range?.[1] === 'string' ? range[1] : undefined
-
-                return (
-                  <DatePicker.RangePicker
-                    allowClear
-                    placeholder={['开始日期', '结束日期']}
-                    value={start && end ? [dayjs(start), dayjs(end)] : null}
-                    onChange={(_dates, dateStrings) => {
-                      const [nextStart, nextEnd] = dateStrings ?? []
-                      setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
-                    }}
-                  />
-                )
-              },
-            },
-            {
-              key: 'owner',
-              label: '负责人',
-              hidden: true,
-              render: ({ value, setValue }) => (
-                <Input
-                  allowClear
-                  placeholder="负责人"
-                  value={typeof value === 'string' ? value : ''}
-                  onChange={(event) => {
-                    const next = event.target.value
-                    setValue(next === '' ? undefined : next)
-                  }}
-                />
-              ),
-            },
-          ],
-        }}
+        filters={filters}
         views
         columnResize
         rowHighlight

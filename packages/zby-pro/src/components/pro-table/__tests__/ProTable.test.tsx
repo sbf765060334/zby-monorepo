@@ -66,7 +66,7 @@ function searchInputField(key: keyof Query, label: string, extra?: { hidden?: bo
     key,
     label,
     ...extra,
-    render: ({ value, setValue }: { value: unknown; setValue: (next: unknown) => void }) => (
+    render: ({ value, setValue }: { value: Query[keyof Query]; setValue: (next: Query[keyof Query] | undefined) => void }) => (
       <input
         aria-label={label}
         value={typeof value === 'string' ? value : ''}
@@ -191,9 +191,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[]}
-        search={{
-          fields: [searchInputField('status', '状态'), searchInputField('owner', '负责人')],
-        }}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
       />,
     )
 
@@ -216,12 +214,10 @@ describe('ProTable', () => {
         defaultQuery={{ status: 'all' }}
         queryRequest={queryRequest}
         columns={[]}
-        search={{
-          fields: [
-            searchInputField('status', '状态'),
-            searchInputField('owner', '负责人', { hidden: true }),
-          ],
-        }}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
       />,
     )
 
@@ -264,7 +260,8 @@ describe('ProTable', () => {
       expect.objectContaining({ page: 1, status: 'all' }),
       expect.anything(),
     )
-    expect(queryRequest.mock.calls[3]?.[0]).not.toHaveProperty('owner')
+    const submittedQuery = queryRequest.mock.calls[3]?.[0] as Record<string, unknown> | undefined
+    expect(submittedQuery).not.toHaveProperty('owner')
     await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
   })
 
@@ -526,7 +523,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: '名称' }]}
-        search={{ fields: [searchInputField('status', '状态')] }}
+        filters={[searchInputField('status', '状态')]}
         views={{ adapter }}
       />,
     )

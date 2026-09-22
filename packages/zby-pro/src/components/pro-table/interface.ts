@@ -263,32 +263,25 @@ export interface ProTableColumnResizeConfig<RecordType = Record<string, unknown>
   onResizeEnd?: (info: ProTableColumnResizeInfo<RecordType>) => void
 }
 
-export interface ProTableSearchFieldRenderContext<Query extends Record<string, unknown>> {
-  value: unknown
+export interface ProTableFilterRenderContext<
+  Query extends Record<string, unknown>,
+  Key extends Extract<keyof Query, string> = Extract<keyof Query, string>,
+> {
+  value: Query[Key] | undefined
   query: Query
-  setValue: (value: unknown) => void
+  setValue: (value: Query[Key] | undefined) => void
 }
 
-export interface ProTableSearchField<
-  Query extends Record<string, unknown>,
-  RecordType = Record<string, unknown>,
-  Summary = unknown,
-> {
-  key: Extract<keyof Query, string> | string
-  label: ReactNode
-  /** 收进「更多筛选」，不排在筛选行上。仍参与查询和视图快照。 */
-  hidden?: boolean
-  /** 必须返回单一根元素，筛选行才能按 width / placeholder / 默认宽合入尺寸。 */
-  render: (context: ProTableSearchFieldRenderContext<Query>) => ReactNode
-}
-
-export interface ProTableSearchConfig<
-  Query extends Record<string, unknown>,
-  RecordType = Record<string, unknown>,
-  Summary = unknown,
-> {
-  fields: ProTableSearchField<Query, RecordType, Summary>[]
-}
+export type ProTableFilter<Query extends Record<string, unknown> = Record<string, unknown>> = {
+  [Key in Extract<keyof Query, string>]: {
+    key: Key
+    label: ReactNode
+    /** 收进「更多筛选」，不排在筛选行上。仍参与查询和视图快照。 */
+    hidden?: boolean
+    /** 必须返回单一根元素，筛选行才能按 width / placeholder / 默认宽合入尺寸。 */
+    render: (context: ProTableFilterRenderContext<Query, Key>) => ReactNode
+  }
+}[Extract<keyof Query, string>]
 
 export interface ProTableViewSorter {
   field: string
@@ -429,7 +422,10 @@ export interface ProTableController<RecordType, Query extends Record<string, unk
     sorter?: ProTableViewSorter | null
     committed?: boolean
   }) => void
-  setQueryField: (key: Extract<keyof Query, string> | string, value: unknown) => void
+  setQueryField: <Key extends Extract<keyof Query, string>>(
+    key: Key,
+    value: Query[Key] | undefined,
+  ) => void
   setQuery: (patch: Partial<Query>) => void
   resetQuery: (patch?: Partial<Query>) => void
   submitQuery: (options?: { resetPage?: boolean }) => Promise<void>
@@ -531,7 +527,7 @@ export interface ProTableProps<
   columns: ProTableColumnsType<RecordType>
   actionColumn?: false | ProTableActionColumnConfig<RecordType, Query, Summary>
   rowKey?: TableProps<RecordType>['rowKey']
-  search?: false | ProTableSearchConfig<Query, RecordType, Summary>
+  filters?: ProTableFilter<Query>[]
   /** `true` 开默认视图；`false` / 缺省关闭；对象为配置。 */
   views?: boolean | ProTableViewsConfig<Query>
   /** `true` 出刷新 / 列设置 / 全屏；`false` / 缺省关闭；对象为工具栏配置。 */
@@ -570,7 +566,7 @@ export interface ProTableConfig<
   autoRequest?: ProTableProps<RecordType, Query, Summary>['autoRequest']
   layout?: Partial<ProTableLayoutConfig>
   emptyState?: Partial<ProTableEmptyStateConfig>
-  search?: false | Partial<ProTableSearchConfig<Query, RecordType, Summary>>
+  filters?: ProTableFilter<Query>[]
   views?: boolean | Partial<ProTableViewsConfig<Query>>
   toolbar?: boolean | Partial<ProTableToolbarConfig<RecordType, Query, Summary>>
   columnResize?: ProTableProps<RecordType, Query, Summary>['columnResize']

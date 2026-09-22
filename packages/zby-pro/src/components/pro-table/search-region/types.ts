@@ -8,16 +8,10 @@ import type {
 import type { ProTableViewStore } from '../store'
 import type {
   ProTableController,
-  ProTableProps,
-  ProTableSearchField,
+  ProTableFilter,
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
-
-export type SearchConfigValue<RecordType, Query extends Record<string, unknown>, Summary> = Exclude<
-  ProTableProps<RecordType, Query, Summary>['search'],
-  false | undefined
->
 
 export type ViewsConfigValue<Query extends Record<string, unknown>> = ProTableViewsConfig<Query>
 
@@ -30,7 +24,7 @@ export type ModalScopeProps = {
 export type SearchRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   className?: string
-  fields?: ProTableSearchField<Query, RecordType, Summary>[]
+  filters?: ProTableFilter<Query>[]
   moreOpen?: boolean
   searchEnabled?: boolean
   showMore?: boolean

@@ -1,4 +1,4 @@
-import type { ProTableSearchField, ProTableViewSnapshot, ProTableViewSorter, ProTableColumnPreference } from '../interface'
+import type { ProTableFilter, ProTableViewSnapshot, ProTableViewSorter, ProTableColumnPreference } from '../interface'
 import type { ProTableColumnDefinition } from './columns'
 import { resolveColumnPreferences, cloneColumnPreferences } from './field-config'
 import { isSearchValueEqual, pickSearchQuery } from './search'
@@ -25,13 +25,13 @@ function normalizeViewSorter(
 
 export function buildViewSnapshot<Query extends Record<string, unknown>>(
   query: Partial<Query>,
-  searchFields: ProTableSearchField<Query, any, any>[],
+  filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
   columnPreferences: ProTableColumnPreference[],
   sorter?: ProTableViewSorter | null,
 ) {
   return {
-    query: pickSearchQuery(query, searchFields),
+    query: pickSearchQuery(query, filters),
     columnPreferences: cloneColumnPreferences(
       resolveColumnPreferences(columnDefinitions, {
         current: columnPreferences,
@@ -43,12 +43,12 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
 
 export function normalizeViewSnapshot<Query extends Record<string, unknown>>(
   snapshot: ProTableViewSnapshot<Query> | null | undefined,
-  searchFields: ProTableSearchField<Query, any, any>[],
+  filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
   newColumnPolicy?: 'prepend' | 'append' | 'default-order',
 ) {
   return {
-    query: pickSearchQuery(snapshot?.query ?? {}, searchFields),
+    query: pickSearchQuery(snapshot?.query ?? {}, filters),
     columnPreferences: resolveColumnPreferences(columnDefinitions, {
       current: snapshot?.columnPreferences,
       policy: newColumnPolicy,

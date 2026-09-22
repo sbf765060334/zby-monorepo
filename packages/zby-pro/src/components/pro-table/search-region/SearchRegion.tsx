@@ -9,7 +9,7 @@ import type { SearchRegionProps } from './types'
 function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
   className,
   controller,
-  fields = [],
+  filters = [],
   moreOpen = false,
   onResetSearch,
   onSearch,
@@ -83,7 +83,7 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
     >
       {viewManagementNode}
       {searchEnabled ? (
-        <SearchFields controller={controller} fields={fields} prefixCls={prefixCls} />
+        <SearchFields controller={controller} filters={filters} prefixCls={prefixCls} />
       ) : null}
       {searchEnabled ? (
         <Flex

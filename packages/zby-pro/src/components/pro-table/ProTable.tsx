@@ -18,7 +18,6 @@ import type {
   ProTableController,
   ProTableProps,
   ProTableRef,
-  ProTableSearchField,
 } from './interface'
 import { ColumnsModalMount, useColumnsState } from './columns-state'
 import {
@@ -70,7 +69,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     columns,
     actionColumn,
     rowKey,
-    search = false,
     views,
     toolbar,
     columnResize,
@@ -96,7 +94,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const intl = useIntl()
   const resolvedConfig = useResolvedProTableConfig({
     ...props,
-    search,
     views,
     toolbar,
     columnResize,
@@ -153,20 +150,14 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     () => buildColumnDefinitions(resolvedColumns),
     [resolvedColumns],
   )
-  const searchFields = useMemo(
-    () =>
-      resolvedConfig.mergedSearch
-        ? resolvedConfig.mergedSearch.fields
-        : ([] as ProTableSearchField<Query, RecordType, Summary>[]),
-    [resolvedConfig.mergedSearch],
+  const filters = resolvedConfig.mergedFilters
+  const visibleFilters = useMemo(
+    () => filters.filter((filter) => !filter.hidden),
+    [filters],
   )
-  const visibleSearchFields = useMemo(
-    () => searchFields.filter((field) => !field.hidden),
-    [searchFields],
-  )
-  const moreSearchFields = useMemo(
-    () => searchFields.filter((field) => field.hidden),
-    [searchFields],
+  const moreFilters = useMemo(
+    () => filters.filter((filter) => filter.hidden),
+    [filters],
   )
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
@@ -208,7 +199,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     viewStore,
     views: resolvedConfig.mergedViews,
     persistenceKey,
-    searchFields,
+    filters,
     columnDefinitions,
     newColumnPolicy: resolvedConfig.mergedColumnSetting
       ? resolvedConfig.mergedColumnSetting.newColumnPolicy
@@ -322,12 +313,12 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     () => contentMainRef.current ?? document.body,
     [],
   )
-  const searchEnabled = resolvedConfig.mergedSearch !== false
+  const searchEnabled = filters.length > 0
   useEffect(() => {
-    if (!searchEnabled || moreSearchFields.length === 0) {
+    if (!searchEnabled || moreFilters.length === 0) {
       setMoreFiltersOpen(false)
     }
-  }, [moreSearchFields.length, searchEnabled])
+  }, [moreFilters.length, searchEnabled])
   const showSearchRow =
     (viewsEnabled || searchEnabled) &&
     !(shouldBlockViewContent && !shouldExposeViewLoadingState)
@@ -352,13 +343,13 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
             <SearchRegion
               className={resolvedConfig.mergedSemanticClassNames.search}
               controller={controller}
-              fields={visibleSearchFields}
+              filters={visibleFilters}
               moreOpen={moreFiltersOpen}
               onResetSearch={handleResetSearch}
               onSearch={handleSearch}
               onToggleMore={handleToggleMoreFilters}
               searchEnabled={searchEnabled}
-              showMore={moreSearchFields.length > 0}
+              showMore={moreFilters.length > 0}
               views={resolvedConfig.mergedViews}
               viewStore={viewStore}
               prefixCls={resolvedConfig.prefixCls}
@@ -382,7 +373,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
             >
               <SearchMorePanel
                 controller={controller}
-                fields={moreSearchFields}
+                filters={moreFilters}
                 getContainer={getSearchOverlayContainer}
                 onClose={handleCloseMoreFilters}
                 open={moreFiltersOpen}
@@ -459,7 +450,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       handleRetryViewInitialization,
       loading,
       moreFiltersOpen,
-      moreSearchFields,
+      moreFilters,
       onTableChange,
       resolvedColumns,
       resolvedConfig.columnPreferencesEnabled,
@@ -486,7 +477,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       rowKey,
       searchEnabled,
       showSearchRow,
-      visibleSearchFields,
+      visibleFilters,
       showTable,
       stableTableProps,
       viewInitialization.initialStorageState,

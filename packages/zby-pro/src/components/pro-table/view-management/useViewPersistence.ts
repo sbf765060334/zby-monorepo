@@ -7,8 +7,8 @@ import {
 } from '../../pro-view-management'
 import type {
   ProTableController,
+  ProTableFilter,
   ProTableNewColumnPolicy,
-  ProTableSearchField,
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
@@ -33,7 +33,7 @@ type ViewPersistenceParams<RecordType, Query extends Record<string, unknown>, Su
   viewStore: ProTableViewStore
   views: false | ProTableViewsConfig<Query>
   persistenceKey?: string
-  searchFields: ProTableSearchField<Query, RecordType, Summary>[]
+  filters: ProTableFilter<Query>[]
   columnDefinitions: ProTableColumnDefinition[]
   newColumnPolicy?: ProTableNewColumnPolicy
 }
@@ -65,24 +65,24 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
   viewStore,
   views,
   persistenceKey,
-  searchFields,
+  filters,
   columnDefinitions,
   newColumnPolicy,
 }: ViewPersistenceParams<RecordType, Query, Summary>) {
   const normalizeSnapshotForCurrentSchema = useCallback(
     (snapshot: ProTableViewSnapshot<Query> | null | undefined) => {
-      return normalizeViewSnapshot(snapshot, searchFields, columnDefinitions, newColumnPolicy)
+      return normalizeViewSnapshot(snapshot, filters, columnDefinitions, newColumnPolicy)
     },
-    [columnDefinitions, newColumnPolicy, searchFields],
+    [columnDefinitions, filters, newColumnPolicy],
   )
 
   const buildSystemDefaultSnapshot = useCallback(
     () =>
       normalizeSnapshotForCurrentSchema({
-        query: pickSearchQuery(controller.getState().defaultQuery, searchFields),
+        query: pickSearchQuery(controller.getState().defaultQuery, filters) as Partial<Query>,
         columnPreferences: buildDefaultColumnPreferences(columnDefinitions),
       }),
-    [columnDefinitions, controller, normalizeSnapshotForCurrentSchema, searchFields],
+    [columnDefinitions, controller, filters, normalizeSnapshotForCurrentSchema],
   )
 
   const transientViewManagementAdapter = useMemo(
@@ -135,7 +135,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
 
     return buildViewSnapshot(
       state.committedQuery,
-      searchFields,
+      filters,
       columnDefinitions,
       storeState.mergedColumnsPreferences,
       state.sortField && state.sortOrder
@@ -145,7 +145,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
           }
         : null,
     )
-  }, [columnDefinitions, controller, searchFields, viewStore])
+  }, [columnDefinitions, controller, filters, viewStore])
 
   const handleApplyManagedView = useCallback(
     async (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => {

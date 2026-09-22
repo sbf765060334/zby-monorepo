@@ -2,16 +2,17 @@ import * as React from 'react'
 import { clsx } from 'clsx'
 import { ConfigProvider } from 'antd'
 
+import type { ModalScopeProps, ViewsConfigValue } from '../search-region/types'
 import type {
   ProTableClassNamesType,
   ProTableColumnSettingConfig,
   ProTableConfig,
+  ProTableFilter,
   ProTableProps,
   ProTableStylesType,
   ProTableToolbarConfig,
   ProTableViewsConfig,
 } from '../interface'
-import type { ModalScopeProps, SearchConfigValue, ViewsConfigValue } from '../search-region/types'
 import useStyle from '../style'
 
 type SemanticProps = Record<string, unknown>
@@ -110,7 +111,7 @@ export interface ResolvedProTableConfig<
   Query extends Record<string, unknown>,
   Summary,
 > {
-  mergedSearch: false | SearchConfigValue<RecordType, Query, Summary>
+  mergedFilters: ProTableFilter<Query>[]
   mergedViews: false | ViewsConfigValue<Query>
   mergedToolbar: false | ProTableToolbarConfig<RecordType, Query, Summary>
   mergedColumnSetting: false | ProTableColumnSettingConfig
@@ -146,7 +147,7 @@ export function useResolvedProTableConfig<
 ): ResolvedProTableConfig<RecordType, Query, Summary> {
   const stableProps = useShallowStableRecord(props as unknown as SemanticProps)
   const {
-    search = false,
+    filters,
     views: viewsProp,
     toolbar,
     heightMode = 'content',
@@ -166,12 +167,10 @@ export function useResolvedProTableConfig<
     autoRequest,
   } = props
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
-  const mergedSearch = React.useMemo(() => {
-    if (search === false || !search?.fields?.length) {
-      return false as const
-    }
-    return search
-  }, [search])
+  const mergedFilters = React.useMemo(
+    () => (filters?.length ? filters : []),
+    [filters],
+  )
   const mergedViews = resolveToggleConfig<ProTableViewsConfig<Query>>(viewsProp)
   const mergedToolbar = resolveToolbarConfig(toolbar)
   const mergedColumnSetting = resolveColumnSetting(mergedToolbar)
@@ -206,7 +205,7 @@ export function useResolvedProTableConfig<
       rootClassName,
       rowSelection: mergedRowSelection,
       scroll: mergedScroll,
-      search: mergedSearch,
+      filters: mergedFilters,
       style: mergedStyle,
       styles,
       toolbar: mergedToolbar,
@@ -226,7 +225,7 @@ export function useResolvedProTableConfig<
       mergedPagination,
       mergedRowSelection,
       mergedScroll,
-      mergedSearch,
+      mergedFilters,
       mergedStyle,
       mergedToolbar,
       mergedViews,
@@ -255,7 +254,7 @@ export function useResolvedProTableConfig<
   )
 
   return {
-    mergedSearch,
+    mergedFilters,
     mergedViews,
     mergedToolbar,
     mergedColumnSetting,

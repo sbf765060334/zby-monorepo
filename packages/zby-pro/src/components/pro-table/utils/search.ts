@@ -1,5 +1,3 @@
-import type { ProTableSearchField } from '../interface'
-
 export function isSearchValueEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true
@@ -31,11 +29,10 @@ export function isSearchValueEqual(left: unknown, right: unknown): boolean {
 
 export function pickSearchQuery<Query extends Record<string, unknown>>(
   query: Partial<Query>,
-  fields: ProTableSearchField<Query, any, any>[],
-) {
-  return fields.reduce<Partial<Query>>((acc, field) => {
-    const key = String(field.key) as keyof Query
-    ;(acc as Record<string, unknown>)[String(key)] = query[key]
+  filters: Array<{ key: Extract<keyof Query, string> }>,
+): Partial<Query> {
+  return filters.reduce<Partial<Query>>((acc, filter) => {
+    acc[filter.key] = query[filter.key]
     return acc
-  }, {} as Partial<Query>)
+  }, {})
 }

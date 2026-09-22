@@ -11,11 +11,11 @@ import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { Drawer } from 'antd'
 
 import { shallow, useControllerSelector } from '../../hooks'
-import type { ProTableController, ProTableSearchField } from '../../interface'
+import type { ProTableController, ProTableFilter, ProTableFilterRenderContext } from '../../interface'
 
 type SearchFieldsProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
-  fields: ProTableSearchField<Query, RecordType, Summary>[]
+  filters: ProTableFilter<Query>[]
   prefixCls: string
 }
 
@@ -46,7 +46,7 @@ function hasSearchValue(value: unknown) {
   return value != null && value !== ''
 }
 
-function toQueryFieldValue(value: unknown) {
+function toQueryFieldValue<T>(value: T) {
   return hasSearchValue(value) ? value : undefined
 }
 
@@ -240,18 +240,21 @@ function SearchFieldControl<RecordType, Query extends Record<string, unknown>, S
   setValue,
   value,
 }: {
-  field: ProTableSearchField<Query, RecordType, Summary>
+  field: ProTableFilter<Query>
   fill?: boolean
   labelId: string
   query: Query
-  setValue: (value: unknown) => void
-  value: unknown
+  setValue: ProTableFilterRenderContext<Query>['setValue']
+  value: ProTableFilterRenderContext<Query>['value']
 }) {
-  return applySearchControlLayout(field.render({ query, setValue, value }), {
-    fill,
-    labelId,
-    value,
-  })
+  return applySearchControlLayout(
+    field.render({ query, setValue, value } as Parameters<ProTableFilter<Query>['render']>[0]),
+    {
+      fill,
+      labelId,
+      value,
+    },
+  )
 }
 
 function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summary>({
@@ -260,16 +263,16 @@ function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summ
   prefixCls,
 }: {
   controller: ProTableController<RecordType, Query, Summary>
-  field: ProTableSearchField<Query, RecordType, Summary>
+  field: ProTableFilter<Query>
   prefixCls: string
 }) {
   const query = useControllerSelector(controller, (state) => state.query, shallow)
-  const key = String(field.key)
+  const key = field.key
   const value = query[key]
-  const setValue = (next: unknown) => {
-    controller.setQueryField(key, toQueryFieldValue(next))
+  const setValue: ProTableFilterRenderContext<Query>['setValue'] = (next) => {
+    controller.setQueryField(key, toQueryFieldValue(next) as Query[typeof key])
   }
-  const labelId = `${prefixCls}-search-field-${key}`
+  const labelId = `${prefixCls}-search-field-${String(key)}`
 
   return (
     <span className={`${prefixCls}-search-field`}>
@@ -292,16 +295,16 @@ function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summ
 
 export function SearchFields<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
-  fields,
+  filters,
   prefixCls,
 }: SearchFieldsProps<RecordType, Query, Summary>) {
-  if (fields.length === 0) {
+  if (filters.length === 0) {
     return null
   }
 
   return (
     <div className={`${prefixCls}-search-fields`}>
-      {fields.map((field) => (
+      {filters.map((field) => (
         <SearchFieldItem
           key={String(field.key)}
           controller={controller}
@@ -315,23 +318,23 @@ export function SearchFields<RecordType, Query extends Record<string, unknown>, 
 
 function SearchOverlayFields<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
-  fields,
+  filters,
   prefixCls,
 }: SearchFieldsProps<RecordType, Query, Summary>) {
   const query = useControllerSelector(controller, (state) => state.query, shallow)
 
   return (
     <div className={`${prefixCls}-search-overlay-fields`}>
-      {fields.map((field) => {
-        const key = String(field.key)
+      {filters.map((field) => {
+        const key = field.key
         const value = query[key]
-        const labelId = `${prefixCls}-search-overlay-field-${key}`
-        const setValue = (next: unknown) => {
-          controller.setQueryField(key, toQueryFieldValue(next))
+        const labelId = `${prefixCls}-search-overlay-field-${String(key)}`
+        const setValue: ProTableFilterRenderContext<Query>['setValue'] = (next) => {
+          controller.setQueryField(key, toQueryFieldValue(next) as Query[typeof key])
         }
 
         return (
-          <div key={key} className={`${prefixCls}-search-overlay-field`}>
+          <div key={String(key)} className={`${prefixCls}-search-overlay-field`}>
             <div id={labelId} className={`${prefixCls}-search-overlay-field-label`}>
               {field.label}
             </div>
@@ -354,7 +357,7 @@ function SearchOverlayFields<RecordType, Query extends Record<string, unknown>, 
 
 export function SearchMorePanel<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
-  fields,
+  filters,
   getContainer,
   onClose,
   open,
@@ -380,7 +383,7 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
     }
   }, [open])
 
-  if (!mounted || fields.length === 0) {
+  if (!mounted || filters.length === 0) {
     return null
   }
 
@@ -401,7 +404,7 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
     >
       <div className={`${prefixCls}-search-overlay-body`}>
         <div className={`${prefixCls}-search-overlay-inner`}>
-          <SearchOverlayFields controller={controller} fields={fields} prefixCls={prefixCls} />
+          <SearchOverlayFields controller={controller} filters={filters} prefixCls={prefixCls} />
         </div>
       </div>
     </Drawer>
