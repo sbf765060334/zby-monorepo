@@ -118,9 +118,6 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
           ...(viewsEnabled ? { sorter: initialSnapshot.sorter ?? null } : {}),
           committed: true,
         })
-        actions.setAdvancedOverlayOpen(false)
-        actions.setAdvancedDraftQuery(null)
-        actions.setSearchReady(true)
         actions.setColumnsReady(true)
         initializedVersionRef.current = retryVersion
 

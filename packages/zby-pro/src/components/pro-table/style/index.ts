@@ -15,15 +15,27 @@ type ProTableToken = GlobalToken & {
 function genProTableStyle(token: ProTableToken): CSSObject {
   const {
     antCls,
+    borderRadius,
     borderRadiusLG,
     colorBgContainer,
+    colorBgTextHover,
+    colorFillAlter,
+    colorText,
     colorTextDescription,
     colorTextHeading,
+    colorTextTertiary,
     componentCls,
+    controlHeight,
+    fontSizeSM,
     fullscreenPadding,
+    lineHeight,
+    lineWidth,
+    marginLG,
     marginSM,
     marginXS,
+    marginXXS,
     paddingSM,
+    paddingXS,
     shellPadding,
     zIndexPopupBase,
   } = token
@@ -52,6 +64,168 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         '&:empty': {
           display: 'none',
+        },
+      },
+
+      [`${componentCls}-search-fields`]: {
+        display: 'contents',
+      },
+
+      [`${componentCls}-search-field`]: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+        height: controlHeight,
+        maxWidth: '100%',
+        paddingBlock: 0,
+        paddingInline: paddingXS,
+        border: `${lineWidth}px solid transparent`,
+        borderRadius,
+        verticalAlign: 'top',
+        cursor: 'text',
+        backgroundColor: colorBgTextHover,
+
+        [`&:has(${antCls}-select), &:has(${antCls}-picker)`]: {
+          paddingInlineEnd: 0,
+        },
+      },
+
+      [`${componentCls}-search-field-label`]: {
+        flex: 'none',
+        marginInlineEnd: marginXXS,
+        color: colorTextTertiary,
+      },
+
+      [`${componentCls}-search-field-control`]: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        minWidth: 0,
+        color: colorText,
+
+        [`${antCls}-select, ${antCls}-picker`]: {
+          minWidth: 0,
+          borderColor: 'transparent !important',
+          background: 'transparent !important',
+          boxShadow: 'none !important',
+          outline: 'none !important',
+        },
+
+        [`${antCls}-select:hover, ${antCls}-select-focused, ${antCls}-select-open, ${antCls}-picker:hover, ${antCls}-picker-focused`]:
+          {
+            borderColor: 'transparent !important',
+            background: 'transparent !important',
+            boxShadow: 'none !important',
+            outline: 'none !important',
+          },
+
+        [`${antCls}-input-affix-wrapper`]: {
+          width: 'auto',
+          paddingInline: paddingXS,
+          border: '0 !important',
+          boxShadow: 'none !important',
+          outline: 'none !important',
+          background: 'transparent',
+        },
+
+        [`${antCls}-input-affix-wrapper:hover, ${antCls}-input-affix-wrapper-focused, ${antCls}-input-affix-wrapper:focus, ${antCls}-input-affix-wrapper:focus-within, ${antCls}-input-affix-wrapper:focus-visible`]:
+          {
+            border: '0 !important',
+            boxShadow: 'none !important',
+            outline: 'none !important',
+          },
+
+        [`${antCls}-input`]: {
+          width: 'auto',
+          minWidth: 0,
+          paddingInline: 0,
+          background: 'transparent',
+          boxShadow: 'none',
+          outline: 'none',
+          fieldSizing: 'content',
+        },
+
+        [`${antCls}-picker`]: {
+          width: 'auto',
+        },
+
+        [`${antCls}-picker-input`]: {
+          width: 'auto',
+          flex: 'none',
+        },
+
+        [`${antCls}-picker-input > input`]: {
+          width: 'auto',
+          minWidth: 0,
+          fieldSizing: 'content',
+        },
+
+        [`${antCls}-picker-active-bar`]: {
+          display: 'none',
+        },
+      },
+
+      [`${componentCls}-search-actions`]: {
+        flexShrink: 0,
+      },
+
+      [`${componentCls}-search-overlay ${antCls}-drawer-content-wrapper`]: {
+        height: '100%',
+      },
+
+      [`${componentCls}-search-overlay ${antCls}-drawer-section`]: {
+        height: 'auto',
+        maxHeight: '90%',
+        overflow: 'hidden',
+      },
+
+      [`${componentCls}-search-overlay ${antCls}-drawer-body`]: {
+        minHeight: 0,
+        overflowY: 'auto',
+      },
+
+      [`${componentCls}-search-overlay-body`]: {
+        paddingBlock: shellPadding,
+        paddingInline: shellPadding,
+      },
+
+      [`${componentCls}-search-overlay-inner`]: {
+        width: '100%',
+        maxWidth: 1280,
+        marginInline: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: marginLG,
+        padding: shellPadding,
+        background: colorFillAlter,
+        borderRadius: borderRadiusLG,
+        boxSizing: 'border-box',
+      },
+
+      [`${componentCls}-search-overlay-fields`]: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+        gap: marginSM,
+      },
+
+      [`${componentCls}-search-overlay-field`]: {
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+      },
+
+      [`${componentCls}-search-overlay-field-label`]: {
+        color: colorTextDescription,
+        fontSize: fontSizeSM,
+        lineHeight,
+      },
+
+      [`${componentCls}-search-overlay-field-body`]: {
+        minWidth: 0,
+        color: colorText,
+
+        [`${antCls}-input-affix-wrapper, ${antCls}-input, ${antCls}-select, ${antCls}-picker`]: {
+          width: '100%',
         },
       },
 

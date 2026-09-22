@@ -122,9 +122,6 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
         sorter: snapshot.sorter ?? null,
         committed: true,
       })
-      actions.setAdvancedOverlayOpen(false)
-      actions.setAdvancedDraftQuery(null)
-
       if (options?.submit !== false) {
         await controller.submitQuery({ resetPage: true })
       }

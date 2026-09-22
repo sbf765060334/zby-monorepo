@@ -12,6 +12,7 @@ import { clsx } from 'clsx'
 
 import { cancelProTableControllerRequests, createProTableController } from './controller'
 import { SearchRegion } from './search-region'
+import { SearchMorePanel } from './search-region/components'
 import type {
   ProTableComponent,
   ProTableController,
@@ -30,7 +31,7 @@ import { createProTableViewStore } from './store'
 import { TableRegion } from './table-region'
 import { ToolbarRegion } from './toolbar-region'
 import { appendActionColumn } from './utils/action-column'
-import { buildColumnDefinitions, buildSearchSnapshotFields } from './utils'
+import { buildColumnDefinitions } from './utils'
 import { useViewPersistence } from './view-management'
 
 const mergeInlineStyles = (...values: Array<React.CSSProperties | undefined>) =>
@@ -155,12 +156,19 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const searchFields = useMemo(
     () =>
       resolvedConfig.mergedSearch
-        ? (buildSearchSnapshotFields(
-            resolvedConfig.mergedSearch.fields ?? [],
-          ) as ProTableSearchField<Query, RecordType, Summary>[])
+        ? resolvedConfig.mergedSearch.fields
         : ([] as ProTableSearchField<Query, RecordType, Summary>[]),
     [resolvedConfig.mergedSearch],
   )
+  const visibleSearchFields = useMemo(
+    () => searchFields.filter((field) => !field.hidden),
+    [searchFields],
+  )
+  const moreSearchFields = useMemo(
+    () => searchFields.filter((field) => field.hidden),
+    [searchFields],
+  )
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
   useImperativeHandle(
     ref,
@@ -295,7 +303,31 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const shouldBlockViewContent = shouldWaitForViewInitialization
   const shouldExposeViewLoadingState =
     shouldBlockViewContent && (viewLoadingVisible || Boolean(viewInitializationError))
+  const handleSearch = useCallback(() => {
+    void controller.submitQuery({ resetPage: true })
+  }, [controller])
+  const handleResetSearch = useCallback(() => {
+    setMoreFiltersOpen(false)
+    controller.resetQuery()
+    void controller.submitQuery({ resetPage: true })
+  }, [controller])
+  const handleToggleMoreFilters = useCallback(() => {
+    setMoreFiltersOpen((open) => !open)
+  }, [])
+  const handleCloseMoreFilters = useCallback(() => {
+    setMoreFiltersOpen(false)
+  }, [])
+  const contentMainRef = useRef<HTMLDivElement | null>(null)
+  const getSearchOverlayContainer = useCallback(
+    () => contentMainRef.current ?? document.body,
+    [],
+  )
   const searchEnabled = resolvedConfig.mergedSearch !== false
+  useEffect(() => {
+    if (!searchEnabled || moreSearchFields.length === 0) {
+      setMoreFiltersOpen(false)
+    }
+  }, [moreSearchFields.length, searchEnabled])
   const showSearchRow =
     (viewsEnabled || searchEnabled) &&
     !(shouldBlockViewContent && !shouldExposeViewLoadingState)
@@ -320,7 +352,13 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
             <SearchRegion
               className={resolvedConfig.mergedSemanticClassNames.search}
               controller={controller}
+              fields={visibleSearchFields}
+              moreOpen={moreFiltersOpen}
+              onResetSearch={handleResetSearch}
+              onSearch={handleSearch}
+              onToggleMore={handleToggleMoreFilters}
               searchEnabled={searchEnabled}
+              showMore={moreSearchFields.length > 0}
               views={resolvedConfig.mergedViews}
               viewStore={viewStore}
               prefixCls={resolvedConfig.prefixCls}
@@ -338,7 +376,18 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
             />
           ) : null}
           {showTable ? (
-            <div className={`${resolvedConfig.prefixCls}-content-main`}>
+            <div
+              ref={contentMainRef}
+              className={`${resolvedConfig.prefixCls}-content-main`}
+            >
+              <SearchMorePanel
+                controller={controller}
+                fields={moreSearchFields}
+                getContainer={getSearchOverlayContainer}
+                onClose={handleCloseMoreFilters}
+                open={moreFiltersOpen}
+                prefixCls={resolvedConfig.prefixCls}
+              />
               {(resolvedConfig.mergedToolbar || resolvedConfig.mergedLayout?.tableTop) && (
                 <div className={`${resolvedConfig.prefixCls}-toolbar-block`}>
                   {resolvedConfig.mergedToolbar && (
@@ -400,10 +449,17 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     [
       columnDefinitions,
       columnEmptyText,
+      getSearchOverlayContainer,
+      handleCloseMoreFilters,
+      handleResetSearch,
+      handleSearch,
+      handleToggleMoreFilters,
       columnSettingEnabled,
       controller,
       handleRetryViewInitialization,
       loading,
+      moreFiltersOpen,
+      moreSearchFields,
       onTableChange,
       resolvedColumns,
       resolvedConfig.columnPreferencesEnabled,
@@ -430,6 +486,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       rowKey,
       searchEnabled,
       showSearchRow,
+      visibleSearchFields,
       showTable,
       stableTableProps,
       viewInitialization.initialStorageState,

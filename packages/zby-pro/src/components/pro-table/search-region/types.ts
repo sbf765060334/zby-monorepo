@@ -9,6 +9,7 @@ import type { ProTableViewStore } from '../store'
 import type {
   ProTableController,
   ProTableProps,
+  ProTableSearchField,
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
@@ -29,8 +30,14 @@ export type ModalScopeProps = {
 export type SearchRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   className?: string
+  fields?: ProTableSearchField<Query, RecordType, Summary>[]
+  moreOpen?: boolean
   searchEnabled?: boolean
+  showMore?: boolean
   style?: React.CSSProperties
+  onResetSearch?: () => void
+  onSearch?: () => void
+  onToggleMore?: () => void
   views: false | ViewsConfigValue<Query>
   viewStore: ProTableViewStore
   prefixCls: string

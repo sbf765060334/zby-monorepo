@@ -105,15 +105,6 @@ function useShallowStableRecord<T extends SemanticProps>(value: T) {
   return valueRef.current
 }
 
-export function normalizeSearchConfig<RecordType, Query extends Record<string, unknown>, Summary>(
-  search: Partial<SearchConfigValue<RecordType, Query, Summary>>,
-) {
-  return {
-    ...search,
-    variant: search.variant ?? 'mixed',
-  } as SearchConfigValue<RecordType, Query, Summary>
-}
-
 export interface ResolvedProTableConfig<
   RecordType,
   Query extends Record<string, unknown>,
@@ -176,10 +167,10 @@ export function useResolvedProTableConfig<
   } = props
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
   const mergedSearch = React.useMemo(() => {
-    if (search === false || !search || !search.fields) {
+    if (search === false || !search?.fields?.length) {
       return false as const
     }
-    return normalizeSearchConfig(search)
+    return search
   }, [search])
   const mergedViews = resolveToggleConfig<ProTableViewsConfig<Query>>(viewsProp)
   const mergedToolbar = resolveToolbarConfig(toolbar)

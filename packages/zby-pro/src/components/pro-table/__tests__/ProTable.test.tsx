@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import * as React from 'react'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider } from 'antd'
@@ -59,6 +59,21 @@ function renderProTable(ui: React.ReactElement) {
       <ConfigProvider>{ui}</ConfigProvider>
     </ZbyIntlProvider>,
   )
+}
+
+function searchInputField(key: keyof Query, label: string, extra?: { hidden?: boolean }) {
+  return {
+    key,
+    label,
+    ...extra,
+    render: ({ value, setValue }: { value: unknown; setValue: (next: unknown) => void }) => (
+      <input
+        aria-label={label}
+        value={typeof value === 'string' ? value : ''}
+        onChange={(event) => setValue(event.target.value === '' ? undefined : event.target.value)}
+      />
+    ),
+  }
 }
 
 function createTestAdapter<TSnapshot>(): ProViewManagementAdapter<TSnapshot> {
@@ -166,7 +181,7 @@ describe('ProTable', () => {
     expect(ref.current?.controller).toBe(controller)
   })
 
-  it('does not render search fields while still supporting search snapshot fields for views', async () => {
+  it('renders inline filters and hides the more button when no field is hidden', async () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: { status: 'all' },
       rowKey: 'id',
@@ -177,18 +192,80 @@ describe('ProTable', () => {
         controller={controller}
         columns={[]}
         search={{
-          fields: [
-            { key: 'status', label: '状态' },
-            { key: 'owner', label: '负责人' },
-          ],
+          fields: [searchInputField('status', '状态'), searchInputField('owner', '负责人')],
         }}
       />,
     )
 
     await waitFor(() => expect(screen.getByTestId('rows')).toBeTruthy())
-    expect(screen.queryByText('更多筛选')).toBeNull()
-    expect(screen.queryByText('查询')).toBeNull()
+    expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '负责人' })).toBeNull()
+    expect(document.querySelector('.zby-pro-table-search-field')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '更多筛选' })).toBeNull()
+    expect(screen.getByRole('button', { name: /查\s*询/ })).toBeTruthy()
     expect(document.querySelector('.zby-pro-table-search-row')).toBeTruthy()
+  })
+
+  it('submits the draft only from the search button and keeps hidden fields in more filters', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        defaultQuery={{ status: 'all' }}
+        queryRequest={queryRequest}
+        columns={[]}
+        search={{
+          fields: [
+            searchInputField('status', '状态'),
+            searchInputField('owner', '负责人', { hidden: true }),
+          ],
+        }}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('textbox', { name: /负责人/ })).toBeNull()
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, status: 'open' }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    const owner = await screen.findByRole('textbox', { name: /负责人/ })
+    expect(owner.closest('.zby-pro-table-search-overlay')).toBeTruthy()
+    const overlaySection = owner.closest('.ant-drawer-section') as HTMLElement | null
+    expect(overlaySection?.style.height).toBe('auto')
+    expect(overlaySection?.style.maxHeight).toBe('90%')
+    fireEvent.change(owner, { target: { value: 'Ada' } })
+    expect(queryRequest).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(3))
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      expect.objectContaining({ owner: 'Ada', status: 'open' }),
+      expect.anything(),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    fireEvent.click(screen.getByRole('button', { name: /重\s*置/ }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(4))
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, status: 'all' }),
+      expect.anything(),
+    )
+    expect(queryRequest.mock.calls[3]?.[0]).not.toHaveProperty('owner')
+    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
   })
 
   it('omits the search row when views and search are both off', async () => {
@@ -449,7 +526,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: '名称' }]}
-        search={{ fields: [{ key: 'status', label: '状态' }] }}
+        search={{ fields: [searchInputField('status', '状态')] }}
         views={{ adapter }}
       />,
     )

@@ -263,17 +263,10 @@ export interface ProTableColumnResizeConfig<RecordType = Record<string, unknown>
   onResizeEnd?: (info: ProTableColumnResizeInfo<RecordType>) => void
 }
 
-export interface ProTableSearchFieldRenderContext<
-  Query extends Record<string, unknown>,
-  RecordType,
-  Summary,
-> {
+export interface ProTableSearchFieldRenderContext<Query extends Record<string, unknown>> {
   value: unknown
   query: Query
   setValue: (value: unknown) => void
-  submit: (options?: { resetPage?: boolean }) => Promise<void> | void
-  controller: ProTableController<RecordType, Query, Summary>
-  reset?: () => void
 }
 
 export interface ProTableSearchField<
@@ -283,44 +276,10 @@ export interface ProTableSearchField<
 > {
   key: Extract<keyof Query, string> | string
   label: ReactNode
-  quick?: boolean
+  /** 收进「更多筛选」，不排在筛选行上。仍参与查询和视图快照。 */
   hidden?: boolean
-  placeholder?: string
-  valueType?: string | Record<string, unknown>
-  render?: (
-    context: ProTableSearchFieldRenderContext<Query, RecordType, Summary>,
-  ) => ReactNode
-  group?: string
-  dependencies?: Array<Extract<keyof Query, string> | string>
-  getTagText?: (value: unknown, query: Query) => ReactNode
-  shouldShowTag?: (value: unknown, query: Query) => boolean
-  allowEmpty?: boolean
-  resetValue?: unknown | ((query: Query) => unknown)
-}
-
-export interface ProTableSearchGroup {
-  key: string
-  label: ReactNode
-  order?: number
-  description?: ReactNode
-  title?: ReactNode
-  fields?: ProTableSearchField<any>[]
-}
-
-export type ProTableQuickFieldSubmitTrigger =
-  | 'manual'
-  | 'change'
-  | {
-    type: 'debounce'
-    wait?: number
-  }
-
-export interface ProTableQuickFieldConfig<Query extends Record<string, unknown> = Record<string, unknown>> {
-  key: Extract<keyof Query, string> | string
-  label?: boolean | ReactNode
-  placeholder?: string
-  width?: number | string
-  submitTrigger?: ProTableQuickFieldSubmitTrigger
+  /** 必须返回单一根元素，筛选行才能按 width / placeholder / 默认宽合入尺寸。 */
+  render: (context: ProTableSearchFieldRenderContext<Query>) => ReactNode
 }
 
 export interface ProTableSearchConfig<
@@ -328,19 +287,7 @@ export interface ProTableSearchConfig<
   RecordType = Record<string, unknown>,
   Summary = unknown,
 > {
-  variant?: 'mixed' | 'inline'
-  fields?: ProTableSearchField<Query, RecordType, Summary>[]
-  quickFields?: Array<
-    Extract<keyof Query, string> | string | ProTableQuickFieldConfig<Query>
-  >
-  groups?: ProTableSearchGroup[]
-  extra?: ReactNode
-  showReset?: boolean
-  resetButtonProps?: ButtonProps
-  submitText?: ReactNode
-  resetText?: ReactNode
-  moreText?: ReactNode
-  emptyText?: ReactNode
+  fields: ProTableSearchField<Query, RecordType, Summary>[]
 }
 
 export interface ProTableViewSorter {
@@ -653,23 +600,3 @@ export type ProTableExpandable<RecordType> = NonNullable<
 export type ProTableTableChange<RecordType> = NonNullable<
   TableProps<RecordType>['onChange']
 >
-
-/** @deprecated use ProTableSearchConfig */
-export type ProTableQueryConfig<
-  Query extends Record<string, unknown>,
-  RecordType = Record<string, unknown>,
-  Summary = unknown,
-> = ProTableSearchConfig<Query, RecordType, Summary>
-
-/** @deprecated use ProTableSearchFieldRenderContext */
-export type ProTableQueryFieldRenderContext<
-  Query extends Record<string, unknown>,
-  RecordType = Record<string, unknown>,
-  Summary = unknown,
-> = ProTableSearchFieldRenderContext<Query, RecordType, Summary>
-
-/** @deprecated use ProTableSearchGroup */
-export type ProTableQueryGroup<Query extends Record<string, unknown> = Record<string, unknown>> =
-  ProTableSearchGroup & {
-    fields?: ProTableSearchField<Query>[]
-  }

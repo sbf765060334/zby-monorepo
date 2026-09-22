@@ -1,14 +1,21 @@
 import { memo, useMemo } from 'react'
-import { Flex } from 'antd'
+import { useIntl } from '@zby/intl'
+import { Button, Flex } from 'antd'
 import { clsx } from 'clsx'
 
-import { SearchViewManagementMount } from './components'
+import { SearchFields, SearchViewManagementMount } from './components'
 import type { SearchRegionProps } from './types'
 
 function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
   className,
   controller,
+  fields = [],
+  moreOpen = false,
+  onResetSearch,
+  onSearch,
+  onToggleMore,
   searchEnabled = false,
+  showMore = false,
   views,
   viewStore,
   prefixCls,
@@ -24,6 +31,7 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   onApplyManagedView,
   onResetManagedView,
 }: SearchRegionProps<RecordType, Query, Summary>) {
+  const intl = useIntl()
   const viewManagementNode = useMemo(
     () =>
       views !== false ? (
@@ -74,6 +82,29 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
       wrap="wrap"
     >
       {viewManagementNode}
+      {searchEnabled ? (
+        <SearchFields controller={controller} fields={fields} prefixCls={prefixCls} />
+      ) : null}
+      {searchEnabled ? (
+        <Flex
+          className={`${prefixCls}-search-actions`}
+          align="center"
+          gap="small"
+          wrap={false}
+        >
+          <Button type="primary" onClick={onSearch}>
+            {intl.getMessage('zby.pro.table.search', '查询')}
+          </Button>
+          {showMore ? (
+            <Button aria-expanded={moreOpen} onClick={onToggleMore}>
+              {intl.getMessage('zby.pro.table.moreFilters', '更多筛选')}
+            </Button>
+          ) : null}
+          <Button onClick={onResetSearch}>
+            {intl.getMessage('zby.pro.table.resetSearch', '重置')}
+          </Button>
+        </Flex>
+      ) : null}
     </Flex>
   )
 }
