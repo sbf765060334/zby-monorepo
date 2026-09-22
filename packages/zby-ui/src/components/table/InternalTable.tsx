@@ -190,6 +190,11 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   sortDirections?: SortOrder[];
   showSorterTooltip?: boolean | SorterTooltipProps;
   virtual?: boolean;
+  /**
+   * Use a thin native scrollbar. Only non-virtual tables read this.
+   * The sticky horizontal bar uses the same measured width.
+   */
+  thinScrollbar?: boolean;
   height?: React.CSSProperties['height'];
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
   rowHighlight?: boolean | TableRowHighlight<RecordType>;
@@ -236,6 +241,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     locale,
     showSorterTooltip = { target: 'full-header' },
     virtual,
+    thinScrollbar,
     title,
     showHeader,
     height,
@@ -852,6 +858,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
             components={mergedComponents}
             columnResize={columnResize}
             scroll={effectiveScroll}
+            thinScrollbar={virtual ? undefined : thinScrollbar}
             classNames={mergedClassNames as RcTableProps<RecordType>['classNames']}
             styles={mergedStyles as RcTableProps<RecordType>['styles']}
             ref={tblRef}

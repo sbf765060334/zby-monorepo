@@ -138,6 +138,12 @@ export interface TableProps<RecordType = any> extends Omit<
   // Fixed Columns
   scroll?: { x?: number | true | string; y?: number | string };
 
+  /**
+   * Thin native scrollbar on `.ant-table-body` / `.ant-table-content`.
+   * Virtual tables do not receive this prop.
+   */
+  thinScrollbar?: boolean;
+
   // Expandable
   /** Config expand rows */
   expandable?: ExpandableConfig<RecordType>;
@@ -265,6 +271,8 @@ const Table = <RecordType extends DefaultRecordType>(
 
     // Events
     onScroll,
+
+    thinScrollbar,
 
     // Internal
     internalHooks,
@@ -481,6 +489,10 @@ const Table = <RecordType extends DefaultRecordType>(
       maxHeight: scroll.y,
     };
   }
+
+  const thinScrollStyle: React.CSSProperties | undefined = thinScrollbar
+    ? { scrollbarWidth: 'thin' }
+    : undefined;
 
   if (horizonScroll) {
     scrollXStyle = {
@@ -724,16 +736,21 @@ const Table = <RecordType extends DefaultRecordType>(
 
   // ===================== Effects ======================
   const [scrollbarSize, setScrollbarSize] = React.useState(0);
+  const [thinScrollbarSize, setThinScrollbarSize] = React.useState(0);
 
   useLayoutEffect(() => {
+    const target =
+      scrollBodyRef.current instanceof Element
+        ? scrollBodyRef.current
+        : scrollBodyContainerRef.current;
+    const measured = target instanceof Element ? getTargetScrollBarSize(target).width : 0;
+
+    // tailor keeps the header gutter at 0. Thin must not start that measurement.
     if (!tailor || !useInternalHooks) {
-      if (scrollBodyRef.current instanceof Element) {
-        setScrollbarSize(getTargetScrollBarSize(scrollBodyRef.current).width);
-      } else {
-        setScrollbarSize(getTargetScrollBarSize(scrollBodyContainerRef.current).width);
-      }
+      setScrollbarSize(measured);
     }
-  }, []);
+    setThinScrollbarSize(thinScrollbar ? measured : 0);
+  }, [thinScrollbar, tailor, useInternalHooks]);
 
   // ================== INTERNAL HOOKS ==================
   React.useEffect(() => {
@@ -855,6 +872,7 @@ const Table = <RecordType extends DefaultRecordType>(
       const bodyViewportStyle = {
         ...scrollXStyle,
         ...scrollYStyle,
+        ...thinScrollStyle,
       };
       const bodyTableNode = (
         <TableComponent
@@ -950,6 +968,7 @@ const Table = <RecordType extends DefaultRecordType>(
             onScroll={onInternalScroll}
             container={container}
             direction={direction}
+            scrollbarSize={thinScrollbar && thinScrollbarSize > 0 ? thinScrollbarSize : undefined}
           />
         )}
       </>
@@ -960,6 +979,7 @@ const Table = <RecordType extends DefaultRecordType>(
       ...scrollXStyle,
       ...scrollYStyle,
       ...styles?.content,
+      ...thinScrollStyle,
     };
     const tableNode = (
       <TableComponent

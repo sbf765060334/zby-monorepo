@@ -317,6 +317,7 @@ export default function ProTablePlayground() {
         views
         columnResize
         rowHighlight
+        thinScrollbar
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

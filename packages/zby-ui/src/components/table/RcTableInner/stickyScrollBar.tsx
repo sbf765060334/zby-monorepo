@@ -17,19 +17,29 @@ interface StickyScrollBarProps {
   offsetScroll: number;
   container: HTMLElement | Window;
   direction: string;
+  /** Measured thin scrollbar width. Omit to keep the default sticky track. */
+  scrollbarSize?: number;
 }
 
 const StickyScrollBar: React.ForwardRefRenderFunction<unknown, StickyScrollBarProps> = (
   props,
   ref,
 ) => {
-  const { scrollBodyRef, onScroll, offsetScroll, container, direction } = props;
+  const { scrollBodyRef, onScroll, offsetScroll, container, direction, scrollbarSize } = props;
+  const resolvedScrollbarSize = scrollbarSize ?? getScrollBarSize();
   const prefixCls = useContext(TableContext, 'prefixCls');
   const bodyScrollWidth = scrollBodyRef.current?.scrollWidth || 0;
   const bodyWidth = scrollBodyRef.current?.clientWidth || 0;
   const scrollBarWidth = bodyScrollWidth && bodyWidth * (bodyWidth / bodyScrollWidth);
 
   const scrollBarRef = React.useRef<HTMLDivElement>(null);
+  const setTrackRef = React.useCallback((node: HTMLDivElement | null) => {
+    if (!node || scrollbarSize == null) {
+      return;
+    }
+    // sticky.ts forces the track to 8px !important. Only thinScrollbar overrides that.
+    node.style.setProperty('height', `${scrollbarSize}px`, 'important');
+  }, [scrollbarSize]);
   const [scrollState, setScrollState] = useLayoutState<{
     scrollLeft: number;
     isHiddenScrollBar: boolean;
@@ -100,7 +110,7 @@ const StickyScrollBar: React.ForwardRefRenderFunction<unknown, StickyScrollBarPr
           : getOffset(container).top + (container as HTMLElement).clientHeight;
 
       if (
-        tableBottomOffset - getScrollBarSize() <= currentClientOffset ||
+        tableBottomOffset - resolvedScrollbarSize <= currentClientOffset ||
         tableOffsetTop >= currentClientOffset - offsetScroll
       ) {
         setScrollState(state => ({
@@ -138,7 +148,7 @@ const StickyScrollBar: React.ForwardRefRenderFunction<unknown, StickyScrollBarPr
       document.body.removeEventListener(MOUSEUP_EVENT, onMouseUp);
       document.body.removeEventListener(MOUSEMOVE_EVENT, onMouseMove);
     };
-  }, [scrollBarWidth, isActive]);
+  }, [scrollBarWidth, isActive, resolvedScrollbarSize]);
 
   // Loop for scroll event check
   React.useEffect(() => {
@@ -188,7 +198,8 @@ const StickyScrollBar: React.ForwardRefRenderFunction<unknown, StickyScrollBarPr
 
   return (
     <div
-      style={{ height: getScrollBarSize(), width: bodyWidth, bottom: offsetScroll }}
+      ref={setTrackRef}
+      style={{ height: resolvedScrollbarSize, width: bodyWidth, bottom: offsetScroll }}
       className={`${prefixCls}-sticky-scroll`}
     >
       <div
@@ -199,6 +210,7 @@ const StickyScrollBar: React.ForwardRefRenderFunction<unknown, StickyScrollBarPr
         })}
         style={{
           width: `${scrollBarWidth}px`,
+          height: scrollbarSize,
           transform: `translate3d(${scrollState.scrollLeft}px, 0, 0)`,
         }}
       />

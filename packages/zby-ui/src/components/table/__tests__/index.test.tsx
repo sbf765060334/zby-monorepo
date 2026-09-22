@@ -159,6 +159,43 @@ const data: RowData[] = [
   { id: 2, name: 'Beta' },
 ]
 
+function mockScrollbarProbe() {
+  const computedStyle = window.getComputedStyle.bind(window)
+  const offsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!.get!
+  const clientWidth = Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth')!.get!
+  vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudoElement) => {
+    const computed = computedStyle(element, pseudoElement)
+    if (pseudoElement || !(element instanceof HTMLElement) || !element.style.scrollbarWidth) {
+      return computed
+    }
+    return new Proxy(computed, {
+      get(target, property, receiver) {
+        if (property === 'scrollbarWidth') {
+          return element.style.scrollbarWidth
+        }
+        const value = Reflect.get(target, property, receiver)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+  })
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function getOffsetWidth(
+    this: HTMLElement,
+  ) {
+    if (this.id.startsWith('rc-scrollbar-measure-')) {
+      return 100
+    }
+    return offsetWidth.call(this)
+  })
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function getClientWidth(
+    this: HTMLElement,
+  ) {
+    if (this.id.startsWith('rc-scrollbar-measure-')) {
+      return this.style.scrollbarWidth === 'thin' ? 92 : 83
+    }
+    return clientWidth.call(this)
+  })
+}
+
 const columns = [
   { key: 'id', dataIndex: 'id' as const, title: 'ID', width: 120 },
   {
@@ -1409,6 +1446,223 @@ describe('Table', () => {
     expect(body.style.overflowX).toBe('auto')
     expect(body.style.overflowY).toBe('scroll')
     expect(body.style.maxHeight).toBe('120px')
+  })
+
+  it('uses the measured thin scrollbar for the native body and header gutter', () => {
+    mockScrollbarProbe()
+
+    const { container, rerender } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 600, y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const body = () => container.querySelector<HTMLElement>('.ant-table-body')!
+
+    expect(body().style.scrollbarWidth).toBe('')
+    expect(container.querySelectorAll('.ant-table-cell-scrollbar')).toHaveLength(1)
+
+    rerender(
+      <Table<RowData>
+        thinScrollbar
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 600, y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    expect(body().style.scrollbarWidth).toBe('thin')
+    expect(container.querySelectorAll('.ant-table-cell-scrollbar')).toHaveLength(1)
+  })
+
+  it('thins the horizontal scrollbar on the native content node', () => {
+    const { container } = render(
+      <Table<RowData>
+        thinScrollbar
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 600 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    expect(container.querySelector<HTMLElement>('.ant-table-content')?.style.scrollbarWidth).toBe(
+      'thin',
+    )
+    expect(container.querySelector('.ant-table-body')).toBeNull()
+  })
+
+  it('sizes the sticky horizontal bar from the measured thin scrollbar', async () => {
+    mockScrollbarProbe()
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function getOffsetHeight(
+      this: HTMLElement,
+    ) {
+      if (this.id.startsWith('rc-scrollbar-measure-')) {
+        return 100
+      }
+      return this.classList.contains('ant-table-body') ? 4000 : 40
+    })
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function getScrollWidth(
+      this: HTMLElement,
+    ) {
+      return this.classList.contains('ant-table-body') ? 800 : 0
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function getClientWidth(
+      this: HTMLElement,
+    ) {
+      if (this.id.startsWith('rc-scrollbar-measure-')) {
+        return this.style.scrollbarWidth === 'thin' ? 92 : 83
+      }
+      return this.classList.contains('ant-table-body') ? 200 : 150
+    })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function getRect(
+      this: HTMLElement,
+    ) {
+      if (this.classList.contains('ant-table-body')) {
+        return {
+          x: 0,
+          y: 100,
+          width: 600,
+          height: 4000,
+          top: 100,
+          left: 0,
+          right: 600,
+          bottom: 4100,
+          toJSON: () => ({}),
+        }
+      }
+      return {
+        x: 0,
+        y: 0,
+        width: 150,
+        height: 40,
+        top: 0,
+        left: 0,
+        right: 150,
+        bottom: 40,
+        toJSON: () => ({}),
+      }
+    })
+
+    const { container, rerender } = render(
+      <Table<RowData>
+        sticky
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 800, y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const flushFrame = async () => {
+      await act(async () => {
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => resolve(undefined))
+        })
+      })
+    }
+
+    await flushFrame()
+
+    const track = () => container.querySelector<HTMLElement>('.ant-table-sticky-scroll')
+    const thumb = () => container.querySelector<HTMLElement>('.ant-table-sticky-scroll-bar')
+
+    expect(track()?.style.getPropertyPriority('height')).toBe('')
+
+    rerender(
+      <Table<RowData>
+        thinScrollbar
+        sticky
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 800, y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+    await flushFrame()
+
+    expect(track()?.style.height).toBe('8px')
+    expect(track()?.style.getPropertyPriority('height')).toBe('important')
+    expect(thumb()?.style.height).toBe('8px')
+  })
+
+  it('keeps column resize on the same measured gutter as a normal thin table', () => {
+    mockScrollbarProbe()
+
+    const { container, rerender } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize
+        scroll={{ y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const gutterWidth = () => {
+      const cols = container.querySelectorAll<HTMLElement>('.ant-table-header col')
+      return cols[cols.length - 1]?.style.width
+    }
+
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.scrollbarWidth).toBe('')
+    expect(gutterWidth()).toBe('17px')
+
+    rerender(
+      <Table<RowData>
+        thinScrollbar
+        rowKey="id"
+        pagination={false}
+        columnResize
+        scroll={{ y: 120 }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.scrollbarWidth).toBe(
+      'thin',
+    )
+    expect(gutterWidth()).toBe('8px')
+  })
+
+  it('ignores thinScrollbar on virtual tables', () => {
+    const virtualData = Array.from({ length: 20 }, (_, index) => ({
+      id: index,
+      name: `Row ${index}`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        thinScrollbar
+        virtual
+        rowKey="id"
+        pagination={false}
+        scroll={{ x: 600, y: 120 }}
+        columns={columns}
+        dataSource={virtualData}
+      />,
+    )
+
+    const holder = container.querySelector<HTMLElement>('.ant-table-tbody-virtual-holder')
+    expect(holder).not.toBeNull()
+    expect(holder?.style.scrollbarWidth ?? '').toBe('')
+    expect(container.querySelector('.ant-table-cell-scrollbar')).toBeNull()
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.scrollbarWidth ?? '').toBe(
+      '',
+    )
+    expect(
+      container.querySelector<HTMLElement>('.ant-table-tbody-virtual-scrollbar')?.style.scrollbarWidth ??
+        '',
+    ).toBe('')
   })
 
   it('keeps column resize and row highlight on the native AntD content node', () => {

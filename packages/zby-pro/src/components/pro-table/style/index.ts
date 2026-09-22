@@ -160,6 +160,10 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-table`]: {
         height: '100%',
+
+        [`&${antCls}-table-wrapper ${antCls}-table-pagination${antCls}-pagination`]: {
+          marginBlockEnd: 0,
+        },
       },
 
       [`${componentCls}-table-loading`]: {
