@@ -1,17 +1,18 @@
 import { memo, useMemo } from 'react'
 import { Flex } from 'antd'
+import { clsx } from 'clsx'
 
-import { useViewStoreSelector } from '../hooks'
 import { SearchViewManagementMount } from './components'
 import type { SearchRegionProps } from './types'
 
 function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
-  children,
-  contentReady,
+  className,
   controller,
+  searchEnabled = false,
   views,
   viewStore,
   prefixCls,
+  style,
   viewManagementAdapter,
   viewManagementInstanceId,
   viewManagementLoading,
@@ -23,7 +24,6 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   onApplyManagedView,
   onResetManagedView,
 }: SearchRegionProps<RecordType, Query, Summary>) {
-  const searchReady = useViewStoreSelector(viewStore, (state) => state.searchReady)
   const viewManagementNode = useMemo(
     () =>
       views !== false ? (
@@ -61,25 +61,20 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
     ],
   )
 
-  if (!searchReady || !contentReady) {
-    return viewManagementNode ? (
-      <div className={`${prefixCls}-search-shell`}>
-        <Flex className={`${prefixCls}-search-row`} align="center" gap="small" wrap="wrap">
-          {viewManagementNode}
-        </Flex>
-      </div>
-    ) : null
+  if (!viewManagementNode && !searchEnabled) {
+    return null
   }
 
   return (
-    <>
-      <div className={`${prefixCls}-search-shell`}>
-        <Flex className={`${prefixCls}-search-row`} align="center" gap="small" wrap="wrap">
-          {viewManagementNode}
-        </Flex>
-      </div>
-      <div className={`${prefixCls}-search-content-shell`}>{children}</div>
-    </>
+    <Flex
+      className={clsx(`${prefixCls}-search-row`, className)}
+      style={style}
+      align="center"
+      gap="small"
+      wrap="wrap"
+    >
+      {viewManagementNode}
+    </Flex>
   )
 }
 

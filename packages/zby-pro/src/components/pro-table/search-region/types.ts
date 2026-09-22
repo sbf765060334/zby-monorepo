@@ -28,8 +28,9 @@ export type ModalScopeProps = {
 
 export type SearchRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
-  children: React.ReactNode
-  contentReady: boolean
+  className?: string
+  searchEnabled?: boolean
+  style?: React.CSSProperties
   views: false | ViewsConfigValue<Query>
   viewStore: ProTableViewStore
   prefixCls: string

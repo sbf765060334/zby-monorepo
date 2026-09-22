@@ -316,7 +316,6 @@ export default function ProTablePlayground() {
         columns={columns}
         views
         columnResize
-        rowSelection={{}}
         rowHighlight
         pagination={{
           defaultPageSize: 10,

@@ -292,82 +292,124 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     viewPersistence.viewManagementInstanceId,
   ])
 
+  const shouldBlockViewContent = shouldWaitForViewInitialization
+  const shouldExposeViewLoadingState =
+    shouldBlockViewContent && (viewLoadingVisible || Boolean(viewInitializationError))
+  const searchEnabled = resolvedConfig.mergedSearch !== false
+  const showSearchRow =
+    (viewsEnabled || searchEnabled) &&
+    !(shouldBlockViewContent && !shouldExposeViewLoadingState)
+  const showTable = !shouldBlockViewContent
   const contentNode = useMemo(
-    () => (
-      <div
-        className={clsx(
-          `${resolvedConfig.prefixCls}-content`,
-          resolvedConfig.mergedLayout?.separated !== false &&
-            `${resolvedConfig.prefixCls}-content-separated`,
-          resolvedConfig.mergedSemanticClassNames.content,
-        )}
-        style={resolvedConfig.mergedSemanticStyles.content}
-      >
-        {(resolvedConfig.mergedToolbar || resolvedConfig.mergedLayout?.tableTop) && (
-          <div className={`${resolvedConfig.prefixCls}-toolbar-block`}>
-            {resolvedConfig.mergedToolbar && (
-              <ToolbarRegion
-                controller={controller}
-                toolbar={resolvedConfig.mergedToolbar}
-                columnSettingEnabled={columnSettingEnabled}
-                fullscreenEnabled={resolvedConfig.fullscreenEnabled}
-                viewStore={viewStore}
-                prefixCls={resolvedConfig.prefixCls}
-                className={resolvedConfig.mergedSemanticClassNames.toolbar}
-                style={resolvedConfig.mergedSemanticStyles.toolbar}
-              />
-            )}
-            {resolvedConfig.mergedLayout?.tableTop ? (
-              <div className={`${resolvedConfig.prefixCls}-table-top`}>
-                {resolvedConfig.mergedLayout.tableTop}
+    () => {
+      if (!showSearchRow && !showTable) {
+        return null
+      }
+
+      return (
+        <div
+          className={clsx(
+            `${resolvedConfig.prefixCls}-content`,
+            resolvedConfig.mergedLayout?.separated !== false &&
+              `${resolvedConfig.prefixCls}-content-separated`,
+            resolvedConfig.mergedSemanticClassNames.content,
+          )}
+          style={resolvedConfig.mergedSemanticStyles.content}
+        >
+          {showSearchRow ? (
+            <SearchRegion
+              className={resolvedConfig.mergedSemanticClassNames.search}
+              controller={controller}
+              searchEnabled={searchEnabled}
+              views={resolvedConfig.mergedViews}
+              viewStore={viewStore}
+              prefixCls={resolvedConfig.prefixCls}
+              style={resolvedConfig.mergedSemanticStyles.search}
+              viewManagementAdapter={viewPersistence.viewManagementAdapter}
+              viewManagementInstanceId={viewPersistence.viewManagementInstanceId}
+              viewManagementLoading={viewInitialization.loading && viewLoadingVisible}
+              viewManagementLoadError={viewInitializationError}
+              onRetryViewManagementLoad={handleRetryViewInitialization}
+              initialStorageState={viewInitialization.initialStorageState}
+              buildSystemDefaultSnapshot={viewPersistence.buildSystemDefaultSnapshot}
+              createCurrentSnapshot={viewPersistence.createCurrentSnapshot}
+              onApplyManagedView={viewPersistence.handleApplyManagedView}
+              onResetManagedView={viewPersistence.handleResetManagedView}
+            />
+          ) : null}
+          {showTable ? (
+            <div className={`${resolvedConfig.prefixCls}-content-main`}>
+              {(resolvedConfig.mergedToolbar || resolvedConfig.mergedLayout?.tableTop) && (
+                <div className={`${resolvedConfig.prefixCls}-toolbar-block`}>
+                  {resolvedConfig.mergedToolbar && (
+                    <ToolbarRegion
+                      controller={controller}
+                      toolbar={resolvedConfig.mergedToolbar}
+                      columnSettingEnabled={columnSettingEnabled}
+                      fullscreenEnabled={resolvedConfig.fullscreenEnabled}
+                      viewStore={viewStore}
+                      prefixCls={resolvedConfig.prefixCls}
+                      className={resolvedConfig.mergedSemanticClassNames.toolbar}
+                      style={resolvedConfig.mergedSemanticStyles.toolbar}
+                    />
+                  )}
+                  {resolvedConfig.mergedLayout?.tableTop ? (
+                    <div className={`${resolvedConfig.prefixCls}-table-top`}>
+                      {resolvedConfig.mergedLayout.tableTop}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              <div className={`${resolvedConfig.prefixCls}-table-layout`}>
+                {resolvedConfig.mergedLayout?.tableAside ? (
+                  <div className={`${resolvedConfig.prefixCls}-table-aside`}>
+                    {resolvedConfig.mergedLayout.tableAside}
+                  </div>
+                ) : null}
+                <div className={`${resolvedConfig.prefixCls}-table-main`}>
+                  <TableRegion
+                    controller={controller}
+                    columns={resolvedColumns}
+                    columnDefinitions={columnDefinitions}
+                    columnsStateEnabled={resolvedConfig.columnPreferencesEnabled}
+                    columnResize={resolvedConfig.mergedColumnResize}
+                    columnResizeDefaultPersist={resolvedConfig.columnPreferencesEnabled}
+                    viewStore={viewStore}
+                    emptyState={resolvedConfig.mergedEmptyState}
+                    columnEmptyText={columnEmptyText}
+                    heightMode={resolvedConfig.mergedHeightMode}
+                    loadingOverride={loading}
+                    onTableChange={onTableChange}
+                    rowKey={rowKey}
+                    rowSelection={resolvedConfig.mergedRowSelection}
+                    expandable={resolvedConfig.mergedExpandable}
+                    pagination={resolvedConfig.mergedPagination}
+                    scroll={resolvedConfig.mergedScroll}
+                    prefixCls={resolvedConfig.prefixCls}
+                    className={resolvedConfig.mergedSemanticClassNames.table}
+                    style={resolvedConfig.mergedSemanticStyles.table}
+                    tableProps={stableTableProps}
+                  />
+                </div>
               </div>
-            ) : null}
-          </div>
-        )}
-        <div className={`${resolvedConfig.prefixCls}-table-layout`}>
-          {resolvedConfig.mergedLayout?.tableAside ? (
-            <div className={`${resolvedConfig.prefixCls}-table-aside`}>
-              {resolvedConfig.mergedLayout.tableAside}
             </div>
           ) : null}
-          <div className={`${resolvedConfig.prefixCls}-table-main`}>
-            <TableRegion
-              controller={controller}
-              columns={resolvedColumns}
-              columnDefinitions={columnDefinitions}
-              columnsStateEnabled={resolvedConfig.columnPreferencesEnabled}
-              columnResize={resolvedConfig.mergedColumnResize}
-              columnResizeDefaultPersist={resolvedConfig.columnPreferencesEnabled}
-              viewStore={viewStore}
-              emptyState={resolvedConfig.mergedEmptyState}
-              columnEmptyText={columnEmptyText}
-              heightMode={resolvedConfig.mergedHeightMode}
-              loadingOverride={loading}
-              onTableChange={onTableChange}
-              rowKey={rowKey}
-              rowSelection={resolvedConfig.mergedRowSelection}
-              expandable={resolvedConfig.mergedExpandable}
-              pagination={resolvedConfig.mergedPagination}
-              scroll={resolvedConfig.mergedScroll}
-              prefixCls={resolvedConfig.prefixCls}
-              className={resolvedConfig.mergedSemanticClassNames.table}
-              style={resolvedConfig.mergedSemanticStyles.table}
-              tableProps={stableTableProps}
-            />
-          </div>
         </div>
-      </div>
-    ),
+      )
+    },
     [
       columnDefinitions,
+      columnEmptyText,
+      columnSettingEnabled,
       controller,
+      handleRetryViewInitialization,
       loading,
       onTableChange,
+      resolvedColumns,
       resolvedConfig.columnPreferencesEnabled,
       resolvedConfig.fullscreenEnabled,
       resolvedConfig.mergedColumnResize,
       resolvedConfig.mergedEmptyState,
-      columnEmptyText,
       resolvedConfig.mergedExpandable,
       resolvedConfig.mergedHeightMode,
       resolvedConfig.mergedLayout,
@@ -375,59 +417,37 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       resolvedConfig.mergedRowSelection,
       resolvedConfig.mergedScroll,
       resolvedConfig.mergedSemanticClassNames.content,
+      resolvedConfig.mergedSemanticClassNames.search,
       resolvedConfig.mergedSemanticClassNames.table,
       resolvedConfig.mergedSemanticClassNames.toolbar,
       resolvedConfig.mergedSemanticStyles.content,
+      resolvedConfig.mergedSemanticStyles.search,
       resolvedConfig.mergedSemanticStyles.table,
       resolvedConfig.mergedSemanticStyles.toolbar,
       resolvedConfig.mergedToolbar,
+      resolvedConfig.mergedViews,
       resolvedConfig.prefixCls,
       rowKey,
-      resolvedColumns,
+      searchEnabled,
+      showSearchRow,
+      showTable,
       stableTableProps,
-      columnSettingEnabled,
+      viewInitialization.initialStorageState,
+      viewInitialization.loading,
+      viewInitializationError,
+      viewLoadingVisible,
+      viewPersistence.buildSystemDefaultSnapshot,
+      viewPersistence.createCurrentSnapshot,
+      viewPersistence.handleApplyManagedView,
+      viewPersistence.handleResetManagedView,
+      viewPersistence.viewManagementAdapter,
+      viewPersistence.viewManagementInstanceId,
       viewStore,
     ],
   )
-  const shouldBlockViewContent = shouldWaitForViewInitialization
-  const shouldExposeViewLoadingState =
-    shouldBlockViewContent && (viewLoadingVisible || Boolean(viewInitializationError))
   const rootStyle = useMemo(
     () => mergeInlineStyles(resolvedConfig.mergedSemanticStyles.root, resolvedConfig.mergedStyle),
     [resolvedConfig.mergedSemanticStyles.root, resolvedConfig.mergedStyle],
-  )
-  const searchRegion = viewsEnabled ? (
-    shouldBlockViewContent && !shouldExposeViewLoadingState ? null : (
-      <div
-        className={clsx(
-          `${resolvedConfig.prefixCls}-search`,
-          resolvedConfig.mergedSemanticClassNames.search,
-        )}
-        style={resolvedConfig.mergedSemanticStyles.search}
-      >
-        <SearchRegion
-          contentReady={!shouldBlockViewContent}
-          controller={controller}
-          views={resolvedConfig.mergedViews}
-          viewStore={viewStore}
-          prefixCls={resolvedConfig.prefixCls}
-          viewManagementAdapter={viewPersistence.viewManagementAdapter}
-          viewManagementInstanceId={viewPersistence.viewManagementInstanceId}
-          viewManagementLoading={viewInitialization.loading && viewLoadingVisible}
-          viewManagementLoadError={viewInitializationError}
-          onRetryViewManagementLoad={handleRetryViewInitialization}
-          initialStorageState={viewInitialization.initialStorageState}
-          buildSystemDefaultSnapshot={viewPersistence.buildSystemDefaultSnapshot}
-          createCurrentSnapshot={viewPersistence.createCurrentSnapshot}
-          onApplyManagedView={viewPersistence.handleApplyManagedView}
-          onResetManagedView={viewPersistence.handleResetManagedView}
-        >
-          {contentNode}
-        </SearchRegion>
-      </div>
-    )
-  ) : shouldBlockViewContent ? null : (
-    contentNode
   )
 
   const content = (
@@ -442,7 +462,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       )}
       style={rootStyle}
     >
-      {searchRegion}
+      {contentNode}
       {columnSettingEnabled && resolvedConfig.mergedColumnSetting && (
         <ColumnsModalMount
           viewStore={viewStore}

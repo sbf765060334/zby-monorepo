@@ -188,6 +188,21 @@ describe('ProTable', () => {
     await waitFor(() => expect(screen.getByTestId('rows')).toBeTruthy())
     expect(screen.queryByText('更多筛选')).toBeNull()
     expect(screen.queryByText('查询')).toBeNull()
+    expect(document.querySelector('.zby-pro-table-search-row')).toBeTruthy()
+  })
+
+  it('omits the search row when views and search are both off', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('rows')).toBeTruthy())
+    expect(document.querySelector('.zby-pro-table-search-row')).toBeNull()
   })
 
   it('hides columns through field default preferences when column setting is enabled', async () => {

@@ -45,25 +45,17 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         height: '100%',
       },
 
-      [`${componentCls}-search`]: {
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-        minWidth: 0,
-        minHeight: 0,
-        background: colorBgContainer,
-        borderRadius: borderRadiusLG,
-      },
-
-      [`${componentCls}-search-shell`]: {
-        padding: shellPadding,
-      },
-
       [`${componentCls}-search-row`]: {
+        flexShrink: 0,
         minWidth: 0,
+        maxWidth: '100%',
+
+        '&:empty': {
+          display: 'none',
+        },
       },
 
-      [`${componentCls}-search-content-shell`]: {
+      [`${componentCls}-content-main`]: {
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -71,7 +63,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         minWidth: 0,
         minHeight: 0,
         gap: marginSM,
-        paddingInline: shellPadding,
       },
 
       [`${componentCls}-search-views`]: {
