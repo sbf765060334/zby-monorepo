@@ -102,6 +102,10 @@ function genProTableStyle(token: ProTableToken): CSSObject {
           outline: 'none !important',
         },
 
+        [`${antCls}-select-content`]: {
+          flexWrap: 'nowrap',
+        },
+
         [`${antCls}-select:hover, ${antCls}-select-focused, ${antCls}-select-open, ${antCls}-picker:hover, ${antCls}-picker-focused`]:
           {
             borderColor: 'transparent !important',
