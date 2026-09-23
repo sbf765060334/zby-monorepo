@@ -18,6 +18,8 @@ type SearchFieldsProps<RecordType, Query extends Record<string, unknown>, Summar
 
 type SearchControlProps = {
   'aria-labelledby'?: string
+  mode?: unknown
+  multiple?: boolean
   options?: Array<{ label?: ReactNode; value?: unknown }>
   placeholder?: unknown
   style?: CSSProperties
@@ -137,6 +139,38 @@ function optionLabel(
   return typeof option?.label === 'string' ? option.label : undefined
 }
 
+function isMultipleControl(props: SearchControlProps) {
+  return props.mode === 'multiple' || props.multiple === true
+}
+
+function isSwitchElement(node: ReactElement) {
+  const type = node.type
+  if (typeof type === 'string') {
+    return type.toLowerCase() === 'switch'
+  }
+
+  if (typeof type === 'function' || (typeof type === 'object' && type !== null)) {
+    const name =
+      (type as { displayName?: string; name?: string }).displayName
+      ?? (type as { name?: string }).name
+      ?? ''
+    return name === 'Switch' || name.endsWith('Switch')
+  }
+
+  return false
+}
+
+function itemMeasureText(item: unknown, options: SearchControlProps['options']) {
+  if (Array.isArray(item)) {
+    const parts = item
+      .map((part) => optionLabel(options, part) ?? (part == null || part === '' ? '' : String(part)))
+      .filter(Boolean)
+    return parts.join('/')
+  }
+
+  return optionLabel(options, item) ?? (item == null || item === '' ? '' : String(item))
+}
+
 function measurePlaceholderWidth(placeholder: unknown, token: SearchSizeToken) {
   const texts = placeholderTexts(placeholder)
   if (texts.length === 0) {
@@ -147,6 +181,32 @@ function measurePlaceholderWidth(placeholder: unknown, token: SearchSizeToken) {
 }
 
 function measureContentWidth(props: SearchControlProps, value: unknown, token: SearchSizeToken) {
+  if (isMultipleControl(props)) {
+    const values = Array.isArray(value)
+      ? value.filter((item) => item != null && item !== '')
+      : []
+    if (values.length === 0) {
+      return undefined
+    }
+
+    const first = itemMeasureText(values[0], props.options)
+    if (!first) {
+      return undefined
+    }
+
+    const tagChrome = token.paddingSM * 2 + token.fontSizeIcon * 2 + token.marginXS
+    if (values.length === 1) {
+      return measureText(first, token) + tagChrome
+    }
+
+    return (
+      measureText(first, token)
+      + tagChrome
+      + measureText(`+${values.length}`, token)
+      + token.marginXS
+    )
+  }
+
   if (Array.isArray(props.options)) {
     const values = Array.isArray(value) ? value : [value]
     const labels = values
@@ -182,7 +242,7 @@ function controlExtraWidth(props: SearchControlProps, token: SearchSizeToken) {
     return selectInlinePad * 2 + token.marginXS + token.fontSizeIcon + token.paddingSM
   }
 
-  if (props.options != null) {
+  if (props.options != null || isMultipleControl(props)) {
     return selectInlinePad * 2 + token.fontSizeIcon * 2 + token.paddingSM
   }
 
@@ -216,7 +276,7 @@ function resolveInlineSearchControlStyle(
       )
 
   const nextStyle: CSSProperties = { ...style, minWidth: autoWidth }
-  if (props.options != null) {
+  if (props.options != null || isMultipleControl(props)) {
     nextStyle.width = autoWidth
   }
 
@@ -240,6 +300,12 @@ function applySearchControlLayout(
   }
 
   const element = node as ReactElement<SearchControlProps>
+  if (isSwitchElement(element)) {
+    return cloneElement(element, {
+      'aria-labelledby': element.props['aria-labelledby'] ?? labelId,
+    })
+  }
+
   const style = resolveInlineSearchControlStyle(element.props, value, token)
 
   return cloneElement(element, {

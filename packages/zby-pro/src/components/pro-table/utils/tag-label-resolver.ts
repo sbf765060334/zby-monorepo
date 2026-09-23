@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react'
+import { createElement, type ReactNode } from 'react'
+
+import { SearchTagOverflowText } from './search-tag-overflow-text'
 
 export type ProTableSearchTagTextResolver<Query = Record<string, unknown>> = (
   value: unknown,
@@ -70,7 +72,7 @@ const DEFAULT_PATH_SEPARATOR = ' / '
 const DEFAULT_RANGE_SEPARATOR = ' ~ '
 const DEFAULT_DATE_FORMAT = 'YYYY-MM-DD'
 const DEFAULT_TIME_FORMAT = 'HH:mm:ss'
-const TAG_OPTION_PREVIEW_COUNT = 3
+const TAG_OPTION_PREVIEW_COUNT = 5
 const PATH_KEY_SEPARATOR = '\u001F'
 const hasOwnProperty = Object.prototype.hasOwnProperty
 
@@ -142,7 +144,13 @@ function joinWithOverflow(nodes: ReactNode[], separator: ReactNode): ReactNode {
     return joinNodes(nodes, separator)
   }
 
-  return [joinNodes(nodes.slice(0, TAG_OPTION_PREVIEW_COUNT), separator), ` +${nodes.length - TAG_OPTION_PREVIEW_COUNT}`]
+  return createElement(SearchTagOverflowText, {
+    full: joinNodes(nodes, separator),
+    children: [
+      joinNodes(nodes.slice(0, TAG_OPTION_PREVIEW_COUNT), separator),
+      `等${nodes.length}项`,
+    ],
+  })
 }
 
 function resolveUnknownValue(value: unknown, config: ProTableSearchTagFallbackConfig): ReactNode {
@@ -413,7 +421,7 @@ export function createCascaderTagTextResolver(
     const fallbackPath = resolveCascaderLabelPathFromValue(pathValue)
     return fallbackPath.length > 0
       ? joinNodes(fallbackPath, pathSeparator)
-      : resolveUnknownValue(pathValue.at(-1), config)
+      : resolveUnknownValue(pathValue[pathValue.length - 1], config)
   }
 
   return ((value: unknown) => {

@@ -263,7 +263,9 @@ describe('ProTable', () => {
       expect.objectContaining({ page: 1, status: 'all' }),
       expect.anything(),
     )
-    const submittedQuery = queryRequest.mock.calls[3]?.[0] as Record<string, unknown> | undefined
+    const submittedQuery = (
+      queryRequest.mock.calls as unknown as Array<[Record<string, unknown>] | undefined>
+    )[3]?.[0]
     expect(submittedQuery).not.toHaveProperty('owner')
     await waitFor(() =>
       expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeNull(),

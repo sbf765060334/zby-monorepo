@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react'
-import { describe, expect, it } from 'vitest'
+// @vitest-environment jsdom
+
+import { isValidElement, type ReactNode } from 'react'
+import { fireEvent, render, waitFor } from '@testing-library/react'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   collectActiveSearchTagItems,
@@ -23,6 +26,16 @@ type Query = {
   createdAt?: [string, string]
 }
 
+beforeAll(() => {
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
+})
+
 function textOf(node: ReactNode): string {
   if (node == null || typeof node === 'boolean') {
     return ''
@@ -30,6 +43,10 @@ function textOf(node: ReactNode): string {
 
   if (Array.isArray(node)) {
     return node.map(textOf).join('')
+  }
+
+  if (isValidElement(node)) {
+    return textOf((node.props as { children?: ReactNode }).children)
   }
 
   return String(node)
@@ -82,28 +99,31 @@ describe('search tags', () => {
   it('hides tags when tagVisible returns false', () => {
     expect(
       collectActiveSearchTagItems(
-        [field('status', '状态', { tagVisible: (value) => value !== 'all' })],
+        [field('status', '状态', { tagVisible: (value: string | undefined) => value !== 'all' })],
         { status: 'all' },
         { status: 'all' },
       ),
     ).toEqual([])
   })
 
-  it('formats select labels and collapses extra options with +n', () => {
+  it('formats select labels and collapses extra options as 等N项', () => {
     const options = [
       { label: '待处理', value: 'pending' },
       { label: '运输中', value: 'shipping' },
       { label: '已完成', value: 'done' },
       { label: '已取消', value: 'canceled' },
       { label: '草稿', value: 'draft' },
+      { label: '已归档', value: 'archived' },
     ]
     const formatter = createSelectTagTextResolver({ options })
 
     expect(textOf(formatter('pending', {}))).toBe('待处理')
-    expect(textOf(formatter(['pending', 'shipping', 'done'], {}))).toBe('待处理、运输中、已完成')
     expect(textOf(formatter(['pending', 'shipping', 'done', 'canceled', 'draft'], {}))).toBe(
-      '待处理、运输中、已完成 +2',
+      '待处理、运输中、已完成、已取消、草稿',
     )
+    expect(
+      textOf(formatter(['pending', 'shipping', 'done', 'canceled', 'draft', 'archived'], {})),
+    ).toBe('待处理、运输中、已完成、已取消、草稿等6项')
     expect(
       hasSearchTagText(
         resolveSearchTagText(field('status', '状态', { tagTextFormatter: formatter }), 'pending', {}),
@@ -111,7 +131,7 @@ describe('search tags', () => {
     ).toBe(true)
   })
 
-  it('formats cascader paths and collapses extra selections with +n', () => {
+  it('formats cascader paths and collapses extra selections as 等N项', () => {
     const formatter = createCascaderTagTextResolver({
       options: [
         {
@@ -133,7 +153,10 @@ describe('search tags', () => {
         {
           label: '华南',
           value: 'south',
-          children: [{ label: '广州', value: 'gz' }],
+          children: [
+            { label: '广州', value: 'gz' },
+            { label: '深圳', value: 'sz' },
+          ],
         },
       ],
     })
@@ -152,7 +175,44 @@ describe('search tags', () => {
           {},
         ),
       ),
-    ).toBe('华东 / 上海、华东 / 杭州、华北 / 北京 +2')
+    ).toBe('华东 / 上海、华东 / 杭州、华北 / 北京、华北 / 天津、华南 / 广州')
+    expect(
+      textOf(
+        formatter(
+          [
+            ['east', 'sh'],
+            ['east', 'hz'],
+            ['north', 'bj'],
+            ['north', 'tj'],
+            ['south', 'gz'],
+            ['south', 'sz'],
+          ],
+          {},
+        ),
+      ),
+    ).toBe('华东 / 上海、华东 / 杭州、华北 / 北京、华北 / 天津、华南 / 广州等6项')
+  })
+
+  it('shows the full option list in a popover when tag text overflows', async () => {
+    const formatter = createSelectTagTextResolver({
+      options: [
+        { label: '待处理', value: 'pending' },
+        { label: '运输中', value: 'shipping' },
+        { label: '已完成', value: 'done' },
+        { label: '已取消', value: 'canceled' },
+        { label: '草稿', value: 'draft' },
+        { label: '已归档', value: 'archived' },
+      ],
+    })
+    const { container } = render(
+      formatter(['pending', 'shipping', 'done', 'canceled', 'draft', 'archived'], {}),
+    )
+
+    expect(container.textContent).toBe('待处理、运输中、已完成、已取消、草稿等6项')
+    fireEvent.mouseEnter(container.querySelector('span') as HTMLElement)
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('待处理、运输中、已完成、已取消、草稿、已归档')
+    })
   })
 
   it('formats date ranges as start ~ end', () => {
