@@ -12,7 +12,7 @@ import { clsx } from 'clsx'
 
 import { cancelProTableControllerRequests, createProTableController } from './controller'
 import { SearchRegion } from './search-region'
-import { SearchMorePanel } from './search-region/components'
+import { SearchMorePanel, SearchTagsMount } from './search-region/components'
 import type {
   ProTableComponent,
   ProTableController,
@@ -371,6 +371,13 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
                 open={moreFiltersOpen}
                 prefixCls={resolvedConfig.prefixCls}
               />
+              {searchEnabled ? (
+                <SearchTagsMount
+                  controller={controller}
+                  filters={filters}
+                  prefixCls={resolvedConfig.prefixCls}
+                />
+              ) : null}
               {(resolvedConfig.mergedToolbar || resolvedConfig.mergedLayout?.tableTop) && (
                 <div className={`${resolvedConfig.prefixCls}-toolbar-block`}>
                   {resolvedConfig.mergedToolbar && (
@@ -442,6 +449,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       loading,
       moreFiltersOpen,
       moreFilters,
+      filters,
       onTableChange,
       resolvedColumns,
       resolvedConfig.columnPreferencesEnabled,

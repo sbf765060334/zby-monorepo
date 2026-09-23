@@ -2,9 +2,6 @@ import {
   cloneElement,
   Fragment,
   isValidElement,
-  useCallback,
-  useEffect,
-  useRef,
   useState,
 } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
@@ -351,21 +348,11 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
   onClose: () => void
   open: boolean
 }) {
-  const openRef = useRef(open)
   const [mounted, setMounted] = useState(open)
-  const handleAfterOpenChange = useCallback((nextOpen: boolean) => {
-    if (!nextOpen && !openRef.current) {
-      setMounted(false)
-    }
-  }, [])
 
-  useEffect(() => {
-    openRef.current = open
-
-    if (open) {
-      setMounted(true)
-    }
-  }, [open])
+  if (open && !mounted) {
+    setMounted(true)
+  }
 
   if (!mounted || filters.length === 0) {
     return null
@@ -373,9 +360,7 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
 
   return (
     <Drawer
-      afterOpenChange={handleAfterOpenChange}
       closable={false}
-      destroyOnHidden
       focusable={DRAWER_FOCUSABLE}
       getContainer={false}
       open={open}

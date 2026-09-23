@@ -8,6 +8,31 @@ export { ColumnSettings as ProTableColumnSettings } from './columns-state'
 export { ProTableActions } from './table-actions'
 export { ProTableBatchActions } from './batch-actions'
 export { ProTableToolbarActions } from './toolbar-actions'
+export {
+  createBooleanTagTextResolver,
+  createCascaderTagTextResolver,
+  createDateRangeTagTextResolver,
+  createDateTagTextResolver,
+  createPrimitiveTagTextResolver,
+  createSelectTagTextResolver,
+  createTimeRangeTagTextResolver,
+  createTimeTagTextResolver,
+  createTreeSelectTagTextResolver,
+} from './utils'
+export type {
+  ProTableBooleanTagTextResolverConfig,
+  ProTableCascaderTagTextResolverConfig,
+  ProTableDateTagTextResolverConfig,
+  ProTableOptionTagTextResolverConfig,
+  ProTablePrimitiveTagTextResolverConfig,
+  ProTableRangeTagTextResolverConfig,
+  ProTableSearchTagFallbackConfig,
+  ProTableSearchTagFieldNames,
+  ProTableSearchTagOption,
+  ProTableSearchTagRawValue,
+  ProTableSearchTagTextResolver,
+  ProTableTreeSelectTagTextResolverConfig,
+} from './utils'
 export type {
   ProTableActionColumnActions,
   ProTableActionColumnConfig,

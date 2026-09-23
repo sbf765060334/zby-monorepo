@@ -1,6 +1,9 @@
 import { App, DatePicker, Input, Select } from 'antd'
 import dayjs from 'dayjs'
 import {
+  createDateRangeTagTextResolver,
+  createDateTagTextResolver,
+  createSelectTagTextResolver,
   ProLayoutContentContainer,
   ProTable,
   type ProTableColumnType,
@@ -455,6 +458,7 @@ function hiddenSelect(
     key,
     label,
     hidden: true,
+    tagTextFormatter: createSelectTagTextResolver({ options }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -473,6 +477,7 @@ function hiddenDate(key: Extract<keyof PlaygroundQuery, string>, label: string):
     key,
     label,
     hidden: true,
+    tagTextFormatter: createDateTagTextResolver(),
     render: ({ value, setValue }) => (
       <DatePicker
         allowClear
@@ -505,6 +510,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'status',
     label: '状态',
+    tagTextFormatter: createSelectTagTextResolver({ options: STATUS_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -520,6 +526,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'createdAt',
     label: '创建时间',
+    tagTextFormatter: createDateRangeTagTextResolver(),
     render: ({ value, setValue }) => {
       const start = value?.[0]
       const end = value?.[1]
@@ -555,6 +562,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'warehouse',
     label: '仓库',
+    tagTextFormatter: createSelectTagTextResolver({ options: WAREHOUSE_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -569,6 +577,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'route',
     label: '线路',
+    tagTextFormatter: createSelectTagTextResolver({ options: ROUTE_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -583,6 +592,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'destination',
     label: '目的地',
+    tagTextFormatter: createSelectTagTextResolver({ options: DESTINATION_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -597,6 +607,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'priority',
     label: '优先级',
+    tagTextFormatter: createSelectTagTextResolver({ options: PRIORITY_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -626,6 +637,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'urgent',
     label: '加急',
+    tagTextFormatter: createSelectTagTextResolver({ options: URGENT_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -670,6 +682,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'label',
     label: '标签',
+    tagTextFormatter: createSelectTagTextResolver({ options: LABEL_OPTIONS }),
     render: ({ value, setValue }) => (
       <Select
         allowClear
@@ -759,6 +772,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'dateValue',
     label: '日期',
+    tagTextFormatter: createDateTagTextResolver(),
     render: ({ value, setValue }) => (
       <DatePicker
         allowClear
@@ -773,6 +787,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'year',
     label: '年份',
+    tagTextFormatter: createDateTagTextResolver({ format: 'YYYY' }),
     render: ({ value, setValue }) => (
       <DatePicker
         allowClear

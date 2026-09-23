@@ -167,6 +167,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-search-overlay${antCls}-drawer-inline`]: {
         overflow: 'hidden',
         top: `calc(${cssLen(marginXS)} - ${cssLen(marginSM)})`,
+        [`&:not(${antCls}-drawer-open)`]: {
+          pointerEvents: 'none',
+        },
       },
 
       [`${componentCls}-search-overlay${antCls}-drawer-top > ${antCls}-drawer-content-wrapper`]: {
@@ -193,6 +196,12 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-search-overlay-body`]: {
         minWidth: 0,
+      },
+
+      [`${componentCls}-search-tags`]: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: marginXS,
       },
 
       [`${componentCls}-content-main`]: {

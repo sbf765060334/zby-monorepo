@@ -23,3 +23,28 @@ export { appendActionColumn, buildActionColumn } from './action-column'
 export { buildViewSnapshot, normalizeViewSnapshot, isViewSnapshotEqual } from './view-snapshot'
 export { getViewsScopeKey, PRO_TABLE_DEFAULT_VIEW_ID } from './persistence'
 export * from './search'
+export {
+  createBooleanTagTextResolver,
+  createCascaderTagTextResolver,
+  createDateRangeTagTextResolver,
+  createDateTagTextResolver,
+  createPrimitiveTagTextResolver,
+  createSelectTagTextResolver,
+  createTimeRangeTagTextResolver,
+  createTimeTagTextResolver,
+  createTreeSelectTagTextResolver,
+} from './tag-label-resolver'
+export type {
+  ProTableBooleanTagTextResolverConfig,
+  ProTableCascaderTagTextResolverConfig,
+  ProTableDateTagTextResolverConfig,
+  ProTableOptionTagTextResolverConfig,
+  ProTablePrimitiveTagTextResolverConfig,
+  ProTableRangeTagTextResolverConfig,
+  ProTableSearchTagFallbackConfig,
+  ProTableSearchTagFieldNames,
+  ProTableSearchTagOption,
+  ProTableSearchTagRawValue,
+  ProTableSearchTagTextResolver,
+  ProTableTreeSelectTagTextResolverConfig,
+} from './tag-label-resolver'

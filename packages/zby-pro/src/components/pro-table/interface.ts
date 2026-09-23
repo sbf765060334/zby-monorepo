@@ -278,6 +278,13 @@ export type ProTableFilter<Query extends Record<string, unknown> = Record<string
     label: ReactNode
     /** 收进「更多筛选」，不排在筛选行上。仍参与查询和视图快照。 */
     hidden?: boolean
+    /** 自定义 Tag 文案。不传时按原始值兜底：数组用 ` / ` 拼接，其余 `String(value)`。选项、路径、日期时间、布尔请用导出的 resolver。 */
+    tagTextFormatter?: (
+      value: Query[Key] | undefined,
+      query: Query,
+    ) => ReactNode
+    /** 是否展示该字段的条件 Tag。不传时有文案就展示。 */
+    tagVisible?: (value: Query[Key] | undefined, query: Query) => boolean
     /** 必须返回单一根元素，筛选行才能按 width / placeholder / 默认宽合入尺寸。 */
     render: (context: ProTableFilterRenderContext<Query, Key>) => ReactNode
   }

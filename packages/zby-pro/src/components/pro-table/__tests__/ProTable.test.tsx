@@ -251,10 +251,12 @@ describe('ProTable', () => {
       expect.objectContaining({ owner: 'Ada', status: 'open' }),
       expect.anything(),
     )
-    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
+    await waitFor(() =>
+      expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
+    )
 
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
-    expect(document.querySelector('.zby-pro-table-search-overlay')).toBeTruthy()
+    expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /重\s*置/ }))
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(4))
     expect(queryRequest).toHaveBeenLastCalledWith(
@@ -263,7 +265,88 @@ describe('ProTable', () => {
     )
     const submittedQuery = queryRequest.mock.calls[3]?.[0] as Record<string, unknown> | undefined
     expect(submittedQuery).not.toHaveProperty('owner')
-    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
+    await waitFor(() =>
+      expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
+    )
+  })
+
+  it('shows draft search tags immediately and clears a field without requesting', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(document.querySelector('.zby-pro-table-search-tags')).toBeNull()
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：open')
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: /负责人/ }), {
+      target: { value: 'Ada' },
+    })
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(
+      document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
+    )
+    expect(controller.getState().query.status).toBeUndefined()
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).not.toContain('状态：open')
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('resets a tag to defaultQuery without requesting and hides the icon at the default', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态')]}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：all')
+    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：open')
+    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeTruthy()
+
+    fireEvent.click(
+      document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
+    )
+    expect(controller.getState().query.status).toBe('all')
+    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：all')
+    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
+    expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
   it('omits the search row when views and search are both off', async () => {
