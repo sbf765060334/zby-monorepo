@@ -3,8 +3,11 @@ import * as React from 'react'
 
 import { ProModal } from '../pro-modal'
 import { SortableList } from '../pro-sortable-list'
+import { restrictToFirstScrollableAncestor } from '../pro-sortable-list/restrict-transform'
 import type { ProViewManagementView } from './interface'
 import { ViewManagementRow } from './ViewManagementRow'
+
+const viewDragModifiers = [restrictToFirstScrollableAncestor]
 
 type ViewManagementModalProps<TSnapshot> = {
   customViews: ProViewManagementView<TSnapshot>[]
@@ -74,6 +77,7 @@ export function ViewManagementModal<TSnapshot>({
         <SortableList
           items={customViews}
           getKey={(view) => view.id}
+          modifiers={viewDragModifiers}
           onReorder={onReorder}
           renderItem={(
             view,

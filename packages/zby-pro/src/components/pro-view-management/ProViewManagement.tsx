@@ -511,15 +511,20 @@ export default function ProViewManagement<TSnapshot = unknown>({
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
     setCreateOpen(false)
-    await applyView(nextView, { persistActiveView: false })
     void messageApi.success(
       createMode === 'saveAs'
         ? intl.getMessage(
             'zby.pro.viewManagement.saveAsSuccess',
-            '另存为成功',
+            '已另存为“{{name}}”',
+            { name },
           )
-        : intl.getMessage('zby.pro.viewManagement.createSuccess', '创建成功'),
+        : intl.getMessage(
+            'zby.pro.viewManagement.createSuccess',
+            '已新建视图“{{name}}”',
+            { name },
+          ),
     )
+    void applyView(nextView, { persistActiveView: false }).catch(() => undefined)
   }
 
   const handleSave = async () => {
@@ -551,14 +556,15 @@ export default function ProViewManagement<TSnapshot = unknown>({
     }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
-    await onSaveViewEvent?.(nextView)
-    await setActiveView(nextView)
     void messageApi.success(
       intl.getMessage('zby.pro.viewManagement.saveSuccess', '保存成功'),
     )
+    await onSaveViewEvent?.(nextView)
+    await setActiveView(nextView)
   }
 
   const handleDelete = async (viewId: string) => {
+    const deletedName = customViews.find((view) => view.id === viewId)?.name
     const nextCustomViews = normalizeCustomViews(
       customViews.filter((view) => view.id !== viewId),
     )
@@ -573,6 +579,13 @@ export default function ProViewManagement<TSnapshot = unknown>({
     }))
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
+    void messageApi.success(
+      intl.getMessage(
+        'zby.pro.viewManagement.deleteSuccess',
+        '已删除视图“{{name}}”',
+        { name: deletedName ?? '' },
+      ),
+    )
 
     if (deletedActiveView) {
       const nextActiveView = resolveActiveView(
@@ -582,13 +595,9 @@ export default function ProViewManagement<TSnapshot = unknown>({
       )
 
       if (nextActiveView) {
-        await applyView(nextActiveView)
+        void applyView(nextActiveView).catch(() => undefined)
       }
     }
-
-    void messageApi.success(
-      intl.getMessage('zby.pro.viewManagement.deleteSuccess', '删除成功'),
-    )
   }
 
   const handleRename = async (viewId: string, name: string) => {

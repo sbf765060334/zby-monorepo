@@ -528,6 +528,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         color: colorTextHeading,
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+        userSelect: 'none',
       },
 
       [`${componentCls}-columns-selected-actions`]: {

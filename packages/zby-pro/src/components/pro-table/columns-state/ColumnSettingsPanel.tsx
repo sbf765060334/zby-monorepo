@@ -120,7 +120,9 @@ function SelectedColumnRow({
       <span className={`${prefixCls}-columns-selected-dragger`} {...(sortable ? dragHandleProps : {})}>
         {!fixed && sortable ? <HolderOutlined /> : null}
       </span>
-      <span className={`${prefixCls}-columns-selected-title`}>{definition.label}</span>
+      <span className={`${prefixCls}-columns-selected-title`} title={getColumnLabelText(definition)}>
+        {definition.label}
+      </span>
       <span className={`${prefixCls}-columns-selected-actions`}>
         {canRemove ? (
           <Tooltip title={localeText.remove}>

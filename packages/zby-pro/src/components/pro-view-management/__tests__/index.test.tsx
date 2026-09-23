@@ -472,7 +472,42 @@ describe('ProViewManagement component', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
-    expect(await screen.findByText('Saved as a new view')).toBeTruthy()
+    expect(await screen.findByText('Saved as “Saved copy”')).toBeTruthy()
+  })
+
+  it('shows save-as success before onApplyView finishes', async () => {
+    let releaseApply: (() => void) | undefined
+    const onApplyView = vi.fn(
+      () => new Promise<void>((resolve) => {
+        releaseApply = resolve
+      }),
+    )
+
+    renderWithIntl(
+      <ProViewManagement
+        adapter={createTestAdapter<{ keyword: string }>()}
+        currentSnapshot={{ keyword: 'changed' }}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{
+          views: [customView],
+          activeViewId: customView.id,
+        }}
+        instanceId="save-as-pending-apply"
+        onApplyView={onApplyView}
+        systemViews={[systemView]}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Save$/ }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Save as' }))
+    fireEvent.change(await screen.findByPlaceholderText('Enter a view name'), {
+      target: { value: 'Pending copy' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByText('Saved as “Pending copy”')).toBeTruthy()
+    expect(onApplyView).toHaveBeenCalled()
+    releaseApply?.()
   })
 
   it('confirms creating a view from the selector', async () => {
@@ -495,7 +530,7 @@ describe('ProViewManagement component', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /创\s*建/ }))
 
-    expect(await screen.findByText('创建成功')).toBeTruthy()
+    expect(await screen.findByText('已新建视图“我的视图”')).toBeTruthy()
   })
 
   it('confirms rename and delete in view management', async () => {
@@ -525,6 +560,6 @@ describe('ProViewManagement component', () => {
     fireEvent.click(screen.getByLabelText('Delete view'))
     const confirmDelete = (await screen.findAllByRole('button', { name: 'Delete view' })).at(-1)!
     fireEvent.click(confirmDelete)
-    expect(await screen.findByText('Deleted')).toBeTruthy()
+    expect(await screen.findByText('Deleted “Closed records”')).toBeTruthy()
   })
 })
