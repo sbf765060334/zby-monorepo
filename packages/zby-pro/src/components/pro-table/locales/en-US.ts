@@ -21,6 +21,8 @@ const enUS = {
   selectedMax: 'max {{count}}',
   maxFixed: 'Pin up to {{count}}',
   fixedLimitReached: 'Pin limit reached',
+  unfixedBeforeLeftFixed: 'Unpinned columns cannot be moved before left-pinned columns',
+  unfixedAfterRightFixed: 'Unpinned columns cannot be moved after right-pinned columns',
   fullScreen: 'Full screen',
   exitFullScreen: 'Exit full screen',
   beforeQuery: 'Results appear after you search',

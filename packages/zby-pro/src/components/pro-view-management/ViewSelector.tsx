@@ -77,7 +77,7 @@ function renderSelectorLabel<TSnapshot>(
       </Typography.Text>
       {showActiveCount ? (
         <span className={`${prefixCls}-selector-label-count`}>
-          ·{activeCount}
+          ({activeCount})
         </span>
       ) : null}
     </span>

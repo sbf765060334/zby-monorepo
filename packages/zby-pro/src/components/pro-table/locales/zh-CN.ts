@@ -21,6 +21,8 @@ const zhCN = {
   selectedMax: '最多 {{count}}',
   maxFixed: '最多可固定 {{count}} 项',
   fixedLimitReached: '已达到固定上限',
+  unfixedBeforeLeftFixed: '非固定列不能拖动到左固定列之前',
+  unfixedAfterRightFixed: '非固定列不能拖动到右固定列之后',
   fullScreen: '全屏',
   exitFullScreen: '退出全屏',
   beforeQuery: '点击查询后展示查询结果',

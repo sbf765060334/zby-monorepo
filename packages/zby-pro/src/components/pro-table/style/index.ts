@@ -481,6 +481,13 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         overflowY: 'auto',
       },
 
+      // 拖动位移不参与滚动高度，避免列表被越拖越长。
+      [`${componentCls}-columns-selected-list-clip`]: {
+        flex: '0 0 auto',
+        minHeight: '100%',
+        overflow: 'clip',
+      },
+
       [`${componentCls}-columns-selected-row`]: {
         display: 'grid',
         gridTemplateColumns: '24px minmax(0, 1fr) auto',

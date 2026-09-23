@@ -5,7 +5,7 @@ import {
 import { useEvent } from '@rc-component/util'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, ConfigProvider, Dropdown, Flex, Tooltip } from 'antd'
+import { Button, ConfigProvider, Dropdown, Flex, message, Tooltip } from 'antd'
 import { clsx } from 'clsx'
 import * as React from 'react'
 
@@ -88,6 +88,7 @@ export default function ProViewManagement<TSnapshot = unknown>({
   viewCounts,
 }: ProViewManagementProps<TSnapshot>) {
   const intl = useIntl()
+  const [messageApi, messageContextHolder] = message.useMessage()
   const locale = intl.locale
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
   const prefixCls = getPrefixCls(DEFAULT_PREFIX_CLS, customizePrefixCls)
@@ -511,6 +512,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
     emitViewsChange(nextCustomViews)
     setCreateOpen(false)
     await applyView(nextView, { persistActiveView: false })
+    void messageApi.success(
+      createMode === 'saveAs'
+        ? intl.getMessage(
+            'zby.pro.viewManagement.saveAsSuccess',
+            '另存为成功',
+          )
+        : intl.getMessage('zby.pro.viewManagement.createSuccess', '创建成功'),
+    )
   }
 
   const handleSave = async () => {
@@ -544,6 +553,9 @@ export default function ProViewManagement<TSnapshot = unknown>({
     emitViewsChange(nextCustomViews)
     await onSaveViewEvent?.(nextView)
     await setActiveView(nextView)
+    void messageApi.success(
+      intl.getMessage('zby.pro.viewManagement.saveSuccess', '保存成功'),
+    )
   }
 
   const handleDelete = async (viewId: string) => {
@@ -573,6 +585,10 @@ export default function ProViewManagement<TSnapshot = unknown>({
         await applyView(nextActiveView)
       }
     }
+
+    void messageApi.success(
+      intl.getMessage('zby.pro.viewManagement.deleteSuccess', '删除成功'),
+    )
   }
 
   const handleRename = async (viewId: string, name: string) => {
@@ -599,6 +615,9 @@ export default function ProViewManagement<TSnapshot = unknown>({
     setCustomViews(nextCustomViews)
     emitViewsChange(nextCustomViews)
     setEditingViewId(null)
+    void messageApi.success(
+      intl.getMessage('zby.pro.viewManagement.renameSuccess', '重命名成功'),
+    )
   }
 
   const handleReorder = async (orderedViewIds: string[]) => {
@@ -626,162 +645,166 @@ export default function ProViewManagement<TSnapshot = unknown>({
   }
 
   return (
-    <Flex
-      className={clsx(
-        prefixCls,
-        hashId,
-        cssVarCls,
-        className,
-        rootClassName,
-      )}
-      style={style}
-      align="center"
-      gap="small"
-      wrap="wrap"
-    >
-      <ViewSelector
-        actionsDisabled={storageUnavailable}
-        activeView={activeView}
-        counts={counts}
-        customViews={customViews}
-        customViewsDisabled={Boolean(loadError)}
-        disabled={loading}
-        loadError={loadError}
-        loading={loading}
-        onCreate={() => {
-          setCreateMode('create')
-          setCreateOpen(true)
-        }}
-        onManage={() => setManagerOpen(true)}
-        onSelect={handleSelectView}
-        popupRootClassName={popupRootClassName}
-        popupWidth={popupWidth}
-        prefixCls={prefixCls}
-        showCount={showCount}
-        systemViews={normalizedSystemViews}
-      />
-      {loadError ? (
-        <Tooltip
-          title={intl.getMessage(
-            'zby.pro.viewManagement.loadErrorRetry',
-            '视图加载失败，点击重新获取',
-          )}
-        >
-          <ActionIcon
-            aria-label={intl.getMessage(
+    <>
+      {/* message.useMessage 的 holder 必须留在当前主题上下文中，提示层才能继承正确 token。 */}
+      {messageContextHolder}
+      <Flex
+        className={clsx(
+          prefixCls,
+          hashId,
+          cssVarCls,
+          className,
+          rootClassName,
+        )}
+        style={style}
+        align="center"
+        gap="small"
+        wrap="wrap"
+      >
+        <ViewSelector
+          actionsDisabled={storageUnavailable}
+          activeView={activeView}
+          counts={counts}
+          customViews={customViews}
+          customViewsDisabled={Boolean(loadError)}
+          disabled={loading}
+          loadError={loadError}
+          loading={loading}
+          onCreate={() => {
+            setCreateMode('create')
+            setCreateOpen(true)
+          }}
+          onManage={() => setManagerOpen(true)}
+          onSelect={handleSelectView}
+          popupRootClassName={popupRootClassName}
+          popupWidth={popupWidth}
+          prefixCls={prefixCls}
+          showCount={showCount}
+          systemViews={normalizedSystemViews}
+        />
+        {loadError ? (
+          <Tooltip
+            title={intl.getMessage(
               'zby.pro.viewManagement.loadErrorRetry',
               '视图加载失败，点击重新获取',
             )}
-            danger
-            icon={<ExclamationCircleFilled />}
-            size="small"
-            onClick={() => {
-              void handleRetryLoad()
-            }}
-          />
-        </Tooltip>
-      ) : null}
-      {mergedDirty ? (
-        <Flex
-          className={`${prefixCls}-actions`}
-          align="center"
-          gap="small"
-        >
-          <Flex align="center" gap={0}>
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  {
-                    key: 'save',
-                    label: intl.getMessage(
-                      'zby.pro.viewManagement.save',
-                      '保存',
-                    ),
-                    disabled:
+          >
+            <ActionIcon
+              aria-label={intl.getMessage(
+                'zby.pro.viewManagement.loadErrorRetry',
+                '视图加载失败，点击重新获取',
+              )}
+              danger
+              icon={<ExclamationCircleFilled />}
+              size="small"
+              onClick={() => {
+                void handleRetryLoad()
+              }}
+            />
+          </Tooltip>
+        ) : null}
+        {mergedDirty ? (
+          <Flex
+            className={`${prefixCls}-actions`}
+            align="center"
+            gap="small"
+          >
+            <Flex align="center" gap={0}>
+              <Dropdown
+                trigger={['click']}
+                menu={{
+                  items: [
+                    {
+                      key: 'save',
+                      label: intl.getMessage(
+                        'zby.pro.viewManagement.save',
+                        '保存',
+                      ),
+                      disabled:
                       storageUnavailable || activeView?.scope === 'system',
-                  },
-                  {
-                    key: 'saveAs',
-                    label: intl.getMessage(
-                      'zby.pro.viewManagement.saveAs',
-                      '另存为',
-                    ),
-                    disabled: storageUnavailable,
-                  },
-                ],
-                onClick: ({ key }) => {
-                  if (storageUnavailable) {
-                    return
-                  }
+                    },
+                    {
+                      key: 'saveAs',
+                      label: intl.getMessage(
+                        'zby.pro.viewManagement.saveAs',
+                        '另存为',
+                      ),
+                      disabled: storageUnavailable,
+                    },
+                  ],
+                  onClick: ({ key }) => {
+                    if (storageUnavailable) {
+                      return
+                    }
 
-                  if (key === 'save') {
-                    void handleSave()
-                    return
-                  }
+                    if (key === 'save') {
+                      void handleSave()
+                      return
+                    }
 
-                  setCreateMode('saveAs')
-                  setCreateOpen(true)
-                },
+                    setCreateMode('saveAs')
+                    setCreateOpen(true)
+                  },
+                }}
+              >
+                <Button
+                  color="default"
+                  disabled={storageUnavailable}
+                  variant="filled"
+                  icon={<DownOutlined />}
+                  iconPlacement="end"
+                >
+                  {intl.getMessage('zby.pro.viewManagement.save', '保存')}
+                </Button>
+              </Dropdown>
+            </Flex>
+            <Button
+              color="default"
+              variant="filled"
+              disabled={storageUnavailable || !activeView}
+              onClick={() => {
+                if (activeView) {
+                  void onResetViewEvent?.(activeView)
+                }
               }}
             >
-              <Button
-                color="default"
-                disabled={storageUnavailable}
-                variant="filled"
-                icon={<DownOutlined />}
-                iconPlacement="end"
-              >
-                {intl.getMessage('zby.pro.viewManagement.save', '保存')}
-              </Button>
-            </Dropdown>
+              {intl.getMessage('zby.pro.viewManagement.reset', '重置')}
+            </Button>
           </Flex>
-          <Button
-            color="default"
-            variant="filled"
-            disabled={storageUnavailable || !activeView}
-            onClick={() => {
-              if (activeView) {
-                void onResetViewEvent?.(activeView)
-              }
-            }}
-          >
-            {intl.getMessage('zby.pro.viewManagement.reset', '重置')}
-          </Button>
-        </Flex>
-      ) : null}
-      <ViewCreateModal
-        mode={createMode}
-        open={createOpen}
-        rootClassName={clsx(
-          `${prefixCls}-create-modal`,
-          popupRootClassName,
-        )}
-        onCancel={() => setCreateOpen(false)}
-        onCreate={handleCreate}
-        validateName={validateCreateName}
-      />
-      <ViewManagementModal
-        customViews={customViews}
-        editingViewId={editingViewId}
-        open={managerOpen}
-        prefixCls={prefixCls}
-        rootClassName={clsx(
-          `${prefixCls}-manager-modal`,
-          popupRootClassName,
-        )}
-        systemViews={normalizedSystemViews}
-        onCancel={() => {
-          setManagerOpen(false)
-          setEditingViewId(null)
-        }}
-        onCancelEdit={() => setEditingViewId(null)}
-        onDelete={handleDelete}
-        onRename={handleRename}
-        onReorder={handleReorder}
-        onStartEdit={setEditingViewId}
-        validateName={validateRenameName}
-      />
-    </Flex>
+        ) : null}
+        <ViewCreateModal
+          mode={createMode}
+          open={createOpen}
+          rootClassName={clsx(
+            `${prefixCls}-create-modal`,
+            popupRootClassName,
+          )}
+          onCancel={() => setCreateOpen(false)}
+          onCreate={handleCreate}
+          validateName={validateCreateName}
+        />
+        <ViewManagementModal
+          customViews={customViews}
+          editingViewId={editingViewId}
+          open={managerOpen}
+          prefixCls={prefixCls}
+          rootClassName={clsx(
+            `${prefixCls}-manager-modal`,
+            popupRootClassName,
+          )}
+          systemViews={normalizedSystemViews}
+          onCancel={() => {
+            setManagerOpen(false)
+            setEditingViewId(null)
+          }}
+          onCancelEdit={() => setEditingViewId(null)}
+          onDelete={handleDelete}
+          onRename={handleRename}
+          onReorder={handleReorder}
+          onStartEdit={setEditingViewId}
+          validateName={validateRenameName}
+        />
+      </Flex>
+    </>
   )
 }

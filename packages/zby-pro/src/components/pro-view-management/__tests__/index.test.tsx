@@ -405,4 +405,126 @@ describe('ProViewManagement component', () => {
     expect(styleText).toContain('pro-view-management-manager-list')
     expect(styleText).toContain('overflow-y:auto')
   })
+
+  it('shows the active view count in parentheses', () => {
+    renderWithIntl(
+      <ProViewManagement
+        currentSnapshot={systemView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{ views: [], activeViewId: systemView.id }}
+        instanceId="count-instance"
+        showCount
+        systemViews={[systemView]}
+        viewCounts={{ [systemView.id]: 40 }}
+      />,
+    )
+
+    expect(screen.getByText('All records')).toBeTruthy()
+    expect(screen.getByText('(40)')).toBeTruthy()
+  })
+
+  it('confirms saving a custom view and stays quiet on reset', async () => {
+    const onResetView = vi.fn()
+
+    renderWithIntl(
+      <ProViewManagement
+        adapter={createTestAdapter<{ keyword: string }>()}
+        currentSnapshot={{ keyword: 'changed' }}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{
+          views: [customView],
+          activeViewId: customView.id,
+        }}
+        instanceId="save-instance"
+        onResetView={onResetView}
+        systemViews={[systemView]}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+    expect(onResetView).toHaveBeenCalledWith(customView)
+    expect(screen.queryByText('Saved')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Save$/ }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Save' }))
+    expect(await screen.findByText('Saved')).toBeTruthy()
+  })
+
+  it('confirms saving the current snapshot as a new view', async () => {
+    renderWithIntl(
+      <ProViewManagement
+        adapter={createTestAdapter<{ keyword: string }>()}
+        currentSnapshot={{ keyword: 'changed' }}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{
+          views: [customView],
+          activeViewId: customView.id,
+        }}
+        instanceId="save-as-instance"
+        systemViews={[systemView]}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Save$/ }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Save as' }))
+    fireEvent.change(await screen.findByPlaceholderText('Enter a view name'), {
+      target: { value: 'Saved copy' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(await screen.findByText('Saved as a new view')).toBeTruthy()
+  })
+
+  it('confirms creating a view from the selector', async () => {
+    renderWithIntl(
+      <ProViewManagement
+        adapter={createTestAdapter<{ keyword: string }>()}
+        currentSnapshot={systemView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{ views: [], activeViewId: systemView.id }}
+        instanceId="create-instance"
+        systemViews={[systemView]}
+      />,
+      'zh-CN',
+    )
+
+    fireEvent.mouseDown(document.querySelector('[role="combobox"]')!)
+    fireEvent.click(await screen.findByText('新建视图'))
+    fireEvent.change(await screen.findByPlaceholderText('请输入视图名称'), {
+      target: { value: '我的视图' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /创\s*建/ }))
+
+    expect(await screen.findByText('创建成功')).toBeTruthy()
+  })
+
+  it('confirms rename and delete in view management', async () => {
+    renderWithIntl(
+      <ProViewManagement
+        adapter={createTestAdapter<{ keyword: string }>()}
+        currentSnapshot={customView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        initialStorageState={{
+          views: [customView],
+          activeViewId: customView.id,
+        }}
+        instanceId="manage-instance"
+        systemViews={[systemView]}
+      />,
+    )
+
+    fireEvent.mouseDown(document.querySelector('[role="combobox"]')!)
+    fireEvent.click(await screen.findByText('Manage views'))
+    fireEvent.click(await screen.findByLabelText('Edit view'))
+    fireEvent.change(await screen.findByDisplayValue('Open records'), {
+      target: { value: 'Closed records' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('Renamed')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Delete view'))
+    const confirmDelete = (await screen.findAllByRole('button', { name: 'Delete view' })).at(-1)!
+    fireEvent.click(confirmDelete)
+    expect(await screen.findByText('Deleted')).toBeTruthy()
+  })
 })

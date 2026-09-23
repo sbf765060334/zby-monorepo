@@ -9,10 +9,14 @@ import {
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, Checkbox, Empty, Input, Tooltip, Typography } from 'antd'
+import { Button, Checkbox, Empty, Input, message, Tooltip, Typography } from 'antd'
 import { clsx } from 'clsx'
 
 import { SortableList } from '../../pro-sortable-list'
+import { restrictToFirstScrollableAncestor } from '../../pro-sortable-list/restrict-transform'
+import { getColumnReorderRejection } from './column-reorder'
+
+const columnDragModifiers = [restrictToFirstScrollableAncestor]
 import type { ProTableColumnPreference } from '../interface'
 import type { ProTableColumnDefinition } from '../utils/columns'
 import {
@@ -194,6 +198,7 @@ export function ColumnSettingsPanel({
   onChange,
 }: ColumnSettingsPanelProps) {
   const intl = useIntl()
+  const [messageApi, messageContextHolder] = message.useMessage()
   const [keyword, setKeyword] = React.useState('')
   const definitionMap = React.useMemo(
     () => new Map(definitions.map((item) => [item.key, item])),
@@ -202,9 +207,6 @@ export function ColumnSettingsPanel({
   const visibleCount = value.filter((item) => item.visible).length
   const fixedCount = value.filter((item) => item.visible && item.pin).length
   const selectedItems = React.useMemo(() => sortVisibleColumnPreferences(value), [value])
-  const leftFixedSelectedItems = selectedItems.filter((item) => item.pin === 'left')
-  const rightFixedSelectedItems = selectedItems.filter((item) => item.pin === 'right')
-  const sortableSelectedItems = selectedItems.filter((item) => !item.pin)
   const filteredDefinitions = React.useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase()
     const ordered = value
@@ -266,15 +268,25 @@ export function ColumnSettingsPanel({
     )
   }
 
-  const reorderSortableItems = (orderedKeys: string[]) => {
-    onChange(
-      replaceVisibleColumnOrder(
-        value,
-        leftFixedSelectedItems
-          .map((item) => item.key)
-          .concat(orderedKeys, rightFixedSelectedItems.map((item) => item.key)),
-      ),
+  const reorderSelectedItems = (orderedKeys: string[]) => {
+    onChange(replaceVisibleColumnOrder(value, orderedKeys))
+  }
+
+  const rejectCrossGroupReorder = (activeKey: string, overKey: string) => {
+    const reason = getColumnReorderRejection(activeKey, overKey, selectedItems)
+    if (!reason) return true
+    void messageApi.info(
+      reason === 'unfixedBeforeLeftFixed'
+        ? intl.getMessage(
+            'zby.pro.table.unfixedBeforeLeftFixed',
+            '非固定列不能拖动到左固定列之前',
+          )
+        : intl.getMessage(
+            'zby.pro.table.unfixedAfterRightFixed',
+            '非固定列不能拖动到右固定列之后',
+          ),
     )
+    return false
   }
 
   const sectionKeys = filteredDefinitions.map((item) => item.key)
@@ -286,6 +298,7 @@ export function ColumnSettingsPanel({
 
   return (
     <div className={`${prefixCls}-columns-panel`}>
+      {messageContextHolder}
       <div className={`${prefixCls}-columns-panel-layout`}>
         <div className={`${prefixCls}-columns-catalog`}>
           <Input
@@ -365,31 +378,14 @@ export function ColumnSettingsPanel({
             ) : null}
           </div>
           <div className={`${prefixCls}-columns-selected-list`}>
-            {leftFixedSelectedItems.map((preference) => {
-              const definition = definitionMap.get(preference.key)
-              if (!definition) return null
-              return (
-                <SelectedColumnRow
-                  key={preference.key}
-                  definition={definition}
-                  fixedCount={fixedCount}
-                  localeText={rowLocaleText}
-                  maxFixed={maxFixed}
-                  preference={preference}
-                  prefixCls={prefixCls}
-                  sortable={false}
-                  onChange={(patch) => commitRowPatch(preference.key, patch)}
-                  onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
-                  onRemove={() =>
-                    onChange(updateColumnPreference(value, preference.key, { visible: false }))
-                  }
-                />
-              )
-            })}
             <SortableList
-              items={sortableSelectedItems}
+              className={`${prefixCls}-columns-selected-list-clip`}
+              items={selectedItems}
               getKey={(item) => item.key}
-              onReorder={reorderSortableItems}
+              isItemSortable={(item) => !item.pin}
+              modifiers={columnDragModifiers}
+              onBeforeReorder={rejectCrossGroupReorder}
+              onReorder={reorderSelectedItems}
               renderItem={(preference, { dragHandleProps, rowRef, dragging, style, sortable }) => {
                 const definition = definitionMap.get(preference.key)
                 if (!definition) return null
@@ -416,27 +412,6 @@ export function ColumnSettingsPanel({
                 )
               }}
             />
-            {rightFixedSelectedItems.map((preference) => {
-              const definition = definitionMap.get(preference.key)
-              if (!definition) return null
-              return (
-                <SelectedColumnRow
-                  key={preference.key}
-                  definition={definition}
-                  fixedCount={fixedCount}
-                  localeText={rowLocaleText}
-                  maxFixed={maxFixed}
-                  preference={preference}
-                  prefixCls={prefixCls}
-                  sortable={false}
-                  onChange={(patch) => commitRowPatch(preference.key, patch)}
-                  onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
-                  onRemove={() =>
-                    onChange(updateColumnPreference(value, preference.key, { visible: false }))
-                  }
-                />
-              )
-            })}
           </div>
         </div>
       </div>

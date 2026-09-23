@@ -1,4 +1,4 @@
-import type { DragEndEvent } from '@dnd-kit/core'
+import type { DragEndEvent, Modifier } from '@dnd-kit/core'
 import {
   closestCenter,
   DndContext,
@@ -36,6 +36,9 @@ export type SortableListProps<Item> = {
   disabled?: boolean
   className?: string
   isItemSortable?: (item: Item) => boolean
+  modifiers?: Modifier[]
+  /** 返回 false 时不改变顺序。 */
+  onBeforeReorder?: (activeKey: string, overKey: string) => boolean
   onReorder: (orderedKeys: string[]) => void
   renderItem: (item: Item, context: SortableListRenderContext) => ReactNode
 }
@@ -54,7 +57,10 @@ function SortableListItem<Item>({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({
       id: itemKey,
-      disabled: !sortable,
+      disabled: {
+        draggable: !sortable,
+        droppable: false,
+      },
     })
   const verticalTransform = transform
     ? {
@@ -88,6 +94,8 @@ export function SortableList<Item>({
   disabled = false,
   className,
   isItemSortable,
+  modifiers,
+  onBeforeReorder,
   onReorder,
   renderItem,
 }: SortableListProps<Item>) {
@@ -113,6 +121,10 @@ export function SortableList<Item>({
     const overKey = String(over.id)
 
     if (!sortableKeySet.has(activeKey)) {
+      return
+    }
+
+    if (onBeforeReorder && !onBeforeReorder(activeKey, overKey)) {
       return
     }
 
@@ -149,6 +161,7 @@ export function SortableList<Item>({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      modifiers={modifiers}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={itemKeys} strategy={verticalListSortingStrategy}>

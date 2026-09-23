@@ -25,6 +25,7 @@ const genProViewManagementStyle = (
     lineWidth,
     marginSM,
     marginXS,
+    marginXXS,
     paddingSM,
     paddingXS,
     paddingContentVerticalSM,
@@ -78,6 +79,7 @@ const genProViewManagementStyle = (
       },
 
       [`${componentCls}-selector-label-count`]: {
+        marginInlineStart: marginXXS,
         color: colorTextDescription,
         flexShrink: 0,
       },
