@@ -1,5 +1,6 @@
 import { useStyleRegister } from '@ant-design/cssinjs'
-import { theme as antdTheme } from 'antd'
+import { ConfigProvider, theme as antdTheme } from 'antd'
+import * as React from 'react'
 
 const unit = (value: number | string) => typeof value === 'number' ? `${value}px` : value
 const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
@@ -7,8 +8,10 @@ const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
 /** 注册与 Shuzhi Drawer 模式一致的 ProLayout token 驱动样式。 */
 export default function useProLayoutStyles(prefixCls: string) {
   const { cssVar, hashId, theme, token } = antdTheme.useToken()
+  const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
   const styleToken = cssVar ?? token
   const componentCls = `.${prefixCls}`
+  const antCls = `.${getPrefixCls()}`
   const headerHeight = Math.max(
     token.controlHeightSM + token.marginXXS,
     token.controlHeightLG - token.marginXXS / 2,
@@ -123,7 +126,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           boxSizing: 'border-box',
           background: 'linear-gradient(180deg, #384386 0%, #11162f 100%)',
 
-          [`.ant-layout-sider-children`]: { height: '100%' },
+          [`${antCls}-layout-sider-children`]: { height: '100%' },
         },
 
         [`${componentCls}-sider-inner`]: {
@@ -313,28 +316,28 @@ export default function useProLayoutStyles(prefixCls: string) {
           overflow: 'hidden',
           background: styleToken.colorBgContainer,
 
-          [`.ant-tabs`]: {
+          [`${antCls}-tabs`]: {
             maxWidth: '100%',
             height: '100%',
             maxHeight: headerHeightStyle,
           },
-          [`.ant-tabs-nav`]: {
+          [`${antCls}-tabs-nav`]: {
             height: '100%',
             maxHeight: headerHeightStyle,
             margin: 0,
             alignItems: 'flex-end',
             '&::before': { borderBlockEnd: 0 },
           },
-          [`.ant-tabs-nav-wrap, .ant-tabs-nav-list, .ant-tabs-nav-operations`]: {
+          [`${antCls}-tabs-nav-wrap, ${antCls}-tabs-nav-list, ${antCls}-tabs-nav-operations`]: {
             height: '100%',
             maxHeight: headerHeightStyle,
             alignItems: 'flex-end',
           },
-          [`.ant-tabs-nav-list`]: {
+          [`${antCls}-tabs-nav-list`]: {
             paddingInlineStart: tabCurveSizeStyle,
             paddingInlineEnd: tabTrailingPaddingStyle,
           },
-          [`.ant-tabs-nav-more`]: {
+          [`${antCls}-tabs-nav-more`]: {
             display: 'inline-flex',
             width: styleToken.controlHeightSM,
             minWidth: styleToken.controlHeightSM,
@@ -350,12 +353,12 @@ export default function useProLayoutStyles(prefixCls: string) {
               color: styleToken.colorTextSecondary,
             },
           },
-          [`.ant-tabs-extra-content`]: {
+          [`${antCls}-tabs-extra-content`]: {
             display: 'inline-flex',
             height: '100%',
             alignItems: 'center',
           },
-          [`.ant-tabs-tab`]: {
+          [`${antCls}-tabs-tab`]: {
             display: 'flex',
             width: tabWidthStyle,
             minWidth: tabWidthStyle,
@@ -383,7 +386,7 @@ export default function useProLayoutStyles(prefixCls: string) {
               color: styleToken.colorTextSecondary,
             },
           },
-          [`.ant-tabs-tab-btn`]: {
+          [`${antCls}-tabs-tab-btn`]: {
             display: 'flex',
             minWidth: 0,
             height: '100%',
@@ -398,7 +401,7 @@ export default function useProLayoutStyles(prefixCls: string) {
               color: 'inherit',
             },
           },
-          [`.ant-tabs-tab-active`]: {
+          [`${antCls}-tabs-tab-active`]: {
             zIndex: 1,
             height: headerIdleTabHeightStyle,
             minHeight: headerIdleTabHeightStyle,
@@ -415,11 +418,11 @@ export default function useProLayoutStyles(prefixCls: string) {
               color: styleToken.colorText,
             },
           },
-          [`.ant-tabs-tab-active .ant-tabs-tab-btn`]: {
+          [`${antCls}-tabs-tab-active ${antCls}-tabs-tab-btn`]: {
             color: styleToken.colorText,
             textShadow: 'none',
           },
-          [`.ant-tabs-tab-remove, .ant-tabs-tab:hover .ant-tabs-tab-remove, .ant-tabs-tab-active .ant-tabs-tab-remove`]: {
+          [`${antCls}-tabs-tab-remove, ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove, ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove`]: {
             display: 'inline-flex',
             width: styleToken.fontSize,
             minWidth: styleToken.fontSize,
@@ -434,11 +437,11 @@ export default function useProLayoutStyles(prefixCls: string) {
             opacity: 1,
             transition: `background ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}, color ${styleToken.motionDurationFast} ${styleToken.motionEaseInOut}`,
           },
-          [`.ant-tabs-tab-remove:hover, .ant-tabs-tab:hover .ant-tabs-tab-remove:hover, .ant-tabs-tab-active .ant-tabs-tab-remove:hover, .ant-tabs-tab-remove:active, .ant-tabs-tab-remove:focus-visible`]: {
+          [`${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab-remove:active, ${antCls}-tabs-tab-remove:focus-visible`]: {
             background: 'transparent',
             color: styleToken.colorText,
           },
-          [`.ant-tabs-content-holder`]: { display: 'none' },
+          [`${antCls}-tabs-content-holder`]: { display: 'none' },
         },
 
         [`${componentCls}-tab-node`]: {
@@ -456,7 +459,7 @@ export default function useProLayoutStyles(prefixCls: string) {
         [`${componentCls}-tab-node-dragging`]: {
           zIndex: styleToken.zIndexPopupBase,
           overflow: 'visible',
-          [`.ant-tabs-tab`]: {
+          [`${antCls}-tabs-tab`]: {
             borderColor: styleToken.colorBorder,
             boxShadow: 'none',
           },
@@ -531,7 +534,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           marginInlineStart: unfixedLabelOffset,
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
-        [`.ant-tabs-tab:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+        [`${antCls}-tabs-tab:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
           marginInlineStart: 0,
         },
         [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
@@ -557,7 +560,7 @@ export default function useProLayoutStyles(prefixCls: string) {
 
           '&:hover, &:focus-visible': { color: styleToken.colorTextSecondary },
         },
-        [`.ant-tabs-tab:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
+        [`${antCls}-tabs-tab:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
           opacity: 1,
         },
         [`${componentCls}-fixed-icon-active`]: {
@@ -569,7 +572,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           marginInlineStart: 0,
           color: styleToken.colorTextTertiary,
 
-          '&:hover, &:focus-visible, &.ant-dropdown-open': {
+          [`&:hover, &:focus-visible, &${antCls}-dropdown-open`]: {
             color: styleToken.colorTextSecondary,
           },
         },
@@ -595,10 +598,10 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: styleToken.colorBgLayout,
           fontSize: styleToken.fontSize,
 
-          [`.ant-breadcrumb`]: {
+          [`${antCls}-breadcrumb`]: {
             fontSize: styleToken.fontSize,
           },
-          [`.ant-breadcrumb-separator`]: {
+          [`${antCls}-breadcrumb-separator`]: {
             marginInline: styleToken.marginXXS,
           },
         },
@@ -635,7 +638,7 @@ export default function useProLayoutStyles(prefixCls: string) {
       },
 
       [`.${prefixCls}-tabs-dropdown`]: {
-        [`.ant-tabs-dropdown-menu-item > span`]: {
+        [`${antCls}-tabs-dropdown-menu-item > span`]: {
           minWidth: 0,
           overflow: 'hidden',
         },
@@ -654,7 +657,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           marginInlineStart: unfixedLabelOffset,
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
-        [`.ant-tabs-dropdown-menu-item:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
           marginInlineStart: 0,
         },
         [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
@@ -679,7 +682,7 @@ export default function useProLayoutStyles(prefixCls: string) {
 
           '&:hover, &:focus-visible': { color: styleToken.colorTextSecondary },
         },
-        [`.ant-tabs-dropdown-menu-item:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
+        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
           opacity: 1,
         },
         [`${componentCls}-fixed-icon-active`]: {
@@ -687,7 +690,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           opacity: 1,
           transform: 'rotate(-45deg)',
         },
-        [`.ant-tabs-dropdown-menu-item-remove`]: {
+        [`${antCls}-tabs-dropdown-menu-item-remove`]: {
           display: 'inline-flex',
           width: styleToken.fontSize,
           height: styleToken.fontSize,
@@ -706,7 +709,7 @@ export default function useProLayoutStyles(prefixCls: string) {
       },
 
       [`.${prefixCls}-menu-drawer`]: {
-        [`.ant-drawer-section`]: {
+        [`${antCls}-drawer-section`]: {
           borderInlineEnd: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
           background: styleToken.colorBgElevated,
           boxShadow: surfaceShadow,
@@ -951,7 +954,7 @@ export default function useProLayoutStyles(prefixCls: string) {
       },
 
       [`.${prefixCls}-system-popover`]: {
-        [`.ant-popover-inner`]: {
+        [`${antCls}-popover-inner`]: {
           border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
           boxShadow: surfaceShadow,
         },

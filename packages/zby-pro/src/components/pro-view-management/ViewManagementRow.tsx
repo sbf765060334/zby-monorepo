@@ -1,11 +1,13 @@
 import {
+  CheckOutlined,
+  CloseOutlined,
   DeleteOutlined,
   EditOutlined,
   HolderOutlined,
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, Flex, Form, Input, Popconfirm, Space, Tag } from 'antd'
+import { Flex, Form, Input, Popconfirm, Space, Tag } from 'antd'
 import { clsx } from 'clsx'
 import type {
   CSSProperties,
@@ -153,16 +155,33 @@ export function ViewManagementRow<TSnapshot>({
         ) : null}
         {!isSystem && editing ? (
           <>
-            <Button type="link" onClick={onCancelEdit}>
-              {intl.getMessage('zby.pro.viewManagement.cancel', '取消')}
-            </Button>
-            <Button
-              type="link"
+            <ActionIcon
+              icon={<CloseOutlined />}
+              aria-label={intl.getMessage(
+                'zby.pro.viewManagement.cancel',
+                '取消',
+              )}
+              title={intl.getMessage(
+                'zby.pro.viewManagement.cancel',
+                '取消',
+              )}
+              onClick={onCancelEdit}
+            />
+            <ActionIcon
+              icon={<CheckOutlined />}
+              aria-label={intl.getMessage(
+                'zby.pro.viewManagement.save',
+                '保存',
+              )}
+              title={intl.getMessage(
+                'zby.pro.viewManagement.save',
+                '保存',
+              )}
               disabled={editingName.trim().length === 0}
-              onClick={() => handleSubmit()}
-            >
-              {intl.getMessage('zby.pro.viewManagement.save', '保存')}
-            </Button>
+              onClick={() => {
+                void handleSubmit().catch(() => undefined)
+              }}
+            />
           </>
         ) : null}
         {!isSystem && !editing ? (
@@ -170,6 +189,10 @@ export function ViewManagementRow<TSnapshot>({
             <ActionIcon
               icon={<EditOutlined />}
               aria-label={intl.getMessage(
+                'zby.pro.viewManagement.editView',
+                '编辑视图',
+              )}
+              title={intl.getMessage(
                 'zby.pro.viewManagement.editView',
                 '编辑视图',
               )}
@@ -199,6 +222,10 @@ export function ViewManagementRow<TSnapshot>({
                 icon={<DeleteOutlined />}
                 danger
                 aria-label={intl.getMessage(
+                  'zby.pro.viewManagement.deleteView',
+                  '删除视图',
+                )}
+                title={intl.getMessage(
                   'zby.pro.viewManagement.deleteView',
                   '删除视图',
                 )}

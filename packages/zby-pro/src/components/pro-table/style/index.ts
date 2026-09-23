@@ -9,6 +9,7 @@ type ProTableToken = GlobalToken & {
   antCls: string
   componentCls: string
   fullscreenPadding: number
+  iconCls: string
   shellPadding: number
 }
 
@@ -26,6 +27,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     componentCls,
     controlHeight,
     fullscreenPadding,
+    iconCls,
     lineWidth,
     marginSM,
     marginXS,
@@ -550,11 +552,11 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         display: 'inline-flex',
       },
 
-      [`${componentCls}-columns-selected-action-pin-right .anticon`]: {
+      [`${componentCls}-columns-selected-action-pin-right ${iconCls}`]: {
         transform: 'rotate(270deg)',
       },
 
-      [`${componentCls}-columns-selected-action-pin-fixed .anticon`]: {
+      [`${componentCls}-columns-selected-action-pin-fixed ${iconCls}`]: {
         transform: 'rotate(315deg)',
       },
 
@@ -597,7 +599,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
 export default function useStyle(prefixCls: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
-  const { getPrefixCls, theme: themeConfig } = React.useContext(ConfigProvider.ConfigContext)
+  const { getPrefixCls, iconPrefixCls, theme: themeConfig } = React.useContext(
+    ConfigProvider.ConfigContext,
+  )
   const styleToken = cssVar ?? token
   const cssVarKey = typeof themeConfig?.cssVar === 'object' ? themeConfig.cssVar.key : undefined
   const cssVarCls = cssVarKey ?? 'css-var-root'
@@ -605,6 +609,7 @@ export default function useStyle(prefixCls: string) {
     ...styleToken,
     componentCls: `.${prefixCls}`,
     antCls: `.${getPrefixCls()}`,
+    iconCls: `.${iconPrefixCls}`,
     shellPadding: styleToken.paddingSM,
     fullscreenPadding: styleToken.paddingLG,
   }
