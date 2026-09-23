@@ -43,7 +43,47 @@ type PlaygroundQuery = {
   customer?: string
   status?: OrderStatus
   createdAt?: [string, string]
+  orderNo?: string
+  warehouse?: string
+  route?: string
+  destination?: string
+  priority?: OrderPriority
+  sku?: string
+  urgent?: boolean
+  remark?: string
+  id?: string
+  label?: OrderLabel
+  note?: string
+  quantity?: string
+  progress?: string
+  amount?: string
+  rate?: string
+  dateValue?: string
+  year?: string
   owner?: string
+  billNo?: string
+  containerNo?: string
+  customsNo?: string
+  contact?: string
+  phone?: string
+  email?: string
+  region?: string
+  plateNo?: string
+  driver?: string
+  carrier?: string
+  channel?: string
+  customerLevel?: string
+  tradeTerm?: string
+  customsStatus?: string
+  invoiceNo?: string
+  contractNo?: string
+  projectNo?: string
+  dept?: string
+  currency?: string
+  settleMethod?: string
+  bizType?: string
+  etd?: string
+  eta?: string
 }
 
 const STATUS_OPTIONS: Array<{ label: string; value: OrderStatus }> = [
@@ -51,12 +91,44 @@ const STATUS_OPTIONS: Array<{ label: string; value: OrderStatus }> = [
   { label: '运输中', value: 'shipping' },
   { label: '已完成', value: 'done' },
 ]
+const PRIORITY_OPTIONS: Array<{ label: string; value: OrderPriority }> = [
+  { label: '低', value: 'low' },
+  { label: '中', value: 'normal' },
+  { label: '高', value: 'high' },
+]
 
 const OWNERS = ['张敏', '李想', '周宁', '王雪', '陈舟']
 const CUSTOMERS = ['星河贸易', '北辰物流', '青云供应链', '远航进出口', '临港仓储']
 const WAREHOUSES = ['上海仓', '杭州仓', '苏州仓', '宁波仓']
 const ROUTES = ['华东干线', '沿海快运', '跨境陆运', '城配循环']
 const DESTINATIONS = ['上海市浦东新区', '杭州市余杭区', '苏州市工业园区', '宁波市北仑区']
+const WAREHOUSE_OPTIONS = WAREHOUSES.map((item) => ({ label: item, value: item }))
+const ROUTE_OPTIONS = ROUTES.map((item) => ({ label: item, value: item }))
+const DESTINATION_OPTIONS = DESTINATIONS.map((item) => ({ label: item, value: item }))
+const URGENT_OPTIONS = [
+  { label: '是', value: true },
+  { label: '否', value: false },
+]
+const LABEL_OPTIONS: Array<{ label: string; value: OrderLabel }> = [
+  { label: '华东', value: 'east' },
+  { label: '加急', value: 'urgent' },
+  { label: '保税', value: 'bonded' },
+]
+const CURRENCY_OPTIONS = [
+  { label: '人民币', value: 'CNY' },
+  { label: '美元', value: 'USD' },
+  { label: '欧元', value: 'EUR' },
+]
+const SETTLE_OPTIONS = [
+  { label: '月结', value: 'monthly' },
+  { label: '现结', value: 'cash' },
+  { label: '到付', value: 'collect' },
+]
+const BIZ_TYPE_OPTIONS = [
+  { label: '进口', value: 'import' },
+  { label: '出口', value: 'export' },
+  { label: '内贸', value: 'domestic' },
+]
 const STATUSES: OrderStatus[] = ['pending', 'shipping', 'done']
 const PRIORITIES: OrderPriority[] = ['low', 'normal', 'high']
 const LABEL_SETS: OrderLabel[][] = [['east'], ['east', 'urgent'], ['bonded'], ['urgent', 'bonded']]
@@ -106,6 +178,16 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
 
   const customer = typeof params.customer === 'string' ? params.customer.trim() : ''
   const owner = typeof params.owner === 'string' ? params.owner.trim() : ''
+  const orderNo = typeof params.orderNo === 'string' ? params.orderNo.trim() : ''
+  const destination = typeof params.destination === 'string' ? params.destination.trim() : ''
+  const sku = typeof params.sku === 'string' ? params.sku.trim() : ''
+  const remark = typeof params.remark === 'string' ? params.remark.trim() : ''
+  const id = typeof params.id === 'string' ? params.id.trim() : ''
+  const note = typeof params.note === 'string' ? params.note.trim() : ''
+  const quantity = typeof params.quantity === 'string' ? params.quantity.trim() : ''
+  const progress = typeof params.progress === 'string' ? params.progress.trim() : ''
+  const amount = typeof params.amount === 'string' ? params.amount.trim() : ''
+  const rate = typeof params.rate === 'string' ? params.rate.trim() : ''
   const createdAt = Array.isArray(params.createdAt) ? params.createdAt : undefined
   const rows = ALL_ROWS.filter((row) => {
     if (customer && !row.customer.includes(customer)) return false
@@ -114,6 +196,23 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
       const day = row.createdAt.slice(0, 10)
       if (day < createdAt[0] || day > createdAt[1]) return false
     }
+    if (orderNo && !row.orderNo.includes(orderNo)) return false
+    if (params.warehouse && row.warehouse !== params.warehouse) return false
+    if (params.route && row.route !== params.route) return false
+    if (destination && !row.destination.includes(destination)) return false
+    if (params.priority && row.priority !== params.priority) return false
+    if (sku && !row.sku.includes(sku)) return false
+    if (params.urgent != null && row.urgent !== params.urgent) return false
+    if (remark && !row.remark.includes(remark)) return false
+    if (id && !row.id.includes(id)) return false
+    if (params.label && !row.labels.includes(params.label)) return false
+    if (note && !row.note.includes(note)) return false
+    if (quantity && !String(row.quantity).includes(quantity)) return false
+    if (progress && !String(row.progress).includes(progress)) return false
+    if (amount && !String(row.amount).includes(amount)) return false
+    if (rate && (row.rate == null || !String(row.rate).includes(rate))) return false
+    if (params.dateValue && row.dateValue.slice(0, 10) !== params.dateValue) return false
+    if (params.year && row.yearValue.slice(0, 4) !== params.year) return false
     if (owner && !row.owner.includes(owner)) return false
     return true
   })
@@ -328,6 +427,65 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
   },
 ]
 
+function hiddenInput(key: Extract<keyof PlaygroundQuery, string>, label: string): ProTableFilter<PlaygroundQuery> {
+  return {
+    key,
+    label,
+    hidden: true,
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder={label}
+        value={typeof value === 'string' ? value : ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue((next === '' ? undefined : next) as never)
+        }}
+      />
+    ),
+  } as ProTableFilter<PlaygroundQuery>
+}
+
+function hiddenSelect(
+  key: Extract<keyof PlaygroundQuery, string>,
+  label: string,
+  options: Array<{ label: string; value: string }>,
+): ProTableFilter<PlaygroundQuery> {
+  return {
+    key,
+    label,
+    hidden: true,
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={options}
+        placeholder={label}
+        popupMatchSelectWidth={false}
+        value={typeof value === 'string' ? value : undefined}
+        onChange={(next) => setValue((next ?? undefined) as never)}
+      />
+    ),
+  } as ProTableFilter<PlaygroundQuery>
+}
+
+function hiddenDate(key: Extract<keyof PlaygroundQuery, string>, label: string): ProTableFilter<PlaygroundQuery> {
+  return {
+    key,
+    label,
+    hidden: true,
+    render: ({ value, setValue }) => (
+      <DatePicker
+        allowClear
+        placeholder={label}
+        value={typeof value === 'string' && value ? dayjs(value) : null}
+        onChange={(_date, dateString) => {
+          setValue((typeof dateString === 'string' && dateString ? dateString : undefined) as never)
+        }}
+      />
+    ),
+  } as ProTableFilter<PlaygroundQuery>
+}
+
 const filters: ProTableFilter<PlaygroundQuery>[] = [
   {
     key: 'customer',
@@ -380,13 +538,12 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
     },
   },
   {
-    key: 'owner',
-    label: '负责人',
-    hidden: true,
+    key: 'orderNo',
+    label: '订单号',
     render: ({ value, setValue }) => (
       <Input
         allowClear
-        placeholder="负责人"
+        placeholder="订单号"
         value={value ?? ''}
         onChange={(event) => {
           const next = event.target.value
@@ -395,6 +552,263 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
       />
     ),
   },
+  {
+    key: 'warehouse',
+    label: '仓库',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={WAREHOUSE_OPTIONS}
+        placeholder="仓库"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'route',
+    label: '线路',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={ROUTE_OPTIONS}
+        placeholder="线路"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'destination',
+    label: '目的地',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={DESTINATION_OPTIONS}
+        placeholder="目的地"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'priority',
+    label: '优先级',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={PRIORITY_OPTIONS}
+        placeholder="优先级"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'sku',
+    label: 'SKU',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="SKU"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'urgent',
+    label: '加急',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={URGENT_OPTIONS}
+        placeholder="加急"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next)}
+      />
+    ),
+  },
+  {
+    key: 'remark',
+    label: '备注',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="备注"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'id',
+    label: 'ID',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="ID"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'label',
+    label: '标签',
+    render: ({ value, setValue }) => (
+      <Select
+        allowClear
+        options={LABEL_OPTIONS}
+        placeholder="标签"
+        popupMatchSelectWidth={false}
+        value={value}
+        onChange={(next) => setValue(next ?? undefined)}
+      />
+    ),
+  },
+  {
+    key: 'note',
+    label: '说明',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="说明"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'quantity',
+    label: '件数',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="件数"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'progress',
+    label: '进度',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="进度"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'amount',
+    label: '金额',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="金额"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'rate',
+    label: '完成率',
+    render: ({ value, setValue }) => (
+      <Input
+        allowClear
+        placeholder="完成率"
+        value={value ?? ''}
+        onChange={(event) => {
+          const next = event.target.value
+          setValue(next === '' ? undefined : next)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'dateValue',
+    label: '日期',
+    render: ({ value, setValue }) => (
+      <DatePicker
+        allowClear
+        placeholder="日期"
+        value={value ? dayjs(value) : null}
+        onChange={(_date, dateString) => {
+          setValue(typeof dateString === 'string' && dateString ? dateString : undefined)
+        }}
+      />
+    ),
+  },
+  {
+    key: 'year',
+    label: '年份',
+    render: ({ value, setValue }) => (
+      <DatePicker
+        allowClear
+        picker="year"
+        placeholder="年份"
+        value={value ? dayjs(value) : null}
+        onChange={(_date, dateString) => {
+          setValue(typeof dateString === 'string' && dateString ? dateString : undefined)
+        }}
+      />
+    ),
+  },
+  hiddenInput('owner', '负责人'),
+  hiddenInput('billNo', '提单号'),
+  hiddenInput('containerNo', '柜号'),
+  hiddenInput('customsNo', '报关单号'),
+  hiddenInput('contact', '联系人'),
+  hiddenInput('phone', '联系电话'),
+  hiddenInput('email', '邮箱'),
+  hiddenInput('region', '区域'),
+  hiddenInput('plateNo', '车牌号'),
+  hiddenInput('driver', '司机'),
+  hiddenInput('carrier', '承运商'),
+  hiddenInput('channel', '来源渠道'),
+  hiddenInput('customerLevel', '客户等级'),
+  hiddenInput('tradeTerm', '贸易条款'),
+  hiddenInput('customsStatus', '关务状态'),
+  hiddenInput('invoiceNo', '发票号'),
+  hiddenInput('contractNo', '合同号'),
+  hiddenInput('projectNo', '项目号'),
+  hiddenInput('dept', '所属部门'),
+  hiddenSelect('currency', '币种', CURRENCY_OPTIONS),
+  hiddenSelect('settleMethod', '结算方式', SETTLE_OPTIONS),
+  hiddenSelect('bizType', '业务类型', BIZ_TYPE_OPTIONS),
+  hiddenDate('etd', '预计离港'),
+  hiddenDate('eta', '预计到港'),
 ]
 
 export default function ProTablePlayground() {

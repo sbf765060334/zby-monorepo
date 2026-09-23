@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
-import { Drawer } from 'antd'
+import { Drawer, Flex } from 'antd'
 
 import { shallow, useControllerSelector } from '../../hooks'
 import type { ProTableController, ProTableFilter, ProTableFilterRenderContext } from '../../interface'
@@ -29,8 +29,9 @@ type SearchControlProps = {
 const DRAWER_FOCUSABLE = { trap: false }
 const OVERLAY_ROOT_STYLE = { overflow: 'hidden' } as const
 const OVERLAY_DRAWER_STYLES = {
-  wrapper: { height: 'auto', maxHeight: '90%' },
-  section: { height: 'auto', maxHeight: '90%' },
+  wrapper: { height: 'auto', maxHeight: '90%', boxShadow: 'none' },
+  section: { height: 'auto', maxHeight: '90%', boxShadow: 'none' },
+  body: { paddingTop: 0, paddingInline: 0 },
 } as const
 const SEARCH_CONTROL_DEFAULT_WIDTH = 120
 const SEARCH_CONTROL_MIN_CONTENT_WIDTH = 24
@@ -357,9 +358,14 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
       styles={OVERLAY_DRAWER_STYLES}
       onClose={onClose}
     >
-      <div className={`${prefixCls}-search-overlay-body`}>
+      <Flex
+        className={`${prefixCls}-search-overlay-body`}
+        align="center"
+        gap="small"
+        wrap="wrap"
+      >
         <SearchFields controller={controller} filters={filters} prefixCls={prefixCls} />
-      </div>
+      </Flex>
     </Drawer>
   )
 }

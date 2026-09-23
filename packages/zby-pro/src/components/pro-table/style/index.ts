@@ -36,6 +36,8 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     zIndexPopupBase,
   } = token
 
+  const cssLen = (value: number | string) => (typeof value === 'number' ? `${value}px` : value)
+
   return {
     [componentCls]: {
       display: 'flex',
@@ -164,28 +166,35 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         flexShrink: 0,
       },
 
-      [`${componentCls}-search-overlay ${antCls}-drawer-content-wrapper`]: {
+      [`${componentCls}-search-overlay${antCls}-drawer-inline`]: {
+        overflow: 'hidden',
+        top: `calc(${cssLen(marginXS)} - ${cssLen(marginSM)})`,
+      },
+
+      [`${componentCls}-search-overlay${antCls}-drawer-top > ${antCls}-drawer-content-wrapper`]: {
         height: 'auto',
         maxHeight: '90%',
+        boxShadow: 'none',
       },
 
       [`${componentCls}-search-overlay ${antCls}-drawer-section`]: {
         height: 'auto',
         maxHeight: '90%',
         overflow: 'hidden',
+        boxShadow: 'none',
+        background: colorBgContainer,
       },
 
       [`${componentCls}-search-overlay ${antCls}-drawer-body`]: {
         minHeight: 0,
         overflowY: 'auto',
-        padding: shellPadding,
+        paddingTop: 0,
+        paddingInline: 0,
+        paddingBottom: paddingSM,
       },
 
       [`${componentCls}-search-overlay-body`]: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        gap: marginXS,
+        minWidth: 0,
       },
 
       [`${componentCls}-content-main`]: {
