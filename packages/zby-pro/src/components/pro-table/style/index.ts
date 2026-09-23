@@ -19,18 +19,14 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     borderRadiusLG,
     colorBgContainer,
     colorBgTextHover,
-    colorFillAlter,
     colorText,
     colorTextDescription,
     colorTextHeading,
     colorTextTertiary,
     componentCls,
     controlHeight,
-    fontSizeSM,
     fullscreenPadding,
-    lineHeight,
     lineWidth,
-    marginLG,
     marginSM,
     marginXS,
     marginXXS,
@@ -169,7 +165,8 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       },
 
       [`${componentCls}-search-overlay ${antCls}-drawer-content-wrapper`]: {
-        height: '100%',
+        height: 'auto',
+        maxHeight: '90%',
       },
 
       [`${componentCls}-search-overlay ${antCls}-drawer-section`]: {
@@ -181,52 +178,14 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-search-overlay ${antCls}-drawer-body`]: {
         minHeight: 0,
         overflowY: 'auto',
+        padding: shellPadding,
       },
 
       [`${componentCls}-search-overlay-body`]: {
-        paddingBlock: shellPadding,
-        paddingInline: shellPadding,
-      },
-
-      [`${componentCls}-search-overlay-inner`]: {
-        width: '100%',
-        maxWidth: 1280,
-        marginInline: 'auto',
         display: 'flex',
-        flexDirection: 'column',
-        gap: marginLG,
-        padding: shellPadding,
-        background: colorFillAlter,
-        borderRadius: borderRadiusLG,
-        boxSizing: 'border-box',
-      },
-
-      [`${componentCls}-search-overlay-fields`]: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-        gap: marginSM,
-      },
-
-      [`${componentCls}-search-overlay-field`]: {
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-      },
-
-      [`${componentCls}-search-overlay-field-label`]: {
-        color: colorTextDescription,
-        fontSize: fontSizeSM,
-        lineHeight,
-      },
-
-      [`${componentCls}-search-overlay-field-body`]: {
-        minWidth: 0,
-        color: colorText,
-
-        [`${antCls}-input-affix-wrapper, ${antCls}-input, ${antCls}-select, ${antCls}-picker`]: {
-          width: '100%',
-        },
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: marginXS,
       },
 
       [`${componentCls}-content-main`]: {

@@ -238,6 +238,8 @@ describe('ProTable', () => {
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
     const owner = await screen.findByRole('textbox', { name: /负责人/ })
     expect(owner.closest('.zby-pro-table-search-overlay')).toBeTruthy()
+    expect(owner.closest('.zby-pro-table-search-field')).toBeTruthy()
+    expect(owner.closest('.ant-drawer-inline')).toBeTruthy()
     const overlaySection = owner.closest('.ant-drawer-section') as HTMLElement | null
     expect(overlaySection?.style.height).toBe('auto')
     expect(overlaySection?.style.maxHeight).toBe('90%')

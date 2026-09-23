@@ -27,7 +27,11 @@ type SearchControlProps = {
 }
 
 const DRAWER_FOCUSABLE = { trap: false }
-const OVERLAY_SECTION_STYLE = { height: 'auto', maxHeight: '90%' }
+const OVERLAY_ROOT_STYLE = { overflow: 'hidden' } as const
+const OVERLAY_DRAWER_STYLES = {
+  wrapper: { height: 'auto', maxHeight: '90%' },
+  section: { height: 'auto', maxHeight: '90%' },
+} as const
 const SEARCH_CONTROL_DEFAULT_WIDTH = 120
 const SEARCH_CONTROL_MIN_CONTENT_WIDTH = 24
 const SEARCH_CONTROL_CHROME = 28
@@ -208,11 +212,9 @@ function resolveInlineSearchControlStyle(props: SearchControlProps, value: unkno
 function applySearchControlLayout(
   node: ReactNode,
   {
-    fill,
     labelId,
     value,
   }: {
-    fill?: boolean
     labelId: string
     value: unknown
   },
@@ -222,9 +224,7 @@ function applySearchControlLayout(
   }
 
   const element = node as ReactElement<SearchControlProps>
-  const style = fill
-    ? { ...element.props.style, width: '100%', minWidth: 0 }
-    : resolveInlineSearchControlStyle(element.props, value)
+  const style = resolveInlineSearchControlStyle(element.props, value)
 
   return cloneElement(element, {
     'aria-labelledby': element.props['aria-labelledby'] ?? labelId,
@@ -232,16 +232,14 @@ function applySearchControlLayout(
   })
 }
 
-function SearchFieldControl<RecordType, Query extends Record<string, unknown>, Summary>({
+function SearchFieldControl<Query extends Record<string, unknown>>({
   field,
-  fill,
   labelId,
   query,
   setValue,
   value,
 }: {
   field: ProTableFilter<Query>
-  fill?: boolean
   labelId: string
   query: Query
   setValue: ProTableFilterRenderContext<Query>['setValue']
@@ -250,7 +248,6 @@ function SearchFieldControl<RecordType, Query extends Record<string, unknown>, S
   return applySearchControlLayout(
     field.render({ query, setValue, value } as Parameters<ProTableFilter<Query>['render']>[0]),
     {
-      fill,
       labelId,
       value,
     },
@@ -316,54 +313,13 @@ export function SearchFields<RecordType, Query extends Record<string, unknown>, 
   )
 }
 
-function SearchOverlayFields<RecordType, Query extends Record<string, unknown>, Summary>({
-  controller,
-  filters,
-  prefixCls,
-}: SearchFieldsProps<RecordType, Query, Summary>) {
-  const query = useControllerSelector(controller, (state) => state.query, shallow)
-
-  return (
-    <div className={`${prefixCls}-search-overlay-fields`}>
-      {filters.map((field) => {
-        const key = field.key
-        const value = query[key]
-        const labelId = `${prefixCls}-search-overlay-field-${String(key)}`
-        const setValue: ProTableFilterRenderContext<Query>['setValue'] = (next) => {
-          controller.setQueryField(key, toQueryFieldValue(next) as Query[typeof key])
-        }
-
-        return (
-          <div key={String(key)} className={`${prefixCls}-search-overlay-field`}>
-            <div id={labelId} className={`${prefixCls}-search-overlay-field-label`}>
-              {field.label}
-            </div>
-            <div className={`${prefixCls}-search-overlay-field-body`}>
-              <SearchFieldControl
-                fill
-                field={field}
-                labelId={labelId}
-                query={query}
-                setValue={setValue}
-                value={value}
-              />
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export function SearchMorePanel<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
   filters,
-  getContainer,
   onClose,
   open,
   prefixCls,
 }: SearchFieldsProps<RecordType, Query, Summary> & {
-  getContainer: () => HTMLElement
   onClose: () => void
   open: boolean
 }) {
@@ -393,19 +349,16 @@ export function SearchMorePanel<RecordType, Query extends Record<string, unknown
       closable={false}
       destroyOnHidden
       focusable={DRAWER_FOCUSABLE}
-      getContainer={getContainer}
+      getContainer={false}
       open={open}
       placement="top"
       rootClassName={`${prefixCls}-search-overlay`}
-      rootStyle={{ position: 'absolute', overflow: 'hidden' }}
-      size="100%"
-      styles={{ section: OVERLAY_SECTION_STYLE }}
+      rootStyle={OVERLAY_ROOT_STYLE}
+      styles={OVERLAY_DRAWER_STYLES}
       onClose={onClose}
     >
       <div className={`${prefixCls}-search-overlay-body`}>
-        <div className={`${prefixCls}-search-overlay-inner`}>
-          <SearchOverlayFields controller={controller} filters={filters} prefixCls={prefixCls} />
-        </div>
+        <SearchFields controller={controller} filters={filters} prefixCls={prefixCls} />
       </div>
     </Drawer>
   )

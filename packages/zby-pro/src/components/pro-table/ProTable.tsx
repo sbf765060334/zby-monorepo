@@ -308,11 +308,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const handleCloseMoreFilters = useCallback(() => {
     setMoreFiltersOpen(false)
   }, [])
-  const contentMainRef = useRef<HTMLDivElement | null>(null)
-  const getSearchOverlayContainer = useCallback(
-    () => contentMainRef.current ?? document.body,
-    [],
-  )
   const searchEnabled = filters.length > 0
   useEffect(() => {
     if (!searchEnabled || moreFilters.length === 0) {
@@ -367,14 +362,10 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
             />
           ) : null}
           {showTable ? (
-            <div
-              ref={contentMainRef}
-              className={`${resolvedConfig.prefixCls}-content-main`}
-            >
+            <div className={`${resolvedConfig.prefixCls}-content-main`}>
               <SearchMorePanel
                 controller={controller}
                 filters={moreFilters}
-                getContainer={getSearchOverlayContainer}
                 onClose={handleCloseMoreFilters}
                 open={moreFiltersOpen}
                 prefixCls={resolvedConfig.prefixCls}
@@ -440,7 +431,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     [
       columnDefinitions,
       columnEmptyText,
-      getSearchOverlayContainer,
       handleCloseMoreFilters,
       handleResetSearch,
       handleSearch,
