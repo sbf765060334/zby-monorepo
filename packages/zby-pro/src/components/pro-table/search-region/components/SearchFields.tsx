@@ -151,9 +151,9 @@ function isSwitchElement(node: ReactElement) {
 
   if (typeof type === 'function' || (typeof type === 'object' && type !== null)) {
     const name =
-      (type as { displayName?: string; name?: string }).displayName
-      ?? (type as { name?: string }).name
-      ?? ''
+      (type as { displayName?: string; name?: string }).displayName ??
+      (type as { name?: string }).name ??
+      ''
     return name === 'Switch' || name.endsWith('Switch')
   }
 
@@ -200,10 +200,10 @@ function measureContentWidth(props: SearchControlProps, value: unknown, token: S
     }
 
     return (
-      measureText(first, token)
-      + tagChrome
-      + measureText(`+${values.length}`, token)
-      + token.marginXS
+      measureText(first, token) +
+      tagChrome +
+      measureText(`+${values.length}`, token) +
+      token.marginXS
     )
   }
 
