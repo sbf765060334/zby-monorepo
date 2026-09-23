@@ -533,10 +533,12 @@ describe('ProViewManagement component', () => {
     expect(await screen.findByText('已新建视图“我的视图”')).toBeTruthy()
   })
 
-  it('confirms rename and delete in view management', async () => {
+  it('keeps management edits in memory until confirm', async () => {
+    const adapter = createTestAdapter<{ keyword: string }>()
+
     renderWithIntl(
       <ProViewManagement
-        adapter={createTestAdapter<{ keyword: string }>()}
+        adapter={adapter}
         currentSnapshot={customView.snapshot}
         defaultSnapshot={systemView.snapshot}
         initialStorageState={{
@@ -555,11 +557,28 @@ describe('ProViewManagement component', () => {
       target: { value: 'Closed records' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(await screen.findByText('Renamed')).toBeTruthy()
+    expect(await screen.findByText('Closed records')).toBeTruthy()
+    expect(screen.queryByText('Renamed')).toBeNull()
+    expect(adapter.update).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByLabelText('Delete view'))
     const confirmDelete = (await screen.findAllByRole('button', { name: 'Delete view' })).at(-1)!
     fireEvent.click(confirmDelete)
-    expect(await screen.findByText('Deleted “Closed records”')).toBeTruthy()
+    expect(screen.queryByText(/Deleted/)).toBeNull()
+    expect(adapter.update).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: /OK|确\s*定/ }))
+    expect(await screen.findByText('Views saved')).toBeTruthy()
+    expect(adapter.update).toHaveBeenCalled()
+    const recipe = vi.mocked(adapter.update).mock.calls[0]?.[1]
+    expect(
+      recipe?.({
+        views: [customView],
+        activeViewId: customView.id,
+      }),
+    ).toMatchObject({
+      views: [],
+      activeViewId: undefined,
+    })
   })
 })

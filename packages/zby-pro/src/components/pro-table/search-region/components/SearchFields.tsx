@@ -13,6 +13,7 @@ import {
   getAutoWidthKind,
   getElementName,
   hasSearchValue,
+  resolveAutoWidthMaxTagCount,
   resolveInlineSearchControlStyle,
 } from '../search-control-layout'
 import type { AutoWidthKind, SearchControlProps, SearchSizeToken } from '../search-control-layout'
@@ -84,10 +85,19 @@ function applySearchControlLayout(
     return cloneElement(element, labelled)
   }
 
-  return cloneElement(element, {
+  const nextProps: SearchControlProps = {
     ...labelled,
     style: resolveInlineSearchControlStyle(kind, element.props, value, token, elementName),
-  })
+  }
+
+  if (kind === 'select') {
+    const maxTagCount = resolveAutoWidthMaxTagCount(element.props, value)
+    if (maxTagCount !== element.props.maxTagCount) {
+      nextProps.maxTagCount = maxTagCount
+    }
+  }
+
+  return cloneElement(element, nextProps)
 }
 
 function SearchFieldControl<Query extends Record<string, unknown>>({

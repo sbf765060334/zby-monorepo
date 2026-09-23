@@ -22,11 +22,9 @@ import {
   DEFAULT_PREFIX_CLS,
   normalizeCustomViews,
   normalizeSystemViews,
-  orderViews,
   resolveActiveView,
   resolveDirty,
   validateCreateViewName,
-  validateRenameViewName,
   type ViewNameValidationMessages,
 } from './utils'
 import { ViewCreateModal } from './ViewCreateModal'
@@ -151,7 +149,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
   const [createMode, setCreateMode] = React.useState<ViewCreateMode>('create')
   const [createOpen, setCreateOpen] = React.useState(false)
   const [managerOpen, setManagerOpen] = React.useState(false)
-  const [editingViewId, setEditingViewId] = React.useState<string | null>(null)
   const [pendingApply, setPendingApply] =
     React.useState<PendingApply<TSnapshot> | null>(null)
   const externalLoadControlled =
@@ -343,25 +340,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
       createMode,
       customViews,
       maxCustomViews,
-      normalizedSystemViews,
-      viewNameValidationMessages,
-    ],
-  )
-
-  const validateRenameName = React.useCallback(
-    async (viewId: string, name: string) => {
-      return validateRenameViewName(
-        {
-          customViews,
-          name,
-          systemViews: normalizedSystemViews,
-          viewId,
-        },
-        viewNameValidationMessages,
-      )
-    },
-    [
-      customViews,
       normalizedSystemViews,
       viewNameValidationMessages,
     ],
@@ -563,94 +541,46 @@ export default function ProViewManagement<TSnapshot = unknown>({
     await setActiveView(nextView)
   }
 
-  const handleDelete = async (viewId: string) => {
-    const deletedName = customViews.find((view) => view.id === viewId)?.name
-    const nextCustomViews = normalizeCustomViews(
-      customViews.filter((view) => view.id !== viewId),
+  const handleConfirmViews = async (
+    nextCustomViews: ProViewManagementView<TSnapshot>[],
+  ) => {
+    const normalized = normalizeCustomViews(nextCustomViews)
+    const activeWasRemoved = Boolean(
+      activeView &&
+      activeView.scope === 'custom' &&
+      !normalized.some((view) => view.id === activeView.id),
     )
-    const deletedActiveView = activeView?.id === viewId
 
     await persist((current) => ({
-      views: normalizeCustomViews(
-        current.views.filter((view) => view.id !== viewId),
-      ),
+      views: normalized,
       activeViewId:
-        current.activeViewId === viewId ? undefined : current.activeViewId,
+        current.activeViewId &&
+        normalized.some((view) => view.id === current.activeViewId)
+          ? current.activeViewId
+          : undefined,
     }))
-    setCustomViews(nextCustomViews)
-    emitViewsChange(nextCustomViews)
+    setCustomViews(normalized)
+    emitViewsChange(normalized)
+    setManagerOpen(false)
     void messageApi.success(
-      intl.getMessage(
-        'zby.pro.viewManagement.deleteSuccess',
-        '已删除视图“{{name}}”',
-        { name: deletedName ?? '' },
-      ),
+      intl.getMessage('zby.pro.viewManagement.manageSaveSuccess', '视图已保存'),
     )
 
-    if (deletedActiveView) {
-      const nextActiveView = resolveActiveView(
-        null,
-        normalizedSystemViews,
-        nextCustomViews,
-      )
-
-      if (nextActiveView) {
-        void applyView(nextActiveView).catch(() => undefined)
-      }
-    }
-  }
-
-  const handleRename = async (viewId: string, name: string) => {
-    const validationMessage = await validateRenameName(viewId, name)
-
-    if (validationMessage) {
-      throw new Error(validationMessage)
+    if (!activeWasRemoved) {
+      return
     }
 
-    const nextCustomViews = normalizeCustomViews(
-      customViews.map((view) =>
-        view.id === viewId ? { ...view, name } : view,
-      ),
+    const nextActiveView = resolveActiveView(
+      null,
+      normalizedSystemViews,
+      normalized,
     )
 
-    await persist((current) => ({
-      ...current,
-      views: normalizeCustomViews(
-        current.views.map((view) =>
-          view.id === viewId ? { ...view, name } : view,
-        ),
-      ),
-    }))
-    setCustomViews(nextCustomViews)
-    emitViewsChange(nextCustomViews)
-    setEditingViewId(null)
-    void messageApi.success(
-      intl.getMessage('zby.pro.viewManagement.renameSuccess', '重命名成功'),
-    )
-  }
-
-  const handleReorder = async (orderedViewIds: string[]) => {
-    const orderLookup = new Map(
-      orderedViewIds.map((viewId, index) => [viewId, index]),
-    )
-    const nextCustomViews = orderViews(
-      customViews.map((view, index) => ({
-        ...view,
-        order: orderLookup.get(view.id) ?? index,
-      })),
-    )
-
-    await persist((current) => ({
-      ...current,
-      views: normalizeCustomViews(
-        current.views.map((view, index) => ({
-          ...view,
-          order: orderLookup.get(view.id) ?? index,
-        })),
-      ),
-    }))
-    setCustomViews(nextCustomViews)
-    emitViewsChange(nextCustomViews)
+    if (nextActiveView) {
+      void applyView(nextActiveView).catch(() => undefined)
+    } else {
+      setActiveViewIdState(null)
+    }
   }
 
   return (
@@ -794,7 +724,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
         />
         <ViewManagementModal
           customViews={customViews}
-          editingViewId={editingViewId}
           open={managerOpen}
           prefixCls={prefixCls}
           rootClassName={clsx(
@@ -802,16 +731,8 @@ export default function ProViewManagement<TSnapshot = unknown>({
             popupRootClassName,
           )}
           systemViews={normalizedSystemViews}
-          onCancel={() => {
-            setManagerOpen(false)
-            setEditingViewId(null)
-          }}
-          onCancelEdit={() => setEditingViewId(null)}
-          onDelete={handleDelete}
-          onRename={handleRename}
-          onReorder={handleReorder}
-          onStartEdit={setEditingViewId}
-          validateName={validateRenameName}
+          onCancel={() => setManagerOpen(false)}
+          onConfirm={handleConfirmViews}
         />
       </Flex>
     </>

@@ -11,6 +11,7 @@ export type SearchControlFieldNames = {
 
 export type SearchControlProps = {
   'aria-labelledby'?: string
+  allowClear?: unknown
   fieldNames?: SearchControlFieldNames
   maxTagCount?: unknown
   mode?: unknown
@@ -31,6 +32,7 @@ export type SearchSizeToken = {
   marginXS: number
   paddingSM: number
   paddingXS: number
+  paddingXXS: number
 }
 
 export type SelectMeasurePlan = {
@@ -40,6 +42,9 @@ export type SelectMeasurePlan = {
 }
 
 const CASCADER_PATH_SEPARATOR = ' / '
+const SELECT_SEARCH_MIN_WIDTH = 4
+const SELECT_TAG_CLOSE_SIZE = 10
+const SELECT_TAG_LAYOUT_SLACK = 1
 
 let measureContext: CanvasRenderingContext2D | null | undefined
 let measureFont = ''
@@ -201,6 +206,9 @@ export function resolveInlineSearchControlStyle(
   const minContent = token.fontSize * 2
   const contentWidth = measureContentWidth(kind, props, value, token, elementName)
   const placeholderWidth = measurePlaceholderWidth(props.placeholder, token)
+  const placeholderInset =
+    kind === 'select' && isMultipleControl(props) ? selectMultiplePlaceholderInset(token) : 0
+  const placeholderSlack = kind === 'select' ? SELECT_TAG_LAYOUT_SLACK : 0
   const autoWidth = hasSearchValue(value)
     ? Math.max(
         Math.ceil((contentWidth ?? 0) + (contentWidth ? extra : 0)),
@@ -208,7 +216,9 @@ export function resolveInlineSearchControlStyle(
         minContent,
       )
     : Math.max(
-        placeholderWidth != null ? Math.ceil(placeholderWidth + extra) : token.controlHeight * 4,
+        placeholderWidth != null
+          ? Math.ceil(placeholderWidth + extra + placeholderInset + placeholderSlack)
+          : token.controlHeight * 4,
         userMin,
       )
 
@@ -218,6 +228,18 @@ export function resolveInlineSearchControlStyle(
   }
 
   return nextStyle
+}
+
+export function resolveAutoWidthMaxTagCount(props: SearchControlProps, value: unknown) {
+  if (hasExplicitWidth(props.style?.width) || props.maxTagCount !== 'responsive') {
+    return props.maxTagCount
+  }
+
+  const total = Array.isArray(value)
+    ? value.filter((item) => item != null && item !== '').length
+    : 0
+
+  return total > 0 ? total : props.maxTagCount
 }
 
 function isMultipleControl(props: SearchControlProps) {
@@ -354,26 +376,36 @@ function resolveVisibleTagLimit(maxTagCount: unknown, total: number) {
 }
 
 function measureTagListWidth(labels: string[], restCount: number, token: SearchSizeToken) {
-  const tagChrome = token.paddingSM * 2 + token.fontSizeIcon * 2 + token.marginXS
   let width = 0
-  let count = 0
 
   for (const text of labels) {
-    if (count > 0) {
-      width += token.marginXS
-    }
-    width += measureText(text, token) + tagChrome
-    count += 1
+    width += measureSelectTagWidth(text, token, true)
   }
 
   if (restCount > 0) {
-    if (count > 0) {
-      width += token.marginXS
-    }
-    width += measureText(`+${restCount}`, token) + tagChrome
+    width += measureSelectTagWidth(formatRestTagLabel(restCount), token, false)
   }
 
-  return width
+  return width + SELECT_SEARCH_MIN_WIDTH
+}
+
+function formatRestTagLabel(restCount: number) {
+  return `+ ${restCount} ...`
+}
+
+function measureSelectTagWidth(text: string, token: SearchSizeToken, closable: boolean) {
+  const itemMargin = Math.floor(token.paddingXXS / 2)
+  const closeChrome = closable ? SELECT_TAG_CLOSE_SIZE + token.paddingXXS : 0
+  return (
+    Math.ceil(
+      measureText(text, token) +
+        token.paddingXS +
+        token.paddingXXS +
+        closeChrome +
+        itemMargin * 2 +
+        token.lineWidth,
+    ) + SELECT_TAG_LAYOUT_SLACK
+  )
 }
 
 function placeholderTexts(placeholder: unknown) {
@@ -397,18 +429,52 @@ function measurePlaceholderWidth(placeholder: unknown, token: SearchSizeToken) {
   return texts.reduce((sum, text) => sum + measureText(text, token), 0)
 }
 
+function selectInlinePad(token: SearchSizeToken) {
+  return Math.max(token.paddingSM - token.lineWidth, 0)
+}
+
+function selectArrowReserve(token: SearchSizeToken) {
+  return Math.max(Math.ceil(token.fontSize * 1.25), token.fontSizeIcon)
+}
+
+function selectMultipleStartPad(token: SearchSizeToken) {
+  const itemHeight = Math.min(
+    token.controlHeight - token.paddingXXS * 2,
+    token.controlHeight - token.lineWidth * 2,
+  )
+  return Math.max((token.controlHeight - itemHeight) / 2 - token.lineWidth, 0)
+}
+
+function selectMultiplePlaceholderInset(token: SearchSizeToken) {
+  const itemMargin = Math.floor(token.paddingXXS / 2)
+  return Math.max(
+    selectInlinePad(token) - selectMultipleStartPad(token) + itemMargin - token.lineWidth * 2,
+    0,
+  )
+}
+
 function controlExtraWidth(kind: AutoWidthKind, props: SearchControlProps, token: SearchSizeToken) {
-  const selectInlinePad = Math.max(token.paddingSM - token.lineWidth, 0)
+  const inlinePad = selectInlinePad(token)
 
   if (kind === 'select') {
-    return selectInlinePad * 2 + token.fontSizeIcon * 2 + token.paddingSM
+    const arrowReserve = selectArrowReserve(token)
+    const borders = token.lineWidth * 2
+    if (isMultipleControl(props)) {
+      return selectMultipleStartPad(token) + inlinePad + arrowReserve + borders
+    }
+    return inlinePad * 2 + arrowReserve + borders
   }
 
   if (kind === 'picker' && Array.isArray(props.placeholder)) {
-    return selectInlinePad * 2 + token.marginXS + token.fontSizeIcon + token.paddingSM
+    return inlinePad * 2 + token.marginXS + token.fontSizeIcon
   }
 
-  return token.paddingXS * 2 + token.fontSizeIcon + token.marginXXS + token.paddingSM
+  if (kind === 'input') {
+    const suffixChrome = props.allowClear ? token.fontSizeIcon + token.marginXXS : 0
+    return inlinePad * 2 + suffixChrome
+  }
+
+  return inlinePad * 2 + token.fontSizeIcon + token.marginXXS
 }
 
 function toPx(value: CSSProperties['minWidth']) {

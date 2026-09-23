@@ -81,10 +81,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         verticalAlign: 'top',
         cursor: 'text',
         backgroundColor: colorBgTextHover,
-
-        [`&:has(${antCls}-select), &:has(${antCls}-picker)`]: {
-          paddingInlineEnd: 0,
-        },
       },
 
       [`${componentCls}-search-field-label`]: {
@@ -116,7 +112,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         [`${antCls}-input-affix-wrapper`]: {
           width: 'auto',
-          paddingInline: paddingXS,
           border: '0 !important',
           boxShadow: 'none !important',
           outline: 'none !important',

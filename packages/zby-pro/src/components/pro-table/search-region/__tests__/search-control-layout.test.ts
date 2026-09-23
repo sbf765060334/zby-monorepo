@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getAutoWidthKind,
   getSelectMeasurePlan,
+  resolveAutoWidthMaxTagCount,
   resolveInlineSearchControlStyle,
 } from '../search-control-layout'
 import type { SearchSizeToken } from '../search-control-layout'
@@ -53,6 +54,17 @@ const TOKEN: SearchSizeToken = {
   marginXS: 8,
   paddingSM: 12,
   paddingXS: 8,
+  paddingXXS: 4,
+}
+
+const COMPACT_TOKEN: SearchSizeToken = {
+  ...TOKEN,
+  controlHeight: 28,
+  fontSize: 12,
+  fontSizeIcon: 10,
+  marginXS: 4,
+  paddingSM: 8,
+  paddingXS: 4,
 }
 
 describe('getAutoWidthKind', () => {
@@ -227,6 +239,28 @@ describe('resolveInlineSearchControlStyle', () => {
     expect(pickerStyle?.width).toBeUndefined()
   })
 
+  it('keeps input minWidth aligned with affix chrome instead of select padding', () => {
+    const withClear = resolveInlineSearchControlStyle(
+      'input',
+      { allowClear: true, placeholder: '客户名称' },
+      '1111111111111111',
+      TOKEN,
+      'Input',
+    )
+    const withoutClear = resolveInlineSearchControlStyle(
+      'input',
+      { placeholder: '客户名称' },
+      '1111111111111111',
+      TOKEN,
+      'Input',
+    )
+
+    expect(withClear?.minWidth as number).toBeGreaterThan(withoutClear?.minWidth as number)
+    expect((withClear?.minWidth as number) - (withoutClear?.minWidth as number)).toBe(
+      TOKEN.fontSizeIcon + TOKEN.marginXXS,
+    )
+  })
+
   it('keeps an explicit width', () => {
     const style = resolveInlineSearchControlStyle(
       'select',
@@ -237,5 +271,132 @@ describe('resolveInlineSearchControlStyle', () => {
     )
 
     expect(style).toEqual({ width: 280 })
+  })
+
+  it('keeps multiple-tag width aligned with density', () => {
+    const props = {
+      maxTagCount: 'responsive' as const,
+      mode: 'multiple',
+      options: LABEL_OPTIONS,
+    }
+    const value = ['east', 'urgent', 'bonded', 'fragile']
+    const compactStyle = resolveInlineSearchControlStyle('select', props, value, COMPACT_TOKEN, 'Select')
+    const defaultStyle = resolveInlineSearchControlStyle('select', props, value, TOKEN, 'Select')
+
+    expect(compactStyle?.width).toBeTypeOf('number')
+    expect(defaultStyle?.width).toBeTypeOf('number')
+    expect(compactStyle?.width as number).toBeLessThan(defaultStyle?.width as number)
+    expect(compactStyle?.width as number).toBeLessThan(260)
+    expect(defaultStyle?.width as number).toBeLessThan(320)
+  })
+
+  it('sizes numeric rest using the + n ... placeholder', () => {
+    const oneTag = resolveInlineSearchControlStyle(
+      'select',
+      { mode: 'multiple', options: LABEL_OPTIONS },
+      ['east'],
+      TOKEN,
+      'Select',
+    )
+    const onePlusRest = resolveInlineSearchControlStyle(
+      'select',
+      { maxTagCount: 1, mode: 'multiple', options: LABEL_OPTIONS },
+      ['east', 'urgent'],
+      TOKEN,
+      'Select',
+    )
+    const compactRest = resolveInlineSearchControlStyle(
+      'select',
+      { maxTagCount: 1, mode: 'multiple', options: LABEL_OPTIONS },
+      ['east', 'urgent'],
+      COMPACT_TOKEN,
+      'Select',
+    )
+
+    expect(onePlusRest?.width as number).toBeGreaterThan(oneTag?.width as number)
+    expect(compactRest?.width as number).toBeLessThan(onePlusRest?.width as number)
+  })
+
+  it('sizes empty select placeholders so the text is not ellipsized', () => {
+    const single = resolveInlineSearchControlStyle(
+      'select',
+      { options: LABEL_OPTIONS, placeholder: '状态' },
+      undefined,
+      TOKEN,
+      'Select',
+    )
+    const multiple = resolveInlineSearchControlStyle(
+      'select',
+      { maxTagCount: 'responsive', mode: 'multiple', options: LABEL_OPTIONS, placeholder: '标签' },
+      undefined,
+      TOKEN,
+      'Select',
+    )
+    const compactSingle = resolveInlineSearchControlStyle(
+      'select',
+      { options: LABEL_OPTIONS, placeholder: '状态' },
+      undefined,
+      COMPACT_TOKEN,
+      'Select',
+    )
+
+    expect(single?.width as number).toBeGreaterThan(62)
+    expect(multiple?.width as number).toBeGreaterThan(62)
+    expect(compactSingle?.width as number).toBeLessThan(single?.width as number)
+    expect(compactSingle?.width as number).toBeGreaterThan(50)
+  })
+
+  it('reserves antd start and end padding in auto-width extra', () => {
+    const inlinePad = TOKEN.paddingSM - TOKEN.lineWidth
+    const arrow = Math.max(Math.ceil(TOKEN.fontSize * 1.25), TOKEN.fontSizeIcon)
+    const extra = inlinePad * 2 + arrow + TOKEN.lineWidth * 2
+    const single = resolveInlineSearchControlStyle(
+      'select',
+      { options: LABEL_OPTIONS, placeholder: '状态' },
+      undefined,
+      TOKEN,
+      'Select',
+    )
+    const input = resolveInlineSearchControlStyle(
+      'input',
+      { placeholder: '客户名称' },
+      undefined,
+      TOKEN,
+      'Input',
+    )
+
+    expect(single?.width).toBe(Math.ceil(2 * TOKEN.fontSize + extra + 1))
+    expect(input?.minWidth).toBe(Math.ceil(4 * TOKEN.fontSize + inlinePad * 2))
+  })
+})
+
+describe('resolveAutoWidthMaxTagCount', () => {
+  it('turns responsive into the selected count so overflow does not reserve a rest tag', () => {
+    expect(
+      resolveAutoWidthMaxTagCount(
+        { maxTagCount: 'responsive', mode: 'multiple', options: LABEL_OPTIONS },
+        ['east', 'urgent', 'bonded', 'fragile'],
+      ),
+    ).toBe(4)
+  })
+
+  it('keeps numeric maxTagCount and explicit widths', () => {
+    expect(
+      resolveAutoWidthMaxTagCount({ maxTagCount: 1, mode: 'multiple', options: LABEL_OPTIONS }, [
+        'east',
+        'urgent',
+      ]),
+    ).toBe(1)
+    expect(
+      resolveAutoWidthMaxTagCount(
+        {
+          maxTagCount: 'responsive',
+          mode: 'multiple',
+          options: LABEL_OPTIONS,
+          style: { width: 280 },
+        },
+        ['east', 'urgent'],
+      ),
+    ).toBe('responsive')
   })
 })
