@@ -299,7 +299,7 @@ function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summ
     <span className={`${prefixCls}-search-field`}>
       <span id={labelId} className={`${prefixCls}-search-field-label`}>
         {field.label}
-        {': '}
+        ：
       </span>
       <span className={`${prefixCls}-search-field-control`}>
         <SearchFieldControl

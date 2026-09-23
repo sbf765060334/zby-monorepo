@@ -29,7 +29,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     lineWidth,
     marginSM,
     marginXS,
-    marginXXS,
     paddingSM,
     paddingXS,
     shellPadding,
@@ -90,7 +89,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-search-field-label`]: {
         flex: 'none',
-        marginInlineEnd: marginXXS,
         color: colorTextTertiary,
       },
 

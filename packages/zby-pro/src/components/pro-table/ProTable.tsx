@@ -295,6 +295,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const shouldExposeViewLoadingState =
     shouldBlockViewContent && (viewLoadingVisible || Boolean(viewInitializationError))
   const handleSearch = useCallback(() => {
+    setMoreFiltersOpen(false)
     void controller.submitQuery({ resetPage: true })
   }, [controller])
   const handleResetSearch = useCallback(() => {

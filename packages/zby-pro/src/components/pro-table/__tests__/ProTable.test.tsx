@@ -245,17 +245,16 @@ describe('ProTable', () => {
     expect(overlaySection?.style.maxHeight).toBe('90%')
     fireEvent.change(owner, { target: { value: 'Ada' } })
     expect(queryRequest).toHaveBeenCalledTimes(2)
-    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
-    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
-
     fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(3))
     expect(queryRequest).toHaveBeenLastCalledWith(
       expect.objectContaining({ owner: 'Ada', status: 'open' }),
       expect.anything(),
     )
+    await waitFor(() => expect(document.querySelector('.zby-pro-table-search-overlay')).toBeNull())
 
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    expect(document.querySelector('.zby-pro-table-search-overlay')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /重\s*置/ }))
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(4))
     expect(queryRequest).toHaveBeenLastCalledWith(
