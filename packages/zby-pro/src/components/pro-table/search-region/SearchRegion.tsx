@@ -15,6 +15,7 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   onSearch,
   onToggleMore,
   searchEnabled = false,
+  searchFilters,
   showMore = false,
   views,
   viewStore,
@@ -30,6 +31,7 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   createCurrentSnapshot,
   onApplyManagedView,
   onResetManagedView,
+  onSaveManagedView,
 }: SearchRegionProps<RecordType, Query, Summary>) {
   const intl = useIntl()
   const viewManagementNode = useMemo(
@@ -39,9 +41,11 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
           buildSystemDefaultSnapshot={buildSystemDefaultSnapshot}
           controller={controller}
           createCurrentSnapshot={createCurrentSnapshot}
+          filters={searchFilters ?? filters}
           initialStorageState={initialStorageState}
           onApplyManagedView={onApplyManagedView}
           onResetManagedView={onResetManagedView}
+          onSaveManagedView={onSaveManagedView}
           onRetryViewManagementLoad={onRetryViewManagementLoad}
           prefixCls={prefixCls}
           viewManagementAdapter={viewManagementAdapter}
@@ -55,11 +59,14 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
       buildSystemDefaultSnapshot,
       controller,
       createCurrentSnapshot,
+      filters,
       initialStorageState,
       onApplyManagedView,
       onResetManagedView,
+      onSaveManagedView,
       onRetryViewManagementLoad,
       prefixCls,
+      searchFilters,
       viewManagementAdapter,
       viewManagementInstanceId,
       viewManagementLoadError,

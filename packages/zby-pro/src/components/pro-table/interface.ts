@@ -296,6 +296,7 @@ export interface ProTableViewSorter {
 }
 
 export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Record<string, unknown>> {
+  /** 当前筛选条（`controller.query`），只含 `filters` 字段，不含页码。不是上次请求的 `committedQuery`。 */
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
   sorter?: ProTableViewSorter | null

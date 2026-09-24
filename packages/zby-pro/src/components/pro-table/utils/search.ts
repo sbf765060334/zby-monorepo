@@ -123,3 +123,14 @@ export function collectActiveSearchTagItems<Query extends Record<string, unknown
     ]
   })
 }
+
+export function countModifiedSearchFields<Query extends Record<string, unknown>>(
+  filters: ProTableFilter<Query>[],
+  query: Query,
+  defaultQuery?: Query,
+): number {
+  return collectActiveSearchTagItems(filters, query, defaultQuery).reduce(
+    (count, item) => (item.action === null ? count : count + 1),
+    0,
+  )
+}

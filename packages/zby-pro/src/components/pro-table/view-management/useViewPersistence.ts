@@ -19,6 +19,7 @@ import {
 import {
   buildViewSnapshot,
   getViewsScopeKey,
+  isSearchValueEqual,
   normalizeViewSnapshot,
   pickSearchQuery,
 } from '../utils'
@@ -134,7 +135,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
     const storeState = viewStore.getState()
 
     return buildViewSnapshot(
-      state.committedQuery,
+      state.query,
       filters,
       columnDefinitions,
       storeState.mergedColumnsPreferences,
@@ -161,6 +162,28 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
     [applySnapshotToTable, normalizeSnapshotForCurrentSchema],
   )
 
+  const handleSaveManagedView = useCallback(async () => {
+    const state = controller.getState()
+    const draftQuery = pickSearchQuery(state.query, filters)
+    const committedQuery = pickSearchQuery(state.committedQuery, filters)
+    const queryKeys = new Set([
+      ...Object.keys(draftQuery ?? {}),
+      ...Object.keys(committedQuery ?? {}),
+    ])
+
+    for (const key of queryKeys) {
+      if (
+        !isSearchValueEqual(
+          (draftQuery as Record<string, unknown>)[key],
+          (committedQuery as Record<string, unknown>)[key],
+        )
+      ) {
+        await controller.submitQuery({ resetPage: true })
+        return
+      }
+    }
+  }, [controller, filters])
+
   return {
     normalizeSnapshotForCurrentSchema,
     buildSystemDefaultSnapshot,
@@ -170,5 +193,6 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
     viewManagementInstanceId,
     handleApplyManagedView,
     handleResetManagedView,
+    handleSaveManagedView,
   }
 }

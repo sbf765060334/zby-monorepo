@@ -27,6 +27,7 @@ export type SearchRegionProps<RecordType, Query extends Record<string, unknown>,
   filters?: ProTableFilter<Query>[]
   moreOpen?: boolean
   searchEnabled?: boolean
+  searchFilters?: ProTableFilter<Query>[]
   showMore?: boolean
   style?: React.CSSProperties
   onResetSearch?: () => void
@@ -45,4 +46,5 @@ export type SearchRegionProps<RecordType, Query extends Record<string, unknown>,
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onResetManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
+  onSaveManagedView: () => Promise<void>
 }

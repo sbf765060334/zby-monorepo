@@ -6,7 +6,7 @@ import type {
   ProViewManagementView,
 } from '../../../pro-view-management'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../../hooks'
-import type { ProTableController, ProTableViewSnapshot } from '../../interface'
+import type { ProTableController, ProTableFilter, ProTableViewSnapshot } from '../../interface'
 import type { ProTableViewStore } from '../../store'
 import { isViewSnapshotEqual } from '../../utils'
 import { ProTableViewManagement } from './ProTableViewManagement'
@@ -15,9 +15,11 @@ type SearchViewManagementMountProps<RecordType, Query extends Record<string, unk
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   controller: ProTableController<RecordType, Query, Summary>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
+  filters: ProTableFilter<Query>[]
   initialStorageState?: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onResetManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
+  onSaveManagedView: () => Promise<void>
   onRetryViewManagementLoad?: () => void | Promise<void>
   prefixCls: string
   viewManagementAdapter?: ProViewManagementAdapter<ProTableViewSnapshot<Query>>
@@ -35,9 +37,11 @@ const SearchViewManagementMountInner = <
   buildSystemDefaultSnapshot,
   controller,
   createCurrentSnapshot,
+  filters,
   initialStorageState,
   onApplyManagedView,
   onResetManagedView,
+  onSaveManagedView,
   onRetryViewManagementLoad,
   prefixCls,
   viewManagementAdapter,
@@ -49,12 +53,11 @@ const SearchViewManagementMountInner = <
   const searchSnapshotState = useControllerSelector(
     controller,
     (state) => ({
-      committedQuery: state.committedQuery,
       defaultQuery: state.defaultQuery,
+      query: state.query,
     }),
     shallow,
   )
-  const total = useControllerSelector(controller, (state) => state.total)
   const sorterState = useControllerSelector(
     controller,
     (state) => ({
@@ -83,7 +86,7 @@ const SearchViewManagementMountInner = <
     [
       columnsPreferences,
       createCurrentSnapshot,
-      searchSnapshotState.committedQuery,
+      searchSnapshotState.query,
       sorterState.sortField,
       sorterState.sortOrder,
     ],
@@ -100,15 +103,17 @@ const SearchViewManagementMountInner = <
     <ProTableViewManagement
       adapter={viewManagementAdapter}
       currentSnapshot={currentSnapshot}
+      defaultQuery={searchSnapshotState.defaultQuery}
+      filters={filters}
       initialStorageState={initialStorageState}
       loading={viewManagementLoading}
       loadError={viewManagementLoadError}
       onApplyView={onApplyManagedView}
       onRetryLoad={onRetryViewManagementLoad}
       onResetView={onResetManagedView}
+      onSaveView={onSaveManagedView}
       prefixCls={prefixCls}
       systemDefaultSnapshot={systemDefaultSnapshot}
-      total={total}
       viewManagementInstanceId={viewManagementInstanceId}
     />
   )

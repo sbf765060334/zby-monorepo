@@ -309,6 +309,20 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const handleCloseMoreFilters = useCallback(() => {
     setMoreFiltersOpen(false)
   }, [])
+  const handleApplyManagedView = useCallback(
+    async (view: Parameters<typeof viewPersistence.handleApplyManagedView>[0]) => {
+      setMoreFiltersOpen(false)
+      await viewPersistence.handleApplyManagedView(view)
+    },
+    [viewPersistence.handleApplyManagedView],
+  )
+  const handleResetManagedView = useCallback(
+    async (view: Parameters<typeof viewPersistence.handleResetManagedView>[0]) => {
+      setMoreFiltersOpen(false)
+      await viewPersistence.handleResetManagedView(view)
+    },
+    [viewPersistence.handleResetManagedView],
+  )
   const searchEnabled = filters.length > 0
   useEffect(() => {
     if (!searchEnabled || moreFilters.length === 0) {
@@ -345,6 +359,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               onSearch={handleSearch}
               onToggleMore={handleToggleMoreFilters}
               searchEnabled={searchEnabled}
+              searchFilters={filters}
               showMore={moreFilters.length > 0}
               views={resolvedConfig.mergedViews}
               viewStore={viewStore}
@@ -358,8 +373,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               initialStorageState={viewInitialization.initialStorageState}
               buildSystemDefaultSnapshot={viewPersistence.buildSystemDefaultSnapshot}
               createCurrentSnapshot={viewPersistence.createCurrentSnapshot}
-              onApplyManagedView={viewPersistence.handleApplyManagedView}
-              onResetManagedView={viewPersistence.handleResetManagedView}
+              onApplyManagedView={handleApplyManagedView}
+              onResetManagedView={handleResetManagedView}
+              onSaveManagedView={viewPersistence.handleSaveManagedView}
             />
           ) : null}
           {showTable ? (
@@ -439,7 +455,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     [
       columnDefinitions,
       columnEmptyText,
+      handleApplyManagedView,
       handleCloseMoreFilters,
+      handleResetManagedView,
       handleResetSearch,
       handleSearch,
       handleToggleMoreFilters,
@@ -485,8 +503,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       viewLoadingVisible,
       viewPersistence.buildSystemDefaultSnapshot,
       viewPersistence.createCurrentSnapshot,
-      viewPersistence.handleApplyManagedView,
-      viewPersistence.handleResetManagedView,
+      viewPersistence.handleSaveManagedView,
       viewPersistence.viewManagementAdapter,
       viewPersistence.viewManagementInstanceId,
       viewStore,

@@ -83,6 +83,49 @@ function createTestAdapter<TSnapshot>(): ProViewManagementAdapter<TSnapshot> {
   }
 }
 
+function createPendingCustomViewAdapter() {
+  const adapter = createTestAdapter<any>()
+  adapter.load = vi.fn().mockResolvedValue({
+    views: [
+      {
+        id: 'custom-pending',
+        name: '待处理',
+        scope: 'custom',
+        order: 0,
+        snapshot: {
+          query: { status: 'pending' },
+          columnPreferences: [],
+          sorter: null,
+        },
+      },
+    ],
+    activeViewId: 'custom-pending',
+  })
+  return adapter
+}
+
+function viewActionRoot() {
+  return document.querySelector('.ant-pro-view-management-actions') as HTMLElement | null
+}
+
+function viewOptionCount(viewName: string) {
+  const option = Array.from(
+    document.querySelectorAll('.ant-pro-view-management-selector-option'),
+  ).find(
+    (node) =>
+      node.querySelector('.ant-pro-view-management-selector-option-name')?.textContent === viewName,
+  )
+
+  return option?.querySelector('.ant-pro-view-management-selector-option-count')?.textContent ?? null
+}
+
+async function saveActiveCustomView() {
+  const saveButton = viewActionRoot()?.querySelector('button')
+  expect(saveButton).toBeTruthy()
+  fireEvent.click(saveButton as HTMLElement)
+  fireEvent.click(await screen.findByRole('menuitem', { name: '保存' }))
+}
+
 const originalResizeObserver = globalThis.ResizeObserver
 const originalMatchMedia = window.matchMedia
 
@@ -634,6 +677,301 @@ describe('ProTable', () => {
     await waitFor(() => expect(queryRequest).toHaveBeenCalled())
     await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
     expect(screen.getByText('待处理')).toBeTruthy()
+  })
+
+  it('hides the view count when query matches defaultQuery', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 48 }))
+
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        queryRequest={queryRequest}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(screen.queryByText('(48)')).toBeNull()
+    expect(screen.queryByText('(1)')).toBeNull()
+  })
+
+  it('shows the modified search field count on the active view', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 48 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(screen.queryByText('(1)')).toBeNull()
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    await waitFor(() => expect(screen.getByText('(1)')).toBeTruthy())
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+
+    fireEvent.change(screen.getByRole('textbox', { name: /负责人/ }), {
+      target: { value: 'lee' },
+    })
+    await waitFor(() => expect(screen.getByText('(2)')).toBeTruthy())
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps each view count on that view snapshot and the active draft', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: undefined,
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 48 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(screen.queryByText('(1)')).toBeNull()
+
+    fireEvent.mouseDown(
+      document.querySelector('.ant-pro-view-management-selector [role="combobox"]')!,
+    )
+    await waitFor(() => expect(viewOptionCount('待处理')).toBe('1'))
+    expect(viewOptionCount('默认视图')).toBeNull()
+
+    fireEvent.click(
+      document.querySelector(
+        '.ant-pro-view-management-selector-option-name[title="待处理"]',
+      )!,
+    )
+    await waitFor(() => expect(screen.getByText('(1)')).toBeTruthy())
+
+    fireEvent.change(screen.getByRole('textbox', { name: /负责人/ }), {
+      target: { value: 'lee' },
+    })
+    await waitFor(() => expect(screen.getByText('(2)')).toBeTruthy())
+
+    fireEvent.mouseDown(
+      document.querySelector('.ant-pro-view-management-selector [role="combobox"]')!,
+    )
+    await waitFor(() => {
+      expect(viewOptionCount('待处理')).toBe('2')
+      expect(viewOptionCount('默认视图')).toBeNull()
+    })
+  })
+
+  it('dirties the view from draft filters without requesting', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(viewActionRoot()).toBeNull()
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(viewActionRoot()).toBeTruthy()
+  })
+
+  it('dirties the view when closing a search tag without requesting', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    const requestCount = queryRequest.mock.calls.length
+
+    fireEvent.click(
+      document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
+    )
+    expect(controller.getState().query.status).toBe('all')
+    expect(controller.getState().committedQuery.status).toBe('pending')
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+  })
+
+  it('submits uncommitted filters and resets the page when saving a custom view', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 20 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: '名称' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    await controller.setPage(2)
+    expect(controller.getState().currentPage).toBe(2)
+    const requestCount = queryRequest.mock.calls.length
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'done' },
+    })
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+
+    await saveActiveCustomView()
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(requestCount + 1))
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'done', page: 1 }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+    expect(controller.getState().currentPage).toBe(1)
+    expect(controller.getState().committedQuery.status).toBe('done')
+  })
+
+  it('does not request when saving a custom view if filters are already committed', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 20 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称' },
+        ]}
+        filters={[searchInputField('status', '状态')]}
+        toolbar
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    await controller.setPage(2)
+    const requestCount = queryRequest.mock.calls.length
+
+    act(() => {
+      screen.getByLabelText('列设置').click()
+    })
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
+    act(() => {
+      screen.getByRole('checkbox', { name: '名称' }).click()
+    })
+    act(() => {
+      screen.getByRole('button', { name: '确定' }).click()
+    })
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+
+    await saveActiveCustomView()
+    await waitFor(() => expect(adapter.update).toHaveBeenCalled())
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+    expect(controller.getState().currentPage).toBe(2)
+  })
+
+  it('closes more filters when resetting a view', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+
+    fireEvent.click(viewActionRoot()!.querySelectorAll('button')[1] as HTMLElement)
+    await waitFor(() =>
+      expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
+    )
   })
 
   it('maps heightMode fill to Table height 100%', async () => {

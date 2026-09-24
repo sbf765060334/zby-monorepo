@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   collectActiveSearchTagItems,
+  countModifiedSearchFields,
   createBooleanTagTextResolver,
   createCascaderTagTextResolver,
   createDateRangeTagTextResolver,
@@ -260,5 +261,29 @@ describe('search tags', () => {
       textOf(resolveSearchTagText(field('labels', '标签'), ['east', 'urgent', 'bonded'], {})),
     ).toBe('east / urgent / bonded')
     expect(textOf(resolveSearchTagText(field('status', '状态'), '', {}))).toBe('')
+  })
+
+  it('counts query fields that differ from defaultQuery', () => {
+    const filters = [
+      field('status', '状态'),
+      field('labels', '标签'),
+    ]
+
+    expect(countModifiedSearchFields(filters, { status: 'all' }, { status: 'all' })).toBe(0)
+    expect(countModifiedSearchFields(filters, { status: 'open' }, { status: 'all' })).toBe(1)
+    expect(
+      countModifiedSearchFields(
+        filters,
+        { status: 'open', labels: ['east'] },
+        { status: 'all' },
+      ),
+    ).toBe(2)
+    expect(
+      countModifiedSearchFields(
+        [field('status', '状态', { tagVisible: (value: string | undefined) => value !== 'all' })],
+        { status: 'all' },
+        { status: 'all' },
+      ),
+    ).toBe(0)
   })
 })
