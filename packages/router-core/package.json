@@ -1,7 +1,10 @@
 {
   "name": "@zby/router-core",
   "version": "0.1.0",
-  "description": "Internal routing, tabs, keep-alive and persistence core for ZBY ProLayout. Not a standalone public package.",
+  "description": "Routing, tabs, keep-alive and persistence core used by @zby/pro ProLayout. Published to the internal registry as a companion package, not a general-purpose router.",
+  "publishConfig": {
+    "access": "restricted"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
