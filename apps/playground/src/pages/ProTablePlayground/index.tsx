@@ -230,6 +230,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     title: '序号',
     width: 64,
     valueType: 'index',
+    fixed: 'left',
   },
   {
     key: 'orderNo',

@@ -66,6 +66,7 @@ export type {
   ProTableColumnFieldValueType,
   ProTableColumnValueType,
   ProTableColumnValueTypeConfig,
+  ProTableMoneyCurrency,
   ProTableColumnValueEnum,
   ProTableColumnValueEnumItem,
   ProTableColumnCapabilities,
