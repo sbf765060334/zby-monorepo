@@ -104,14 +104,14 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
           <Button type="primary" onClick={onSearch}>
             {intl.getMessage('zby.pro.table.search', '查询')}
           </Button>
+          <Button onClick={onResetSearch}>
+            {intl.getMessage('zby.pro.table.resetSearch', '重置')}
+          </Button>
           {showMore ? (
             <Button aria-expanded={moreOpen} onClick={onToggleMore}>
               {intl.getMessage('zby.pro.table.moreFilters', '更多筛选')}
             </Button>
           ) : null}
-          <Button onClick={onResetSearch}>
-            {intl.getMessage('zby.pro.table.resetSearch', '重置')}
-          </Button>
           {filterSettingEnabled ? (
             <Button autoInsertSpace={false} onClick={onOpenFilterSettings}>
               {intl.getMessage('zby.pro.table.filterSetting', '筛选设置')}
