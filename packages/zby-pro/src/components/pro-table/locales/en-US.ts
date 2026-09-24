@@ -26,8 +26,6 @@ const enUS = {
   beforeQuery: 'Results appear after you search',
   afterQuery: 'No data',
   paginationTotal: '{{start}}-{{end}} of {{total}} items',
-  actionColumn: 'Actions',
-  more: 'More',
   moreFilters: 'More filters',
   filterSetting: 'Filter settings',
   filtersModalTitle: 'Filter settings',

@@ -7,7 +7,6 @@ export { default } from './ProTable'
 export { ColumnSettings as ProTableColumnSettings } from './columns-state'
 export { ProTableActions } from './table-actions'
 export { ProTableBatchActions } from './batch-actions'
-export { ProTableToolbarActions } from './toolbar-actions'
 export {
   createBooleanTagTextResolver,
   createCascaderTagTextResolver,
@@ -34,9 +33,6 @@ export type {
   ProTableTreeSelectTagTextResolverConfig,
 } from './utils'
 export type {
-  ProTableActionColumnActions,
-  ProTableActionColumnConfig,
-  ProTableActionColumnContext,
   ProTableActionInfo,
   ProTableActionItem,
   ProTableActionTooltip,
@@ -67,16 +63,11 @@ export type {
   ProTableClassNamesType,
   ProTableConfig,
   ProTableStylesType,
-  ProTableToolbarActionInfo,
-  ProTableToolbarActionItem,
-  ProTableToolbarBatchActionItem,
-  ProTableToolbarButtonActionItem,
   ProTableToolbarConfig,
   ProTableViewsConfig,
   ProTableViewSnapshot,
 } from './interface'
 export type { ProTableBatchActionInfo, ProTableBatchActionItem, ProTableBatchActionsProps } from './batch-actions'
-export type { ProTableToolbarActionsProps } from './toolbar-actions'
 
 export type {
   ProTableController,

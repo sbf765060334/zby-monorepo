@@ -48,7 +48,6 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
     | 'defaultQuery'
     | 'onControllerReady'
     | 'columns'
-    | 'actionColumn'
     | 'rowKey'
     | 'search'
     | 'views'

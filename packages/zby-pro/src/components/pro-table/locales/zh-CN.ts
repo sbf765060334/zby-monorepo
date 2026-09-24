@@ -26,8 +26,6 @@ const zhCN = {
   beforeQuery: '点击查询后展示查询结果',
   afterQuery: '查无数据',
   paginationTotal: '第 {{start}}-{{end}} 条/总共 {{total}} 条',
-  actionColumn: '操作',
-  more: '更多',
   moreFilters: '更多筛选',
   filterSetting: '筛选设置',
   filtersModalTitle: '筛选设置',

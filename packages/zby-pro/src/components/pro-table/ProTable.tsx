@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 
 import { cancelProTableControllerRequests, createProTableController } from './controller'
@@ -30,7 +29,6 @@ import {
 import { createProTableViewStore } from './store'
 import { TableRegion } from './table-region'
 import { ToolbarRegion } from './toolbar-region'
-import { appendActionColumn } from './utils/action-column'
 import { buildColumnDefinitions, splitFiltersByPreference } from './utils'
 import { useViewPersistence } from './view-management'
 
@@ -68,7 +66,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     defaultQuery,
     onControllerReady,
     columns,
-    actionColumn,
     rowKey,
     views,
     toolbar,
@@ -93,7 +90,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     filterSetting: _filterSetting,
     ...tableProps
   } = props
-  const intl = useIntl()
   const resolvedConfig = useResolvedProTableConfig({
     ...props,
     views,
@@ -138,19 +134,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const stableTableProps = useShallowStableObject(
     tableProps as Record<string, unknown>,
   ) as typeof tableProps
-  const resolvedColumns = useMemo(
-    () =>
-      appendActionColumn(
-        columns,
-        actionColumn,
-        controller,
-        intl.getMessage('zby.pro.table.actionColumn', '操作'),
-      ),
-    [actionColumn, columns, controller, intl],
-  )
   const columnDefinitions = useMemo(
-    () => buildColumnDefinitions(resolvedColumns),
-    [resolvedColumns],
+    () => buildColumnDefinitions(columns),
+    [columns],
   )
   const filters = resolvedConfig.mergedFilters
   const mergedFilterPreferences = useViewStoreSelector(
@@ -438,7 +424,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
                 <div className={`${resolvedConfig.prefixCls}-table-main`}>
                   <TableRegion
                     controller={controller}
-                    columns={resolvedColumns}
+                    columns={columns}
                     columnDefinitions={columnDefinitions}
                     columnsStateEnabled={resolvedConfig.columnPreferencesEnabled}
                     columnResize={resolvedConfig.mergedColumnResize}
@@ -485,7 +471,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       moreFilters,
       filters,
       onTableChange,
-      resolvedColumns,
+      columns,
       resolvedConfig.columnPreferencesEnabled,
       resolvedConfig.fullscreenEnabled,
       resolvedConfig.mergedColumnResize,

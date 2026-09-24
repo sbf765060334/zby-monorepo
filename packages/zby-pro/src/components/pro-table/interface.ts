@@ -48,37 +48,6 @@ export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   prefixCls?: string
 }
 
-export interface ProTableToolbarActionInfo<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> {
-  key: Key
-  controller?: ProTableController<RecordType, Query, Summary>
-  loading?: boolean
-  selectedRowKeys: Key[]
-  selectedRows?: RecordType[]
-}
-
-export interface ProTableToolbarButtonActionItem<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> {
-  key: Key
-  label: ReactNode
-  type?: 'primary' | 'default'
-  hidden?: boolean
-  overflow?: boolean
-  disabled?: boolean | ((info: ProTableToolbarActionInfo<RecordType, Query, Summary>) => boolean)
-  onClick?: (info: ProTableToolbarActionInfo<RecordType, Query, Summary>) => void | Promise<void>
-  [key: string]: unknown
-}
-
-export interface ProTableToolbarBatchActionItem<RecordType = Record<string, unknown>> {
-  key: Key
-  label: ReactNode
-  type: 'batch'
-  actions: Array<ProTableActionItem<RecordType> | false | null | undefined>
-  hidden?: boolean
-}
-
-export type ProTableToolbarActionItem<RecordType = Record<string, unknown>, Query extends Record<string, unknown> = Record<string, unknown>, Summary = unknown> =
-  | ProTableToolbarButtonActionItem<RecordType, Query, Summary>
-  | ProTableToolbarBatchActionItem<RecordType>
-
 type ResolvableSemantic<T> = T | ((info: { props: Record<string, unknown> }) => T)
 
 export type ProTableColumnPin = 'left' | 'right' | null
@@ -192,42 +161,6 @@ export type ProTableColumnsType<
 export type ProTableColumns<RecordType = Record<string, unknown>> =
   ProTableColumnsType<RecordType>
 
-export interface ProTableActionColumnContext<
-  RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
-  Summary = unknown,
-> {
-  record: RecordType
-  index: number
-  controller: ProTableController<RecordType, Query, Summary>
-}
-
-export type ProTableActionColumnActions<
-  RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
-  Summary = unknown,
-> =
-  | Array<ProTableActionItem<RecordType> | false | null | undefined>
-  | ((
-    context: ProTableActionColumnContext<RecordType, Query, Summary>,
-  ) => Array<ProTableActionItem<RecordType> | false | null | undefined>)
-
-export type ProTableActionColumnConfig<
-  RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
-  Summary = unknown,
-> = Omit<
-  ProTableColumnType<RecordType>,
-  'children' | 'fieldConfig' | 'render'
-> & {
-  actions?: ProTableActionColumnActions<RecordType, Query, Summary>
-  actionsProps?: Omit<
-    ProTableActionsProps<RecordType>,
-    'actions' | 'record' | 'index'
-  >
-  render?: TableColumnType<RecordType>['render']
-}
-
 export type ProTableNewColumnPolicy = 'prepend' | 'append' | 'default-order'
 
 /** 列设置约束。`toolbar.columnSetting` 不传或为 `true` 时走这份默认（无可见/固定上限）。 */
@@ -339,21 +272,6 @@ export interface ProTableToolbarConfig<
   Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
 > {
-  actionItems?:
-    | Array<
-        | ProTableToolbarActionItem<RecordType, Query, Summary>
-        | false
-        | null
-        | undefined
-    >
-    | ((
-      context: ProTableToolbarContext<RecordType, Query, Summary>,
-    ) => Array<
-        | ProTableToolbarActionItem<RecordType, Query, Summary>
-        | false
-        | null
-        | undefined
-    >)
   actions?: ReactNode | ((context: ProTableToolbarContext<RecordType, Query, Summary>) => ReactNode)
   extra?: ReactNode | ((context: ProTableToolbarContext<RecordType, Query, Summary>) => ReactNode)
   /** 刷新。工具栏开启后默认显示；`false` 隐藏。 */
@@ -544,7 +462,6 @@ export interface ProTableProps<
   defaultQuery?: Query
   onControllerReady?: (controller: ProTableController<RecordType, Query, Summary>) => void
   columns: ProTableColumnsType<RecordType>
-  actionColumn?: false | ProTableActionColumnConfig<RecordType, Query, Summary>
   rowKey?: TableProps<RecordType>['rowKey']
   filters?: ProTableFilter<Query>[]
   /** 筛选设置。有筛选时默认显示；`false` 隐藏入口。无视图时只留内存。 */

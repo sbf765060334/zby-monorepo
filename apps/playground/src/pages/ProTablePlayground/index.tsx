@@ -1,4 +1,5 @@
-import { App, Cascader, DatePicker, Input, Select, Switch, TimePicker, TreeSelect } from 'antd'
+import { useMemo } from 'react'
+import { App, Button, Cascader, DatePicker, Input, message, Select, Switch, TimePicker, TreeSelect } from 'antd'
 import dayjs from 'dayjs'
 import {
   createBooleanTagTextResolver,
@@ -12,6 +13,7 @@ import {
   createTreeSelectTagTextResolver,
   ProLayoutContentContainer,
   ProTable,
+  ProTableActions,
   type ProTableColumnType,
   type ProTableFilter,
   type ProTableQueryRequest,
@@ -612,6 +614,53 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
 
 export default function ProTablePlayground() {
   const { message } = App.useApp()
+  const tableColumns = useMemo<ProTableColumnType<PlaygroundRow>[]>(
+    () => [
+      ...columns,
+      {
+        key: 'actions',
+        title: '操作',
+        align: 'center',
+        width: 64,
+        fixed: 'right',
+        fieldConfig: false,
+        render: (_value, record, index) => (
+          <ProTableActions
+            record={record}
+            index={index}
+            actions={[
+              {
+                key: 'view',
+                label: '查看',
+                onClick: () => {
+                  void message.info(`查看 ${record.orderNo}`)
+                },
+              },
+              {
+                key: 'edit',
+                label: '编辑',
+                onClick: () => {
+                  void message.info(`编辑 ${record.orderNo}`)
+                },
+              },
+              {
+                key: 'delete',
+                label: '删除',
+                danger: true,
+                popconfirm: {
+                  title: `确定删除 ${record.orderNo} 吗？`,
+                  onConfirm: () => {
+                    void message.success(`已模拟删除 ${record.orderNo}`)
+                  },
+                },
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [message],
+  )
 
   return (
     <ProLayoutContentContainer mode="fill">
@@ -620,7 +669,7 @@ export default function ProTablePlayground() {
         heightMode="fill"
         persistenceKey="playground-pro-table"
         queryRequest={queryOrders}
-        columns={columns}
+        columns={tableColumns}
         filters={filters}
         views
         columnResize
@@ -631,52 +680,25 @@ export default function ProTablePlayground() {
           showSizeChanger: true,
         }}
         toolbar={{
-          actionItems: [
-            {
-              key: 'create',
-              type: 'primary',
-              label: '新建订单',
-              onClick: () => {
-                void message.success('模拟新建订单')
-              },
-            },
-            {
-              key: 'export',
-              label: '导出',
-              onClick: () => {
-                void message.success('模拟导出')
-              },
-            },
-          ],
-        }}
-        actionColumn={{
-          actions: ({ record }) => [
-            {
-              key: 'view',
-              label: '查看',
-              onClick: () => {
-                void message.info(`查看 ${record.orderNo}`)
-              },
-            },
-            {
-              key: 'edit',
-              label: '编辑',
-              onClick: () => {
-                void message.info(`编辑 ${record.orderNo}`)
-              },
-            },
-            {
-              key: 'delete',
-              label: '删除',
-              danger: true,
-              popconfirm: {
-                title: `确定删除 ${record.orderNo} 吗？`,
-                onConfirm: () => {
-                  void message.success(`已模拟删除 ${record.orderNo}`)
-                },
-              },
-            },
-          ],
+          actions: (
+            <>
+              <Button
+                type="primary"
+                onClick={() => {
+                  void message.success('模拟新建订单')
+                }}
+              >
+                新建订单
+              </Button>
+              <Button
+                onClick={() => {
+                  void message.success('模拟导出')
+                }}
+              >
+                导出
+              </Button>
+            </>
+          ),
         }}
         style={{ flex: 1, minHeight: 0, height: '100%' }}
       />

@@ -7,7 +7,6 @@ import { clsx } from 'clsx'
 import type { ProTableController, ProTableProps } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
-import { ProTableToolbarActions } from '../toolbar-actions'
 
 const RELOAD_ICON = <ReloadOutlined />
 const SETTING_ICON = <SettingOutlined />
@@ -141,24 +140,7 @@ function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, S
     [controller, toolbarState.loading, toolbarState.selectedRowKeys],
   )
 
-  const actionItems = resolveNode(toolbar.actionItems, actions)
-  const customActions = resolveNode(toolbar.actions, actions)
-  const selectedRows = controller.getSelectedRows()
-  const left =
-    actionItems || customActions ? (
-      <>
-        {actionItems ? (
-          <ProTableToolbarActions
-            actions={actionItems}
-            controller={controller}
-            loading={toolbarState.loading}
-            selectedRowKeys={toolbarState.selectedRowKeys}
-            selectedRows={selectedRows}
-          />
-        ) : null}
-        {customActions}
-      </>
-    ) : null
+  const left = resolveNode(toolbar.actions, actions)
   const right = resolveNode(toolbar.extra, actions)
   const showRefresh = toolbar.refresh !== false
   const showColumnSetting = columnSettingEnabled

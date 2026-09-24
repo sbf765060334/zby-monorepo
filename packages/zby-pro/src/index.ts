@@ -45,7 +45,6 @@ export {
   ProTableColumnSettings,
   ProTableActions,
   ProTableBatchActions,
-  ProTableToolbarActions,
 } from './components/pro-table'
 export type {
   ProTableController,
@@ -73,9 +72,6 @@ export type {
   ProTableColumnDefaultPreference,
   ProTableColumnPreference,
   ProTableColumnPin,
-  ProTableActionColumnActions,
-  ProTableActionColumnConfig,
-  ProTableActionColumnContext,
   ProTableActionInfo,
   ProTableActionItem,
   ProTableActionTooltip,
@@ -83,10 +79,6 @@ export type {
   ProTableBatchActionInfo,
   ProTableBatchActionItem,
   ProTableBatchActionsProps,
-  ProTableToolbarActionInfo,
-  ProTableToolbarActionItem,
-  ProTableToolbarBatchActionItem,
-  ProTableToolbarButtonActionItem,
   ProTableToolbarConfig,
   ProTableFilter,
   ProTableFilterPlacement,

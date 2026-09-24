@@ -811,6 +811,20 @@ describe('ProTable', () => {
     expect(screen.getByLabelText('全屏')).toBeTruthy()
   })
 
+  it('renders toolbar actions on the left', () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        toolbar={{
+          actions: <button type="button">新建</button>,
+        }}
+      />,
+    )
+    expect(screen.getByRole('button', { name: '新建' })).toBeTruthy()
+  })
+
   it('keeps reset on the default view after column settings change', async () => {
     const controller = createProTableController<Row, Query>({ rowKey: 'id' })
     renderProTable(
