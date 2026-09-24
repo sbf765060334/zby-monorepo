@@ -337,6 +337,7 @@ describe('ProTable', () => {
     fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
     fireEvent.click(screen.getByRole('button', { name: '确定' }))
 
     await waitFor(() => expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy())
@@ -383,6 +384,7 @@ describe('ProTable', () => {
     fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
     fireEvent.click(screen.getByRole('button', { name: '确定' }))
 
     await waitFor(() => expect(viewActionRoot()).toBeTruthy())
@@ -405,6 +407,7 @@ describe('ProTable', () => {
     fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '状态' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '状态' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到更多筛选' }))
     fireEvent.click(screen.getByRole('button', { name: '确定' }))
 
     await waitFor(() => expect(screen.queryByRole('textbox', { name: /状态/ })).toBeNull())
@@ -477,6 +480,7 @@ describe('ProTable', () => {
     fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
     fireEvent.click(screen.getByRole('button', { name: '确定' }))
     await waitFor(() => expect(viewActionRoot()).toBeTruthy())
 

@@ -1,5 +1,5 @@
 import type { CSSObject } from '@ant-design/cssinjs'
-import { useStyleRegister } from '@ant-design/cssinjs'
+import { unit, useStyleRegister } from '@ant-design/cssinjs'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import * as React from 'react'
 
@@ -8,9 +8,9 @@ type GlobalToken = ReturnType<typeof antdTheme.useToken>['token']
 type ProTableToken = GlobalToken & {
   antCls: string
   componentCls: string
-  fullscreenPadding: number
+  fullscreenPadding: number | string
   iconCls: string
-  shellPadding: number
+  shellPadding: number | string
 }
 
 function genProTableStyle(token: ProTableToken): CSSObject {
@@ -20,6 +20,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     borderRadiusLG,
     colorBgContainer,
     colorBgTextHover,
+    colorBorder,
     colorText,
     colorTextDescription,
     colorTextHeading,
@@ -28,6 +29,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     controlHeight,
     fullscreenPadding,
     iconCls,
+    lineType,
     lineWidth,
     marginSM,
     marginXS,
@@ -37,7 +39,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     zIndexPopupBase,
   } = token
 
-  const cssLen = (value: number | string) => (typeof value === 'number' ? `${value}px` : value)
+  const line = (color: string) => `${unit(lineWidth)} ${lineType} ${color}`
 
   return {
     [componentCls]: {
@@ -78,7 +80,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         maxWidth: '100%',
         paddingBlock: 0,
         paddingInline: paddingXS,
-        border: `${lineWidth}px solid transparent`,
+        border: `${line('transparent')}`,
         borderRadius,
         verticalAlign: 'top',
         cursor: 'text',
@@ -167,7 +169,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-search-overlay${antCls}-drawer-inline`]: {
         overflow: 'hidden',
-        top: `calc(${cssLen(marginXS)} - ${cssLen(marginSM)})`,
+        top: `calc(${unit(marginXS)} - ${unit(marginSM)})`,
         [`&:not(${antCls}-drawer-open)`]: {
           pointerEvents: 'none',
         },
@@ -370,7 +372,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         minHeight: 0,
         height: '100%',
         flex: 1,
-        border: `${token.lineWidth}px ${token.lineType} ${token.colorSplit}`,
         overflow: 'hidden',
       },
 
@@ -384,7 +385,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         flexDirection: 'column',
         gap: shellPadding,
         padding: paddingSM,
-        borderInlineEnd: `${token.lineWidth}px ${token.lineType} ${token.colorSplit}`,
       },
 
       [`${componentCls}-columns-catalog-search`]: {
@@ -495,10 +495,10 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         gap: marginXS,
         alignItems: 'center',
         minHeight: token.controlHeight,
-        padding: `${token.paddingXS}px ${shellPadding}px`,
+        paddingBlock: paddingXS,
+        paddingInline: shellPadding,
         color: token.colorText,
         background: colorBgContainer,
-        borderBottom: `${token.lineWidth}px ${token.lineType} ${token.colorSplit}`,
 
         '&:hover': {
           background: token.colorPrimaryBg,
@@ -576,10 +576,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         [`${componentCls}-columns-panel-layout`]: {
           gridTemplateColumns: '1fr',
         },
-
-        [`${componentCls}-columns-selected`]: {
-          borderTop: `${token.lineWidth}px ${token.lineType} ${token.colorSplit}`,
-        },
       },
 
       '@media (max-width: 768px)': {
@@ -590,6 +586,137 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         [`${componentCls}-columns-selected-actions`]: {
           gridColumn: '1 / -1',
           justifyContent: 'flex-end',
+        },
+      },
+    },
+
+    [`${componentCls}-filters-modal-body`]: {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      minHeight: 0,
+    },
+
+    [`${componentCls}-filters-panel`]: {
+      display: 'flex',
+      flexDirection: 'column',
+      minWidth: 0,
+      minHeight: 360,
+      height: '100%',
+      flex: 1,
+      padding: paddingSM,
+
+      '&, *': {
+        boxSizing: 'border-box',
+      },
+
+      [`${componentCls}-filters-panel-layout`]: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(260px, 1fr) auto minmax(260px, 1fr)',
+        alignItems: 'stretch',
+        gap: paddingSM,
+        width: 720,
+        maxWidth: '100%',
+        minHeight: 0,
+        height: '100%',
+        flex: 1,
+      },
+
+      [`${componentCls}-filters-pane`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: 0,
+        minHeight: 0,
+        overflow: 'hidden',
+        background: colorBgContainer,
+        border: line(colorBorder),
+        borderRadius: borderRadiusLG,
+      },
+
+      [`${componentCls}-filters-operations`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        gap: marginXS,
+      },
+
+      [`${componentCls}-filters-pane-row`]: {
+        gridTemplateColumns: '24px minmax(0, 1fr) auto',
+        paddingBlock: paddingXS,
+        paddingInline: paddingSM,
+        borderBottom: 'none',
+      },
+
+      [`${componentCls}-filters-pane-check`]: {
+        minWidth: 0,
+      },
+
+      [`${componentCls}-filters-pane-check ${antCls}-checkbox-wrapper`]: {
+        maxWidth: '100%',
+      },
+
+      [`${componentCls}-filters-pane-row-selected`]: {
+        background: token.colorPrimaryBg,
+      },
+
+      [`${componentCls}-filters-pane-header`]: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: marginXS,
+        paddingBlock: paddingXS,
+        paddingInline: paddingSM,
+        background: token.colorFillAlter,
+        borderBottom: line(colorBorder),
+      },
+
+      [`${componentCls}-filters-pane-title`]: {
+        color: colorTextHeading,
+        fontWeight: token.fontWeightStrong,
+      },
+
+      [`${componentCls}-filters-pane-count`]: {
+        color: colorTextTertiary,
+        fontVariantNumeric: 'tabular-nums',
+      },
+
+      [`${componentCls}-filters-pane-list`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        flex: 1,
+        paddingBlock: paddingXS,
+        overflowX: 'hidden',
+        overflowY: 'auto',
+      },
+
+      [`${componentCls}-filters-pane-empty`]: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        minHeight: 160,
+        padding: paddingSM,
+      },
+
+      '@media (max-width: 960px)': {
+        [`${componentCls}-filters-panel-layout`]: {
+          gridTemplateColumns: '1fr',
+          width: '100%',
+        },
+
+        [`${componentCls}-filters-operations`]: {
+          flexDirection: 'row',
+          justifyContent: 'center',
+          paddingBlock: paddingSM,
+        },
+      },
+
+      '@media (max-width: 768px)': {
+        [`${componentCls}-filters-pane-row ${componentCls}-columns-selected-actions`]: {
+          gridColumn: 'auto',
         },
       },
     },

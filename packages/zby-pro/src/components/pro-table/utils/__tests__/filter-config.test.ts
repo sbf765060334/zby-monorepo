@@ -5,7 +5,7 @@ import {
   getFilterReorderRejection,
   groupFilterPreferencesByPlacement,
   moveGroupedFilterToTop,
-  replaceGroupedFilterOrder,
+  replacePlacementFilterOrder,
   replaceRowFilterOrder,
   resolveFilterPreferences,
   setFilterPlacement,
@@ -72,13 +72,14 @@ describe('filter preferences', () => {
   })
 
   it('reorders more filters within the more group', () => {
-    const next = replaceGroupedFilterOrder(
+    const next = replacePlacementFilterOrder(
       [
         { key: 'status', placement: 'row', order: 0 },
         { key: 'owner', placement: 'more', order: 1 },
         { key: 'region', placement: 'more', order: 2 },
       ],
-      ['status', 'region', 'owner'],
+      'more',
+      ['region', 'owner'],
     )
 
     expect(next.map((item) => item.key)).toEqual(['status', 'region', 'owner'])

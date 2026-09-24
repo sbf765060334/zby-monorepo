@@ -221,14 +221,28 @@ export function replaceGroupedFilterOrder(
   return groupFilterPreferencesByPlacement(normalizePreferenceOrder(next))
 }
 
+export function replacePlacementFilterOrder(
+  items: ProTableFilterPreference[],
+  placement: ProTableFilterPreference['placement'],
+  orderedKeys: string[],
+) {
+  const grouped = groupFilterPreferencesByPlacement(items)
+  const otherKeys = grouped
+    .filter((item) => item.placement !== placement)
+    .map((item) => item.key)
+
+  if (placement === 'row') {
+    return replaceGroupedFilterOrder(items, [...orderedKeys, ...otherKeys])
+  }
+
+  return replaceGroupedFilterOrder(items, [...otherKeys, ...orderedKeys])
+}
+
 export function replaceRowFilterOrder(
   items: ProTableFilterPreference[],
   orderedRowKeys: string[],
 ) {
-  const moreKeys = groupFilterPreferencesByPlacement(items)
-    .filter((item) => item.placement === 'more')
-    .map((item) => item.key)
-  return replaceGroupedFilterOrder(items, [...orderedRowKeys, ...moreKeys])
+  return replacePlacementFilterOrder(items, 'row', orderedRowKeys)
 }
 
 export function moveGroupedFilterToTop(items: ProTableFilterPreference[], key: string) {

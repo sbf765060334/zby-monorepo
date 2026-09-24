@@ -47,6 +47,7 @@ export function FilterSettings<Query extends Record<string, unknown>>({
       width="fit-content"
       bodyHeightMode="height"
       rootClassName={clsx(`${prefixCls}-columns-modal`, hashId, cssVarCls)}
+      className={clsx(hashId, cssVarCls)}
       styles={{
         body: { padding: 0 },
         footer: { width: '100%' },
@@ -70,8 +71,9 @@ export function FilterSettings<Query extends Record<string, unknown>>({
         </div>
       )}
     >
-      <div className={`${prefixCls}-columns-modal-body`}>
+      <div className={clsx(`${prefixCls}-filters-modal-body`, hashId, cssVarCls)}>
         <FilterSettingsPanel
+          className={clsx(hashId, cssVarCls)}
           filters={filters}
           value={draft}
           prefixCls={prefixCls}
