@@ -31,6 +31,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "prepare": "tsc -b src/components/table/rc-table.tsconfig.json",
     "typecheck": "tsc -b src/components/table/rc-table.tsconfig.json && tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests"
   },

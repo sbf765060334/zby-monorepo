@@ -7,7 +7,7 @@ import ConfigProvider from 'antd/es/config-provider'
 import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import Table from '../index'
+import Table, { type ColumnResizeWidths } from '../index'
 import { zbyUiIntlResources } from '../../../locale/intl-resources'
 
 const OriginalResizeObserver = globalThis.ResizeObserver
@@ -85,7 +85,7 @@ async function flushObservedTableResize(container: HTMLElement) {
   }
 
   await act(async () => {
-    _rs(targets.map((target) => ({ target }) as ResizeObserverEntry))
+    _rs(targets.map((target) => ({ target }) as unknown as ResizeObserverEntry))
     await Promise.resolve()
   })
 }
@@ -804,7 +804,7 @@ describe('Table', () => {
 
     const onResizeEnd = vi.fn()
     function Demo() {
-      const [widths, setWidths] = React.useState({ id: 120, name: 160 })
+      const [widths, setWidths] = React.useState<ColumnResizeWidths>({ id: 120, name: 160 })
       return (
         <Table<RowData>
           rowKey="id"
