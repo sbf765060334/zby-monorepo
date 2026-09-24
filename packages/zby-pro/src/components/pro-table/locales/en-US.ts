@@ -11,7 +11,6 @@ const enUS = {
   unpinLeft: 'Unpin left',
   unpinRight: 'Unpin right',
   pinTop: 'Move to top',
-  removeColumn: 'Remove',
   fieldInfo: 'Fields',
   columnSearchPlaceholder: 'Search',
   selectAll: 'Select all',

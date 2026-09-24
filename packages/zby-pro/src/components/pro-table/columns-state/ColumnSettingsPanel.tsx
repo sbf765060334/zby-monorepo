@@ -1,6 +1,5 @@
 import * as React from 'react'
 import {
-  CloseOutlined,
   HolderOutlined,
   PushpinFilled,
   PushpinOutlined,
@@ -48,7 +47,6 @@ type SelectedColumnRowProps = {
   sortable: boolean
   style?: React.CSSProperties
   localeText: {
-    remove: string
     pinTop: string
     pinLeft: string
     pinRight: string
@@ -58,7 +56,6 @@ type SelectedColumnRowProps = {
   }
   onChange: (patch: Partial<ProTableColumnPreference>) => void
   onMoveTop: () => void
-  onRemove: () => void
 }
 
 function normalizePreferenceOrder(items: ProTableColumnPreference[]) {
@@ -80,7 +77,6 @@ function SelectedColumnRow({
   maxFixed,
   onChange,
   onMoveTop,
-  onRemove,
   preference,
   prefixCls,
   rowRef,
@@ -88,7 +84,6 @@ function SelectedColumnRow({
   style,
   localeText,
 }: SelectedColumnRowProps) {
-  const canRemove = definition.capabilities?.visibility !== false
   const canPin = definition.capabilities?.pinning !== false
   const fixed = preference.pin ?? null
   const pinDisabled = !fixed && typeof maxFixed === 'number' && fixedCount >= maxFixed
@@ -126,16 +121,6 @@ function SelectedColumnRow({
         {definition.label}
       </span>
       <span className={`${prefixCls}-columns-selected-actions`}>
-        {canRemove ? (
-          <ActionIcon
-            className={`${prefixCls}-columns-selected-action`}
-            icon={<CloseOutlined />}
-            size="small"
-            title={localeText.remove}
-            aria-label={localeText.remove}
-            onClick={onRemove}
-          />
-        ) : null}
         {fixed ? fixedPinAction : null}
         {!fixed && sortable ? (
           <ActionIcon
@@ -217,7 +202,6 @@ export function ColumnSettingsPanel({
   }, [definitionMap, keyword, value])
   const rowLocaleText = React.useMemo(
     () => ({
-      remove: intl.getMessage('zby.pro.table.removeColumn', '移除'),
       pinTop: intl.getMessage('zby.pro.table.pinTop', '置顶'),
       pinLeft: intl.getMessage('zby.pro.table.pinLeft', '左固定'),
       pinRight: intl.getMessage('zby.pro.table.pinRight', '右固定'),
@@ -403,9 +387,6 @@ export function ColumnSettingsPanel({
                     style={style}
                     onChange={(patch) => commitRowPatch(preference.key, patch)}
                     onMoveTop={() => onChange(moveVisibleColumnToTop(value, preference.key))}
-                    onRemove={() =>
-                      onChange(updateColumnPreference(value, preference.key, { visible: false }))
-                    }
                   />
                 )
               }}

@@ -11,7 +11,6 @@ const zhCN = {
   unpinLeft: '取消左固定',
   unpinRight: '取消右固定',
   pinTop: '置顶',
-  removeColumn: '移除',
   fieldInfo: '字段信息',
   columnSearchPlaceholder: '请输入查询',
   selectAll: '全选',
