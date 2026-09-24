@@ -450,7 +450,12 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       },
 
       [`${componentCls}-columns-catalog-text`]: {
+        display: 'block',
         maxWidth: '100%',
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
       },
 
       [`${componentCls}-columns-selected`]: {

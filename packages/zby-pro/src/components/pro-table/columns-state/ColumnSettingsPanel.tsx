@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, Checkbox, Empty, Input, message, Typography } from 'antd'
+import { Button, Checkbox, Empty, Input, message } from 'antd'
 import { clsx } from 'clsx'
 
 import { SortableList } from '../../pro-sortable-list'
@@ -324,12 +324,12 @@ export function ColumnSettingsPanel({
                           disabled={disabled}
                           onChange={(event) => toggleField(definition.key, event.target.checked)}
                         >
-                          <Typography.Text
+                          <span
                             className={`${prefixCls}-columns-catalog-text`}
-                            ellipsis={{ tooltip: getColumnLabelText(definition) }}
+                            title={getColumnLabelText(definition)}
                           >
                             {definition.label}
-                          </Typography.Text>
+                          </span>
                         </Checkbox>
                       </label>
                     )

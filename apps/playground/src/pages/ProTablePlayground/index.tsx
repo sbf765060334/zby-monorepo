@@ -410,7 +410,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
   },
   {
     key: 'remark',
-    title: '备注',
+    title: <span>备注</span>,
     dataIndex: 'remark',
     width: 120,
   },
