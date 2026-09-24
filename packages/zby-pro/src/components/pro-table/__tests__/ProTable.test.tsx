@@ -897,6 +897,94 @@ describe('ProTable', () => {
     expect(screen.getByText('待处理')).toBeTruthy()
   })
 
+  it('keeps defaultQuery fields that a saved view did not write', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    })
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', name: 'A' }],
+      total: 1,
+    }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all', owner: 'Ada' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery).toEqual({
+      status: 'pending',
+      owner: 'Ada',
+    }))
+    expect(controller.getState().query).toEqual({
+      status: 'pending',
+      owner: 'Ada',
+    })
+  })
+
+  it('restores defaultQuery when a saved view stored an empty field', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-owner',
+          name: '负责人',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: '', owner: 'Ada' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-owner',
+    })
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', name: 'A' }],
+      total: 1,
+    }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().query.status).toBe('all'))
+    expect(controller.getState().query.owner).toBe('Ada')
+  })
+
   it('hides the view count when query matches defaultQuery', async () => {
     const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 48 }))
 

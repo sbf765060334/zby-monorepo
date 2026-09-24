@@ -12,7 +12,7 @@ import {
   isFilterPreferenceEqual,
   resolveFilterPreferences,
 } from './filter-config'
-import { isSearchValueEqual, pickSearchQuery } from './search'
+import { hasSearchFieldValue, isSearchValueEqual, pickSearchQuery } from './search'
 
 function isValidSorterOrder(order: unknown): order is ProTableViewSorter['order'] {
   return order === 'ascend' || order === 'descend'
@@ -41,9 +41,10 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
   columnPreferences: ProTableColumnPreference[],
   sorter?: ProTableViewSorter | null,
   filterPreferences: ProTableFilterPreference[] = [],
+  defaultQuery?: Partial<Query>,
 ) {
   return {
-    query: pickSearchQuery(query, filters),
+    query: pickSearchQuery(query, filters, defaultQuery),
     columnPreferences: cloneColumnPreferences(
       resolveColumnPreferences(columnDefinitions, {
         current: columnPreferences,
@@ -61,9 +62,10 @@ export function normalizeViewSnapshot<Query extends Record<string, unknown>>(
   filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
   newColumnPolicy?: 'prepend' | 'append' | 'default-order',
+  defaultQuery?: Partial<Query>,
 ) {
   return {
-    query: pickSearchQuery(snapshot?.query ?? {}, filters),
+    query: pickSearchQuery(snapshot?.query ?? {}, filters, defaultQuery),
     columnPreferences: resolveColumnPreferences(columnDefinitions, {
       current: snapshot?.columnPreferences,
       policy: newColumnPolicy,
@@ -115,14 +117,14 @@ export function isViewSnapshotEqual<Query extends Record<string, unknown>>(
   ) {
     return false
   }
-  const queryKeys = new Set([...Object.keys(left.query ?? {}), ...Object.keys(right.query ?? {})])
+  const leftQuery = (left.query ?? {}) as Record<string, unknown>
+  const rightQuery = (right.query ?? {}) as Record<string, unknown>
+  const queryKeys = new Set([
+    ...Object.keys(leftQuery).filter((key) => hasSearchFieldValue(leftQuery[key])),
+    ...Object.keys(rightQuery).filter((key) => hasSearchFieldValue(rightQuery[key])),
+  ])
   for (const key of queryKeys) {
-    if (
-      !isSearchValueEqual(
-        (left.query as Record<string, unknown>)[key],
-        (right.query as Record<string, unknown>)[key],
-      )
-    ) {
+    if (!isSearchValueEqual(leftQuery[key], rightQuery[key])) {
       return false
     }
   }

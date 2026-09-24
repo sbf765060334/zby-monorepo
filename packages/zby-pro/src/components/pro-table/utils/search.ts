@@ -34,11 +34,34 @@ export function isSearchValueEqual(left: unknown, right: unknown): boolean {
 export function pickSearchQuery<Query extends Record<string, unknown>>(
   query: Partial<Query>,
   filters: Array<{ key: Extract<keyof Query, string> }>,
+  defaultQuery?: Partial<Query>,
 ): Partial<Query> {
   return filters.reduce<Partial<Query>>((acc, filter) => {
-    acc[filter.key] = query[filter.key]
+    const value = query[filter.key]
+    if (!hasSearchFieldValue(value)) {
+      return acc
+    }
+    if (defaultQuery && isSearchValueEqual(value, defaultQuery[filter.key])) {
+      return acc
+    }
+    acc[filter.key] = value
     return acc
   }, {})
+}
+
+export function mergeSearchQuery<Query extends Record<string, unknown>>(
+  defaultQuery: Query,
+  snapshotQuery?: Partial<Query> | null,
+): Query {
+  const next = { ...(defaultQuery as Record<string, unknown>) }
+
+  Object.entries(snapshotQuery ?? {}).forEach(([key, value]) => {
+    if (hasSearchFieldValue(value)) {
+      next[key] = value
+    }
+  })
+
+  return next as Query
 }
 
 export function hasSearchFieldValue(value: unknown) {

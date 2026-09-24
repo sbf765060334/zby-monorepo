@@ -21,6 +21,7 @@ import {
   buildViewSnapshot,
   getViewsScopeKey,
   isSearchValueEqual,
+  mergeSearchQuery,
   normalizeViewSnapshot,
   pickSearchQuery,
 } from '../utils'
@@ -73,19 +74,25 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
 }: ViewPersistenceParams<RecordType, Query, Summary>) {
   const normalizeSnapshotForCurrentSchema = useCallback(
     (snapshot: ProTableViewSnapshot<Query> | null | undefined) => {
-      return normalizeViewSnapshot(snapshot, filters, columnDefinitions, newColumnPolicy)
+      return normalizeViewSnapshot(
+        snapshot,
+        filters,
+        columnDefinitions,
+        newColumnPolicy,
+        controller.getState().defaultQuery,
+      )
     },
-    [columnDefinitions, filters, newColumnPolicy],
+    [columnDefinitions, controller, filters, newColumnPolicy],
   )
 
   const buildSystemDefaultSnapshot = useCallback(
     () =>
       normalizeSnapshotForCurrentSchema({
-        query: pickSearchQuery(controller.getState().defaultQuery, filters) as Partial<Query>,
+        query: {},
         columnPreferences: buildDefaultColumnPreferences(columnDefinitions),
         filterPreferences: buildDefaultFilterPreferences(filters),
       }),
-    [columnDefinitions, controller, filters, normalizeSnapshotForCurrentSchema],
+    [columnDefinitions, filters, normalizeSnapshotForCurrentSchema],
   )
 
   const transientViewManagementAdapter = useMemo(
@@ -114,10 +121,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
   const applySnapshotToTable = useCallback(
     async (snapshot: ProTableViewSnapshot<Query>, options?: { submit?: boolean }) => {
       const actions = viewStore.getState()
-      const nextQuery = {
-        ...(controller.getState().defaultQuery as Record<string, unknown>),
-        ...(snapshot.query as Record<string, unknown>),
-      } as Query
+      const nextQuery = mergeSearchQuery(controller.getState().defaultQuery, snapshot.query)
 
       actions.setMergedColumnsPreferences(snapshot.columnPreferences)
       actions.setMergedFilterPreferences(snapshot.filterPreferences)
@@ -149,6 +153,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
           }
         : null,
       storeState.mergedFilterPreferences,
+      state.defaultQuery,
     )
   }, [columnDefinitions, controller, filters, viewStore])
 
@@ -168,8 +173,8 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
 
   const handleSaveManagedView = useCallback(async () => {
     const state = controller.getState()
-    const draftQuery = pickSearchQuery(state.query, filters)
-    const committedQuery = pickSearchQuery(state.committedQuery, filters)
+    const draftQuery = pickSearchQuery(state.query, filters, state.defaultQuery)
+    const committedQuery = pickSearchQuery(state.committedQuery, filters, state.defaultQuery)
     const queryKeys = new Set([
       ...Object.keys(draftQuery ?? {}),
       ...Object.keys(committedQuery ?? {}),

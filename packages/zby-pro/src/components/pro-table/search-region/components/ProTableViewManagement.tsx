@@ -8,7 +8,7 @@ import type {
   ProViewManagementView,
 } from '../../../pro-view-management'
 import type { ProTableFilter, ProTableViewSnapshot } from '../../interface'
-import { countModifiedSearchFields, isViewSnapshotEqual, PRO_TABLE_DEFAULT_VIEW_ID } from '../../utils'
+import { countModifiedSearchFields, isViewSnapshotEqual, pickSearchQuery, PRO_TABLE_DEFAULT_VIEW_ID } from '../../utils'
 import { DEFAULT_VIEW_LABEL } from '../constants'
 
 type ProTableViewManagementProps<Query extends Record<string, unknown>> = {
@@ -79,6 +79,20 @@ function ProTableViewManagementInner<Query extends Record<string, unknown>>({
       countViewSearchFields(view, activeViewId, currentSnapshot, filters, defaultQuery),
     [activeViewId, currentSnapshot, defaultQuery, filters],
   )
+  const isSnapshotEqual = useCallback(
+    (left: ProTableViewSnapshot<Query>, right: ProTableViewSnapshot<Query>) =>
+      isViewSnapshotEqual(
+        {
+          ...left,
+          query: pickSearchQuery(left.query, filters, defaultQuery),
+        },
+        {
+          ...right,
+          query: pickSearchQuery(right.query, filters, defaultQuery),
+        },
+      ),
+    [defaultQuery, filters],
+  )
 
   return (
     <ProViewManagement<ProTableViewSnapshot<Query>>
@@ -89,7 +103,7 @@ function ProTableViewManagementInner<Query extends Record<string, unknown>>({
       getViewCount={getViewCount}
       initialStorageState={initialStorageState}
       instanceId={viewManagementInstanceId}
-      isSnapshotEqual={isViewSnapshotEqual}
+      isSnapshotEqual={isSnapshotEqual}
       loading={loading}
       loadError={loadError}
       onActiveViewChange={(view) => {

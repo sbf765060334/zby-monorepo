@@ -53,4 +53,41 @@ describe('view snapshot filter preferences', () => {
 
     expect(isViewSnapshotEqual(left, right)).toBe(false)
   })
+
+  it('does not treat omitted query keys as a difference from undefined', () => {
+    const left = normalizeViewSnapshot(
+      {
+        query: { status: 'open' },
+        columnPreferences: [],
+      } as any,
+      filters,
+      [],
+    )
+    const right = normalizeViewSnapshot(
+      {
+        query: { status: 'open', owner: undefined },
+        columnPreferences: [],
+      } as any,
+      filters,
+      [],
+    )
+
+    expect(left.query).toEqual({ status: 'open' })
+    expect(isViewSnapshotEqual(left, right)).toBe(true)
+  })
+
+  it('drops snapshot values that match defaultQuery', () => {
+    expect(
+      normalizeViewSnapshot(
+        {
+          query: { status: 'all', owner: 'Ada' },
+          columnPreferences: [],
+        } as any,
+        filters,
+        [],
+        undefined,
+        { status: 'all' },
+      ).query,
+    ).toEqual({ owner: 'Ada' })
+  })
 })

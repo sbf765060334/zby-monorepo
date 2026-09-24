@@ -12,7 +12,7 @@ import {
 import type { ProTableController, ProTableViewSnapshot } from '../interface'
 import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewStore } from '../store'
-import { PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
+import { mergeSearchQuery, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
 
 type ViewInitializationParams<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
@@ -106,10 +106,10 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
         const initialSnapshot = normalizeSnapshotForCurrentSchema(
           activeView?.snapshot ?? defaultSnapshot,
         )
-        const initialQuery = {
-          ...(controller.getState().defaultQuery as Record<string, unknown>),
-          ...(initialSnapshot.query as Record<string, unknown>),
-        } as Query
+        const initialQuery = mergeSearchQuery(
+          controller.getState().defaultQuery,
+          initialSnapshot.query,
+        )
         const actions = viewStore.getState()
 
         actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)

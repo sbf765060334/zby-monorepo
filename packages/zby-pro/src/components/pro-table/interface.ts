@@ -399,7 +399,7 @@ export interface ProTableFilterPreference {
 }
 
 export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Record<string, unknown>> {
-  /** 当前筛选条（`controller.query`），只含 `filters` 字段，不含页码。不是上次请求的 `committedQuery`。 */
+  /** 当前筛选条里相对默认值有改动的字段。空值和未出现的字段都不当作改动，恢复时回落到 defaultQuery。 */
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
   filterPreferences: ProTableFilterPreference[]
