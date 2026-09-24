@@ -232,12 +232,6 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     valueType: 'index',
   },
   {
-    key: 'indexBorder',
-    title: '序号(边框)',
-    width: 120,
-    valueType: 'indexBorder',
-  },
-  {
     key: 'id',
     title: 'ID',
     dataIndex: 'id',
@@ -257,6 +251,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     title: '客户',
     dataIndex: 'customer',
     width: 160,
+    ellipsis: true,
   },
   {
     key: 'status',
@@ -264,6 +259,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     dataIndex: 'status',
     width: 120,
     valueType: 'tag',
+    ellipsis: true,
     valueEnum: {
       pending: { text: '待处理', color: 'warning' },
       shipping: { text: '运输中', color: 'processing' },
@@ -274,6 +270,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     key: 'priority',
     title: '优先级',
     dataIndex: 'priority',
+    ellipsis: true,
     width: 130,
     valueEnum: {
       low: { text: '低', status: 'default' },

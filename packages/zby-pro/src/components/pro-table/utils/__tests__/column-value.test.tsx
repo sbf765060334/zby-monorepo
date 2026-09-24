@@ -117,6 +117,6 @@ describe('formatColumnValue', () => {
   })
 
   it('uses the row index for index columns when the cell value is empty', () => {
-    expect(textOf(formatColumnValue(undefined, { valueType: 'index' }, 3))).toBe('4')
+    expect(textOf(formatColumnValue(undefined, { valueType: 'index' }, 3))).toBe('#4')
   })
 })

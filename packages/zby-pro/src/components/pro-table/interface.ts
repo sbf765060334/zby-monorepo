@@ -95,7 +95,6 @@ export type ProTableColumnValueType =
   | 'digit'
   | 'boolean'
   | 'index'
-  | 'indexBorder'
   | 'progress'
   | 'code'
   | 'jsonCode'

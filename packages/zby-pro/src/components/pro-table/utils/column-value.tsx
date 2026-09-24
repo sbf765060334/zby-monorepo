@@ -245,26 +245,10 @@ function getProgressStatus(value: number): 'success' | 'exception' | 'normal' | 
   return 'normal'
 }
 
-function renderIndex(value: unknown, index: number, border: boolean) {
+function renderIndex(value: unknown, index: number) {
   const serial =
     typeof value === 'number' && Number.isFinite(value) ? value + 1 : index + 1
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 18,
-        height: 18,
-        paddingInline: 4,
-        borderRadius: border ? 9 : 0,
-        border: border ? '1px solid currentColor' : undefined,
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      {serial}
-    </span>
-  )
+  return `#${serial}`
 }
 
 export function formatColumnValue(
@@ -278,8 +262,7 @@ export function formatColumnValue(
   if (
     emptyText !== false &&
     isEmptyCellValue(value) &&
-    valueType !== 'index' &&
-    valueType !== 'indexBorder'
+    valueType !== 'index'
   ) {
     return emptyText
   }
@@ -348,11 +331,7 @@ export function formatColumnValue(
   }
 
   if (valueType === 'index') {
-    return renderIndex(value, index, false)
-  }
-
-  if (valueType === 'indexBorder') {
-    return renderIndex(value, index, true)
+    return renderIndex(value, index)
   }
 
   if (valueType === 'progress') {
