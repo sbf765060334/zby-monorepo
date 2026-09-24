@@ -54,11 +54,7 @@ export function getElementName(type: unknown) {
     return type
   }
 
-  if (typeof type === 'function') {
-    return type.displayName ?? type.name ?? ''
-  }
-
-  if (typeof type === 'object' && type !== null) {
+  if (type && (typeof type === 'function' || typeof type === 'object')) {
     const named = type as { displayName?: string; name?: string }
     return named.displayName ?? named.name ?? ''
   }
@@ -326,13 +322,15 @@ function pathLabels(
   let current: unknown[] | undefined = options
 
   for (const segment of path) {
-    const rec = Array.isArray(current)
-      ? current.map(asRecord).find((item) => item && item[names.value] === segment)
+    const rec: Record<string, unknown> | undefined = Array.isArray(current)
+      ? current
+          .map(asRecord)
+          .find((item): item is Record<string, unknown> => item != null && item[names.value] === segment)
       : undefined
 
     if (rec) {
       labels.push(optionText(rec, names) ?? fallbackText(segment))
-      const children = rec[names.children]
+      const children: unknown = rec[names.children]
       current = Array.isArray(children) ? children : undefined
       continue
     }
