@@ -514,6 +514,18 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         background: token.colorPrimaryBg,
       },
 
+      [`${componentCls}-columns-selected-row-more`]: {
+        color: colorTextDescription,
+
+        [`${componentCls}-columns-selected-title`]: {
+          color: colorTextDescription,
+        },
+      },
+
+      [`${componentCls}-columns-selected-row-more-start`]: {
+        borderTopWidth: token.lineWidthBold,
+      },
+
       [`${componentCls}-columns-selected-dragger`]: {
         display: 'inline-flex',
         alignItems: 'center',

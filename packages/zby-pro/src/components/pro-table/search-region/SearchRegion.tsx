@@ -17,6 +17,8 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   searchEnabled = false,
   searchFilters,
   showMore = false,
+  filterSettingEnabled = false,
+  onOpenFilterSettings,
   views,
   viewStore,
   prefixCls,
@@ -110,6 +112,11 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
           <Button onClick={onResetSearch}>
             {intl.getMessage('zby.pro.table.resetSearch', '重置')}
           </Button>
+          {filterSettingEnabled ? (
+            <Button autoInsertSpace={false} onClick={onOpenFilterSettings}>
+              {intl.getMessage('zby.pro.table.filterSetting', '筛选设置')}
+            </Button>
+          ) : null}
         </Flex>
       ) : null}
     </Flex>

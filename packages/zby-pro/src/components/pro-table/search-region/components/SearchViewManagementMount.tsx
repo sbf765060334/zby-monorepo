@@ -70,6 +70,10 @@ const SearchViewManagementMountInner = <
     viewStore,
     (state) => state.mergedColumnsPreferences,
   )
+  const filterPreferences = useViewStoreSelector(
+    viewStore,
+    (state) => state.mergedFilterPreferences,
+  )
   const nextSystemDefaultSnapshot = useMemo(
     () => buildSystemDefaultSnapshot(),
     [buildSystemDefaultSnapshot],
@@ -86,6 +90,7 @@ const SearchViewManagementMountInner = <
     [
       columnsPreferences,
       createCurrentSnapshot,
+      filterPreferences,
       searchSnapshotState.query,
       sorterState.sortField,
       sorterState.sortOrder,

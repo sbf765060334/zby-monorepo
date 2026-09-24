@@ -113,6 +113,7 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
         const actions = viewStore.getState()
 
         actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)
+        actions.setMergedFilterPreferences(initialSnapshot.filterPreferences)
         controller.setViewState({
           query: initialQuery,
           ...(viewsEnabled ? { sorter: initialSnapshot.sorter ?? null } : {}),

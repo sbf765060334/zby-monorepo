@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, Checkbox, Empty, Input, message, Tooltip, Typography } from 'antd'
+import { Button, Checkbox, Empty, Input, message, Typography } from 'antd'
 import { clsx } from 'clsx'
 
 import { SortableList } from '../../pro-sortable-list'
@@ -92,6 +92,7 @@ function SelectedColumnRow({
   const canPin = definition.capabilities?.pinning !== false
   const fixed = preference.pin ?? null
   const pinDisabled = !fixed && typeof maxFixed === 'number' && fixedCount >= maxFixed
+  const unpinTitle = fixed === 'right' ? localeText.unpinRight : localeText.unpinLeft
   const fixedPinAction = fixed ? (
     <ActionIcon
       className={clsx(
@@ -102,7 +103,8 @@ function SelectedColumnRow({
       disabled={!canPin}
       icon={<PushpinFilled />}
       size="small"
-      aria-label={fixed === 'right' ? localeText.unpinRight : localeText.unpinLeft}
+      title={unpinTitle}
+      aria-label={unpinTitle}
       onClick={canPin ? () => onChange({ pin: null }) : undefined}
     />
   ) : null
@@ -125,65 +127,59 @@ function SelectedColumnRow({
       </span>
       <span className={`${prefixCls}-columns-selected-actions`}>
         {canRemove ? (
-          <Tooltip title={localeText.remove}>
-            <ActionIcon
-              className={`${prefixCls}-columns-selected-action`}
-              icon={<CloseOutlined />}
-              size="small"
-              aria-label={localeText.remove}
-              onClick={onRemove}
-            />
-          </Tooltip>
+          <ActionIcon
+            className={`${prefixCls}-columns-selected-action`}
+            icon={<CloseOutlined />}
+            size="small"
+            title={localeText.remove}
+            aria-label={localeText.remove}
+            onClick={onRemove}
+          />
         ) : null}
-        {fixed ? (
-          canPin ? (
-            <Tooltip title={fixed === 'right' ? localeText.unpinRight : localeText.unpinLeft}>
-              {fixedPinAction}
-            </Tooltip>
-          ) : (
-            fixedPinAction
-          )
-        ) : null}
+        {fixed ? fixedPinAction : null}
         {!fixed && sortable ? (
-          <Tooltip title={localeText.pinTop}>
-            <ActionIcon
-              className={`${prefixCls}-columns-selected-action`}
-              icon={<VerticalAlignTopOutlined />}
-              size="small"
-              aria-label={localeText.pinTop}
-              onClick={onMoveTop}
-            />
-          </Tooltip>
+          <ActionIcon
+            className={`${prefixCls}-columns-selected-action`}
+            icon={<VerticalAlignTopOutlined />}
+            size="small"
+            title={localeText.pinTop}
+            aria-label={localeText.pinTop}
+            onClick={onMoveTop}
+          />
         ) : null}
         {!fixed && canPin ? (
           <>
-            <Tooltip title={pinDisabled ? localeText.fixedLimitReached : localeText.pinLeft}>
-              <span className={pinDisabled ? `${prefixCls}-columns-selected-action-wrap` : undefined}>
-                <ActionIcon
-                  className={`${prefixCls}-columns-selected-action`}
-                  disabled={pinDisabled}
-                  icon={<PushpinOutlined />}
-                  size="small"
-                  aria-label={localeText.pinLeft}
-                  onClick={pinDisabled ? undefined : () => onChange({ pin: 'left' })}
-                />
-              </span>
-            </Tooltip>
-            <Tooltip title={pinDisabled ? localeText.fixedLimitReached : localeText.pinRight}>
-              <span className={pinDisabled ? `${prefixCls}-columns-selected-action-wrap` : undefined}>
-                <ActionIcon
-                  className={clsx(
-                    `${prefixCls}-columns-selected-action`,
-                    `${prefixCls}-columns-selected-action-pin-right`,
-                  )}
-                  disabled={pinDisabled}
-                  icon={<PushpinOutlined />}
-                  size="small"
-                  aria-label={localeText.pinRight}
-                  onClick={pinDisabled ? undefined : () => onChange({ pin: 'right' })}
-                />
-              </span>
-            </Tooltip>
+            <span
+              className={pinDisabled ? `${prefixCls}-columns-selected-action-wrap` : undefined}
+              title={pinDisabled ? localeText.fixedLimitReached : undefined}
+            >
+              <ActionIcon
+                className={`${prefixCls}-columns-selected-action`}
+                disabled={pinDisabled}
+                icon={<PushpinOutlined />}
+                size="small"
+                title={pinDisabled ? undefined : localeText.pinLeft}
+                aria-label={pinDisabled ? localeText.fixedLimitReached : localeText.pinLeft}
+                onClick={pinDisabled ? undefined : () => onChange({ pin: 'left' })}
+              />
+            </span>
+            <span
+              className={pinDisabled ? `${prefixCls}-columns-selected-action-wrap` : undefined}
+              title={pinDisabled ? localeText.fixedLimitReached : undefined}
+            >
+              <ActionIcon
+                className={clsx(
+                  `${prefixCls}-columns-selected-action`,
+                  `${prefixCls}-columns-selected-action-pin-right`,
+                )}
+                disabled={pinDisabled}
+                icon={<PushpinOutlined />}
+                size="small"
+                title={pinDisabled ? undefined : localeText.pinRight}
+                aria-label={pinDisabled ? localeText.fixedLimitReached : localeText.pinRight}
+                onClick={pinDisabled ? undefined : () => onChange({ pin: 'right' })}
+              />
+            </span>
           </>
         ) : null}
       </span>

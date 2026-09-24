@@ -23,6 +23,7 @@ export { appendActionColumn, buildActionColumn } from './action-column'
 export { buildViewSnapshot, normalizeViewSnapshot, isViewSnapshotEqual } from './view-snapshot'
 export { getViewsScopeKey, PRO_TABLE_DEFAULT_VIEW_ID } from './persistence'
 export * from './search'
+export * from './filter-config'
 export {
   createBooleanTagTextResolver,
   createCascaderTagTextResolver,

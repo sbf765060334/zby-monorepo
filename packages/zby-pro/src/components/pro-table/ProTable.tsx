@@ -20,6 +20,7 @@ import type {
   ProTableRef,
 } from './interface'
 import { ColumnsModalMount, useColumnsState } from './columns-state'
+import { FiltersModalMount, useFiltersState } from './filters-state'
 import {
   useAutoRequest,
   useResolvedProTableConfig,
@@ -30,7 +31,7 @@ import { createProTableViewStore } from './store'
 import { TableRegion } from './table-region'
 import { ToolbarRegion } from './toolbar-region'
 import { appendActionColumn } from './utils/action-column'
-import { buildColumnDefinitions } from './utils'
+import { buildColumnDefinitions, splitFiltersByPreference } from './utils'
 import { useViewPersistence } from './view-management'
 
 const mergeInlineStyles = (...values: Array<React.CSSProperties | undefined>) =>
@@ -89,6 +90,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     expandable,
     pagination,
     scroll,
+    filterSetting: _filterSetting,
     ...tableProps
   } = props
   const intl = useIntl()
@@ -151,13 +153,13 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     [resolvedColumns],
   )
   const filters = resolvedConfig.mergedFilters
-  const visibleFilters = useMemo(
-    () => filters.filter((filter) => !filter.hidden),
-    [filters],
+  const mergedFilterPreferences = useViewStoreSelector(
+    viewStore,
+    (state) => state.mergedFilterPreferences,
   )
-  const moreFilters = useMemo(
-    () => filters.filter((filter) => filter.hidden),
-    [filters],
+  const { row: visibleFilters, more: moreFilters } = useMemo(
+    () => splitFiltersByPreference(filters, mergedFilterPreferences),
+    [filters, mergedFilterPreferences],
   )
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
@@ -229,8 +231,15 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     columnDefinitions,
     viewInitializationReady: viewInitialization.ready,
   })
+  const filtersStateActions = useFiltersState({
+    filters,
+    viewStore,
+    viewInitializationReady: viewInitialization.ready,
+  })
   const viewsEnabled = resolvedConfig.mergedViews !== false
   const columnSettingEnabled = resolvedConfig.mergedColumnSetting !== false
+  const filterSettingEnabled =
+    resolvedConfig.mergedFilterSetting !== false && filters.length > 0
   const shouldWaitForViewInitialization = viewsEnabled && !viewInitialization.ready
   const viewInitializationError = viewInitialization.error
   const [viewLoadingVisible, setViewLoadingVisible] = useState(false)
@@ -309,6 +318,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const handleCloseMoreFilters = useCallback(() => {
     setMoreFiltersOpen(false)
   }, [])
+  const handleOpenFilterSettings = useCallback(() => {
+    viewStore.getState().setFiltersModalOpen(true)
+  }, [viewStore])
   const handleApplyManagedView = useCallback(
     async (view: Parameters<typeof viewPersistence.handleApplyManagedView>[0]) => {
       setMoreFiltersOpen(false)
@@ -361,6 +373,8 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               searchEnabled={searchEnabled}
               searchFilters={filters}
               showMore={moreFilters.length > 0}
+              filterSettingEnabled={filterSettingEnabled}
+              onOpenFilterSettings={handleOpenFilterSettings}
               views={resolvedConfig.mergedViews}
               viewStore={viewStore}
               prefixCls={resolvedConfig.prefixCls}
@@ -461,7 +475,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       handleResetSearch,
       handleSearch,
       handleToggleMoreFilters,
+      handleOpenFilterSettings,
       columnSettingEnabled,
+      filterSettingEnabled,
       controller,
       handleRetryViewInitialization,
       loading,
@@ -538,6 +554,14 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
           modalProps={resolvedConfig.columnsModalProps}
         />
       )}
+      {filterSettingEnabled ? (
+        <FiltersModalMount
+          viewStore={viewStore}
+          filters={filters}
+          onApply={filtersStateActions.applyFiltersState}
+          prefixCls={resolvedConfig.prefixCls}
+        />
+      ) : null}
     </div>
   )
 

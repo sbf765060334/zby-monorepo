@@ -276,7 +276,9 @@ export type ProTableFilter<Query extends Record<string, unknown> = Record<string
   [Key in Extract<keyof Query, string>]: {
     key: Key
     label: ReactNode
-    /** 收进「更多筛选」，不排在筛选行上。仍参与查询和视图快照。 */
+    /**
+     * 默认收进「更多筛选」。用户可在筛选设置里改到筛选行；仍参与查询和视图快照。
+     */
     hidden?: boolean
     /** 自定义 Tag 文案。不传时按原始值兜底：数组用 ` / ` 拼接，其余 `String(value)`。选项、路径、日期时间、布尔请用导出的 resolver。 */
     tagTextFormatter?: (
@@ -295,10 +297,19 @@ export interface ProTableViewSorter {
   order: 'ascend' | 'descend'
 }
 
+export type ProTableFilterPlacement = 'row' | 'more'
+
+export interface ProTableFilterPreference {
+  key: string
+  placement: ProTableFilterPlacement
+  order: number
+}
+
 export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Record<string, unknown>> {
   /** 当前筛选条（`controller.query`），只含 `filters` 字段，不含页码。不是上次请求的 `committedQuery`。 */
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
+  filterPreferences: ProTableFilterPreference[]
   sorter?: ProTableViewSorter | null
 }
 
@@ -536,6 +547,8 @@ export interface ProTableProps<
   actionColumn?: false | ProTableActionColumnConfig<RecordType, Query, Summary>
   rowKey?: TableProps<RecordType>['rowKey']
   filters?: ProTableFilter<Query>[]
+  /** 筛选设置。有筛选时默认显示；`false` 隐藏入口。无视图时只留内存。 */
+  filterSetting?: boolean
   /** `true` 开默认视图；`false` / 缺省关闭；对象为配置。 */
   views?: boolean | ProTableViewsConfig<Query>
   /** `true` 出刷新 / 列设置 / 全屏；`false` / 缺省关闭；对象为工具栏配置。 */

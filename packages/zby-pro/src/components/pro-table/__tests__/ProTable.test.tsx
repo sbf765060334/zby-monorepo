@@ -315,6 +315,204 @@ describe('ProTable', () => {
     )
   })
 
+  it('shows filter settings and moves a hidden field onto the search row', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        queryRequest={queryRequest}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('textbox', { name: /负责人/ })).toBeNull()
+    expect(screen.getByRole('button', { name: '筛选设置' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy())
+    expect(screen.queryByRole('button', { name: '更多筛选' })).toBeNull()
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('hides filter settings when filterSetting is false', async () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        columns={[{ key: 'id', title: 'ID' }]}
+        filterSetting={false}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy())
+    expect(screen.queryByRole('button', { name: '筛选设置' })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: /负责人/ })).toBeNull()
+    expect(screen.getByRole('button', { name: '更多筛选' })).toBeTruthy()
+  })
+
+  it('dirties the view when filter placement changes', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        views
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(viewActionRoot()).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    expect(screen.getByRole('button', { name: /保存/ })).toBeTruthy()
+  })
+
+  it('moves a row field into more filters from filter settings', async () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '状态' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '状态' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: /状态/ })).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    const status = await screen.findByRole('textbox', { name: /状态/ })
+    expect(status.closest('.ant-pro-table-search-overlay')).toBeTruthy()
+  })
+
+  it('applies stored filter preferences from a view snapshot', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-layout',
+          name: '自定义布局',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: {},
+            columnPreferences: [],
+            filterPreferences: [
+              { key: 'owner', placement: 'row', order: 0 },
+              { key: 'status', placement: 'more', order: 1 },
+            ],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-layout',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        rowKey="id"
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('自定义布局')).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy())
+    expect(screen.queryByRole('textbox', { name: /状态/ })).toBeNull()
+    expect(screen.getByRole('button', { name: '更多筛选' })).toBeTruthy()
+  })
+
+  it('persists filter preferences when saving a custom view', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+
+    await saveActiveCustomView()
+    await waitFor(() => expect(adapter.update).toHaveBeenCalled())
+
+    const dummyState = {
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom' as const,
+          order: 0,
+          snapshot: { query: { status: 'pending' }, columnPreferences: [] },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    }
+    const persisted = (adapter.update as ReturnType<typeof vi.fn>).mock.calls.some(([, recipe]) => {
+      const next = (
+        recipe as (current: typeof dummyState) => {
+          views: Array<{
+            id: string
+            snapshot: { filterPreferences?: Array<{ key: string; placement: string }> }
+          }>
+        }
+      )(dummyState)
+      return (
+        next.views
+          .find((view) => view.id === 'custom-pending')
+          ?.snapshot.filterPreferences?.find((item) => item.key === 'owner')?.placement === 'row'
+      )
+    })
+    expect(persisted).toBe(true)
+  })
+
   it('shows draft search tags immediately and clears a field without requesting', async () => {
     const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
     const controller = createProTableController<Row, Query>({

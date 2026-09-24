@@ -61,6 +61,8 @@ export type {
   ProTableColumnsType,
   ProTableColumnsState,
   ProTableFilter,
+  ProTableFilterPlacement,
+  ProTableFilterPreference,
   ProTableFilterRenderContext,
   ProTableClassNamesType,
   ProTableConfig,

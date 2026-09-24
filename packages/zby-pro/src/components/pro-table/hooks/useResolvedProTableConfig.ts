@@ -113,6 +113,7 @@ export interface ResolvedProTableConfig<
   mergedViews: false | ViewsConfigValue<Query>
   mergedToolbar: false | ProTableToolbarConfig<RecordType, Query, Summary>
   mergedColumnSetting: false | ProTableColumnSettingConfig
+  mergedFilterSetting: false | Record<string, never>
   columnPreferencesEnabled: boolean
   mergedColumnResize: ProTableProps<RecordType, Query, Summary>['columnResize']
   mergedLayout: ProTableConfig<RecordType, Query, Summary>['layout']
@@ -146,6 +147,7 @@ export function useResolvedProTableConfig<
   const stableProps = useShallowStableRecord(props as unknown as SemanticProps)
   const {
     filters,
+    filterSetting,
     views: viewsProp,
     toolbar,
     heightMode = 'content',
@@ -172,6 +174,7 @@ export function useResolvedProTableConfig<
   const mergedViews = resolveToggleConfig<ProTableViewsConfig<Query>>(viewsProp)
   const mergedToolbar = resolveToolbarConfig(toolbar)
   const mergedColumnSetting = resolveColumnSetting(mergedToolbar)
+  const mergedFilterSetting = filterSetting === false ? false : {}
   const columnPreferencesEnabled = mergedViews !== false || mergedColumnSetting !== false
   const mergedColumnResize = columnResize ?? true
   const mergedLayout = layout
@@ -256,6 +259,7 @@ export function useResolvedProTableConfig<
     mergedViews,
     mergedToolbar,
     mergedColumnSetting,
+    mergedFilterSetting,
     columnPreferencesEnabled,
     mergedColumnResize,
     mergedLayout,

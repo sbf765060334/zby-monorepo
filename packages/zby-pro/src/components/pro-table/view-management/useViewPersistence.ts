@@ -16,6 +16,7 @@ import type { ProTableViewStore } from '../store'
 import {
   buildDefaultColumnPreferences,
 } from '../utils/field-config'
+import { buildDefaultFilterPreferences } from '../utils/filter-config'
 import {
   buildViewSnapshot,
   getViewsScopeKey,
@@ -82,6 +83,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
       normalizeSnapshotForCurrentSchema({
         query: pickSearchQuery(controller.getState().defaultQuery, filters) as Partial<Query>,
         columnPreferences: buildDefaultColumnPreferences(columnDefinitions),
+        filterPreferences: buildDefaultFilterPreferences(filters),
       }),
     [columnDefinitions, controller, filters, normalizeSnapshotForCurrentSchema],
   )
@@ -118,6 +120,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
       } as Query
 
       actions.setMergedColumnsPreferences(snapshot.columnPreferences)
+      actions.setMergedFilterPreferences(snapshot.filterPreferences)
       controller.setViewState({
         query: nextQuery,
         sorter: snapshot.sorter ?? null,
@@ -145,6 +148,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
             order: state.sortOrder,
           }
         : null,
+      storeState.mergedFilterPreferences,
     )
   }, [columnDefinitions, controller, filters, viewStore])
 

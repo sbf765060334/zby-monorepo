@@ -89,6 +89,8 @@ export type {
   ProTableToolbarButtonActionItem,
   ProTableToolbarConfig,
   ProTableFilter,
+  ProTableFilterPlacement,
+  ProTableFilterPreference,
   ProTableFilterRenderContext,
   ProTableViewsConfig,
   ProTableViewSnapshot,

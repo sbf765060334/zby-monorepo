@@ -1,6 +1,17 @@
-import type { ProTableFilter, ProTableViewSnapshot, ProTableViewSorter, ProTableColumnPreference } from '../interface'
+import type {
+  ProTableFilter,
+  ProTableViewSnapshot,
+  ProTableViewSorter,
+  ProTableColumnPreference,
+  ProTableFilterPreference,
+} from '../interface'
 import type { ProTableColumnDefinition } from './columns'
 import { resolveColumnPreferences, cloneColumnPreferences } from './field-config'
+import {
+  cloneFilterPreferences,
+  isFilterPreferenceEqual,
+  resolveFilterPreferences,
+} from './filter-config'
 import { isSearchValueEqual, pickSearchQuery } from './search'
 
 function isValidSorterOrder(order: unknown): order is ProTableViewSorter['order'] {
@@ -29,6 +40,7 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
   columnDefinitions: ProTableColumnDefinition[],
   columnPreferences: ProTableColumnPreference[],
   sorter?: ProTableViewSorter | null,
+  filterPreferences: ProTableFilterPreference[] = [],
 ) {
   return {
     query: pickSearchQuery(query, filters),
@@ -36,6 +48,9 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
       resolveColumnPreferences(columnDefinitions, {
         current: columnPreferences,
       }),
+    ),
+    filterPreferences: cloneFilterPreferences(
+      resolveFilterPreferences(filters, filterPreferences),
     ),
     sorter: normalizeViewSorter(sorter, columnDefinitions),
   } satisfies ProTableViewSnapshot<Query>
@@ -53,6 +68,7 @@ export function normalizeViewSnapshot<Query extends Record<string, unknown>>(
       current: snapshot?.columnPreferences,
       policy: newColumnPolicy,
     }),
+    filterPreferences: resolveFilterPreferences(filters, snapshot?.filterPreferences),
     sorter: normalizeViewSorter(snapshot?.sorter, columnDefinitions),
   } satisfies ProTableViewSnapshot<Query>
 }
@@ -83,6 +99,18 @@ export function isViewSnapshotEqual<Query extends Record<string, unknown>>(
   if (
     left.columnPreferences.some(
       (item, index) => !isFieldPreferenceEqual(item, right.columnPreferences[index]),
+    )
+  ) {
+    return false
+  }
+  const leftFilterPreferences = left.filterPreferences ?? []
+  const rightFilterPreferences = right.filterPreferences ?? []
+  if (leftFilterPreferences.length !== rightFilterPreferences.length) {
+    return false
+  }
+  if (
+    leftFilterPreferences.some(
+      (item, index) => !isFilterPreferenceEqual(item, rightFilterPreferences[index]),
     )
   ) {
     return false
