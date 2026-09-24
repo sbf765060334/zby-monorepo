@@ -63,8 +63,6 @@ function resolveColumnSetting(
   return value
 }
 
-const DEFAULT_PREFIX_CLS = 'zby-pro-table'
-
 const mergeInlineStyles = (...values: Array<React.CSSProperties | undefined>) =>
   values.reduce<React.CSSProperties>((current, value) => ({ ...current, ...value }), {})
 
@@ -185,7 +183,7 @@ export function useResolvedProTableConfig<
   const mergedHeightMode = heightMode ?? 'content'
   const mergedAutoRequest = autoRequest ?? true
   const mergedStyle = React.useMemo(() => mergeInlineStyles(style), [style])
-  const prefixCls = getPrefixCls('pro-table', customizePrefixCls ?? DEFAULT_PREFIX_CLS)
+  const prefixCls = getPrefixCls('pro-table', customizePrefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls)
   const rootStyleClassName = clsx(hashId, cssVarCls)
   const fullscreenEnabled = mergedToolbar !== false && mergedToolbar.fullscreen !== false

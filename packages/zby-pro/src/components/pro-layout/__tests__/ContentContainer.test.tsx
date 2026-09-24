@@ -36,13 +36,13 @@ describe('ProLayoutContentContainer', () => {
     const { container, getByText } = render(
       <ProLayoutContentContainer>Table</ProLayoutContentContainer>,
     )
-    const root = container.querySelector('.zby-pro-layout-content-container')!
-    const body = root.querySelector('.zby-pro-layout-content-container-body')!
-    const item = root.querySelector('.zby-pro-layout-content-container-item')!
+    const root = container.querySelector('.ant-pro-layout-content-container')!
+    const body = root.querySelector('.ant-pro-layout-content-container-body')!
+    const item = root.querySelector('.ant-pro-layout-content-container-item')!
 
-    expect(root.classList.contains('zby-pro-layout-content-container-fill')).toBe(true)
+    expect(root.classList.contains('ant-pro-layout-content-container-fill')).toBe(true)
     expect(body.classList.contains('ant-scroll-area')).toBe(false)
-    expect(item.classList.contains('zby-pro-layout-content-container-item-fill')).toBe(true)
+    expect(item.classList.contains('ant-pro-layout-content-container-item-fill')).toBe(true)
     expect(item.classList.contains('ant-card')).toBe(true)
     expect(root.querySelector('.ant-card-head')).toBeNull()
     expect(root.querySelector('[class*="breadcrumb"]')).toBeNull()
@@ -56,10 +56,10 @@ describe('ProLayoutContentContainer', () => {
         <section>Second</section>
       </ProLayoutContentContainer>,
     )
-    const root = container.querySelector('.zby-pro-layout-content-container')!
-    const body = root.querySelector('.zby-pro-layout-content-container-body')!
+    const root = container.querySelector('.ant-pro-layout-content-container')!
+    const body = root.querySelector('.ant-pro-layout-content-container-body')!
 
-    expect(root.classList.contains('zby-pro-layout-content-container-stack')).toBe(true)
+    expect(root.classList.contains('ant-pro-layout-content-container-stack')).toBe(true)
     expect(body.classList.contains('ant-scroll-area')).toBe(false)
     expect(body.children).toHaveLength(2)
     expect(root.querySelector('[class*="body-scroll-"]')).toBeNull()
@@ -75,11 +75,11 @@ describe('ProLayoutContentContainer', () => {
         ]}
       />,
     )
-    const root = container.querySelector('.zby-pro-layout-content-container')!
+    const root = container.querySelector('.ant-pro-layout-content-container')!
 
-    expect(root.classList.contains('zby-pro-layout-content-container-stack')).toBe(true)
-    expect(root.querySelectorAll('.zby-pro-layout-content-container-item')).toHaveLength(2)
-    expect(root.querySelector('.zby-pro-layout-content-container-body.ant-scroll-area')).toBeNull()
+    expect(root.classList.contains('ant-pro-layout-content-container-stack')).toBe(true)
+    expect(root.querySelectorAll('.ant-pro-layout-content-container-item')).toHaveLength(2)
+    expect(root.querySelector('.ant-pro-layout-content-container-body.ant-scroll-area')).toBeNull()
     expect(getByText('First item')).not.toBeNull()
     expect(getByText('Second item')).not.toBeNull()
   })
@@ -144,17 +144,17 @@ describe('ProLayoutContentContainer', () => {
         Results
       </ProLayoutContentContainer>,
     )
-    const root = container.querySelector('.zby-pro-layout-content-container')!
-    const content = root.querySelector('.zby-pro-layout-content-container-content')!
-    const aside = root.querySelector<HTMLElement>('.zby-pro-layout-content-container-aside')!
+    const root = container.querySelector('.ant-pro-layout-content-container')!
+    const content = root.querySelector('.ant-pro-layout-content-container-content')!
+    const aside = root.querySelector<HTMLElement>('.ant-pro-layout-content-container-aside')!
 
-    expect(root.classList.contains('zby-pro-layout-content-container-with-aside')).toBe(true)
-    expect(root.classList.contains('zby-pro-layout-content-container-aside-end')).toBe(true)
+    expect(root.classList.contains('ant-pro-layout-content-container-with-aside')).toBe(true)
+    expect(root.classList.contains('ant-pro-layout-content-container-aside-end')).toBe(true)
     expect(content.lastElementChild).toBe(aside)
     expect(aside.classList.contains('custom-aside')).toBe(true)
     expect(aside.style.width).toBe('280px')
     expect(aside.style.flexBasis).toBe('280px')
-    const asideScroll = aside.querySelector('.zby-pro-layout-content-container-aside-scroll')!
+    const asideScroll = aside.querySelector('.ant-pro-layout-content-container-aside-scroll')!
 
     expect(asideScroll.tagName).toBe('DIV')
     expect(asideScroll.classList.contains('ant-scroll-area')).toBe(false)
@@ -174,13 +174,13 @@ describe('ProLayoutContentContainer', () => {
       </ProLayoutContentContainer>,
     )
     const stackContent = stackView.container.querySelector<HTMLElement>(
-      '.zby-pro-layout-content-container-content',
+      '.ant-pro-layout-content-container-content',
     )!
     const stackBody = stackView.container.querySelector<HTMLElement>(
-      '.zby-pro-layout-content-container-body',
+      '.ant-pro-layout-content-container-body',
     )!
     const stackAside = stackView.container.querySelector<HTMLElement>(
-      '.zby-pro-layout-content-container-aside',
+      '.ant-pro-layout-content-container-aside',
     )!
 
     expect(stackContent.style.padding).toBe('0px')
@@ -198,10 +198,10 @@ describe('ProLayoutContentContainer', () => {
       </ProLayoutContentContainer>,
     )
     const fillContent = fillView.container.querySelector<HTMLElement>(
-      '.zby-pro-layout-content-container-content',
+      '.ant-pro-layout-content-container-content',
     )!
     const fillBody = fillView.container.querySelector<HTMLElement>(
-      '.zby-pro-layout-content-container-body',
+      '.ant-pro-layout-content-container-body',
     )!
 
     expect(fillContent.style.padding).toBe('24px')
@@ -219,11 +219,11 @@ describe('ProLayoutContentContainer', () => {
         Content
       </ProLayoutContentContainer>,
     )
-    const root = container.querySelector('.zby-pro-layout-content-container')!
-    const footer = root.querySelector<HTMLElement>('.zby-pro-layout-content-container-footer')!
+    const root = container.querySelector('.ant-pro-layout-content-container')!
+    const footer = root.querySelector<HTMLElement>('.ant-pro-layout-content-container-footer')!
 
-    expect(root.classList.contains('zby-pro-layout-content-container-with-footer')).toBe(true)
-    expect(root.querySelector('.zby-pro-layout-content-container-header-content')).not.toBeNull()
+    expect(root.classList.contains('ant-pro-layout-content-container-with-footer')).toBe(true)
+    expect(root.querySelector('.ant-pro-layout-content-container-header-content')).not.toBeNull()
     expect(root.querySelector('[class*="breadcrumb"]')).toBeNull()
     expect(footer.classList.contains('custom-footer')).toBe(true)
     expect(footer.style.minHeight).toBe('48px')
@@ -253,14 +253,14 @@ describe('ProLayoutContentContainer', () => {
 
     const styleText = extractStyle(cache)
 
-    expect(styleText).toContain('zby-pro-layout-content-container')
+    expect(styleText).toContain('ant-pro-layout-content-container')
     expect(styleText).toContain('height:100%')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
     expect(styleText).toContain('overflow:auto')
     expect(styleText).not.toContain('scrollbar-gutter')
     expect(styleText).toMatch(
-      /zby-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,
+      /ant-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,
     )
     expect(styleText).not.toMatch(/@media\s*\(max-width:\s*960px\)/)
   })

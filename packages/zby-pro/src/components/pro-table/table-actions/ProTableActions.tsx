@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { EllipsisOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Button, Dropdown, Popconfirm, Space, Tooltip } from 'antd'
+import { Button, ConfigProvider, Dropdown, Popconfirm, Space, Tooltip } from 'antd'
 import type { MenuProps, TooltipProps } from 'antd'
 import { clsx } from 'clsx'
 
@@ -37,8 +37,10 @@ export function ProTableActions<RecordType>({
   dropdownProps,
   className,
   style,
-  prefixCls = 'zby-pro-table',
+  prefixCls: customizePrefixCls,
 }: ProTableActionsProps<RecordType>) {
+  const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-table', customizePrefixCls)
   const intl = useIntl()
   const moreHint = intl.getMessage('zby.pro.table.moreActions', '更多操作')
   const items = actions.filter((item): item is ProTableActionItem<RecordType> => Boolean(item && !item.hidden))

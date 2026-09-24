@@ -123,7 +123,7 @@ function createBoundaryNode(
       resources={zbyProIntlResources}
     >
       <PageErrorBoundary
-        prefixCls="zby-pro-layout"
+        prefixCls="ant-pro-layout"
         resetKeys={resetKeys}
         onError={onError}
       >

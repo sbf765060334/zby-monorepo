@@ -1,10 +1,10 @@
 import { CloseCircleFilled, CloseOutlined, SearchOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { useRouterCore } from '@zby/router-core/react'
-import { Empty, Modal } from 'antd'
+import { ConfigProvider, Empty, Modal } from 'antd'
 import { clsx } from 'clsx'
 import { Command } from 'cmdk'
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
 import { resolveProLayoutTitle } from '../title'
@@ -15,7 +15,6 @@ import type { ReactNode } from 'react'
 import type { RouterCore } from '@zby/router-core'
 import type { ProLayoutRoute } from '../types'
 
-const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 /** 最近搜索只保留有限数量，避免长期使用后无界增长。 */
 const MAX_RECENT_ROUTE_COUNT = 8
 /** 搜索记录不区分应用、用户或租户，统一使用固定空间。 */
@@ -46,7 +45,7 @@ interface RecentRouteState {
 }
 
 export interface ProRouteSearchProps {
-  /** 生成样式类名的前缀，默认与 ProLayout 一致。 */
+  /** 生成样式类名的前缀；未传时使用 ConfigProvider.getPrefixCls('pro-layout')。 */
   prefixCls?: string
   /** 附加到搜索触发按钮上的业务类名。 */
   className?: string
@@ -62,8 +61,10 @@ export interface ProRouteSearchProps {
 function RouteSearch(props: ProRouteSearchProps) {
   const {
     className,
-    prefixCls = DEFAULT_PREFIX_CLS,
+    prefixCls: customizePrefixCls,
   } = props
+  const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-layout', customizePrefixCls)
   const intl = useIntl()
   // 搜索、权限过滤、页签打开均复用宿主已经创建的 RouterCore 实例。
   const router = useRouterCore<ProLayoutRoute>()

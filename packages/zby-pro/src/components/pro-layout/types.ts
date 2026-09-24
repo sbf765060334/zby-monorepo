@@ -176,7 +176,7 @@ export interface ProLayoutProps {
   noBar?: boolean
   /** 左侧图标栏底部的系统切换入口；空数组或省略时不显示。 */
   systemList?: ProLayoutSystemItem[]
-  /** ProLayout 生成 CSS 类名时使用的前缀；默认为 zby-pro-layout。 */
+  /** ProLayout 生成 CSS 类名时使用的前缀；未传时为 ConfigProvider.getPrefixCls('pro-layout')。 */
   prefixCls?: string
   /** 追加到布局根节点的 className。 */
   className?: string

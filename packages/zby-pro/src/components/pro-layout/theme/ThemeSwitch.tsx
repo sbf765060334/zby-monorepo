@@ -8,9 +8,9 @@ import {
 import { useThemeModeTransition } from '@zby/hooks'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Dropdown, theme as antdTheme } from 'antd'
+import { ConfigProvider, Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
-import { useCallback, useRef } from 'react'
+import { useCallback, useContext, useRef } from 'react'
 
 import type { MenuProps } from 'antd'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './constants'
@@ -18,13 +18,13 @@ import useThemeSwitchStyles from './style'
 import type { ProThemeAppearance, ProThemeMode, ProThemePreference } from './types'
 import { resolveThemeAppearance } from './useThemePreference'
 
-const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 const THEME_ICON_PATH = 'M7.02 3.635l12.518 12.518a1.863 1.863 0 010 2.635l-1.317 1.318a1.863 1.863 0 01-2.635 0L3.068 7.588A2.795 2.795 0 117.02 3.635zm2.09 14.428a.932.932 0 110 1.864.932.932 0 010-1.864zm-.043-9.747L7.75 9.635l9.154 9.153 1.318-1.317-9.154-9.155zM3.52 12.473c.514 0 .931.417.931.931v.932h.932a.932.932 0 110 1.864h-.932v.931a.932.932 0 01-1.863 0l-.001-.931h-.93a.932.932 0 010-1.864h.93v-.932c0-.514.418-.931.933-.931zm15.374-3.727a1.398 1.398 0 110 2.795 1.398 1.398 0 010-2.795zM4.385 4.953a.932.932 0 000 1.317l12.046 12.047L7.75 7 5.703 4.953a.932.932 0 00-1.318 0zM14.701.36a.932.932 0 01.931.932v.931h.932a.932.932 0 010 1.864h-.933l.001.932a.932.932 0 11-1.863 0l-.001-.932h-.93a.932.932 0 110-1.864h.93v-.931a.932.932 0 01.933-.932z'
 
 /** 使用 Ant Design 官网主题入口的图形，并保持与 antd 图标一致的尺寸和颜色继承方式。 */
 function ThemeIcon() {
+  const { iconPrefixCls } = useContext(ConfigProvider.ConfigContext)
   return (
-    <span role="img" className="anticon">
+    <span role="img" className={iconPrefixCls}>
       <svg
         width="1em"
         height="1em"
@@ -52,7 +52,7 @@ export interface ProThemeSwitchProps {
   appearance: ProThemeAppearance
   /** 偏好变化通知；组件本身不保存状态，也不直接配置 antd。 */
   onChange: (value: ProThemePreference) => void
-  /** 生成样式类名的前缀，默认与 ProLayout 一致。 */
+  /** 生成样式类名的前缀；未传时使用 ConfigProvider.getPrefixCls('pro-layout')。 */
   prefixCls?: string
   /** 附加到触发按钮上的业务类名。 */
   className?: string
@@ -64,9 +64,11 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
     appearance,
     className,
     onChange,
-    prefixCls = DEFAULT_PREFIX_CLS,
+    prefixCls: customizePrefixCls,
     value,
   } = props
+  const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-layout', customizePrefixCls)
   const intl = useIntl()
   const { token } = antdTheme.useToken()
   const hashId = useThemeSwitchStyles(prefixCls)

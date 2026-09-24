@@ -406,6 +406,23 @@ describe('ProViewManagement component', () => {
     expect(styleText).toContain('overflow-y:auto')
   })
 
+  it('inherits ConfigProvider prefixCls for the root class', () => {
+    const { container } = renderWithIntl(
+      <ConfigProvider prefixCls="zby">
+        <ProViewManagement
+          currentSnapshot={systemView.snapshot}
+          defaultSnapshot={systemView.snapshot}
+          initialStorageState={{ views: [], activeViewId: systemView.id }}
+          instanceId="prefix-instance"
+          systemViews={[systemView]}
+        />
+      </ConfigProvider>,
+    )
+
+    expect(container.querySelector('.zby-pro-view-management-selector')).not.toBeNull()
+    expect(container.querySelector('.ant-pro-view-management-selector')).toBeNull()
+  })
+
   it('shows the active view count in parentheses', () => {
     renderWithIntl(
       <ProViewManagement

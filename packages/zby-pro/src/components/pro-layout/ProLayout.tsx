@@ -1,8 +1,8 @@
 import { useIntl } from '@zby/intl'
 import { useRouterCoreSelector } from '@zby/router-core/react'
-import { Layout } from 'antd'
+import { ConfigProvider, Layout } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useContext, useEffect, useMemo, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
 import Header from './header'
@@ -14,8 +14,6 @@ import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
 import { resolveProLayoutTitle } from './title'
 import type { ProLayoutProps, ProLayoutRoute } from './types'
-
-const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 
 /**
  * ProLayout 的纯 UI 外壳。
@@ -33,7 +31,7 @@ function ProLayout(props: ProLayoutProps) {
     noBar = false,
     onPageError,
     pageLoading,
-    prefixCls = DEFAULT_PREFIX_CLS,
+    prefixCls: customizePrefixCls,
     rootClassName,
     setPage,
     showBreadcrumb = true,
@@ -42,6 +40,8 @@ function ProLayout(props: ProLayoutProps) {
     systemList,
     title,
   } = props
+  const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-layout', customizePrefixCls)
   const currentRoutes = useRouterCoreSelector(
     (state: RouterCoreState<ProLayoutRoute>) => state.currentRoutes,
   )

@@ -88,13 +88,29 @@ describe('ReactRouterProLayout', () => {
     render(
       <MemoryRouter initialEntries={['/missing']}>
         <RouterCoreProvider router={router}>
-          <PageContent prefixCls="zby-pro-layout" />
+          <PageContent prefixCls="ant-pro-layout" />
         </RouterCoreProvider>
       </MemoryRouter>,
     )
 
     expect(router.getState().navigationStatus).toBe('settled')
     expect(screen.getByText('404')).toBeTruthy()
+  })
+
+  it('继承 ConfigProvider prefixCls 生成布局类名', async () => {
+    const router = createTestRouter()
+
+    render(
+      <ConfigProvider prefixCls="zby">
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ReactRouterProLayout router={router} title="数字化平台" />
+        </MemoryRouter>
+      </ConfigProvider>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    expect(document.querySelector('.zby-pro-layout')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-layout')).toBeNull()
   })
 
   it('未知地址恢复固定页签时不把固定页签标记为活动状态', async () => {
@@ -148,7 +164,7 @@ describe('ReactRouterProLayout', () => {
 
     await screen.findByTestId('orders-page')
     expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/e'])
-    expect(container.querySelector('.zby-pro-layout-tabs')).toBeTruthy()
+    expect(container.querySelector('.ant-pro-layout-tabs')).toBeTruthy()
     expect(container.querySelector('.ant-tabs')).toBeNull()
 
     act(() => {
@@ -336,9 +352,9 @@ describe('ReactRouterProLayout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '搜索页面（Ctrl+K）' }))
     let dialog = await screen.findByRole('dialog')
-    const searchBody = dialog.querySelector('.zby-pro-layout-search-body') as HTMLElement
+    const searchBody = dialog.querySelector('.ant-pro-layout-search-body') as HTMLElement
     const searchResults = dialog.querySelector(
-      '.zby-pro-layout-search-results',
+      '.ant-pro-layout-search-results',
     ) as HTMLElement
     await waitFor(() => expect(searchBody.style.maxHeight).toBe('692px'))
     expect(searchBody.style.height).toBe('')
@@ -356,7 +372,7 @@ describe('ReactRouterProLayout', () => {
     fireEvent.change(input, { target: { value: '订单' } })
     expect(within(dialog).getByText('搜索结果')).toBeTruthy()
     const fullTitlePath = dialog.querySelector(
-      '.zby-pro-layout-search-result-title',
+      '.ant-pro-layout-search-result-title',
     ) as HTMLElement
     expect(fullTitlePath.textContent).toBe('业务中心 / 订单管理 / 订单列表')
     expect(within(dialog).getByText('/business/orders/list')).toBeTruthy()
@@ -371,7 +387,7 @@ describe('ReactRouterProLayout', () => {
 
     fireEvent.change(input, { target: { value: '/business/orders' } })
     const pathResult = dialog.querySelector(
-      '.zby-pro-layout-search-result-path',
+      '.ant-pro-layout-search-result-path',
     ) as HTMLElement
     expect(pathResult.textContent).toBe('/business/orders/list')
     expect(pathResult.querySelector('mark')?.textContent).toBe('/business/orders')
@@ -549,14 +565,14 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('reports-page')
     expect(screen.queryByText('当前位置：')).toBeNull()
 
-    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
+    const header = container.querySelector('.ant-pro-layout-header') as HTMLElement
     const nestedScroller = screen.getByTestId('reports-page')
 
-    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(false)
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(false)
     fireEvent.scroll(nestedScroller, { target: { scrollTop: 24 } })
-    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(true)
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(true)
     fireEvent.scroll(nestedScroller, { target: { scrollTop: 0 } })
-    expect(header.classList.contains('zby-pro-layout-header-scrolled')).toBe(false)
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(false)
   })
 
   it('通过图标栏和 Drawer 导航，并复用 KeepAlive 页面实例', async () => {
@@ -591,38 +607,38 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('dashboard-page')
-    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
-    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
-    const menuContainer = container.querySelector('.zby-pro-layout-sider-menu-container')
+    const main = container.querySelector('.ant-pro-layout-main') as HTMLElement
+    const header = container.querySelector('.ant-pro-layout-header') as HTMLElement
+    const menuContainer = container.querySelector('.ant-pro-layout-sider-menu-container')
     expect(main.style.paddingBlockStart).toBe('38px')
     expect(header.style.height).toBe('38px')
     expect(header.style.paddingInlineStart).toBe('68px')
-    expect(menuContainer?.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    expect(menuContainer?.querySelector('.ant-pro-layout-sider-menu')).toBeTruthy()
     const siderMenuScroll = menuContainer?.querySelector(
-      '.zby-pro-layout-sider-menu-scroll',
+      '.ant-pro-layout-sider-menu-scroll',
     ) as HTMLElement
     expect(siderMenuScroll.tagName).toBe('DIV')
-    expect(siderMenuScroll.querySelector('.zby-pro-layout-sider-menu')).toBeTruthy()
+    expect(siderMenuScroll.querySelector('.ant-pro-layout-sider-menu')).toBeTruthy()
     expect(siderMenuScroll.querySelector('[data-zby-scroll-area-viewport]')).toBeNull()
     const orderMenu = screen.getByRole('button', { name: /订单管理/ })
     fireEvent.click(orderMenu)
 
     const drawer = await screen.findByRole('dialog')
-    expect(drawer.querySelector('.zby-pro-layout-menu-columns')).toBeTruthy()
-    expect(drawer.querySelector('.zby-pro-layout-menu-scroll')).toBeNull()
-    expect(drawer.querySelector('.zby-pro-layout-menu-entry')).toBeTruthy()
+    expect(drawer.querySelector('.ant-pro-layout-menu-columns')).toBeTruthy()
+    expect(drawer.querySelector('.ant-pro-layout-menu-scroll')).toBeNull()
+    expect(drawer.querySelector('.ant-pro-layout-menu-entry')).toBeTruthy()
     const drawerBody = drawer.querySelector('.ant-drawer-body') as HTMLElement
     expect(drawerBody.style.overflowX).toBe('hidden')
     const menuGroupInner = drawer.querySelector(
-      '.zby-pro-layout-menu-group-inner',
+      '.ant-pro-layout-menu-group-inner',
     ) as HTMLElement
     expect(menuGroupInner.style.maxHeight).toBe('')
     expect(drawer.querySelectorAll('[data-zby-scroll-area-viewport]')).toHaveLength(0)
-    const drawerRoot = document.querySelector('.zby-pro-layout-menu-drawer.ant-drawer') as HTMLElement
+    const drawerRoot = document.querySelector('.ant-pro-layout-menu-drawer.ant-drawer') as HTMLElement
     expect(drawerRoot.style.left).toBe('68px')
     expect(drawerRoot.style.overflow).toBe('hidden')
     expect(drawerRoot.style.zIndex).toBe('999')
-    expect(menuContainer?.querySelector('.zby-pro-layout-menu-drawer')).toBeTruthy()
+    expect(menuContainer?.querySelector('.ant-pro-layout-menu-drawer')).toBeTruthy()
     const drawerWrapper = drawerRoot.querySelector('.ant-drawer-content-wrapper') as HTMLElement
     const openDrawerWidth = drawerWrapper.style.width
 
@@ -646,15 +662,15 @@ describe('ReactRouterProLayout', () => {
 
     act(() => router.jumpTo('/reports'))
     await screen.findByTestId('reports-page')
-    const tabNodes = container.querySelectorAll('.zby-pro-layout-tab-node')
-    const tabSplits = container.querySelectorAll('.zby-pro-layout-tab-split')
+    const tabNodes = container.querySelectorAll('.ant-pro-layout-tab-node')
+    const tabSplits = container.querySelectorAll('.ant-pro-layout-tab-split')
     expect(tabSplits).toHaveLength(tabNodes.length)
     expect(tabSplits[tabSplits.length - 1]?.classList.contains(
-      'zby-pro-layout-tab-split-hidden',
+      'ant-pro-layout-tab-split-hidden',
     )).toBe(true)
-    expect(container.querySelectorAll('.zby-pro-layout-tab-split-hidden')).toHaveLength(2)
+    expect(container.querySelectorAll('.ant-pro-layout-tab-split-hidden')).toHaveLength(2)
     expect(container.querySelectorAll(
-      '.zby-pro-layout-tab-split:not(.zby-pro-layout-tab-split-hidden)',
+      '.ant-pro-layout-tab-split:not(.ant-pro-layout-tab-split-hidden)',
     )).toHaveLength(1)
   })
 
@@ -667,7 +683,7 @@ describe('ReactRouterProLayout', () => {
             algorithm: nextCompact
               ? antdTheme.compactAlgorithm
               : antdTheme.defaultAlgorithm,
-            cssVar: { prefix: 'zby-pro-layout-test' },
+            cssVar: { prefix: 'ant-pro-layout-test' },
           }}
         >
           <MemoryRouter initialEntries={['/dashboard']}>
@@ -691,25 +707,25 @@ describe('ReactRouterProLayout', () => {
       siderIconSize: string,
       tabWidth: string,
     ) => {
-      const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
-      const root = container.querySelector('.zby-pro-layout') as HTMLElement
-      const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
-      const sider = container.querySelector('.zby-pro-layout-sider') as HTMLElement
-      const siderItem = container.querySelector('.zby-pro-layout-sider-item') as HTMLElement
-      const siderIcon = container.querySelector('.zby-pro-layout-sider-item dt') as HTMLElement
-      const tabs = container.querySelector('.zby-pro-layout-tabs') as HTMLElement
-      const breadcrumb = container.querySelector('.zby-pro-layout-breadcrumb') as HTMLElement
+      const main = container.querySelector('.ant-pro-layout-main') as HTMLElement
+      const root = container.querySelector('.ant-pro-layout') as HTMLElement
+      const header = container.querySelector('.ant-pro-layout-header') as HTMLElement
+      const sider = container.querySelector('.ant-pro-layout-sider') as HTMLElement
+      const siderItem = container.querySelector('.ant-pro-layout-sider-item') as HTMLElement
+      const siderIcon = container.querySelector('.ant-pro-layout-sider-item dt') as HTMLElement
+      const tabs = container.querySelector('.ant-pro-layout-tabs') as HTMLElement
+      const breadcrumb = container.querySelector('.ant-pro-layout-breadcrumb') as HTMLElement
       const breadcrumbContent = breadcrumb.querySelector('.ant-breadcrumb') as HTMLElement
       const breadcrumbLabel = breadcrumb.querySelector(
-        '.zby-pro-layout-breadcrumb-label',
+        '.ant-pro-layout-breadcrumb-label',
       ) as HTMLElement
-      const pageBody = container.querySelector('.zby-pro-layout-page-body') as HTMLElement
+      const pageBody = container.querySelector('.ant-pro-layout-page-body') as HTMLElement
       const activeNode = container.querySelector(
-        '.zby-pro-layout-tab-node-active',
+        '.ant-pro-layout-tab-node-active',
       ) as HTMLElement
       const tab = container.querySelector('.ant-tabs-tab') as HTMLElement
       const siderLabel = container.querySelector(
-        '.zby-pro-layout-sider-item dd',
+        '.ant-pro-layout-sider-item dd',
       ) as HTMLElement
 
       expect(main.style.paddingBlockStart).toBe(headerHeight)
@@ -717,51 +733,51 @@ describe('ReactRouterProLayout', () => {
       expect(header.style.height).toBe(headerHeight)
       expect(header.style.paddingInlineStart).toBe(siderWidth)
       expect(sider.style.width).toBe(siderWidth)
-      expect(root.style.getPropertyValue('--zby-pro-layout-header-height')).toBe(
+      expect(root.style.getPropertyValue('--ant-pro-layout-header-height')).toBe(
         headerHeight,
       )
-      expect(root.style.getPropertyValue('--zby-pro-layout-header-tab-height')).toBe(
+      expect(root.style.getPropertyValue('--ant-pro-layout-header-tab-height')).toBe(
         activeNodeHeight,
       )
-      expect(root.style.getPropertyValue('--zby-pro-layout-tab-width')).toBe(tabWidth)
-      expect(root.style.getPropertyValue('--zby-pro-layout-sider-width')).toBe(siderWidth)
-      expect(root.style.getPropertyValue('--zby-pro-layout-sider-item-height')).toBe(
+      expect(root.style.getPropertyValue('--ant-pro-layout-tab-width')).toBe(tabWidth)
+      expect(root.style.getPropertyValue('--ant-pro-layout-sider-width')).toBe(siderWidth)
+      expect(root.style.getPropertyValue('--ant-pro-layout-sider-item-height')).toBe(
         siderItemHeight,
       )
-      expect(root.style.getPropertyValue('--zby-pro-layout-sider-icon-size')).toBe(
+      expect(root.style.getPropertyValue('--ant-pro-layout-sider-icon-size')).toBe(
         siderIconSize,
       )
       expect(getComputedStyle(tabs).maxHeight).toBe(
-        'var(--zby-pro-layout-header-height)',
+        'var(--ant-pro-layout-header-height)',
       )
       expect(getComputedStyle(activeNode).height).toBe(
-        'var(--zby-pro-layout-header-tab-height)',
+        'var(--ant-pro-layout-header-tab-height)',
       )
       expect(getComputedStyle(activeNode).width).toBe(
-        'var(--zby-pro-layout-tab-width)',
+        'var(--ant-pro-layout-tab-width)',
       )
-      expect(getComputedStyle(tab).width).toBe('var(--zby-pro-layout-tab-width)')
+      expect(getComputedStyle(tab).width).toBe('var(--ant-pro-layout-tab-width)')
       expect(getComputedStyle(siderItem).width).toBe(
-        'var(--zby-pro-layout-sider-width)',
+        'var(--ant-pro-layout-sider-width)',
       )
       expect(getComputedStyle(siderItem).height).toBe(
-        'var(--zby-pro-layout-sider-item-height)',
+        'var(--ant-pro-layout-sider-item-height)',
       )
       expect(getComputedStyle(siderIcon).fontSize).toBe(
-        'var(--zby-pro-layout-sider-icon-size)',
+        'var(--ant-pro-layout-sider-icon-size)',
       )
       expect(getComputedStyle(siderLabel).fontSize).toBe(getComputedStyle(main).fontSize)
       expect(getComputedStyle(breadcrumb).backgroundColor).toBe(
         getComputedStyle(pageBody).backgroundColor,
       )
       expect(getComputedStyle(breadcrumb).minHeight).toBe(
-        'var(--zby-pro-layout-test-control-height)',
+        'var(--ant-pro-layout-test-control-height)',
       )
       expect(getComputedStyle(breadcrumbContent).fontSize).toBe(
-        'var(--zby-pro-layout-test-font-size)',
+        'var(--ant-pro-layout-test-font-size)',
       )
       expect(getComputedStyle(breadcrumbLabel).fontSize).toBe(
-        'var(--zby-pro-layout-test-font-size)',
+        'var(--ant-pro-layout-test-font-size)',
       )
     }
 
@@ -773,15 +789,15 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(orderMenu)
     await screen.findByRole('dialog')
     const getDrawerRoot = () => document.querySelector(
-      '.zby-pro-layout-menu-drawer.ant-drawer',
+      '.ant-pro-layout-menu-drawer.ant-drawer',
     ) as HTMLElement
     const getMenuMeasure = () => document.querySelector(
-      '.zby-pro-layout-menu-measure',
+      '.ant-pro-layout-menu-measure',
     ) as HTMLElement
     expect(getDrawerRoot().style.left).toBe('68px')
     expect(getMenuMeasure().style.width).toBe('232px')
     expect(getDrawerRoot().style.getPropertyValue(
-      '--zby-pro-layout-menu-indent',
+      '--ant-pro-layout-menu-indent',
     )).toBe('12px')
     fireEvent.click(orderMenu)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
@@ -795,7 +811,7 @@ describe('ReactRouterProLayout', () => {
     expect(getDrawerRoot().style.left).toBe('60px')
     expect(getMenuMeasure().style.width).toBe('204px')
     expect(getDrawerRoot().style.getPropertyValue(
-      '--zby-pro-layout-menu-indent',
+      '--ant-pro-layout-menu-indent',
     )).toBe('8px')
     defaultLayout.unmount()
 
@@ -821,9 +837,9 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: /超级菜单/ }))
 
     const drawer = await screen.findByRole('dialog')
-    const menuGroups = drawer.querySelectorAll('.zby-pro-layout-menu-group')
+    const menuGroups = drawer.querySelectorAll('.ant-pro-layout-menu-group')
     expect(menuGroups).toHaveLength(1)
-    expect(menuGroups[0]?.querySelectorAll('.zby-pro-layout-menu')).toHaveLength(22)
+    expect(menuGroups[0]?.querySelectorAll('.ant-pro-layout-menu')).toHaveLength(22)
     expect(within(drawer).getByText('业务中心')).toBeTruthy()
     expect(within(drawer).getByText('订单处理')).toBeTruthy()
     expect(within(drawer).queryByText('业务中心 · 续')).toBeNull()
@@ -833,9 +849,9 @@ describe('ReactRouterProLayout', () => {
     expect(within(drawer).getAllByRole('button', { name: '订单项 1' })).toHaveLength(1)
     const nestedMenu = within(drawer)
       .getByRole('button', { name: '订单项 1' })
-      .closest('.zby-pro-layout-menu') as HTMLElement
+      .closest('.ant-pro-layout-menu') as HTMLElement
     expect(nestedMenu.style.paddingInlineStart).toBe(
-      'calc(var(--zby-pro-layout-menu-indent) * 2)',
+      'calc(var(--ant-pro-layout-menu-indent) * 2)',
     )
     const drawerBody = drawer.querySelector('.ant-drawer-body') as HTMLElement
     expect(drawerBody.style.overflowY).toBe('auto')
@@ -886,8 +902,8 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('dashboard-page')
-    expect(container.querySelector('.zby-pro-layout-sider')).toBeNull()
-    expect(container.querySelector('.zby-pro-layout-header')).toBeNull()
+    expect(container.querySelector('.ant-pro-layout-sider')).toBeNull()
+    expect(container.querySelector('.ant-pro-layout-header')).toBeNull()
   })
 
   it('打开外部系统时隔离新窗口的 opener', async () => {
@@ -954,41 +970,41 @@ describe('ReactRouterProLayout', () => {
     expect((container.querySelector('.custom-breadcrumb') as HTMLElement).style.backgroundColor)
       .toBe('rgb(1, 2, 3)')
     const tab = screen.getByRole('tab', { name: /工作台/ })
-    const sortableNode = tab.closest('.zby-pro-layout-tab-node')
+    const sortableNode = tab.closest('.ant-pro-layout-tab-node')
     expect(sortableNode?.getAttribute('role')).toBeNull()
     expect(sortableNode?.getAttribute('tabindex')).toBeNull()
     expect(screen.queryByRole('button', { name: '拖动页签：工作台' })).toBeNull()
     fireEvent.keyDown(tab, { code: 'Space' })
     await waitFor(() => {
-      expect(sortableNode?.classList.contains('zby-pro-layout-tab-node-dragging')).toBe(true)
+      expect(sortableNode?.classList.contains('ant-pro-layout-tab-node-dragging')).toBe(true)
     })
     fireEvent.keyDown(tab, { code: 'Escape' })
     await waitFor(() => {
-      expect(sortableNode?.classList.contains('zby-pro-layout-tab-node-dragging')).toBe(false)
+      expect(sortableNode?.classList.contains('ant-pro-layout-tab-node-dragging')).toBe(false)
     })
     expect(screen.getByRole('button', { name: '切换系统' })).toBeTruthy()
 
     const pinButton = screen.getByRole('button', { name: '固定页签：工作台' })
-    expect(pinButton.classList.contains('zby-pro-layout-fixed-icon-unfixed')).toBe(true)
+    expect(pinButton.classList.contains('ant-pro-layout-fixed-icon-unfixed')).toBe(true)
     const unfixedLabel = container.querySelector(
-      '.zby-pro-layout-tab-label-unfixed',
+      '.ant-pro-layout-tab-label-unfixed',
     ) as HTMLElement
     expect(getComputedStyle(unfixedLabel).marginInlineStart).not.toBe('0px')
     fireEvent.click(pinButton)
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '取消固定页签：工作台' })
-        .classList.contains('zby-pro-layout-fixed-icon-active')).toBe(true)
+        .classList.contains('ant-pro-layout-fixed-icon-active')).toBe(true)
     })
     expect(await screen.findByText('页签固定成功')).toBeTruthy()
     const fixedLabel = container.querySelector(
-      '.zby-pro-layout-tab-label-fixed',
+      '.ant-pro-layout-tab-label-fixed',
     ) as HTMLElement
     expect(getComputedStyle(fixedLabel).marginInlineStart).toBe('0px')
 
     fireEvent.click(screen.getByRole('button', { name: '取消固定页签：工作台' }))
     expect(await screen.findByText('已取消页签固定')).toBeTruthy()
     const unpinnedLabel = container.querySelector(
-      '.zby-pro-layout-tab-label-unfixed',
+      '.ant-pro-layout-tab-label-unfixed',
     ) as HTMLElement
     fireEvent.mouseLeave(unpinnedLabel.closest('.ant-tabs-tab') as HTMLElement)
     expect(getComputedStyle(unpinnedLabel).marginInlineStart).not.toBe('0px')
@@ -1021,8 +1037,8 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('dashboard-page')
-    const header = container.querySelector('.zby-pro-layout-header') as HTMLElement
-    const main = container.querySelector('.zby-pro-layout-main') as HTMLElement
+    const header = container.querySelector('.ant-pro-layout-header') as HTMLElement
+    const main = container.querySelector('.ant-pro-layout-main') as HTMLElement
     expect(header.style.backgroundColor).toBe('rgb(1, 2, 3)')
     expect(header.style.position).toBe('absolute')
     expect(header.style.insetBlockStart).toBe('0px')
@@ -1061,7 +1077,7 @@ describe('ReactRouterProLayout', () => {
     ) as HTMLElement[]
     expect(closeIcons.every((icon) => getComputedStyle(icon).opacity === '1')).toBe(true)
     const tabLabels = Array.from(
-      container.querySelectorAll('.zby-pro-layout-tab-label'),
+      container.querySelectorAll('.ant-pro-layout-tab-label'),
     ) as HTMLElement[]
     expect(tabLabels.map((label) => label.textContent)).toEqual(['工作台', '订单列表'])
     expect(tabLabels.map((label) => label.getAttribute('title'))).toEqual([
@@ -1071,17 +1087,17 @@ describe('ReactRouterProLayout', () => {
     expect(tabLabels.every((label) => getComputedStyle(label).textOverflow === 'ellipsis'))
       .toBe(true)
     expect(
-      tabLabels.every((label) => label.classList.contains('zby-pro-layout-tab-label-unfixed')),
+      tabLabels.every((label) => label.classList.contains('ant-pro-layout-tab-label-unfixed')),
     ).toBe(true)
     expect(
       tabLabels.every((label) => getComputedStyle(label).marginInlineStart !== '0px'),
     ).toBe(true)
     const tabNodes = Array.from(
-      container.querySelectorAll('.zby-pro-layout-tab-node'),
+      container.querySelectorAll('.ant-pro-layout-tab-node'),
     ) as HTMLElement[]
     expect(tabNodes).toHaveLength(2)
     expect(getComputedStyle(tabNodes[0]).width).toBe(getComputedStyle(tabNodes[1]).width)
-    expect(getComputedStyle(tabNodes[0]).width).toBe('var(--zby-pro-layout-tab-width)')
+    expect(getComputedStyle(tabNodes[0]).width).toBe('var(--ant-pro-layout-tab-width)')
     expect(container.querySelector('.ant-tooltip')).toBeNull()
 
     await act(async () => {
@@ -1222,7 +1238,7 @@ describe('ReactRouterProLayout', () => {
     expect(await screen.findByText('收藏成功')).toBeTruthy()
     fireEvent.click(await screen.findByRole('button', { name: '收藏菜单' }))
     const collectionHeader = await screen.findByText('收藏的菜单（1）')
-    const collectionPanel = collectionHeader.closest('.zby-pro-layout-collection-panel')
+    const collectionPanel = collectionHeader.closest('.ant-pro-layout-collection-panel')
     expect(collectionPanel).toBeTruthy()
     fireEvent.click(within(collectionPanel as HTMLElement).getByRole('button', { name: '订单列表' }))
     expect(jumpTo).toHaveBeenCalledWith('/orders/list')

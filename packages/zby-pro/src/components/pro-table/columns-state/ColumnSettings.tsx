@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useIntl } from '@zby/intl'
-import { Button } from 'antd'
+import { Button, ConfigProvider } from 'antd'
 import { clsx } from 'clsx'
 
 import { ProModal } from '../../pro-modal'
@@ -32,11 +32,13 @@ export function ColumnSettings({
   maxFixed,
   onApply,
   onCancel,
-  prefixCls = 'zby-pro-table',
+  prefixCls: customizePrefixCls,
   className,
   rootClassName,
   style,
 }: ColumnSettingsProps) {
+  const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-table', customizePrefixCls)
   const intl = useIntl()
   const [hashId, cssVarCls] = useStyle(prefixCls)
   const [draft, setDraft] = React.useState<ProTableColumnPreference[]>(currentPreferences)

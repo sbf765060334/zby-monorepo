@@ -85,7 +85,8 @@ function PlaygroundApp() {
   return (
     <ZbyConfigProvider
       locale={playgroundLocales[localePreference.value]}
-      theme={{ algorithm, cssVar: { prefix: 'zby-playground' } }}
+      theme={{ algorithm, cssVar: { prefix: 'zby' } }}
+      prefixCls="zby"
     >
       <ReactRouterProLayout
         router={routers}

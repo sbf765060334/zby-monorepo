@@ -199,10 +199,10 @@ describe('ProTable', () => {
     expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy()
     expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy()
     expect(screen.queryByRole('button', { name: '负责人' })).toBeNull()
-    expect(document.querySelector('.zby-pro-table-search-field')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table-search-field')).toBeTruthy()
     expect(screen.queryByRole('button', { name: '更多筛选' })).toBeNull()
     expect(screen.getByRole('button', { name: /查\s*询/ })).toBeTruthy()
-    expect(document.querySelector('.zby-pro-table-search-row')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table-search-row')).toBeTruthy()
   })
 
   it('submits the draft only from the search button and keeps hidden fields in more filters', async () => {
@@ -237,8 +237,8 @@ describe('ProTable', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
     const owner = await screen.findByRole('textbox', { name: /负责人/ })
-    expect(owner.closest('.zby-pro-table-search-overlay')).toBeTruthy()
-    expect(owner.closest('.zby-pro-table-search-field')).toBeTruthy()
+    expect(owner.closest('.ant-pro-table-search-overlay')).toBeTruthy()
+    expect(owner.closest('.ant-pro-table-search-field')).toBeTruthy()
     expect(owner.closest('.ant-drawer-inline')).toBeTruthy()
     const overlaySection = owner.closest('.ant-drawer-section') as HTMLElement | null
     expect(overlaySection?.style.height).toBe('auto')
@@ -252,11 +252,11 @@ describe('ProTable', () => {
       expect.anything(),
     )
     await waitFor(() =>
-      expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
+      expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
     )
 
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
-    expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /重\s*置/ }))
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(4))
     expect(queryRequest).toHaveBeenLastCalledWith(
@@ -268,7 +268,7 @@ describe('ProTable', () => {
     )[3]?.[0]
     expect(submittedQuery).not.toHaveProperty('owner')
     await waitFor(() =>
-      expect(document.querySelector('.zby-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
+      expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeNull(),
     )
   })
 
@@ -292,27 +292,27 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
-    expect(document.querySelector('.zby-pro-table-search-tags')).toBeNull()
+    expect(document.querySelector('.ant-pro-table-search-tags')).toBeNull()
 
     fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
       target: { value: 'open' },
     })
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：open')
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('状态：open')
     expect(queryRequest).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
     fireEvent.change(await screen.findByRole('textbox', { name: /负责人/ }), {
       target: { value: 'Ada' },
     })
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
     expect(queryRequest).toHaveBeenCalledTimes(1)
 
     fireEvent.click(
-      document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
+      document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
     )
     expect(controller.getState().query.status).toBeUndefined()
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).not.toContain('状态：open')
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).not.toContain('状态：open')
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('负责人：Ada')
     expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
@@ -333,21 +333,21 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：all')
-    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('状态：all')
+    expect(document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
 
     fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
       target: { value: 'open' },
     })
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：open')
-    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('状态：open')
+    expect(document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon')).toBeTruthy()
 
     fireEvent.click(
-      document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
+      document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon') as HTMLElement,
     )
     expect(controller.getState().query.status).toBe('all')
-    expect(document.querySelector('.zby-pro-table-search-tags')?.textContent).toContain('状态：all')
-    expect(document.querySelector('.zby-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain('状态：all')
+    expect(document.querySelector('.ant-pro-table-search-tags .ant-tag-close-icon')).toBeNull()
     expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
@@ -362,7 +362,23 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(screen.getByTestId('rows')).toBeTruthy())
-    expect(document.querySelector('.zby-pro-table-search-row')).toBeNull()
+    expect(document.querySelector('.ant-pro-table-search-row')).toBeNull()
+  })
+
+  it('inherits ConfigProvider prefixCls for the table shell', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+
+    render(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider prefixCls="zby">
+          <ProTable<Row, Query> controller={controller} columns={[]} />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('rows')).toBeTruthy())
+    expect(document.querySelector('.zby-pro-table')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table')).toBeNull()
   })
 
   it('hides columns through field default preferences when column setting is enabled', async () => {

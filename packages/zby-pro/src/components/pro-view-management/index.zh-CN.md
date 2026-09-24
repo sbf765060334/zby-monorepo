@@ -81,7 +81,7 @@ const systemViews: ProViewManagementView<Snapshot>[] = [
 | onViewsChange | 系统视图和自定义视图列表变化回调 | `(views) => void` | - |
 | onRetryLoad | 加载失败后点击重试的回调 | `() => void | Promise<void>` | - |
 | onLoadError | 内部 `load` 失败回调，参数包含 `retry` 方法 | `(error, info) => void` | - |
-| prefixCls | 自定义样式前缀 | `string` | `pro-view-management` |
+| prefixCls | 自定义样式前缀；未传时为 `ConfigProvider.getPrefixCls('pro-view-management')` | `string` | `ant-pro-view-management` |
 | className | 根节点类名 | `string` | - |
 | rootClassName | 根节点补充类名 | `string` | - |
 | style | 根节点样式 | `React.CSSProperties` | - |

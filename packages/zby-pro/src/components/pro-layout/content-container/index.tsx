@@ -5,8 +5,6 @@ import * as React from 'react'
 import type { CardProps } from 'antd'
 import useStyle from './style'
 
-const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
-
 export type ProLayoutContentContainerItemBodyPadding =
   | React.CSSProperties['padding']
   | false
@@ -77,7 +75,7 @@ type ProLayoutContentContainerComponent = React.ForwardRefExoticComponent<
 
 function useContentContainerStyle(customizePrefixCls?: string) {
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
-  const prefixCls = customizePrefixCls ?? DEFAULT_PREFIX_CLS
+  const prefixCls = getPrefixCls('pro-layout', customizePrefixCls)
   const hashId = useStyle(prefixCls, getPrefixCls('card'))
 
   return [prefixCls, hashId] as const

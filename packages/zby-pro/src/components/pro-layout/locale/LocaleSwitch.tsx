@@ -1,13 +1,12 @@
 import { GlobalOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Dropdown, theme as antdTheme } from 'antd'
+import { ConfigProvider, Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
+import { useContext } from 'react'
 
 import type { MenuProps } from 'antd'
 import useLocaleSwitchStyles from './style'
-
-const DEFAULT_PREFIX_CLS = 'zby-pro-layout'
 
 export type ProLocale = 'zh-CN' | 'en-US'
 
@@ -17,7 +16,7 @@ export interface ProLocaleSwitchProps {
   value: ProLocale
   /** 用户选择另一语言时触发。 */
   onChange: (locale: ProLocale) => void
-  /** 生成样式类名的前缀，默认与 ProLayout 一致。 */
+  /** 生成样式类名的前缀；未传时使用 ConfigProvider.getPrefixCls('pro-layout')。 */
   prefixCls?: string
   /** 附加到触发按钮上的业务类名。 */
   className?: string
@@ -33,9 +32,11 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
   const {
     className,
     onChange,
-    prefixCls = DEFAULT_PREFIX_CLS,
+    prefixCls: customizePrefixCls,
     value,
   } = props
+  const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
+  const prefixCls = getPrefixCls('pro-layout', customizePrefixCls)
   const intl = useIntl()
   const { token } = antdTheme.useToken()
   const hashId = useLocaleSwitchStyles(prefixCls)

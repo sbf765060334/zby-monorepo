@@ -247,7 +247,7 @@ export function OrderPage() {
 | minimumContentWidth | 内容区域最小宽度；数字按像素处理 | `number \| string` | - |
 | noBar | 隐藏左侧菜单和顶部页签栏，让内容占满视口 | `boolean` | `false` |
 | systemList | 左侧图标栏底部的系统切换入口 | `ProLayoutSystemItem[]` | - |
-| prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 | className | 布局根节点的业务类名 | `string` | - |
 | rootClassName | 布局根节点的稳定根类名 | `string` | - |
 | style | 布局根节点样式，优先级高于 `styles.root` | `React.CSSProperties` | - |
@@ -337,7 +337,7 @@ export function OrderPage() {
 
 | 属性 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| prefixCls | CSS 类名前缀，应与 ProLayout 保持一致 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀，应与 ProLayout 保持一致；未传时为 `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
 | className | 搜索触发按钮类名 | `string` | - |
 
 ### ProLocaleSwitch
@@ -346,7 +346,7 @@ export function OrderPage() {
 | --- | --- | --- | --- |
 | value | 当前语言 | `'zh-CN' \| 'en-US'` | 必填 |
 | onChange | 用户选择语言后的通知 | `(locale: ProLocale) => void` | 必填 |
-| prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 | className | 触发按钮类名 | `string` | - |
 
 `useLocalePreference(options)` 默认使用 `zh-CN`，并固定存储在 `zby-pro:locale-preference`。可通过 `defaultValue` 覆盖默认语言，并通过返回的 `value`、`setValue` 驱动选择器和外层 Provider。
@@ -358,7 +358,7 @@ export function OrderPage() {
 | value | 当前明暗模式和布局密度 | `ProThemePreference` | 必填 |
 | appearance | `auto` 解析后的实际 `light` 或 `dark` 外观 | `'light' \| 'dark'` | 必填 |
 | onChange | 偏好变化通知 | `(value: ProThemePreference) => void` | 必填 |
-| prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 | className | 触发按钮类名 | `string` | - |
 
 `ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。
@@ -382,7 +382,7 @@ export function OrderPage() {
 | bodyClassName / bodyStyle | 主体区域类名和样式 | `string / CSSProperties` | - |
 | footerClassName / footerStyle | 底部区域类名和样式 | `string / CSSProperties` | - |
 | asideClassName / asideStyle | 侧栏类名和样式 | `string / CSSProperties` | - |
-| prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 
 除上表属性外，容器还透传原生 `div` 属性。
 
@@ -394,7 +394,7 @@ Item 基于 Ant Design `Card`，但不开放 Card 的标题、Tab 等 Header API
 | --- | --- | --- | --- |
 | fill | 是否填满主体剩余空间 | `boolean` | `false` |
 | bodyPadding | Card body 内边距；`false` 表示 0 | `CSSProperties['padding'] \| false` | - |
-| prefixCls | CSS 类名前缀 | `string` | `zby-pro-layout` |
+| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 | children | 内容 | `ReactNode` | - |
 
 其余属性继承支持的 Ant Design `CardProps`；默认 `variant="borderless"`。

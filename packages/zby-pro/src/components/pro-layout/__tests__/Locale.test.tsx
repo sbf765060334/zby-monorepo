@@ -58,7 +58,7 @@ describe('ProLocaleSwitch', () => {
     await openLocaleMenu(trigger)
     expect(screen.getByText('简体中文')).toBeTruthy()
     expect(screen.getByText('English')).toBeTruthy()
-    expect(document.querySelectorAll('.zby-pro-layout-locale-selected-dot')).toHaveLength(1)
+    expect(document.querySelectorAll('.ant-pro-layout-locale-selected-dot')).toHaveLength(1)
     expect(document.querySelectorAll('.ant-dropdown-menu-item-selected')).toHaveLength(0)
 
     fireEvent.click(screen.getByText('English'))

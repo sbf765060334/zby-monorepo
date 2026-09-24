@@ -110,7 +110,7 @@ describe('ProThemeSwitch', () => {
     expect(screen.getByText('暗黑主题')).toBeTruthy()
     expect(screen.getByText('默认布局')).toBeTruthy()
     expect(screen.getByText('紧凑布局')).toBeTruthy()
-    expect(document.querySelectorAll('.zby-pro-layout-theme-selected-dot')).toHaveLength(2)
+    expect(document.querySelectorAll('.ant-pro-layout-theme-selected-dot')).toHaveLength(2)
     expect(document.querySelectorAll('.ant-dropdown-menu-item-selected')).toHaveLength(0)
 
     fireEvent.click(screen.getByText('紧凑布局'))

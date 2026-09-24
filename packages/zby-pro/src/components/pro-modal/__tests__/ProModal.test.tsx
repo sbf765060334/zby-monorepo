@@ -51,8 +51,8 @@ describe('ProModal', () => {
       </ProModal>,
     )
 
-    const root = container.querySelector('.zby-pro-modal')
-    expect(root?.className).toContain('zby-pro-modal-body-height-mode-max-height')
+    const root = container.querySelector('.ant-pro-modal')
+    expect(root?.className).toContain('ant-pro-modal-body-height-mode-max-height')
     expect(screen.getByText('body')).toBeTruthy()
   })
 
@@ -63,7 +63,20 @@ describe('ProModal', () => {
       </ProModal>,
     )
 
-    const root = container.querySelector('.zby-pro-modal')
-    expect(root?.className).toContain('zby-pro-modal-body-height-mode-height')
+    const root = container.querySelector('.ant-pro-modal')
+    expect(root?.className).toContain('ant-pro-modal-body-height-mode-height')
+  })
+
+  it('inherits ConfigProvider prefixCls for the modal shell', () => {
+    const { container } = render(
+      <ConfigProvider prefixCls="zby">
+        <ProModal open getContainer={false} title="Demo">
+          body
+        </ProModal>
+      </ConfigProvider>,
+    )
+
+    expect(container.querySelector('.zby-pro-modal')).toBeTruthy()
+    expect(container.querySelector('.ant-pro-modal')).toBeNull()
   })
 })

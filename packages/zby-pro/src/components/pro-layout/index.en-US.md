@@ -246,7 +246,7 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 | minimumContentWidth | Minimum content width; numbers are treated as pixels | `number \| string` | - |
 | noBar | Hide the sider and tab bar and let content fill the viewport | `boolean` | `false` |
 | systemList | System-switcher entries at the bottom of the icon sider | `ProLayoutSystemItem[]` | - |
-| prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 | className | Application class name on the layout root | `string` | - |
 | rootClassName | Stable root class name on the layout root | `string` | - |
 | style | Root inline style; takes precedence over `styles.root` | `React.CSSProperties` | - |
@@ -336,7 +336,7 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
-| prefixCls | CSS class prefix; keep it aligned with ProLayout | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix; keep it aligned with ProLayout. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
 | className | Class name on the search trigger button | `string` | - |
 
 ### ProLocaleSwitch
@@ -345,7 +345,7 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | --- | --- | --- | --- |
 | value | Current locale | `'zh-CN' \| 'en-US'` | Required |
 | onChange | Called when the user selects a locale | `(locale: ProLocale) => void` | Required |
-| prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 | className | Class name on the trigger button | `string` | - |
 
 `useLocalePreference(options)` defaults to `zh-CN` and always stores it under `zby-pro:locale-preference`. Override the default locale with `defaultValue`, then use the returned `value` and `setValue` to drive the selector and outer providers.
@@ -357,7 +357,7 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | value | Current color mode and layout density | `ProThemePreference` | Required |
 | appearance | Resolved `light` or `dark` appearance when mode may be `auto` | `'light' \| 'dark'` | Required |
 | onChange | Called when the preference changes | `(value: ProThemePreference) => void` | Required |
-| prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 | className | Class name on the trigger button | `string` | - |
 
 `ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`.
@@ -381,7 +381,7 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | bodyClassName / bodyStyle | Body-region class and style | `string / CSSProperties` | - |
 | footerClassName / footerStyle | Footer-region class and style | `string / CSSProperties` | - |
 | asideClassName / asideStyle | Aside class and style | `string / CSSProperties` | - |
-| prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 
 The container also accepts native `div` attributes in addition to the properties above.
 
@@ -393,7 +393,7 @@ Item is based on Ant Design `Card` but intentionally excludes Card header and ta
 | --- | --- | --- | --- |
 | fill | Fill the remaining body space | `boolean` | `false` |
 | bodyPadding | Card body padding; `false` means 0 | `CSSProperties['padding'] \| false` | - |
-| prefixCls | CSS class prefix | `string` | `zby-pro-layout` |
+| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 | children | Item content | `ReactNode` | - |
 
 All other supported Ant Design `CardProps` are forwarded. The default is `variant="borderless"`.

@@ -80,7 +80,7 @@ named `zby-pro-view-management`, and `instanceId` isolates data for each busines
 | onViewsChange | Called when the combined view list changes | `(views) => void` | - |
 | onRetryLoad | Called when the user retries after a load failure | `() => void | Promise<void>` | - |
 | onLoadError | Called when internal `load` fails; `info` contains `retry` | `(error, info) => void` | - |
-| prefixCls | Custom style prefix | `string` | `pro-view-management` |
+| prefixCls | Custom style prefix. Defaults to `ConfigProvider.getPrefixCls('pro-view-management')` | `string` | `ant-pro-view-management` |
 | className | Root class name | `string` | - |
 | rootClassName | Additional root class name | `string` | - |
 | style | Root style | `React.CSSProperties` | - |
