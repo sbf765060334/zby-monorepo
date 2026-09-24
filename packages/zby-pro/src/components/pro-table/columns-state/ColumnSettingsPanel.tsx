@@ -3,12 +3,11 @@ import {
   HolderOutlined,
   PushpinFilled,
   PushpinOutlined,
-  SearchOutlined,
   VerticalAlignTopOutlined,
 } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
-import { Button, Checkbox, Empty, Input, message } from 'antd'
+import { Button, Checkbox, message } from 'antd'
 import { clsx } from 'clsx'
 
 import { SortableList } from '../../pro-sortable-list'
@@ -182,7 +181,6 @@ export function ColumnSettingsPanel({
 }: ColumnSettingsPanelProps) {
   const intl = useIntl()
   const [messageApi, messageContextHolder] = message.useMessage()
-  const [keyword, setKeyword] = React.useState('')
   const definitionMap = React.useMemo(
     () => new Map(definitions.map((item) => [item.key, item])),
     [definitions],
@@ -190,16 +188,15 @@ export function ColumnSettingsPanel({
   const visibleCount = value.filter((item) => item.visible).length
   const fixedCount = value.filter((item) => item.visible && item.pin).length
   const selectedItems = React.useMemo(() => sortVisibleColumnPreferences(value), [value])
-  const filteredDefinitions = React.useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase()
-    const ordered = value
-      .slice()
-      .sort((left, right) => left.order - right.order)
-      .map((item) => definitionMap.get(item.key))
-      .filter((item): item is ProTableColumnDefinition => Boolean(item))
-    if (!normalizedKeyword) return ordered
-    return ordered.filter((item) => getColumnLabelText(item).toLowerCase().includes(normalizedKeyword))
-  }, [definitionMap, keyword, value])
+  const catalogDefinitions = React.useMemo(
+    () =>
+      value
+        .slice()
+        .sort((left, right) => left.order - right.order)
+        .map((item) => definitionMap.get(item.key))
+        .filter((item): item is ProTableColumnDefinition => Boolean(item)),
+    [definitionMap, value],
+  )
   const rowLocaleText = React.useMemo(
     () => ({
       pinTop: intl.getMessage('zby.pro.table.pinTop', '置顶'),
@@ -228,7 +225,7 @@ export function ColumnSettingsPanel({
   }
 
   const toggleAll = (checked: boolean) => {
-    const editableKeys = filteredDefinitions
+    const editableKeys = catalogDefinitions
       .filter((item) => item.capabilities?.visibility !== false)
       .map((item) => item.key)
     const nextVisibleCount = checked
@@ -271,72 +268,56 @@ export function ColumnSettingsPanel({
     return false
   }
 
-  const sectionKeys = filteredDefinitions.map((item) => item.key)
+  const sectionKeys = catalogDefinitions.map((item) => item.key)
   const checkedCount = sectionKeys.filter(
     (key) => value.find((item) => item.key === key)?.visible,
   ).length
   const allChecked = checkedCount === sectionKeys.length && sectionKeys.length > 0
-  const showCatalogEmpty = keyword.trim().length > 0 && filteredDefinitions.length === 0
 
   return (
     <div className={`${prefixCls}-columns-panel`}>
       {messageContextHolder}
       <div className={`${prefixCls}-columns-panel-layout`}>
         <div className={`${prefixCls}-columns-catalog`}>
-          <Input
-            allowClear
-            className={`${prefixCls}-columns-catalog-search`}
-            prefix={<SearchOutlined />}
-            placeholder={intl.getMessage('zby.pro.table.columnSearchPlaceholder', '请输入查询')}
-            value={keyword}
-            variant="underlined"
-            onChange={(event) => setKeyword(event.target.value)}
-          />
           <div className={`${prefixCls}-columns-catalog-list`}>
-            {showCatalogEmpty ? (
-              <div className={`${prefixCls}-columns-catalog-empty`}>
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <section className={`${prefixCls}-columns-catalog-section`}>
+              <div className={`${prefixCls}-columns-catalog-section-header`}>
+                <span className={`${prefixCls}-columns-catalog-section-title`}>
+                  {intl.getMessage('zby.pro.table.fieldInfo', '字段信息')}
+                </span>
+                <Button type="link" autoInsertSpace={false} onClick={() => toggleAll(!allChecked)}>
+                  {allChecked
+                    ? intl.getMessage('zby.pro.table.deselectAll', '取消全选')
+                    : intl.getMessage('zby.pro.table.selectAll', '全选')}
+                </Button>
               </div>
-            ) : (
-              <section className={`${prefixCls}-columns-catalog-section`}>
-                <div className={`${prefixCls}-columns-catalog-section-header`}>
-                  <span className={`${prefixCls}-columns-catalog-section-title`}>
-                    {intl.getMessage('zby.pro.table.fieldInfo', '字段信息')}
-                  </span>
-                  <Button type="link" autoInsertSpace={false} onClick={() => toggleAll(!allChecked)}>
-                    {allChecked
-                      ? intl.getMessage('zby.pro.table.deselectAll', '取消全选')
-                      : intl.getMessage('zby.pro.table.selectAll', '全选')}
-                  </Button>
-                </div>
-                <div className={`${prefixCls}-columns-catalog-grid`}>
-                  {filteredDefinitions.map((definition) => {
-                    const preference = value.find((item) => item.key === definition.key)
-                    const checked = Boolean(preference?.visible)
-                    const disabled =
-                      definition.capabilities?.visibility === false ||
-                      (!checked && typeof maxVisible === 'number' && visibleCount >= maxVisible)
+              <div className={`${prefixCls}-columns-catalog-grid`}>
+                {catalogDefinitions.map((definition) => {
+                  const preference = value.find((item) => item.key === definition.key)
+                  const checked = Boolean(preference?.visible)
+                  const disabled =
+                    definition.capabilities?.visibility === false ||
+                    (!checked && typeof maxVisible === 'number' && visibleCount >= maxVisible)
 
-                    return (
-                      <label key={definition.key} className={`${prefixCls}-columns-catalog-item`}>
-                        <Checkbox
-                          checked={checked}
-                          disabled={disabled}
-                          onChange={(event) => toggleField(definition.key, event.target.checked)}
+                  return (
+                    <label key={definition.key} className={`${prefixCls}-columns-catalog-item`}>
+                      <Checkbox
+                        checked={checked}
+                        disabled={disabled}
+                        onChange={(event) => toggleField(definition.key, event.target.checked)}
+                      >
+                        <span
+                          className={`${prefixCls}-columns-catalog-text`}
+                          title={getColumnLabelText(definition)}
                         >
-                          <span
-                            className={`${prefixCls}-columns-catalog-text`}
-                            title={getColumnLabelText(definition)}
-                          >
-                            {definition.label}
-                          </span>
-                        </Checkbox>
-                      </label>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
+                          {definition.label}
+                        </span>
+                      </Checkbox>
+                    </label>
+                  )
+                })}
+              </div>
+            </section>
           </div>
         </div>
         <div className={`${prefixCls}-columns-selected`}>

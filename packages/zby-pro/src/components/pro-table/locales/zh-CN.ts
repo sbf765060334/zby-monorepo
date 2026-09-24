@@ -12,7 +12,6 @@ const zhCN = {
   unpinRight: '取消右固定',
   pinTop: '置顶',
   fieldInfo: '字段信息',
-  columnSearchPlaceholder: '请输入查询',
   selectAll: '全选',
   deselectAll: '取消全选',
   resetDefault: '恢复默认',

@@ -12,7 +12,6 @@ const enUS = {
   unpinRight: 'Unpin right',
   pinTop: 'Move to top',
   fieldInfo: 'Fields',
-  columnSearchPlaceholder: 'Search',
   selectAll: 'Select all',
   deselectAll: 'Clear all',
   resetDefault: 'Reset',

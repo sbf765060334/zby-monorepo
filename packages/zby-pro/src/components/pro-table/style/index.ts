@@ -387,24 +387,12 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         padding: paddingSM,
       },
 
-      [`${componentCls}-columns-catalog-search`]: {
-        flex: '0 0 auto',
-      },
-
       [`${componentCls}-columns-catalog-list`]: {
         display: 'flex',
         flexDirection: 'column',
         gap: shellPadding,
         minHeight: 0,
         overflow: 'auto',
-      },
-
-      [`${componentCls}-columns-catalog-empty`]: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 0,
-        flex: 1,
       },
 
       [`${componentCls}-columns-catalog-section`]: {

@@ -647,6 +647,7 @@ describe('ProTable', () => {
     })
     await waitFor(() => expect(screen.getByText('字段信息')).toBeTruthy())
     expect(screen.getByText('恢复默认')).toBeTruthy()
+    expect(screen.queryByPlaceholderText('请输入查询')).toBeNull()
     expect(screen.queryByLabelText('移除')).toBeNull()
     expect(screen.queryByText('↑')).toBeNull()
 
