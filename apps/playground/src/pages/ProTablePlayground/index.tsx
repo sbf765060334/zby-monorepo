@@ -232,14 +232,6 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     valueType: 'index',
   },
   {
-    key: 'id',
-    title: 'ID',
-    dataIndex: 'id',
-    width: 88,
-    fixed: 'left',
-    sorter: true,
-  },
-  {
     key: 'orderNo',
     title: '订单号',
     dataIndex: 'orderNo',
@@ -279,21 +271,6 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     },
   },
   {
-    key: 'labels',
-    title: '标签 Enum[]',
-    dataIndex: 'labels',
-    width: 160,
-    valueEnum: {
-      east: { text: '华东', color: 'blue' },
-      urgent: { text: '加急', color: 'red' },
-      bonded: { text: '保税', color: 'gold' },
-      fragile: { text: '易碎', color: 'purple' },
-      cold: { text: '冷链', color: 'cyan' },
-      oversize: { text: '超大', color: 'geekblue' },
-      hazard: { text: '危品', color: 'volcano' },
-    },
-  },
-  {
     key: 'amount',
     title: '金额',
     dataIndex: 'amount',
@@ -312,7 +289,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
   },
   {
     key: 'quantity',
-    title: '件数 Digit',
+    title: '件数',
     dataIndex: 'quantity',
     width: 110,
     align: 'right',
