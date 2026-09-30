@@ -110,7 +110,7 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
         const overlay = consumeProTableQueryOverlay(controller)
         const controllerState = controller.getState()
         const actions = viewStore.getState()
-        const hasCustomSort = controllerState.sortField !== undefined
+        const hasCustomSort = controllerState.sort.length > 0
 
         actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)
         actions.setMergedFilterPreferences(initialSnapshot.filterPreferences)

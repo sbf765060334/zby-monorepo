@@ -6,10 +6,10 @@ import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 
 import type { ProTableColumnDefinition } from '../utils/columns'
-import type { ProTableController, ProTablePaginationConfig, ProTableProps } from '../interface'
+import type { ProTableController, ProTablePaginationConfig, ProTableProps, ProTableViewSorter } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
-import { applyColumnPreferences, extractColumnKey, normalizeTableColumns } from '../utils'
+import { applyColumnPreferences, extractColumnKey, normalizeTableColumns, sortCurrentPageRows, toDisplaySorter, toProTableSorters } from '../utils'
 import { useProTableColumnResize } from './useProTableColumnResize'
 
 type SortableTableColumn<RecordType> = TableColumnType<RecordType> & {
@@ -74,22 +74,27 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
 
 function applyControlledSorter<RecordType>(
   columns: TableColumnsType<RecordType>,
-  sortField: string | undefined,
-  sortOrder: 'ascend' | 'descend' | null | undefined,
+  sort: ProTableViewSorter[],
 ): TableColumnsType<RecordType> {
   let changed = false
+  const orderByField = new Map(sort.map((item) => [item.field, item.order]))
   const nextColumns = columns.map((column) => {
     const sortableColumn = column as SortableTableColumn<RecordType>
     const columnKey = extractColumnKey(column as any)
-    const nextSortOrder = (columnKey && columnKey === sortField ? sortOrder : null) ?? null
+    const nextSortOrder = (columnKey ? orderByField.get(columnKey) : undefined) ?? null
     const currentSortOrder = column.sortOrder ?? null
+    const nextSorter = toDisplaySorter(column.sorter)
     let nextChildren = sortableColumn.children
 
     if (Array.isArray(sortableColumn.children)) {
-      nextChildren = applyControlledSorter(sortableColumn.children, sortField, sortOrder)
+      nextChildren = applyControlledSorter(sortableColumn.children, sort)
     }
 
-    if (currentSortOrder === nextSortOrder && nextChildren === sortableColumn.children) {
+    if (
+      currentSortOrder === nextSortOrder &&
+      nextChildren === sortableColumn.children &&
+      Object.is(nextSorter, column.sorter)
+    ) {
       return column
     }
 
@@ -97,6 +102,7 @@ function applyControlledSorter<RecordType>(
     return {
       ...column,
       sortOrder: nextSortOrder,
+      ...(column.sorter === undefined ? {} : { sorter: nextSorter as typeof column.sorter }),
       ...(Array.isArray(nextChildren) ? { children: nextChildren } : {}),
     }
   })
@@ -160,14 +166,8 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     }),
     shallow,
   )
-  const sorterState = useControllerSelector(
-    controller,
-    (state) => ({
-      sortField: state.sortField,
-      sortOrder: state.sortOrder,
-    }),
-    shallow,
-  )
+  const sorterState = useControllerSelector(controller, (state) => state.sort)
+  const childrenColumnName = expandable?.childrenColumnName ?? 'children'
   const { mergedColumnsPreferences, columnsReady } = useViewStoreSelector(
     viewStore,
     (state) => ({
@@ -210,8 +210,18 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     viewStore,
   })
   const sortedVisibleColumns = useMemo(
-    () => applyControlledSorter(resizedVisibleColumns, sorterState.sortField, sorterState.sortOrder),
-    [resizedVisibleColumns, sorterState.sortField, sorterState.sortOrder],
+    () => applyControlledSorter(resizedVisibleColumns, sorterState),
+    [resizedVisibleColumns, sorterState],
+  )
+  const displayDataSource = useMemo(
+    () =>
+      sortCurrentPageRows(
+        dataState.dataSource,
+        sorterState,
+        columns,
+        childrenColumnName,
+      ),
+    [childrenColumnName, columns, dataState.dataSource, sorterState],
   )
 
   const mergedRowSelection = useMemo(() => {
@@ -324,11 +334,8 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
         }
       }
 
-      if (extra.action === 'sort' && !Array.isArray(sorter)) {
-        void controller.setSort(
-          sorter.field ? String(sorter.field) : undefined,
-          sorter.order ?? null,
-        )
+      if (extra.action === 'sort') {
+        void controller.setSort(toProTableSorters(sorter))
       }
 
       onTableChange?.(nextPagination, filters, sorter, extra)
@@ -358,7 +365,7 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
         className={`${prefixCls}-table`}
         columns={sortedVisibleColumns}
         columnResize={mergedColumnResize}
-        dataSource={dataState.dataSource}
+        dataSource={displayDataSource}
         loading={loadingOverride ?? dataState.loading}
         pagination={mergedPagination}
         rowKey={rowKey}

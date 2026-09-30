@@ -203,16 +203,19 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
     if (params.dateValue && row.dateValue.slice(0, 10) !== params.dateValue) return false
     return true
   })
-  if (params.sortBy && params.sortOrder) {
-    const direction = params.sortOrder === 'ascend' ? 1 : -1
-    const key = params.sortBy as keyof PlaygroundRow
+  if (params.sort?.length) {
     rows.sort((left, right) => {
-      const leftValue = left[key]
-      const rightValue = right[key]
-      if (leftValue === rightValue) return 0
-      if (leftValue === undefined) return 1
-      if (rightValue === undefined) return -1
-      return leftValue > rightValue ? direction : -direction
+      for (const rule of params.sort!) {
+        const direction = rule.order === 'ascend' ? 1 : -1
+        const key = rule.field as keyof PlaygroundRow
+        const leftValue = left[key]
+        const rightValue = right[key]
+        if (leftValue === rightValue) continue
+        if (leftValue === undefined) return 1
+        if (rightValue === undefined) return -1
+        return leftValue > rightValue ? direction : -direction
+      }
+      return 0
     })
   }
 
@@ -245,6 +248,10 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     dataIndex: 'customer',
     width: 136,
     ellipsis: true,
+    sorter: {
+      multiple: 10,
+      compare: (left, right) => left.customer.localeCompare(right.customer, 'zh-CN'),
+    },
   },
   {
     key: 'status',
@@ -277,7 +284,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     dataIndex: 'amount',
     width: 88,
     align: 'right',
-    sorter: true,
+    sorter: { multiple: 2 },
     valueType: { type: 'money', currency: 'CNY' },
   },
   {
@@ -596,7 +603,7 @@ export default function ProTablePlayground() {
         key: 'actions',
         title: '操作',
         align: 'center',
-        width: 48,
+        width: 64,
         fixed: 'right',
         fieldConfig: false,
         render: (_value, record, index) => (

@@ -19,6 +19,7 @@ vi.mock('@zby/ui', async (importOriginal) => {
     Table: (props: any) => (
       <div>
         <span data-testid="rows">{props.dataSource.length}</span>
+        <span data-testid="row-ids">{(props.dataSource ?? []).map((row: { id?: string }) => row.id).join(',')}</span>
         <span data-testid="loading">{String(Boolean(props.loading))}</span>
         <span data-testid="columns">{props.columns?.length ?? 0}</span>
         <span data-testid="height">{props.height === undefined ? 'none' : String(props.height)}</span>
@@ -206,7 +207,47 @@ describe('ProTable', () => {
     await act(async () => {
       screen.getByTestId('sort').click()
     })
-    expect(controller.getState().sortField).toBe('name')
+    expect(controller.getState().sort).toEqual([{ field: 'name', order: 'ascend' }])
+  })
+
+  it('reorders the current page locally when the column has a compare function', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [
+        { id: '1', name: 'B' },
+        { id: '2', name: 'A' },
+      ],
+      total: 2,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[
+          {
+            key: 'name',
+            dataIndex: 'name',
+            title: '名称',
+            sorter: (left, right) => left.name.localeCompare(right.name),
+          },
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(screen.getByTestId('row-ids').textContent).toBe('1,2')
+
+    await act(async () => {
+      screen.getByTestId('sort').click()
+    })
+
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(controller.getState().sort).toEqual([{ field: 'name', order: 'ascend' }])
+    expect(controller.getState().dataSource.map((row) => row.id)).toEqual(['1', '2'])
+    await waitFor(() => expect(screen.getByTestId('row-ids').textContent).toBe('2,1'))
   })
 
   it('exposes the active controller through the ProTable ref', () => {

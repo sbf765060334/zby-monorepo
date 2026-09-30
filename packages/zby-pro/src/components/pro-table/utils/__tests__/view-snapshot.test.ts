@@ -76,6 +76,20 @@ describe('view snapshot filter preferences', () => {
     expect(isViewSnapshotEqual(left, right)).toBe(true)
   })
 
+  it('normalizes a legacy single sorter object into a list', () => {
+    expect(
+      normalizeViewSnapshot(
+        {
+          query: {},
+          columnPreferences: [],
+          sorter: { field: 'amount', order: 'ascend' },
+        } as any,
+        filters,
+        [{ key: 'amount', label: '金额' }] as any,
+      ).sorter,
+    ).toEqual([{ field: 'amount', order: 'ascend' }])
+  })
+
   it('drops snapshot values that match defaultQuery', () => {
     expect(
       normalizeViewSnapshot(

@@ -148,12 +148,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
       filters,
       columnDefinitions,
       storeState.mergedColumnsPreferences,
-      state.sortField && state.sortOrder
-        ? {
-            field: state.sortField,
-            order: state.sortOrder,
-          }
-        : null,
+      state.sort.length > 0 ? state.sort : null,
       storeState.mergedFilterPreferences,
       state.defaultQuery,
     )

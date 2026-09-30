@@ -29,7 +29,7 @@ import {
 import { createProTableViewStore } from './store'
 import { TableRegion } from './table-region'
 import { ToolbarRegion } from './toolbar-region'
-import { buildColumnDefinitions, splitFiltersByPreference } from './utils'
+import { buildColumnDefinitions, collectLocalSortFields, splitFiltersByPreference } from './utils'
 import { useViewPersistence } from './view-management'
 
 const mergeInlineStyles = (...values: Array<React.CSSProperties | undefined>) =>
@@ -138,6 +138,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     () => buildColumnDefinitions(columns),
     [columns],
   )
+  const localSortFields = useMemo(() => collectLocalSortFields(columns), [columns])
   const filters = resolvedConfig.mergedFilters
   const mergedFilterPreferences = useViewStoreSelector(
     viewStore,
@@ -168,6 +169,10 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       })
     }
   }, [controller, controllerConfig, controllerProp, defaultQuery, queryRequest, rowKey, summaryRequest])
+
+  useEffect(() => {
+    controller.configure({ localSortFields })
+  }, [controller, localSortFields])
 
   useEffect(
     () => () => {

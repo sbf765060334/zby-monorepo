@@ -97,28 +97,105 @@ describe('createProTableController', () => {
     )
     expect(queryRequest).toHaveBeenCalledTimes(2)
 
-    await controller.setSort('amount', 'ascend')
+    await controller.setSort([{ field: 'amount', order: 'ascend' }])
     expect(controller.getState()).toMatchObject({
       query: { status: 'done' },
       committedQuery: { status: 'pending' },
       currentPage: 1,
-      sortField: 'amount',
-      sortOrder: 'ascend',
+      sort: [{ field: 'amount', order: 'ascend' }],
       latestParams: {
         status: 'pending',
         page: 1,
         pageSize: 10,
-        sortBy: 'amount',
-        sortOrder: 'ascend',
+        sort: [{ field: 'amount', order: 'ascend' }],
       },
     })
     expect(controller.getRequestParams()).toEqual({
       status: 'pending',
       page: 1,
       pageSize: 10,
-      sortBy: 'amount',
-      sortOrder: 'ascend',
+      sort: [{ field: 'amount', order: 'ascend' }],
     })
+
+    await controller.setSort([
+      { field: 'amount', order: 'ascend' },
+      { field: 'id', order: 'descend' },
+    ])
+    expect(controller.getRequestParams()).toEqual({
+      status: 'pending',
+      page: 1,
+      pageSize: 10,
+      sort: [
+        { field: 'amount', order: 'ascend' },
+        { field: 'id', order: 'descend' },
+      ],
+    })
+  })
+
+  it('keeps local sort on the client and only sends remote sort in the request', async () => {
+    const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
+      data: [{ id: String(params.page), status: params.status ?? 'all' }],
+      total: 20,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+      localSortFields: ['name'],
+    })
+
+    await controller.submitQuery()
+    await controller.setPage(2)
+    controller.setSelectedRowKeys(['2'], [{ id: '2', status: 'all' }])
+    queryRequest.mockClear()
+
+    await controller.setSort([{ field: 'name', order: 'ascend' }])
+    expect(queryRequest).not.toHaveBeenCalled()
+    expect(controller.getState()).toMatchObject({
+      currentPage: 2,
+      selectedRowKeys: ['2'],
+      sort: [{ field: 'name', order: 'ascend' }],
+    })
+    expect(controller.getRequestParams()).toEqual({ page: 2, pageSize: 10 })
+
+    await controller.setSort([
+      { field: 'amount', order: 'ascend' },
+      { field: 'name', order: 'descend' },
+    ])
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(queryRequest).toHaveBeenCalledWith(
+      { page: 1, pageSize: 10, sort: [{ field: 'amount', order: 'ascend' }] },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+    expect(controller.getState().sort).toEqual([
+      { field: 'amount', order: 'ascend' },
+      { field: 'name', order: 'descend' },
+    ])
+    expect(controller.getState().currentPage).toBe(1)
+    expect(controller.getState().selectedRowKeys).toEqual([])
+    expect(controller.getRequestParams()).toEqual({
+      page: 1,
+      pageSize: 10,
+      sort: [{ field: 'amount', order: 'ascend' }],
+    })
+
+    queryRequest.mockClear()
+    await controller.setSort([
+      { field: 'amount', order: 'ascend' },
+      { field: 'name', order: 'ascend' },
+    ])
+    expect(queryRequest).not.toHaveBeenCalled()
+    expect(controller.getState().currentPage).toBe(1)
+    expect(controller.getState().sort).toEqual([
+      { field: 'amount', order: 'ascend' },
+      { field: 'name', order: 'ascend' },
+    ])
+
+    await controller.submitQuery()
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      { page: 1, pageSize: 10, sort: [{ field: 'amount', order: 'ascend' }] },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
   })
 
   it('pages with committed filters and ignores the unsaved draft', async () => {
@@ -273,18 +350,18 @@ describe('createProTableController', () => {
     await controller.setPageSize(20)
     expect(summaryRequest).toHaveBeenCalledTimes(4)
 
-    await controller.setSort('id', 'ascend')
+    await controller.setSort([{ field: 'id', order: 'ascend' }])
     expect(summaryRequest).toHaveBeenCalledTimes(5)
 
     controller.setQueryField('status', 'pending')
     await controller.submitQuery({ resetPage: false })
     expect(summaryRequest).toHaveBeenCalledTimes(6)
     expect(queryRequest).toHaveBeenLastCalledWith(
-      { status: 'pending', page: 1, pageSize: 20, sortBy: 'id', sortOrder: 'ascend' },
+      { status: 'pending', page: 1, pageSize: 20, sort: [{ field: 'id', order: 'ascend' }] },
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
     expect(summaryRequest).toHaveBeenLastCalledWith(
-      { status: 'pending', page: 1, pageSize: 20, sortBy: 'id', sortOrder: 'ascend' },
+      { status: 'pending', page: 1, pageSize: 20, sort: [{ field: 'id', order: 'ascend' }] },
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
   })

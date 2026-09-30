@@ -21,6 +21,18 @@ export {
 } from './field-config'
 export { buildViewSnapshot, normalizeViewSnapshot, isViewSnapshotEqual } from './view-snapshot'
 export { getViewsScopeKey, PRO_TABLE_DEFAULT_VIEW_ID } from './persistence'
+export {
+  cloneSort,
+  collectLocalSortFields,
+  isSorterListEqual,
+  isValidSortOrder,
+  normalizeSortItems,
+  resolveSorterField,
+  sortCurrentPageRows,
+  toDisplaySorter,
+  toProTableSorters,
+  toRequestSort,
+} from './sort'
 export * from './search'
 export * from './filter-config'
 export {

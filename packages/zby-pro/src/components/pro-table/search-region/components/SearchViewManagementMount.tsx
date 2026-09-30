@@ -60,11 +60,7 @@ const SearchViewManagementMountInner = <
   )
   const sorterState = useControllerSelector(
     controller,
-    (state) => ({
-      sortField: state.sortField,
-      sortOrder: state.sortOrder,
-    }),
-    shallow,
+    (state) => state.sort,
   )
   const columnsPreferences = useViewStoreSelector(
     viewStore,
@@ -92,8 +88,7 @@ const SearchViewManagementMountInner = <
       createCurrentSnapshot,
       filterPreferences,
       searchSnapshotState.query,
-      sorterState.sortField,
-      sorterState.sortOrder,
+      sorterState,
     ],
   )
   const currentSnapshotRef = useRef(nextCurrentSnapshot)

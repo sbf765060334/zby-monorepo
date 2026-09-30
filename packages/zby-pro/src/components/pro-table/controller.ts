@@ -9,6 +9,7 @@ import type {
   ProTableViewSorter,
 } from './interface'
 import { isSearchValueEqual } from './utils/search'
+import { cloneSort, isSorterListEqual, normalizeSortItems, toRequestSort } from './utils/sort'
 
 const CANCEL_REQUESTS = Symbol('ProTableCancelRequests')
 const QUERY_OVERLAY = Symbol('ProTableQueryOverlay')
@@ -24,6 +25,7 @@ type InternalControllerState<
   queryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['queryRequest'];
   summaryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['summaryRequest'];
   rowKey?: ProTableControllerConfig<RecordType, Query, Summary>['rowKey'];
+  localSortFields: string[];
 }
 
 type OverlayableProTableController<
@@ -102,6 +104,10 @@ function areKeyArraysEqual(left: Key[], right: readonly Key[]) {
   return left.length === right.length && left.every((key, index) => Object.is(key, right[index]))
 }
 
+function areStringArraysEqual(left: readonly string[], right: readonly string[]) {
+  return left.length === right.length && left.every((item, index) => item === right[index])
+}
+
 function isQueryPatchEqual<Query>(query: Query, patch: Partial<Query>) {
   return Object.keys(patch as Record<string, unknown>).every((key) =>
     isSearchValueEqual(
@@ -126,16 +132,11 @@ function isQueryEqual<Query>(left: Query, right: Query) {
   return Array.from(keys).every((key) => isSearchValueEqual(leftRecord[key], rightRecord[key]))
 }
 
-function isValidSortOrder(order: unknown): order is ProTableViewSorter['order'] {
-  return order === 'ascend' || order === 'descend'
-}
-
 function assembleRequestParams<Query extends Record<string, unknown>>(
   filters: Query,
   currentPage: number,
   pageSize: number,
-  sortField: string | undefined,
-  sortOrder: 'ascend' | 'descend' | null | undefined,
+  sort: readonly ProTableViewSorter[],
 ): ProTableRequestParams<Query> {
   const params: Record<string, unknown> = {
     ...(filters as Record<string, unknown>),
@@ -143,12 +144,10 @@ function assembleRequestParams<Query extends Record<string, unknown>>(
     pageSize,
   }
 
-  if (sortField && isValidSortOrder(sortOrder)) {
-    params.sortBy = sortField
-    params.sortOrder = sortOrder
+  if (sort.length > 0) {
+    params.sort = cloneSort(sort)
   } else {
-    delete params.sortBy
-    delete params.sortOrder
+    delete params.sort
   }
 
   return params as ProTableRequestParams<Query>
@@ -173,8 +172,7 @@ function toPublicState<RecordType, Query extends Record<string, unknown>, Summar
     summary: state.summary,
     selectedRowKeys: state.selectedRowKeys,
     expandedRowKeys: state.expandedRowKeys,
-    sortField: state.sortField,
-    sortOrder: state.sortOrder,
+    sort: state.sort,
   }
 }
 
@@ -268,13 +266,13 @@ export function createProTableController<
     selectedRowKeys: [],
     selectedRowMap: new Map<Key, RecordType>(),
     expandedRowKeys: [],
-    sortField: undefined,
-    sortOrder: null,
+    sort: [],
     requestSeq: 0,
     queryOverlay: {},
     queryRequest: config.queryRequest,
     summaryRequest: config.summaryRequest,
     rowKey: config.rowKey,
+    localSortFields: config.localSortFields ? [...config.localSortFields] : [],
   }))
   let listAbortController: AbortController | null = null
   let summaryAbortController: AbortController | null = null
@@ -282,8 +280,7 @@ export function createProTableController<
     committedQuery: cloneQuery(defaultQuery),
     currentPage: defaultCurrent,
     pageSize: defaultPageSize,
-    sortField: undefined as string | undefined,
-    sortOrder: null as 'ascend' | 'descend' | null,
+    sort: [] as ProTableViewSorter[],
     latestParams: null as ProTableRequestParams<Query> | null,
     selectedRowKeys: [] as Key[],
   }
@@ -309,8 +306,7 @@ export function createProTableController<
       committedQuery: cloneQuery(current.committedQuery),
       currentPage: current.currentPage,
       pageSize: current.pageSize,
-      sortField: current.sortField,
-      sortOrder: current.sortOrder ?? null,
+      sort: cloneSort(current.sort),
       latestParams: current.latestParams
         ? ({ ...current.latestParams } as ProTableRequestParams<Query>)
         : null,
@@ -323,8 +319,7 @@ export function createProTableController<
       committedQuery: cloneQuery(lastSettledIdentity.committedQuery),
       currentPage: lastSettledIdentity.currentPage,
       pageSize: lastSettledIdentity.pageSize,
-      sortField: lastSettledIdentity.sortField,
-      sortOrder: lastSettledIdentity.sortOrder,
+      sort: cloneSort(lastSettledIdentity.sort),
       latestParams: lastSettledIdentity.latestParams
         ? ({ ...lastSettledIdentity.latestParams } as ProTableRequestParams<Query>)
         : null,
@@ -337,8 +332,7 @@ export function createProTableController<
     filters: Query
     currentPage: number
     pageSize: number
-    sortField: string | undefined
-    sortOrder: 'ascend' | 'descend' | null | undefined
+    sort: ProTableViewSorter[]
     commitDraft: boolean
     clearSelection: boolean
   }) => {
@@ -347,14 +341,12 @@ export function createProTableController<
       input.filters,
       input.currentPage,
       input.pageSize,
-      input.sortField,
-      input.sortOrder,
+      toRequestSort(input.sort, state.localSortFields),
     )
     const snapshot = {
       currentPage: input.currentPage,
       pageSize: input.pageSize,
-      sortField: input.sortField,
-      sortOrder: input.sortOrder ?? null,
+      sort: cloneSort(input.sort),
       latestParams: requestParams,
       ...(input.commitDraft
         ? {
@@ -445,13 +437,18 @@ export function createProTableController<
         const nextSummaryRequest = nextConfig.summaryRequest ?? state.summaryRequest
         const nextRowKey = nextConfig.rowKey ?? state.rowKey
         const nextRequestReady = Boolean(nextQueryRequest)
+        const nextLocalSortFields =
+          nextConfig.localSortFields === undefined
+            ? state.localSortFields
+            : [...nextConfig.localSortFields]
 
         if (
           isQueryEqual(state.defaultQuery, nextDefaultQuery) &&
           nextQueryRequest === state.queryRequest &&
           nextSummaryRequest === state.summaryRequest &&
           Object.is(nextRowKey, state.rowKey) &&
-          nextRequestReady === state.requestReady
+          nextRequestReady === state.requestReady &&
+          areStringArraysEqual(state.localSortFields, nextLocalSortFields)
         ) {
           return state
         }
@@ -464,6 +461,7 @@ export function createProTableController<
           requestReady: nextRequestReady,
           summaryRequest: nextSummaryRequest,
           rowKey: nextRowKey,
+          localSortFields: nextLocalSortFields,
         }
       })
     },
@@ -472,18 +470,14 @@ export function createProTableController<
       store.setState((state) => {
         // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
         const hasSorter = Object.prototype.hasOwnProperty.call(viewState, 'sorter')
-        const nextSortField = hasSorter ? sorter?.field : state.sortField
-        const nextSortOrder = hasSorter
-          ? isValidSortOrder(sorter?.order)
-            ? sorter.order
-            : null
-          : state.sortOrder
+        const nextSort = hasSorter
+          ? normalizeSortItems(sorter ?? [])
+          : state.sort
 
         return {
           query: cloneQuery(query),
           committedQuery: committed ? cloneQuery(query) : state.committedQuery,
-          sortField: nextSortField,
-          sortOrder: nextSortOrder,
+          sort: nextSort,
         }
       })
     },
@@ -537,8 +531,7 @@ export function createProTableController<
         filters: state.query,
         currentPage: resetPage ? 1 : state.currentPage,
         pageSize: state.pageSize,
-        sortField: state.sortField,
-        sortOrder: state.sortOrder,
+        sort: state.sort,
         commitDraft: true,
         clearSelection: resetPage,
       })
@@ -549,8 +542,7 @@ export function createProTableController<
         filters: state.committedQuery,
         currentPage: state.currentPage,
         pageSize: state.pageSize,
-        sortField: state.sortField,
-        sortOrder: state.sortOrder,
+        sort: state.sort,
         commitDraft: false,
         clearSelection: false,
       })
@@ -561,8 +553,7 @@ export function createProTableController<
         filters: state.committedQuery,
         currentPage: page,
         pageSize: state.pageSize,
-        sortField: state.sortField,
-        sortOrder: state.sortOrder,
+        sort: state.sort,
         commitDraft: false,
         clearSelection: false,
       })
@@ -573,17 +564,28 @@ export function createProTableController<
         filters: state.committedQuery,
         currentPage: 1,
         pageSize,
-        sortField: state.sortField,
-        sortOrder: state.sortOrder,
+        sort: state.sort,
         commitDraft: false,
         clearSelection: true,
       })
     },
-    setSort: async (field, order) => {
-      const nextSortOrder = isValidSortOrder(order) ? order : null
+    setSort: async (sort) => {
+      const nextSort = normalizeSortItems(sort)
       const state = store.getState()
 
-      if (state.sortField === field && state.sortOrder === nextSortOrder) {
+      if (isSorterListEqual(state.sort, nextSort)) {
+        return
+      }
+
+      const previousRequestSort = toRequestSort(state.sort, state.localSortFields)
+      const nextRequestSort = toRequestSort(nextSort, state.localSortFields)
+
+      if (isSorterListEqual(previousRequestSort, nextRequestSort)) {
+        store.setState({ sort: nextSort })
+        lastSettledIdentity = {
+          ...lastSettledIdentity,
+          sort: cloneSort(nextSort),
+        }
         return
       }
 
@@ -591,8 +593,7 @@ export function createProTableController<
         filters: state.committedQuery,
         currentPage: 1,
         pageSize: state.pageSize,
-        sortField: field,
-        sortOrder: nextSortOrder,
+        sort: nextSort,
         commitDraft: false,
         clearSelection: true,
       })
@@ -660,8 +661,7 @@ export function createProTableController<
         state.committedQuery,
         state.currentPage,
         state.pageSize,
-        state.sortField,
-        state.sortOrder,
+        toRequestSort(state.sort, state.localSortFields),
       )
     },
   };

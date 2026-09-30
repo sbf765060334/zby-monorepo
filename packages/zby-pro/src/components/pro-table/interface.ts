@@ -403,7 +403,7 @@ export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Re
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
   filterPreferences: ProTableFilterPreference[]
-  sorter?: ProTableViewSorter | null
+  sorter?: ProTableViewSorter[] | null
 }
 
 export interface ProTableViewsConfig<Query extends Record<string, unknown> = Record<string, unknown>> {
@@ -455,8 +455,7 @@ export type ProTableRequestParams<Query extends Record<string, unknown> = Record
   Query & {
     page: number
     pageSize: number
-    sortBy?: string
-    sortOrder?: 'ascend' | 'descend'
+    sort?: ProTableViewSorter[]
   }
 
 export interface ProTableRequestContext {
@@ -484,6 +483,7 @@ export interface ProTableControllerConfig<RecordType, Query extends Record<strin
   rowKey?: TableProps<RecordType>['rowKey']
   queryRequest?: ProTableQueryRequest<RecordType, Query>
   summaryRequest?: ProTableSummaryRequest<Query, Summary>
+  localSortFields?: readonly string[]
   /** Create-time page defaults. Runtime page lives on controller state. */
   pagination?: ProTableControllerPaginationConfig
 }
@@ -504,8 +504,7 @@ export interface ProTableControllerState<RecordType, Query extends Record<string
   summary: Summary | undefined
   selectedRowKeys: Key[]
   expandedRowKeys: Key[]
-  sortField?: string
-  sortOrder?: 'ascend' | 'descend' | null
+  sort: ProTableViewSorter[]
 }
 
 export interface ProTableController<RecordType, Query extends Record<string, unknown>, Summary> {
@@ -516,7 +515,7 @@ export interface ProTableController<RecordType, Query extends Record<string, unk
   configure: (config: Partial<ProTableControllerConfig<RecordType, Query, Summary>>) => void
   setViewState: (state: {
     query: Query
-    sorter?: ProTableViewSorter | null
+    sorter?: ProTableViewSorter[] | null
     committed?: boolean
   }) => void
   setQueryField: <Key extends Extract<keyof Query, string>>(
@@ -529,7 +528,7 @@ export interface ProTableController<RecordType, Query extends Record<string, unk
   reload: () => Promise<void>
   setPage: (page: number) => Promise<void>
   setPageSize: (pageSize: number) => Promise<void>
-  setSort: (field?: string, order?: 'ascend' | 'descend' | null) => Promise<void>
+  setSort: (sort: ProTableViewSorter[]) => Promise<void>
   setDataSource: (rows: RecordType[], total?: number) => void
   patchRow: (
     uniqueKey: keyof RecordType,

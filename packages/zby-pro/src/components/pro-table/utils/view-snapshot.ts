@@ -13,25 +13,35 @@ import {
   resolveFilterPreferences,
 } from './filter-config'
 import { hasSearchFieldValue, isSearchValueEqual, pickSearchQuery } from './search'
+import { isSorterListEqual, isValidSortOrder } from './sort'
 
-function isValidSorterOrder(order: unknown): order is ProTableViewSorter['order'] {
-  return order === 'ascend' || order === 'descend'
+function coerceSorterList(
+  sorter: ProTableViewSnapshot<any>['sorter'] | { field?: unknown; order?: unknown } | null | undefined,
+): ProTableViewSorter[] {
+  if (sorter == null) {
+    return []
+  }
+  if (Array.isArray(sorter)) {
+    return sorter
+  }
+  if (typeof sorter === 'object') {
+    return [sorter as ProTableViewSorter]
+  }
+  return []
 }
 
 function normalizeViewSorter(
-  sorter: ProTableViewSnapshot<any>['sorter'],
+  sorter: ProTableViewSnapshot<any>['sorter'] | { field?: unknown; order?: unknown } | null | undefined,
   columnDefinitions: ProTableColumnDefinition[],
-): ProTableViewSorter | null {
-  if (!sorter || typeof sorter.field !== 'string' || !isValidSorterOrder(sorter.order)) {
-    return null
-  }
-  if (!columnDefinitions.some((definition) => definition.key === sorter.field)) {
-    return null
-  }
-  return {
-    field: sorter.field,
-    order: sorter.order,
-  }
+): ProTableViewSorter[] | null {
+  const items = coerceSorterList(sorter).filter(
+    (item): item is ProTableViewSorter =>
+      typeof item.field === 'string' &&
+      item.field !== '' &&
+      isValidSortOrder(item.order) &&
+      columnDefinitions.some((definition) => definition.key === item.field),
+  )
+  return items.length > 0 ? items : null
 }
 
 export function buildViewSnapshot<Query extends Record<string, unknown>>(
@@ -39,7 +49,7 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
   filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
   columnPreferences: ProTableColumnPreference[],
-  sorter?: ProTableViewSorter | null,
+  sorter?: ProTableViewSorter[] | null,
   filterPreferences: ProTableFilterPreference[] = [],
   defaultQuery?: Partial<Query>,
 ) {
@@ -89,10 +99,7 @@ export function isViewSnapshotEqual<Query extends Record<string, unknown>>(
   left: ProTableViewSnapshot<Query>,
   right: ProTableViewSnapshot<Query>,
 ) {
-  if ((left.sorter?.field ?? null) !== (right.sorter?.field ?? null)) {
-    return false
-  }
-  if ((left.sorter?.order ?? null) !== (right.sorter?.order ?? null)) {
+  if (!isSorterListEqual(left.sorter ?? [], right.sorter ?? [])) {
     return false
   }
   if (left.columnPreferences.length !== right.columnPreferences.length) {
