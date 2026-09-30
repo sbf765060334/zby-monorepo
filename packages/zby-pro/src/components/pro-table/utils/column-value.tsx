@@ -43,6 +43,11 @@ type ObjectValueTypeConfig = {
 export type FormatColumnValueOptions = {
   emptyText?: ReactNode | false
   messages?: ProTableColumnValueMessages
+  getIndexPage?: () => {
+    currentPage: number
+    pageSize: number
+    paginated: boolean
+  }
 }
 
 function isEmptyCellValue(value: unknown) {
@@ -245,10 +250,13 @@ function getProgressStatus(value: number): 'success' | 'exception' | 'normal' | 
   return 'normal'
 }
 
-function renderIndex(value: unknown, index: number) {
-  const serial =
-    typeof value === 'number' && Number.isFinite(value) ? value + 1 : index + 1
-  return `#${serial}`
+function renderIndex(index: number, options?: FormatColumnValueOptions) {
+  const page = options?.getIndexPage?.()
+  const offset =
+    page?.paginated === true
+      ? Math.max(page.currentPage - 1, 0) * Math.max(page.pageSize, 0)
+      : 0
+  return `#${offset + index + 1}`
 }
 
 export function formatColumnValue(
@@ -331,7 +339,10 @@ export function formatColumnValue(
   }
 
   if (valueType === 'index') {
-    return renderIndex(value, index)
+    if (!isEmptyCellValue(value)) {
+      return value as ReactNode
+    }
+    return renderIndex(index, options)
   }
 
   if (valueType === 'progress') {

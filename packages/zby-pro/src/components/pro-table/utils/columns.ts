@@ -7,11 +7,12 @@ import type {
 } from '../interface'
 import {
   formatColumnValue,
+  type FormatColumnValueOptions,
   type ProTableColumnValueMessages,
 } from './column-value'
 
 export { formatColumnValue }
-export type { ProTableColumnValueMessages }
+export type { FormatColumnValueOptions, ProTableColumnValueMessages }
 
 export interface ProTableColumnDefinitionMeta {
   title?: ReactNode
@@ -122,6 +123,7 @@ function normalizeColumn<RecordType>(
   column: ProTableColumnType<RecordType>,
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
+  getIndexPage?: FormatColumnValueOptions['getIndexPage'],
 ): TableColumnsType<RecordType>[number] {
   const {
     children,
@@ -139,7 +141,7 @@ function normalizeColumn<RecordType>(
     return {
       ...rest,
       children: children.map((child) =>
-        normalizeColumn(child, messages, columnEmptyText),
+        normalizeColumn(child, messages, columnEmptyText, getIndexPage),
       ),
     } as TableColumnsType<RecordType>[number]
   }
@@ -157,7 +159,7 @@ function normalizeColumn<RecordType>(
                 : column.fieldProps,
           },
           index,
-          { emptyText: columnEmptyText, messages },
+          { emptyText: columnEmptyText, messages, getIndexPage },
         ),
     } as TableColumnsType<RecordType>[number]
   }
@@ -168,9 +170,10 @@ export function normalizeTableColumns<RecordType>(
   columns: ProTableColumnType<RecordType>[] | undefined,
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
+  getIndexPage?: FormatColumnValueOptions['getIndexPage'],
 ): TableColumnsType<RecordType> {
   return (columns ?? []).map((column) =>
-    normalizeColumn(column, messages, columnEmptyText),
+    normalizeColumn(column, messages, columnEmptyText, getIndexPage),
   )
 }
 
@@ -197,17 +200,21 @@ export function applyColumnPreferences<RecordType>(
   preferences: ProTableColumnPreference[],
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
+  getIndexPage?: FormatColumnValueOptions['getIndexPage'],
 ): TableColumnsType<RecordType> {
   const definitionMap = new Map(definitions.map((definition) => [definition.key, definition]))
   const preferenceMap = new Map(preferences.map((item) => [item.key, item]))
   const sourceMap = new Map(flattenColumnLeaves(columns).map((column) => [column.__proTableKey, column]))
+
+  const toColumn = (column: ProTableColumnType<RecordType>) =>
+    normalizeColumn(column, messages, columnEmptyText, getIndexPage)
 
   const buildPreferredColumn = (preference: ProTableColumnPreference) => {
     const definition = definitionMap.get(preference.key)
     const column = sourceMap.get(preference.key)
     if (!definition || !column) return null
     return {
-      ...normalizeColumn(column, messages, columnEmptyText),
+      ...toColumn(column),
       fixed: preference.pin ?? undefined,
       title: definition.meta?.title ?? column.title,
     } as TableColumnsType<RecordType>[number]
@@ -238,19 +245,19 @@ export function applyColumnPreferences<RecordType>(
         hoistedRight.push(...nested.hoistedRight)
         if (nested.columns.length > 0) {
           result.push({
-            ...normalizeColumn(column, messages, columnEmptyText),
+            ...toColumn(column),
             children: nested.columns,
           } as TableColumnsType<RecordType>[number])
         }
         return result
       }
       if (column.fieldConfig === false) {
-        result.push(normalizeColumn(column, messages, columnEmptyText))
+        result.push(toColumn(column))
         return result
       }
       const key = extractColumnKey(column)
       if (!key || !definitionMap.has(key)) {
-        result.push(normalizeColumn(column, messages, columnEmptyText))
+        result.push(toColumn(column))
         return result
       }
       const preference = preferenceMap.get(key)

@@ -206,6 +206,14 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     }),
     [intl],
   )
+  const getIndexPage = useCallback(() => {
+    const state = controller.getState()
+    return {
+      currentPage: state.currentPage,
+      pageSize: state.pageSize,
+      paginated: pagination !== false,
+    }
+  }, [controller, pagination])
   const visibleColumns = useMemo(
     () =>
       columnsStateEnabled
@@ -215,9 +223,18 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
             mergedColumnsPreferences,
             columnValueMessages,
             columnEmptyText,
+            getIndexPage,
           )
-        : normalizeTableColumns(columns, columnValueMessages, columnEmptyText),
-    [columnDefinitions, columnEmptyText, columnValueMessages, columns, columnsStateEnabled, mergedColumnsPreferences],
+        : normalizeTableColumns(columns, columnValueMessages, columnEmptyText, getIndexPage),
+    [
+      columnDefinitions,
+      columnEmptyText,
+      columnValueMessages,
+      columns,
+      columnsStateEnabled,
+      getIndexPage,
+      mergedColumnsPreferences,
+    ],
   )
   const {
     columnResizeEnabled,

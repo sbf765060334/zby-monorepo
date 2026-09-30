@@ -47,6 +47,22 @@ describe('normalizeTableColumns empty text', () => {
     expect(column.renderText?.(undefined, {}, 0)).toBeUndefined()
     expect(column.renderText?.('', {}, 0)).toBe('')
   })
+
+  it('lets index columns read the current page at render time', () => {
+    let currentPage = 1
+    const [column] = normalizeTableColumns(
+      [{ key: 'serial', title: '序号', valueType: 'index' }],
+      undefined,
+      undefined,
+      () => ({ currentPage, pageSize: 10, paginated: true }),
+    ) as Array<{
+      renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown
+    }>
+
+    expect(column.renderText?.(undefined, {}, 0)).toBe('#1')
+    currentPage = 2
+    expect(column.renderText?.(undefined, {}, 0)).toBe('#11')
+  })
 })
 
 type Row = {

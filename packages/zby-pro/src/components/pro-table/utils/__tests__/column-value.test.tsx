@@ -119,4 +119,40 @@ describe('formatColumnValue', () => {
   it('uses the row index for index columns when the cell value is empty', () => {
     expect(textOf(formatColumnValue(undefined, { valueType: 'index' }, 3))).toBe('#4')
   })
+
+  it('continues index numbers across pages', () => {
+    expect(
+      textOf(
+        formatColumnValue(undefined, { valueType: 'index' }, 0, {
+          getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
+        }),
+      ),
+    ).toBe('#11')
+    expect(
+      textOf(
+        formatColumnValue(undefined, { valueType: 'index' }, 3, {
+          getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
+        }),
+      ),
+    ).toBe('#14')
+  })
+
+  it('does not add a page offset when pagination is disabled', () => {
+    expect(
+      textOf(
+        formatColumnValue(undefined, { valueType: 'index' }, 0, {
+          getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: false }),
+        }),
+      ),
+    ).toBe('#1')
+  })
+
+  it('ignores index formatting when the cell already has a value', () => {
+    expect(
+      formatColumnValue(3, { valueType: 'index', dataIndex: 'orderIndex' }, 0, {
+        getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
+      }),
+    ).toBe(3)
+    expect(formatColumnValue('A-01', { valueType: 'index' }, 0)).toBe('A-01')
+  })
 })
