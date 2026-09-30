@@ -773,4 +773,106 @@ describe('createProTableController', () => {
     expect(consumeProTableQueryOverlay(controller)).toEqual({})
     expect(controller.getState().query).toEqual({ status: 'all' })
   })
+
+  it('seeds selected keys at create and keeps them through the first query', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'pending' }],
+      total: 1,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+      defaultSelectedRowKeys: ['1'],
+    })
+
+    expect(controller.getState().selectedRowKeys).toEqual(['1'])
+    await controller.submitQuery()
+    expect(controller.getState().selectedRowKeys).toEqual(['1'])
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'pending' }])
+
+    await controller.submitQuery()
+    expect(controller.getState().selectedRowKeys).toEqual([])
+  })
+
+  it('seeds expanded keys at create', () => {
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+      defaultExpandedRowKeys: ['1'],
+    })
+
+    expect(controller.getState().expandedRowKeys).toEqual(['1'])
+  })
+
+  it('expands all rows once when the first non-empty data arrives', () => {
+    type TreeRow = { id: string; status: string; children?: TreeRow[] }
+    const controller = createProTableController<TreeRow, Query>({
+      rowKey: 'id',
+      defaultExpandAllRows: true,
+      defaultExpandedRowKeys: ['2'],
+    })
+
+    controller.setDataSource([
+      {
+        id: '1',
+        status: 'pending',
+        children: [{ id: '1-1', status: 'done' }],
+      },
+      { id: '2', status: 'pending' },
+    ])
+    expect(controller.getState().expandedRowKeys).toEqual(['1'])
+
+    controller.setDataSource([
+      {
+        id: '1',
+        status: 'pending',
+        children: [{ id: '1-1', status: 'done' }],
+      },
+      {
+        id: '2',
+        status: 'pending',
+        children: [{ id: '2-1', status: 'done' }],
+      },
+    ])
+    expect(controller.getState().expandedRowKeys).toEqual(['1'])
+  })
+
+  it('does not expand all after an explicit collapse before data arrives', () => {
+    type TreeRow = { id: string; status: string; children?: TreeRow[] }
+    const controller = createProTableController<TreeRow, Query>({
+      rowKey: 'id',
+      defaultExpandAllRows: true,
+    })
+
+    controller.collapseAllRows()
+    controller.setDataSource([
+      {
+        id: '1',
+        status: 'pending',
+        children: [{ id: '1-1', status: 'done' }],
+      },
+    ])
+    expect(controller.getState().expandedRowKeys).toEqual([])
+  })
+
+  it('expands all rows after the first list response', async () => {
+    type TreeRow = { id: string; status: string; children?: TreeRow[] }
+    const queryRequest = vi.fn(async () => ({
+      data: [
+        {
+          id: '1',
+          status: 'pending',
+          children: [{ id: '1-1', status: 'done' }],
+        },
+      ],
+      total: 1,
+    }))
+    const controller = createProTableController<TreeRow, Query>({
+      queryRequest,
+      rowKey: 'id',
+      defaultExpandAllRows: true,
+    })
+
+    await controller.submitQuery()
+    expect(controller.getState().expandedRowKeys).toEqual(['1'])
+  })
 })

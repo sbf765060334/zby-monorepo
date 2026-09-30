@@ -23,6 +23,8 @@ vi.mock('@zby/ui', async (importOriginal) => {
         <span data-testid="loading">{String(Boolean(props.loading))}</span>
         <span data-testid="columns">{props.columns?.length ?? 0}</span>
         <span data-testid="height">{props.height === undefined ? 'none' : String(props.height)}</span>
+        <span data-testid="selected-keys">{(props.rowSelection?.selectedRowKeys ?? []).join(',')}</span>
+        <span data-testid="expanded-keys">{(props.expandable?.expandedRowKeys ?? []).join(',')}</span>
         <button
           data-testid="page"
           onClick={() =>
@@ -208,6 +210,83 @@ describe('ProTable', () => {
       screen.getByTestId('sort').click()
     })
     expect(controller.getState().sort).toEqual([{ field: 'name', order: 'ascend' }])
+  })
+
+  it('notifies rowSelection.onChange after the controller stores the selection', () => {
+    const onChange = vi.fn()
+    const onExpandedRowsChange = vi.fn()
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+    })
+    controller.setDataSource([{ id: '1', name: 'A' }])
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        rowSelection={{ onChange }}
+        expandable={{
+          expandedRowRender: () => null,
+          onExpandedRowsChange,
+        }}
+      />,
+    )
+
+    act(() => screen.getByTestId('select').click())
+    act(() => screen.getByTestId('expand').click())
+
+    expect(controller.getState().selectedRowKeys).toEqual(['1'])
+    expect(onChange).toHaveBeenCalledWith(['1'], [{ id: '1' }], { type: 'single' })
+    expect(controller.getState().expandedRowKeys).toEqual(['1'])
+    expect(onExpandedRowsChange).toHaveBeenCalledWith(['1'])
+  })
+
+  it('drives table keys from the controller and ignores leftover Table ownership props', () => {
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+      defaultSelectedRowKeys: ['1'],
+      defaultExpandedRowKeys: ['1'],
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        rowSelection={{
+          selectedRowKeys: ['ignored'],
+          defaultSelectedRowKeys: ['ignored-default'],
+        } as never}
+        expandable={{
+          expandedRowRender: () => null,
+          expandedRowKeys: ['ignored'],
+          defaultExpandedRowKeys: ['ignored-default'],
+          defaultExpandAllRows: true,
+        } as never}
+      />,
+    )
+
+    expect(screen.getByTestId('selected-keys').textContent).toBe('1')
+    expect(screen.getByTestId('expanded-keys').textContent).toBe('1')
+  })
+
+  it('keeps controllerConfig default selected keys after the first automatic request', async () => {
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+
+    renderProTable(
+      <ProTable<Row, Query>
+        ref={ref}
+        rowKey="id"
+        columns={[]}
+        rowSelection={{}}
+        controllerConfig={{ defaultSelectedRowKeys: ['1'] }}
+        queryRequest={async () => ({ data: [{ id: '1', name: 'A' }], total: 1 })}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(ref.current?.controller.getState().inquired).toBe(true)
+    })
+    expect(ref.current?.controller.getState().selectedRowKeys).toEqual(['1'])
   })
 
   it('reorders the current page locally when the column has a compare function', async () => {

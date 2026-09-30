@@ -122,6 +122,29 @@ function toTablePagination(pagination: ProTableProps<any, any, any>['pagination'
   return tablePagination
 }
 
+function toTableRowSelection<RecordType>(
+  rowSelection: NonNullable<ProTableProps<RecordType, any, any>['rowSelection']>,
+) {
+  const {
+    selectedRowKeys: _selectedRowKeys,
+    defaultSelectedRowKeys: _defaultSelectedRowKeys,
+    ...rest
+  } = rowSelection as NonNullable<TableProps<RecordType>['rowSelection']>
+  return rest
+}
+
+function toTableExpandable<RecordType>(
+  expandable: NonNullable<ProTableProps<RecordType, any, any>['expandable']>,
+) {
+  const {
+    expandedRowKeys: _expandedRowKeys,
+    defaultExpandedRowKeys: _defaultExpandedRowKeys,
+    defaultExpandAllRows: _defaultExpandAllRows,
+    ...rest
+  } = expandable as NonNullable<TableProps<RecordType>['expandable']>
+  return rest
+}
+
 function TableRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
   columns,
@@ -230,7 +253,7 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     }
 
     return {
-      ...rowSelection,
+      ...toTableRowSelection(rowSelection),
       selectedRowKeys,
       onChange: (
         keys: React.Key[],
@@ -249,7 +272,7 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     }
 
     return {
-      ...expandable,
+      ...toTableExpandable(expandable),
       expandedRowKeys,
       onExpandedRowsChange: (keys: readonly React.Key[]) => {
         controller.setExpandedRowKeys(keys as React.Key[])

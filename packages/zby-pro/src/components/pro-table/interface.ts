@@ -486,6 +486,12 @@ export interface ProTableControllerConfig<RecordType, Query extends Record<strin
   localSortFields?: readonly string[]
   /** Create-time page defaults. Runtime page lives on controller state. */
   pagination?: ProTableControllerPaginationConfig
+  /** Initial selected keys. Later selection lives on controller state. */
+  defaultSelectedRowKeys?: Key[]
+  /** Initial expanded keys. Ignored when `defaultExpandAllRows` is true. */
+  defaultExpandedRowKeys?: Key[]
+  /** Expand all current rows once the first non-empty dataSource arrives. */
+  defaultExpandAllRows?: boolean
 }
 
 export interface ProTableControllerState<RecordType, Query extends Record<string, unknown>, Summary> {
@@ -637,8 +643,8 @@ export interface ProTableProps<
   columnEmptyText?: ReactNode | false
   onTableChange?: TableProps<RecordType>['onChange']
   pagination?: false | ProTablePaginationConfig
-  rowSelection?: TableProps<RecordType>['rowSelection']
-  expandable?: TableProps<RecordType>['expandable']
+  rowSelection?: ProTableRowSelection<RecordType>
+  expandable?: ProTableExpandable<RecordType>
   loading?: boolean | SpinProps
   prefixCls?: string
   className?: string
@@ -684,11 +690,13 @@ export type ProTableComponent = (<
   displayName?: string
 }
 
-export type ProTableRowSelection<RecordType> = NonNullable<
-  TableProps<RecordType>['rowSelection']
+export type ProTableRowSelection<RecordType> = Omit<
+  NonNullable<TableProps<RecordType>['rowSelection']>,
+  'selectedRowKeys' | 'defaultSelectedRowKeys'
 >
-export type ProTableExpandable<RecordType> = NonNullable<
-  TableProps<RecordType>['expandable']
+export type ProTableExpandable<RecordType> = Omit<
+  NonNullable<TableProps<RecordType>['expandable']>,
+  'expandedRowKeys' | 'defaultExpandedRowKeys' | 'defaultExpandAllRows'
 >
 export type ProTableTableChange<RecordType> = NonNullable<
   TableProps<RecordType>['onChange']

@@ -26,6 +26,7 @@ type InternalControllerState<
   summaryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['summaryRequest'];
   rowKey?: ProTableControllerConfig<RecordType, Query, Summary>['rowKey'];
   localSortFields: string[];
+  pendingExpandAllRows: boolean;
 }
 
 type OverlayableProTableController<
@@ -256,6 +257,26 @@ function collectSelectedRows<RecordType, Query extends Record<string, unknown>, 
     .filter((item): item is RecordType => Boolean(item))
 }
 
+function cloneKeys(keys: readonly Key[] | undefined) {
+  return keys ? [...keys] : []
+}
+
+function takePendingExpandAll<RecordType>(
+  state: Pick<
+    InternalControllerState<RecordType, any, any>,
+    'dataSource' | 'pendingExpandAllRows' | 'rowKey'
+  >,
+) {
+  if (!state.pendingExpandAllRows || state.dataSource.length === 0) {
+    return undefined
+  }
+
+  return {
+    pendingExpandAllRows: false,
+    expandedRowKeys: getExpandedKeys(state.dataSource, state.rowKey),
+  }
+}
+
 function getExpandedKeys<RecordType>(
   rows: RecordType[],
   rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
@@ -320,6 +341,11 @@ export function createProTableController<
   const defaultCurrent = config.pagination?.defaultCurrent ?? 1
   const defaultPageSize = config.pagination?.defaultPageSize ?? 10
   const defaultQuery = cloneQuery((config.defaultQuery ?? {}) as Query)
+  const initialSelectedRowKeys = cloneKeys(config.defaultSelectedRowKeys)
+  const pendingExpandAllRows = Boolean(config.defaultExpandAllRows)
+  const initialExpandedRowKeys = pendingExpandAllRows
+    ? []
+    : cloneKeys(config.defaultExpandedRowKeys)
 
   const store = createStore<InternalControllerState<RecordType, Query, Summary>>(() => ({
     query: cloneQuery(defaultQuery),
@@ -335,9 +361,10 @@ export function createProTableController<
     requestReady: Boolean(config.queryRequest),
     inquired: false,
     summary: undefined,
-    selectedRowKeys: [],
+    selectedRowKeys: initialSelectedRowKeys,
     selectedRowMap: new Map<Key, RecordType>(),
-    expandedRowKeys: [],
+    expandedRowKeys: initialExpandedRowKeys,
+    pendingExpandAllRows,
     sort: [],
     requestSeq: 0,
     queryOverlay: {},
@@ -354,7 +381,7 @@ export function createProTableController<
     pageSize: defaultPageSize,
     sort: [] as ProTableViewSorter[],
     latestParams: null as ProTableRequestParams<Query> | null,
-    selectedRowKeys: [] as Key[],
+    selectedRowKeys: [...initialSelectedRowKeys],
     selectedRowMap: new Map<Key, RecordType>(),
   }
 
@@ -486,7 +513,8 @@ export function createProTableController<
 
       store.setState((current) => {
         const nextDataSource = listResult.data ?? []
-        return {
+        const nextState = {
+          ...current,
           dataSource: nextDataSource,
           total: typeof listResult.total === 'number' ? listResult.total : nextDataSource.length,
           selectedRowMap: syncSelectedRowMap(
@@ -498,6 +526,10 @@ export function createProTableController<
           ...(summaryRequest ? { summary: summaryResult } : {}),
           loading: false,
           inquired: true,
+        }
+        return {
+          ...nextState,
+          ...takePendingExpandAll(nextState),
         }
       })
       rememberSettledIdentity()
@@ -631,7 +663,7 @@ export function createProTableController<
         pageSize: state.pageSize,
         sort: state.sort,
         commitDraft: true,
-        clearSelection: resetPage,
+        clearSelection: resetPage && Boolean(state.requested),
       })
     },
     reload: async () => {
@@ -697,16 +729,23 @@ export function createProTableController<
       })
     },
     setDataSource: (rows, total) => {
-      store.setState((state) => ({
-        dataSource: rows,
-        total: typeof total === 'number' ? total : rows.length,
-        selectedRowMap: syncSelectedRowMap(
-          state.selectedRowKeys,
-          state.selectedRowMap,
-          state.rowKey,
-          [rows],
-        ),
-      }))
+      store.setState((state) => {
+        const nextState = {
+          ...state,
+          dataSource: rows,
+          total: typeof total === 'number' ? total : rows.length,
+          selectedRowMap: syncSelectedRowMap(
+            state.selectedRowKeys,
+            state.selectedRowMap,
+            state.rowKey,
+            [rows],
+          ),
+        }
+        return {
+          ...nextState,
+          ...takePendingExpandAll(nextState),
+        }
+      })
     },
     patchRow: (uniqueKey, targetValue, patch) => {
       store.setState((state) => {
@@ -768,20 +807,36 @@ export function createProTableController<
     },
     getSelectedRows: () => collectSelectedRows(store.getState()),
     setExpandedRowKeys: (keys) => {
-      store.setState((state) =>
-        areKeyArraysEqual(state.expandedRowKeys, keys) ? state : { expandedRowKeys: keys },
-      )
+      store.setState((state) => {
+        const keysUnchanged = areKeyArraysEqual(state.expandedRowKeys, keys)
+        if (keysUnchanged && !state.pendingExpandAllRows) {
+          return state
+        }
+
+        return {
+          expandedRowKeys: keys,
+          pendingExpandAllRows: false,
+        }
+      })
     },
     expandAllRows: () => {
       const state = store.getState()
       store.setState({
         expandedRowKeys: getExpandedKeys(state.dataSource, state.rowKey),
+        pendingExpandAllRows: false,
       })
     },
     collapseAllRows: () => {
-      store.setState((state) =>
-        state.expandedRowKeys.length === 0 ? state : { expandedRowKeys: [] },
-      )
+      store.setState((state) => {
+        if (state.expandedRowKeys.length === 0 && !state.pendingExpandAllRows) {
+          return state
+        }
+
+        return {
+          expandedRowKeys: [],
+          pendingExpandAllRows: false,
+        }
+      })
     },
     getRequestParams: () => {
       const state = store.getState()
