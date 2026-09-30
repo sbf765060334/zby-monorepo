@@ -1,13 +1,29 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider } from 'antd'
 import * as React from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { zbyProIntlResources } from '../../../../locale/intl-resources'
 import { ProTableActions } from '..'
+
+const originalResizeObserver = globalThis.ResizeObserver
+
+class TestResizeObserver implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', TestResizeObserver)
+})
+
+afterAll(() => {
+  vi.stubGlobal('ResizeObserver', originalResizeObserver)
+})
 
 afterEach(() => {
   cleanup()
@@ -52,5 +68,71 @@ describe('ProTableActions', () => {
     )
 
     expect(screen.getByText('更多操作组合')).toBeTruthy()
+  })
+
+  it('runs overflow actions without a confirm through onClick', async () => {
+    const onView = vi.fn()
+    renderActions(
+      <ProTableActions
+        dropdownProps={{ open: true }}
+        actions={[{ key: 'view', label: '查看', onClick: onView }]}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('查看'))
+    expect(onView).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps overflow popconfirm and only confirms through onConfirm', async () => {
+    const onConfirm = vi.fn()
+    const onClick = vi.fn()
+    renderActions(
+      <ProTableActions
+        dropdownProps={{ open: true }}
+        actions={[
+          {
+            key: 'delete',
+            label: '删除',
+            danger: true,
+            onClick,
+            popconfirm: {
+              title: '确定删除吗？',
+              onConfirm,
+            },
+          },
+        ]}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('删除'))
+    expect(onConfirm).not.toHaveBeenCalled()
+    expect(onClick).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByText('确定删除吗？')).toBeTruthy())
+
+    fireEvent.click(screen.getByRole('button', { name: /OK|确\s*定/ }))
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1))
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('falls back to onClick when overflow popconfirm has no onConfirm', async () => {
+    const onClick = vi.fn()
+    renderActions(
+      <ProTableActions
+        dropdownProps={{ open: true }}
+        actions={[
+          {
+            key: 'delete',
+            label: '删除',
+            popconfirm: { title: '确定删除吗？' },
+            onClick,
+          },
+        ]}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('删除'))
+    await waitFor(() => expect(screen.getByText('确定删除吗？')).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: /OK|确\s*定/ }))
+    await waitFor(() => expect(onClick).toHaveBeenCalledTimes(1))
   })
 })

@@ -614,6 +614,7 @@ export default function ProTablePlayground() {
               {
                 key: 'edit',
                 label: '编辑',
+                tooltip: '编辑订单',
                 onClick: () => {
                   void message.info(`编辑 ${record.orderNo}`)
                 },

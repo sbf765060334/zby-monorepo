@@ -46,16 +46,59 @@ export function ProTableActions<RecordType>({
   const items = actions.filter((item): item is ProTableActionItem<RecordType> => Boolean(item && !item.hidden))
   const visible = items.slice(0, Math.max(0, visibleCount))
   const overflow = items.slice(Math.max(0, visibleCount))
+  const holdOpenRef = React.useRef(false)
+  const [holdingConfirm, setHoldingConfirm] = React.useState(false)
+  const [moreOpen, setMoreOpen] = React.useState(false)
+  const isOpenControlled = Boolean(dropdownProps && 'open' in dropdownProps)
   const info = (item: ProTableActionItem<RecordType>): ProTableActionInfo<RecordType> => ({ record, index, key: item.key })
-  const run = (item: ProTableActionItem<RecordType>) => {
+  const executeClick = (item: ProTableActionItem<RecordType>) => {
     if (!item.disabled) void item.onClick?.(info(item))
+  }
+  const executeConfirm = (item: ProTableActionItem<RecordType>) => {
+    if (item.disabled || !item.popconfirm) return
+    if (item.popconfirm.onConfirm) {
+      void item.popconfirm.onConfirm(info(item))
+      return
+    }
+    void item.onClick?.(info(item))
+  }
+  const wrapAction = (
+    item: ProTableActionItem<RecordType>,
+    trigger: React.ReactElement,
+    overlay?: boolean,
+  ) => {
+    const popconfirm = item.popconfirm
+    const content = popconfirm ? (
+      <Popconfirm
+        {...popconfirm}
+        onOpenChange={(open) => {
+          popconfirm.onOpenChange?.(open)
+          if (!overlay) return
+          holdOpenRef.current = open
+          setHoldingConfirm(open)
+          if (!open) {
+            setMoreOpen(false)
+          }
+        }}
+        onConfirm={() => executeConfirm(item)}
+      >
+        {trigger}
+      </Popconfirm>
+    ) : trigger
+    return renderTooltip(content, item.tooltip)
   }
   const menuItems: MenuProps['items'] = overflow.map((item) => ({
     key: String(item.key),
-    label: item.label,
+    label: wrapAction(
+      item,
+      <span onClick={item.popconfirm ? (event) => event.stopPropagation() : undefined}>
+        {item.label}
+      </span>,
+      true,
+    ),
     disabled: item.disabled,
     danger: item.danger,
-    onClick: () => run(item),
+    onClick: item.popconfirm ? undefined : () => executeClick(item),
   }))
   const moreButton = (
     <Button
@@ -77,17 +120,32 @@ export function ProTableActions<RecordType>({
   return (
     <Space className={className ?? `${prefixCls}-actions`} size={4} style={style}>
       {visible.map((item) => {
-        const { key, label, hidden: _hidden, tooltip: _tooltip, popconfirm, onClick, ...buttonProps } = item
-        const button = <Button {...buttonProps} type={buttonProps.type ?? 'link'} size={buttonProps.size ?? 'small'} onClick={popconfirm ? undefined : () => run(item)}>{label}</Button>
-        const content = popconfirm ? (
-          <Popconfirm {...popconfirm} onConfirm={() => void (popconfirm.onConfirm?.(info(item)) ?? onClick?.(info(item)))}>
-            {button}
-          </Popconfirm>
-        ) : button
-        return <React.Fragment key={String(key)}>{renderTooltip(content, item.tooltip)}</React.Fragment>
+        const { key, label, hidden: _hidden, tooltip: _tooltip, popconfirm, onClick: _onClick, ...buttonProps } = item
+        const button = (
+          <Button
+            {...buttonProps}
+            type={buttonProps.type ?? 'link'}
+            size={buttonProps.size ?? 'small'}
+            onClick={popconfirm ? undefined : () => executeClick(item)}
+          >
+            {label}
+          </Button>
+        )
+        return <React.Fragment key={String(key)}>{wrapAction(item, button)}</React.Fragment>
       })}
       {overflow.length > 0 && (
-        <Dropdown {...dropdownProps} menu={{ items: menuItems }} trigger={dropdownProps?.trigger ?? ['hover']}>
+        <Dropdown
+          {...dropdownProps}
+          menu={{ items: menuItems }}
+          trigger={dropdownProps?.trigger ?? ['hover']}
+          open={isOpenControlled ? dropdownProps?.open : holdingConfirm || moreOpen}
+          onOpenChange={(open, openInfo) => {
+            dropdownProps?.onOpenChange?.(open, openInfo)
+            if (isOpenControlled) return
+            if (!open && holdOpenRef.current) return
+            setMoreOpen(open)
+          }}
+        >
           {moreButton}
         </Dropdown>
       )}
