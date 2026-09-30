@@ -440,7 +440,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
                     heightMode={resolvedConfig.mergedHeightMode}
                     loadingOverride={loading}
                     onTableChange={onTableChange}
-                    rowKey={rowKey}
+                    rowKey={rowKey ?? 'key'}
                     rowSelection={resolvedConfig.mergedRowSelection}
                     expandable={resolvedConfig.mergedExpandable}
                     pagination={resolvedConfig.mergedPagination}

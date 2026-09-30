@@ -584,11 +584,131 @@ describe('createProTableController', () => {
     controller.setSelectedRowKeys(['1'])
     controller.patchRow('id', '1', { status: 'done' })
 
-    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'pending' }])
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'done' }])
     expect(controller.getState().dataSource).toEqual([
       { id: '1', status: 'done' },
       { id: '2', status: 'done' },
     ])
+  })
+
+  it('fills selected rows from the default key field when rowKey is omitted', () => {
+    type KeyRow = { key: string; status: string }
+    const controller = createProTableController<KeyRow, Query>()
+    controller.setDataSource([{ key: 'a', status: 'pending' }])
+    controller.setSelectedRowKeys(['a'])
+    expect(controller.getSelectedRows()).toEqual([{ key: 'a', status: 'pending' }])
+  })
+
+  it('drops stale selected rows when keys are cleared and refreshes them from new data', () => {
+    const first = { id: '1', status: 'pending' }
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+    })
+    controller.setDataSource([first, { id: '2', status: 'done' }])
+    controller.setSelectedRowKeys(['1'])
+    expect(controller.getSelectedRows()[0]).toBe(first)
+
+    controller.setSelectedRowKeys([])
+    expect(controller.getSelectedRows()).toEqual([])
+
+    const next = { id: '1', status: 'shipping' }
+    controller.setDataSource([next])
+    controller.setSelectedRowKeys(['1'])
+    expect(controller.getSelectedRows()).toEqual([next])
+  })
+
+  it('keeps off-page selected rows and replaces them when the same key comes back', () => {
+    const first = { id: '1', status: 'pending' }
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+    })
+    controller.setDataSource([first, { id: '2', status: 'done' }])
+    controller.setSelectedRowKeys(['1'])
+
+    controller.setDataSource([{ id: '2', status: 'done' }])
+    expect(controller.getSelectedRows()).toEqual([first])
+
+    const refreshed = { id: '1', status: 'done' }
+    controller.setDataSource([refreshed])
+    expect(controller.getSelectedRows()).toEqual([refreshed])
+  })
+
+  it('refreshes selected rows after reload without clearing the keys', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'pending' }],
+      total: 1,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    await controller.submitQuery()
+    controller.setSelectedRowKeys(['1'])
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'pending' }])
+
+    queryRequest.mockResolvedValueOnce({
+      data: [{ id: '1', status: 'done' }],
+      total: 1,
+    })
+    await controller.reload()
+
+    expect(controller.getState().selectedRowKeys).toEqual(['1'])
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'done' }])
+  })
+
+  it('does not let stale table rows overwrite a patched selected row', () => {
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+    })
+    controller.setDataSource([{ id: '1', status: 'pending' }])
+    controller.setSelectedRowKeys(['1'])
+    controller.patchRow('id', '1', { status: 'done' })
+    controller.setSelectedRowKeys(['1'], [{ id: '1', status: 'pending' }])
+
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'done' }])
+    expect(controller.getState().dataSource).toEqual([{ id: '1', status: 'done' }])
+  })
+
+  it('keeps patched selected rows when a later request is cancelled', async () => {
+    let holdNextRequest = false
+    const queryRequest = vi.fn(
+      (_params: Query & { page: number; pageSize: number }, context: { signal: AbortSignal }) => {
+        if (!holdNextRequest) {
+          return Promise.resolve({
+            data: [{ id: '1', status: 'pending' }],
+            total: 1,
+          })
+        }
+
+        return new Promise<{ data: Row[]; total: number }>((_resolve, reject) => {
+          const fail = () => reject(createAbortError())
+          if (context.signal.aborted) {
+            fail()
+            return
+          }
+          context.signal.addEventListener('abort', fail, { once: true })
+        })
+      },
+    )
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    await controller.submitQuery()
+    controller.setSelectedRowKeys(['1'])
+    await controller.reload()
+    controller.patchRow('id', '1', { status: 'done' })
+
+    holdNextRequest = true
+    const reloadPromise = controller.reload()
+    cancelProTableControllerRequests(controller)
+    await reloadPromise
+
+    expect(controller.getState().selectedRowKeys).toEqual(['1'])
+    expect(controller.getState().dataSource).toEqual([{ id: '1', status: 'done' }])
+    expect(controller.getSelectedRows()).toEqual([{ id: '1', status: 'done' }])
   })
 
   it('records explicit setQuery keys until the overlay is consumed', () => {

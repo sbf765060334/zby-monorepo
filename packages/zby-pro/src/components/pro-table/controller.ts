@@ -55,20 +55,92 @@ function toRecordKey(value: unknown): Key | undefined {
   return undefined
 }
 
+const DEFAULT_ROW_KEY = 'key'
+
+function resolveRowKey<RecordType>(
+  rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
+) {
+  return rowKey ?? DEFAULT_ROW_KEY
+}
+
 function getRowRecordKey<RecordType>(
   rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
   record: RecordType,
   index: number,
 ): Key | undefined {
-  if (typeof rowKey === 'function') {
-    return rowKey(record, index)
+  const resolvedRowKey = resolveRowKey(rowKey)
+
+  if (typeof resolvedRowKey === 'function') {
+    return resolvedRowKey(record, index)
   }
 
-  if (typeof rowKey === 'string' || typeof rowKey === 'number') {
-    return toRecordKey((record as Record<string, unknown>)[rowKey as string])
+  if (typeof resolvedRowKey === 'string' || typeof resolvedRowKey === 'number') {
+    return toRecordKey((record as Record<string, unknown>)[resolvedRowKey as string])
   }
 
   return undefined
+}
+
+function cloneSelectedRowMap<RecordType>(map: Map<Key, RecordType>) {
+  return new Map(map)
+}
+
+function areSelectedRowMapsEqual<RecordType>(
+  left: Map<Key, RecordType>,
+  right: Map<Key, RecordType>,
+) {
+  if (left.size !== right.size) {
+    return false
+  }
+
+  for (const [key, record] of left) {
+    if (!Object.is(record, right.get(key))) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function indexRowsByKey<RecordType>(
+  rows: readonly RecordType[] | undefined,
+  rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
+) {
+  const indexed = new Map<Key, RecordType>()
+  ;(rows ?? []).forEach((record, index) => {
+    const recordKey = getRowRecordKey(rowKey, record, index)
+    if (recordKey !== undefined) {
+      indexed.set(recordKey, record)
+    }
+  })
+  return indexed
+}
+
+function syncSelectedRowMap<RecordType>(
+  keys: readonly Key[],
+  previousMap: Map<Key, RecordType>,
+  rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
+  sources: Array<readonly RecordType[] | undefined>,
+) {
+  const nextMap = new Map<Key, RecordType>()
+  const indexedSources = sources.map((source) => indexRowsByKey(source, rowKey))
+
+  keys.forEach((key) => {
+    for (const indexed of indexedSources) {
+      const record = indexed.get(key)
+      if (record !== undefined) {
+        nextMap.set(key, record)
+        return
+      }
+    }
+
+    const previous = previousMap.get(key)
+    if (previous !== undefined) {
+      nextMap.set(key, previous)
+    }
+  })
+
+  return nextMap
 }
 
 function cloneQuery<Query>(query: Query): Query {
@@ -271,7 +343,7 @@ export function createProTableController<
     queryOverlay: {},
     queryRequest: config.queryRequest,
     summaryRequest: config.summaryRequest,
-    rowKey: config.rowKey,
+    rowKey: resolveRowKey(config.rowKey),
     localSortFields: config.localSortFields ? [...config.localSortFields] : [],
   }))
   let listAbortController: AbortController | null = null
@@ -283,6 +355,7 @@ export function createProTableController<
     sort: [] as ProTableViewSorter[],
     latestParams: null as ProTableRequestParams<Query> | null,
     selectedRowKeys: [] as Key[],
+    selectedRowMap: new Map<Key, RecordType>(),
   }
 
   const abortListRequest = () => {
@@ -311,10 +384,13 @@ export function createProTableController<
         ? ({ ...current.latestParams } as ProTableRequestParams<Query>)
         : null,
       selectedRowKeys: [...current.selectedRowKeys],
+      selectedRowMap: cloneSelectedRowMap(current.selectedRowMap),
     }
   }
 
   const restoreSettledIdentity = () => {
+    const current = store.getState()
+    const nextKeys = [...lastSettledIdentity.selectedRowKeys]
     store.setState({
       committedQuery: cloneQuery(lastSettledIdentity.committedQuery),
       currentPage: lastSettledIdentity.currentPage,
@@ -323,7 +399,13 @@ export function createProTableController<
       latestParams: lastSettledIdentity.latestParams
         ? ({ ...lastSettledIdentity.latestParams } as ProTableRequestParams<Query>)
         : null,
-      selectedRowKeys: [...lastSettledIdentity.selectedRowKeys],
+      selectedRowKeys: nextKeys,
+      selectedRowMap: syncSelectedRowMap(
+        nextKeys,
+        lastSettledIdentity.selectedRowMap,
+        current.rowKey,
+        [current.dataSource],
+      ),
       loading: false,
     })
   }
@@ -354,7 +436,13 @@ export function createProTableController<
             committedQuery: cloneQuery(input.filters),
           }
         : {}),
-      ...(input.clearSelection && state.selectedRowKeys.length > 0 ? { selectedRowKeys: [] } : {}),
+      ...(input.clearSelection &&
+      (state.selectedRowKeys.length > 0 || state.selectedRowMap.size > 0)
+        ? {
+            selectedRowKeys: [] as Key[],
+            selectedRowMap: new Map<Key, RecordType>(),
+          }
+        : {}),
     }
     const { queryRequest, summaryRequest } = state
 
@@ -396,13 +484,22 @@ export function createProTableController<
         return
       }
 
-      store.setState((current) => ({
-        dataSource: listResult.data ?? [],
-        total: typeof listResult.total === 'number' ? listResult.total : current.total,
-        ...(summaryRequest ? { summary: summaryResult } : {}),
-        loading: false,
-        inquired: true,
-      }))
+      store.setState((current) => {
+        const nextDataSource = listResult.data ?? []
+        return {
+          dataSource: nextDataSource,
+          total: typeof listResult.total === 'number' ? listResult.total : current.total,
+          selectedRowMap: syncSelectedRowMap(
+            current.selectedRowKeys,
+            current.selectedRowMap,
+            current.rowKey,
+            [nextDataSource],
+          ),
+          ...(summaryRequest ? { summary: summaryResult } : {}),
+          loading: false,
+          inquired: true,
+        }
+      })
       rememberSettledIdentity()
     } catch (error) {
       if (store.getState().requestSeq !== requestSeq) {
@@ -435,7 +532,8 @@ export function createProTableController<
             : cloneQuery(nextConfig.defaultQuery as Query)
         const nextQueryRequest = nextConfig.queryRequest ?? state.queryRequest
         const nextSummaryRequest = nextConfig.summaryRequest ?? state.summaryRequest
-        const nextRowKey = nextConfig.rowKey ?? state.rowKey
+        const nextRowKey =
+          nextConfig.rowKey === undefined ? state.rowKey : resolveRowKey(nextConfig.rowKey)
         const nextRequestReady = Boolean(nextQueryRequest)
         const nextLocalSortFields =
           nextConfig.localSortFields === undefined
@@ -599,41 +697,71 @@ export function createProTableController<
       })
     },
     setDataSource: (rows, total) => {
-      store.setState({
+      store.setState((state) => ({
         dataSource: rows,
         total: typeof total === 'number' ? total : rows.length,
-      })
+        selectedRowMap: syncSelectedRowMap(
+          state.selectedRowKeys,
+          state.selectedRowMap,
+          state.rowKey,
+          [rows],
+        ),
+      }))
     },
     patchRow: (uniqueKey, targetValue, patch) => {
-      store.setState((state) => ({
-        dataSource: state.dataSource.map((row) =>
+      store.setState((state) => {
+        const applyPatch = (row: RecordType) =>
           row[uniqueKey] === targetValue
             ? ({
                 ...row,
                 ...patch,
               } as RecordType)
-            : row,
-        ),
-      }))
-    },
-    setSelectedRowKeys: (keys, rows) => {
-      store.setState((state) => {
-        if (!rows && areKeyArraysEqual(state.selectedRowKeys, keys)) {
+            : row
+
+        const nextDataSource = state.dataSource.map(applyPatch)
+        const patchedPreviousMap = new Map<Key, RecordType>()
+        state.selectedRowMap.forEach((row, key) => {
+          patchedPreviousMap.set(key, applyPatch(row))
+        })
+        const nextMap = syncSelectedRowMap(
+          state.selectedRowKeys,
+          patchedPreviousMap,
+          state.rowKey,
+          [nextDataSource],
+        )
+        const dataUnchanged = nextDataSource.every((row, index) =>
+          Object.is(row, state.dataSource[index]),
+        )
+
+        if (dataUnchanged && areSelectedRowMapsEqual(state.selectedRowMap, nextMap)) {
           return state
         }
 
-        const nextMap = new Map(state.selectedRowMap)
-        const list = rows ?? state.dataSource
+        return {
+          ...(dataUnchanged ? {} : { dataSource: nextDataSource }),
+          selectedRowMap: nextMap,
+        }
+      })
+    },
+    setSelectedRowKeys: (keys, rows) => {
+      store.setState((state) => {
+        const nextKeys = [...keys]
+        const nextMap = syncSelectedRowMap(
+          nextKeys,
+          state.selectedRowMap,
+          state.rowKey,
+          [state.dataSource, rows],
+        )
 
-        list.forEach((record, index) => {
-          const recordKey = getRowRecordKey(state.rowKey, record, index)
-          if (recordKey !== undefined && keys.includes(recordKey)) {
-            nextMap.set(recordKey, record)
-          }
-        })
+        if (
+          areKeyArraysEqual(state.selectedRowKeys, nextKeys) &&
+          areSelectedRowMapsEqual(state.selectedRowMap, nextMap)
+        ) {
+          return state
+        }
 
         return {
-          selectedRowKeys: keys,
+          selectedRowKeys: nextKeys,
           selectedRowMap: nextMap,
         }
       })
