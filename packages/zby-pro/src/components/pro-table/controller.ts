@@ -262,36 +262,43 @@ export function createProTableController<
     abortSummaryRequest()
   }
 
-  const resolveRequestFilters = (
-    state: InternalControllerState<RecordType, Query, Summary>,
-  ) => state.committedQuery
-
-  const performRequest = async (
-    filters: Query,
-    options: { commitFilters?: boolean; resetPage?: boolean } = {},
-  ) => {
+  const dispatchRequest = async (input: {
+    filters: Query
+    currentPage: number
+    pageSize: number
+    sortField: string | undefined
+    sortOrder: 'ascend' | 'descend' | null | undefined
+    commitDraft: boolean
+    refreshSummary: boolean
+    clearSelection: boolean
+  }) => {
     const state = store.getState()
-    const { queryRequest, summaryRequest } = state
     const requestParams = assembleRequestParams(
-      filters,
-      state.currentPage,
-      state.pageSize,
-      state.sortField,
-      state.sortOrder,
+      input.filters,
+      input.currentPage,
+      input.pageSize,
+      input.sortField,
+      input.sortOrder,
     )
-    const commitFilters = options.commitFilters === true
+    const snapshot = {
+      currentPage: input.currentPage,
+      pageSize: input.pageSize,
+      sortField: input.sortField,
+      sortOrder: input.sortOrder ?? null,
+      latestParams: requestParams,
+      ...(input.commitDraft
+        ? {
+            query: cloneQuery(input.filters),
+            committedQuery: cloneQuery(input.filters),
+          }
+        : {}),
+      ...(input.clearSelection && state.selectedRowKeys.length > 0 ? { selectedRowKeys: [] } : {}),
+    }
+    const { queryRequest, summaryRequest } = state
 
     if (!queryRequest) {
       abortAllRequests()
-      store.setState({
-        ...(commitFilters
-          ? {
-              query: cloneQuery(filters),
-              committedQuery: cloneQuery(filters),
-            }
-          : {}),
-        latestParams: requestParams,
-      })
+      store.setState(snapshot)
       return
     }
 
@@ -301,20 +308,14 @@ export function createProTableController<
     const requestSeq = state.requestSeq + 1
 
     store.setState({
+      ...snapshot,
       loading: true,
       requested: true,
       requestReady: true,
       requestSeq,
-      ...(commitFilters
-        ? {
-            query: cloneQuery(filters),
-            committedQuery: cloneQuery(filters),
-          }
-        : {}),
-      latestParams: requestParams,
     })
 
-    const shouldFetchSummary = options.resetPage !== false && typeof summaryRequest === 'function'
+    const shouldFetchSummary = input.refreshSummary && typeof summaryRequest === 'function'
     let summaryPromise: Promise<Summary | undefined> | undefined
     let summarySignal: AbortSignal | undefined
     let summarySeq: number | undefined
@@ -465,33 +466,56 @@ export function createProTableController<
     },
     submitQuery: async (options) => {
       const resetPage = options?.resetPage !== false
-      const filters = store.getState().query
-
-      store.setState((current) => ({
-        currentPage: resetPage ? 1 : current.currentPage,
-        selectedRowKeys:
-          resetPage && current.selectedRowKeys.length > 0 ? [] : current.selectedRowKeys,
-      }))
-
-      await performRequest(filters, { commitFilters: true, resetPage })
+      const state = store.getState()
+      await dispatchRequest({
+        filters: state.query,
+        currentPage: resetPage ? 1 : state.currentPage,
+        pageSize: state.pageSize,
+        sortField: state.sortField,
+        sortOrder: state.sortOrder,
+        commitDraft: true,
+        refreshSummary: resetPage,
+        clearSelection: resetPage,
+      })
     },
     reload: async () => {
       const state = store.getState()
-      await performRequest(resolveRequestFilters(state), { resetPage: false })
+      await dispatchRequest({
+        filters: state.committedQuery,
+        currentPage: state.currentPage,
+        pageSize: state.pageSize,
+        sortField: state.sortField,
+        sortOrder: state.sortOrder,
+        commitDraft: false,
+        refreshSummary: false,
+        clearSelection: false,
+      })
     },
     setPage: async (page) => {
-      store.setState({ currentPage: page })
       const state = store.getState()
-      await performRequest(resolveRequestFilters(state), { resetPage: false })
+      await dispatchRequest({
+        filters: state.committedQuery,
+        currentPage: page,
+        pageSize: state.pageSize,
+        sortField: state.sortField,
+        sortOrder: state.sortOrder,
+        commitDraft: false,
+        refreshSummary: false,
+        clearSelection: false,
+      })
     },
     setPageSize: async (pageSize) => {
-      store.setState((current) => ({
+      const state = store.getState()
+      await dispatchRequest({
+        filters: state.committedQuery,
         currentPage: 1,
         pageSize,
-        selectedRowKeys: current.selectedRowKeys.length === 0 ? current.selectedRowKeys : [],
-      }))
-      const state = store.getState()
-      await performRequest(resolveRequestFilters(state), { resetPage: true })
+        sortField: state.sortField,
+        sortOrder: state.sortOrder,
+        commitDraft: false,
+        refreshSummary: true,
+        clearSelection: true,
+      })
     },
     setSort: async (field, order) => {
       const nextSortOrder = isValidSortOrder(order) ? order : null
@@ -501,14 +525,16 @@ export function createProTableController<
         return
       }
 
-      store.setState((current) => ({
+      await dispatchRequest({
+        filters: state.committedQuery,
+        currentPage: 1,
+        pageSize: state.pageSize,
         sortField: field,
         sortOrder: nextSortOrder,
-        currentPage: 1,
-        selectedRowKeys: current.selectedRowKeys.length === 0 ? current.selectedRowKeys : [],
-      }))
-
-      await performRequest(resolveRequestFilters(store.getState()), { resetPage: true })
+        commitDraft: false,
+        refreshSummary: true,
+        clearSelection: true,
+      })
     },
     setDataSource: (rows, total) => {
       store.setState({
@@ -570,7 +596,7 @@ export function createProTableController<
     getRequestParams: () => {
       const state = store.getState()
       return assembleRequestParams(
-        resolveRequestFilters(state),
+        state.committedQuery,
         state.currentPage,
         state.pageSize,
         state.sortField,

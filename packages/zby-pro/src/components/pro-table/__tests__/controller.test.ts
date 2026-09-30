@@ -137,6 +137,138 @@ describe('createProTableController', () => {
     })
   })
 
+  it('lets paging during an in-flight search use the submitted filters', async () => {
+    const queryRequest = vi.fn(
+      (
+        params: Query & { page: number; pageSize: number },
+        context: { signal: AbortSignal },
+      ) =>
+        new Promise<{ data: Row[]; total: number }>((resolve, reject) => {
+          const fail = () => {
+            const error = new Error('Aborted')
+            error.name = 'AbortError'
+            reject(error)
+          }
+
+          if (context.signal.aborted) {
+            fail()
+            return
+          }
+
+          context.signal.addEventListener('abort', fail, { once: true })
+
+          if (params.page !== 1) {
+            resolve({
+              data: [{ id: String(params.page), status: params.status ?? 'all' }],
+              total: 20,
+            })
+          }
+        }),
+    )
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    controller.setQueryField('status', 'pending')
+    const searchPromise = controller.submitQuery()
+
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(queryRequest.mock.calls[0]?.[0]).toEqual({
+      status: 'pending',
+      page: 1,
+      pageSize: 10,
+    })
+    expect(controller.getState()).toMatchObject({
+      committedQuery: { status: 'pending' },
+      currentPage: 1,
+      latestParams: { status: 'pending', page: 1, pageSize: 10 },
+    })
+
+    await controller.setPage(2)
+    await searchPromise
+
+    expect(queryRequest).toHaveBeenCalledTimes(2)
+    expect(queryRequest.mock.calls[1]?.[0]).toEqual({
+      status: 'pending',
+      page: 2,
+      pageSize: 10,
+    })
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'pending' },
+      committedQuery: { status: 'pending' },
+      currentPage: 2,
+      latestParams: { status: 'pending', page: 2, pageSize: 10 },
+      loading: false,
+      inquired: true,
+    })
+    expect(controller.getRequestParams()).toEqual({
+      status: 'pending',
+      page: 2,
+      pageSize: 10,
+    })
+  })
+
+  it('writes the request snapshot even when queryRequest is missing', async () => {
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    controller.setQueryField('status', 'pending')
+    await controller.submitQuery()
+
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'pending' },
+      committedQuery: { status: 'pending' },
+      currentPage: 1,
+      latestParams: { status: 'pending', page: 1, pageSize: 10 },
+    })
+    expect(controller.getRequestParams()).toEqual({
+      status: 'pending',
+      page: 1,
+      pageSize: 10,
+    })
+  })
+
+  it('refreshes summary on search, page size, and sort, but not on page or reload', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'all' }],
+      total: 1,
+    }))
+    const summaryRequest = vi.fn(async () => ({ count: 1 }))
+    const controller = createProTableController<Row, Query, { count: number }>({
+      queryRequest,
+      summaryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    await controller.submitQuery()
+    expect(summaryRequest).toHaveBeenCalledTimes(1)
+
+    await controller.setPage(2)
+    expect(summaryRequest).toHaveBeenCalledTimes(1)
+
+    await controller.reload()
+    expect(summaryRequest).toHaveBeenCalledTimes(1)
+
+    await controller.setPageSize(20)
+    expect(summaryRequest).toHaveBeenCalledTimes(2)
+
+    await controller.setSort('id', 'ascend')
+    expect(summaryRequest).toHaveBeenCalledTimes(3)
+
+    controller.setQueryField('status', 'pending')
+    await controller.submitQuery({ resetPage: false })
+    expect(summaryRequest).toHaveBeenCalledTimes(3)
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      { status: 'pending', page: 1, pageSize: 20, sortBy: 'id', sortOrder: 'ascend' },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+
   it('resetQuery applies the latest defaultQuery from configure without touching page', () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: { status: 'all' },
