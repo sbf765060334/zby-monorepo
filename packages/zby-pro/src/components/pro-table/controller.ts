@@ -245,7 +245,15 @@ export function createProTableController<
   }))
   let listAbortController: AbortController | null = null
   let summaryAbortController: AbortController | null = null
-  let summaryRequestSeq = 0
+  let lastSettledIdentity = {
+    committedQuery: cloneQuery(defaultQuery),
+    currentPage: defaultCurrent,
+    pageSize: defaultPageSize,
+    sortField: undefined as string | undefined,
+    sortOrder: null as 'ascend' | 'descend' | null,
+    latestParams: null as ProTableRequestParams<Query> | null,
+    selectedRowKeys: [] as Key[],
+  }
 
   const abortListRequest = () => {
     listAbortController?.abort()
@@ -262,6 +270,36 @@ export function createProTableController<
     abortSummaryRequest()
   }
 
+  const rememberSettledIdentity = () => {
+    const current = store.getState()
+    lastSettledIdentity = {
+      committedQuery: cloneQuery(current.committedQuery),
+      currentPage: current.currentPage,
+      pageSize: current.pageSize,
+      sortField: current.sortField,
+      sortOrder: current.sortOrder ?? null,
+      latestParams: current.latestParams
+        ? ({ ...current.latestParams } as ProTableRequestParams<Query>)
+        : null,
+      selectedRowKeys: [...current.selectedRowKeys],
+    }
+  }
+
+  const restoreSettledIdentity = () => {
+    store.setState({
+      committedQuery: cloneQuery(lastSettledIdentity.committedQuery),
+      currentPage: lastSettledIdentity.currentPage,
+      pageSize: lastSettledIdentity.pageSize,
+      sortField: lastSettledIdentity.sortField,
+      sortOrder: lastSettledIdentity.sortOrder,
+      latestParams: lastSettledIdentity.latestParams
+        ? ({ ...lastSettledIdentity.latestParams } as ProTableRequestParams<Query>)
+        : null,
+      selectedRowKeys: [...lastSettledIdentity.selectedRowKeys],
+      loading: false,
+    })
+  }
+
   const dispatchRequest = async (input: {
     filters: Query
     currentPage: number
@@ -269,7 +307,6 @@ export function createProTableController<
     sortField: string | undefined
     sortOrder: 'ascend' | 'descend' | null | undefined
     commitDraft: boolean
-    refreshSummary: boolean
     clearSelection: boolean
   }) => {
     const state = store.getState()
@@ -299,12 +336,18 @@ export function createProTableController<
     if (!queryRequest) {
       abortAllRequests()
       store.setState(snapshot)
+      rememberSettledIdentity()
       return
     }
 
-    abortListRequest()
+    abortAllRequests()
     listAbortController = new AbortController()
     const listSignal = listAbortController.signal
+    let summarySignal: AbortSignal | undefined
+    if (typeof summaryRequest === 'function') {
+      summaryAbortController = new AbortController()
+      summarySignal = summaryAbortController.signal
+    }
     const requestSeq = state.requestSeq + 1
 
     store.setState({
@@ -315,69 +358,43 @@ export function createProTableController<
       requestSeq,
     })
 
-    const shouldFetchSummary = input.refreshSummary && typeof summaryRequest === 'function'
-    let summaryPromise: Promise<Summary | undefined> | undefined
-    let summarySignal: AbortSignal | undefined
-    let summarySeq: number | undefined
-
-    const commitSummary = (summaryResult: Summary | undefined) => {
-      if (
-        summarySeq === undefined ||
-        summaryResult === undefined ||
-        summarySignal?.aborted ||
-        summarySeq !== summaryRequestSeq
-      ) {
-        return
-      }
-
-      store.setState({ summary: summaryResult })
-    }
-
-    if (shouldFetchSummary && summaryRequest) {
-      abortSummaryRequest()
-      summaryAbortController = new AbortController()
-      summarySignal = summaryAbortController.signal
-      summarySeq = summaryRequestSeq + 1
-      summaryRequestSeq = summarySeq
-      summaryPromise = summaryRequest(requestParams, { signal: summarySignal }).catch((error) => {
-        if (summarySignal && isAbortError(error, summarySignal)) {
-          return undefined
-        }
-
-        throw error
-      })
-      void summaryPromise.catch(() => undefined)
-    }
-
     try {
-      const listResult = await queryRequest(requestParams, { signal: listSignal })
+      const listPromise = queryRequest(requestParams, { signal: listSignal })
+      const [listResult, summaryResult] = summaryRequest && summarySignal
+        ? await Promise.all([
+            listPromise,
+            summaryRequest(requestParams, { signal: summarySignal }),
+          ])
+        : [await listPromise, undefined]
 
       if (store.getState().requestSeq !== requestSeq) {
-        return
-      }
-
-      const summaryResult = summaryPromise ? await summaryPromise : undefined
-      if (store.getState().requestSeq !== requestSeq) {
-        commitSummary(summaryResult)
         return
       }
 
       store.setState((current) => ({
         dataSource: listResult.data ?? [],
         total: typeof listResult.total === 'number' ? listResult.total : current.total,
-        summary: summaryResult === undefined ? current.summary : summaryResult,
+        ...(summaryRequest ? { summary: summaryResult } : {}),
         loading: false,
         inquired: true,
       }))
+      rememberSettledIdentity()
     } catch (error) {
-      if (isAbortError(error, listSignal)) {
-        summaryPromise?.then(commitSummary, () => undefined)
+      if (store.getState().requestSeq !== requestSeq) {
         return
       }
 
-      if (store.getState().requestSeq === requestSeq) {
-        store.setState({ loading: false })
+      const aborted =
+        isAbortError(error, listSignal) ||
+        (summarySignal !== undefined && isAbortError(error, summarySignal))
+
+      abortAllRequests()
+      restoreSettledIdentity()
+
+      if (aborted) {
+        return
       }
+
       throw error
     }
   }
@@ -474,7 +491,6 @@ export function createProTableController<
         sortField: state.sortField,
         sortOrder: state.sortOrder,
         commitDraft: true,
-        refreshSummary: resetPage,
         clearSelection: resetPage,
       })
     },
@@ -487,7 +503,6 @@ export function createProTableController<
         sortField: state.sortField,
         sortOrder: state.sortOrder,
         commitDraft: false,
-        refreshSummary: false,
         clearSelection: false,
       })
     },
@@ -500,7 +515,6 @@ export function createProTableController<
         sortField: state.sortField,
         sortOrder: state.sortOrder,
         commitDraft: false,
-        refreshSummary: false,
         clearSelection: false,
       })
     },
@@ -513,7 +527,6 @@ export function createProTableController<
         sortField: state.sortField,
         sortOrder: state.sortOrder,
         commitDraft: false,
-        refreshSummary: true,
         clearSelection: true,
       })
     },
@@ -532,7 +545,6 @@ export function createProTableController<
         sortField: field,
         sortOrder: nextSortOrder,
         commitDraft: false,
-        refreshSummary: true,
         clearSelection: true,
       })
     },
