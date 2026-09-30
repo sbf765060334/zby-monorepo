@@ -488,7 +488,7 @@ export function createProTableController<
         const nextDataSource = listResult.data ?? []
         return {
           dataSource: nextDataSource,
-          total: typeof listResult.total === 'number' ? listResult.total : current.total,
+          total: typeof listResult.total === 'number' ? listResult.total : nextDataSource.length,
           selectedRowMap: syncSelectedRowMap(
             current.selectedRowKeys,
             current.selectedRowMap,

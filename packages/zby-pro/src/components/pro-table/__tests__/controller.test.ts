@@ -51,6 +51,31 @@ describe('createProTableController', () => {
     })
   })
 
+  it('uses data length as total when the list response omits total', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [
+        { id: '1', status: 'pending' },
+        { id: '2', status: 'pending' },
+      ],
+      total: 20,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    await controller.submitQuery()
+    expect(controller.getState().total).toBe(20)
+
+    queryRequest.mockResolvedValueOnce({
+      data: [{ id: '1', status: 'pending' }],
+    } as { data: Row[]; total?: number })
+    await controller.reload()
+
+    expect(controller.getState().dataSource).toHaveLength(1)
+    expect(controller.getState().total).toBe(1)
+  })
+
   it('does not write page or sort into query when paging, sorting, or reloading', async () => {
     const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
       data: [{ id: String(params.page), status: params.status ?? 'all' }],
