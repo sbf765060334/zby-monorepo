@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mergeSearchQuery, pickSearchQuery } from '../search'
+import { mergeSearchQuery, mergeViewQueryWithOverlay, pickSearchQuery } from '../search'
 
 const filters = [{ key: 'status' as const }, { key: 'owner' as const }, { key: 'urgent' as const }]
 
@@ -44,6 +44,57 @@ describe('mergeSearchQuery', () => {
     expect(mergeSearchQuery({ urgent: true, count: 3 }, { urgent: false, count: 0 })).toEqual({
       urgent: false,
       count: 0,
+    })
+  })
+})
+
+describe('mergeViewQueryWithOverlay', () => {
+  it('lets overlay fields win over the view snapshot and fills the rest from the view', () => {
+    expect(
+      mergeViewQueryWithOverlay(
+        { status: 'all', owner: 'Ada', warehouse: '上海仓' },
+        { status: 'pending', warehouse: '深圳仓' },
+        { status: 'open' },
+      ),
+    ).toEqual({
+      status: 'open',
+      owner: 'Ada',
+      warehouse: '深圳仓',
+    })
+  })
+
+  it('pins defaultQuery keys that are present on the overlay even when they match defaults', () => {
+    expect(
+      mergeViewQueryWithOverlay(
+        { status: 'all', owner: 'Ada' },
+        { status: 'pending' },
+        { status: 'all', owner: 'Bob' },
+      ),
+    ).toEqual({
+      status: 'all',
+      owner: 'Bob',
+    })
+  })
+
+  it('applies the view snapshot when overlay is empty', () => {
+    expect(
+      mergeViewQueryWithOverlay({ status: 'all', owner: 'Ada' }, { status: 'pending' }, {}),
+    ).toEqual({
+      status: 'pending',
+      owner: 'Ada',
+    })
+  })
+
+  it('lets overlay empty values overwrite view fields', () => {
+    expect(
+      mergeViewQueryWithOverlay(
+        { status: 'all', owner: 'Ada' },
+        { status: 'pending', owner: 'Ada' },
+        { owner: '' },
+      ),
+    ).toEqual({
+      status: 'pending',
+      owner: '',
     })
   })
 })

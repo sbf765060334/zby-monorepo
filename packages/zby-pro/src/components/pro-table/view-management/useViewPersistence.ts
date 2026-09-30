@@ -26,6 +26,7 @@ import {
   pickSearchQuery,
 } from '../utils'
 import type { ProTableColumnDefinition } from '../utils/columns'
+import { clearProTableQueryOverlay } from '../controller'
 
 const UNPERSISTED_VIEW_MANAGEMENT_INSTANCE_ID = '__pro_table_unpersisted_views__'
 const DEFAULT_VIEW_MANAGEMENT_ADAPTER =
@@ -123,6 +124,7 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
       const actions = viewStore.getState()
       const nextQuery = mergeSearchQuery(controller.getState().defaultQuery, snapshot.query)
 
+      clearProTableQueryOverlay(controller)
       actions.setMergedColumnsPreferences(snapshot.columnPreferences)
       actions.setMergedFilterPreferences(snapshot.filterPreferences)
       controller.setViewState({

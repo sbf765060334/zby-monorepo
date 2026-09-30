@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { cancelProTableControllerRequests, createProTableController } from '..'
+import { cancelProTableControllerRequests, consumeProTableQueryOverlay, createProTableController } from '../controller'
 
 type Row = { id: string; status: string }
 type Query = { status?: string }
@@ -512,5 +512,43 @@ describe('createProTableController', () => {
       { id: '1', status: 'done' },
       { id: '2', status: 'done' },
     ])
+  })
+
+  it('records explicit setQuery keys until the overlay is consumed', () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      rowKey: 'id',
+    })
+
+    controller.setQuery({ status: 'open' })
+    expect(consumeProTableQueryOverlay(controller)).toEqual({ status: 'open' })
+    expect(consumeProTableQueryOverlay(controller)).toEqual({})
+  })
+
+  it('pins setQueryField and default-matching setQuery keys on the overlay', () => {
+    type OverlayQuery = { status?: string; owner?: string }
+    const controller = createProTableController<Row, OverlayQuery>({
+      defaultQuery: { status: 'all' },
+      rowKey: 'id',
+    })
+
+    controller.setQuery({ status: 'all' })
+    controller.setQueryField('owner', 'Ada')
+    expect(consumeProTableQueryOverlay(controller)).toEqual({
+      status: 'all',
+      owner: 'Ada',
+    })
+  })
+
+  it('clears the query overlay on resetQuery', () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      rowKey: 'id',
+    })
+
+    controller.setQuery({ status: 'open' })
+    controller.resetQuery()
+    expect(consumeProTableQueryOverlay(controller)).toEqual({})
+    expect(controller.getState().query).toEqual({ status: 'all' })
   })
 })

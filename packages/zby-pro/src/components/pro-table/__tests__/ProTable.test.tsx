@@ -944,6 +944,205 @@ describe('ProTable', () => {
     })
   })
 
+  it('keeps setQuery when views are disabled', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('open'))
+    expect(controller.getState().query.status).toBe('open')
+  })
+
+  it('overlays setQuery fields onto the restored view snapshot', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending', owner: 'Ada' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery).toEqual({
+      status: 'open',
+      owner: 'Ada',
+    }))
+    expect(controller.getState().query).toEqual({
+      status: 'open',
+      owner: 'Ada',
+    })
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+  })
+
+  it('pins defaultQuery keys from a full setQuery overlay', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all', owner: 'Ada' },
+      queryRequest,
+      rowKey: 'id',
+    })
+    controller.setQuery({ ...controller.getState().defaultQuery, owner: 'Bob' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery).toEqual({
+      status: 'all',
+      owner: 'Bob',
+    }))
+  })
+
+  it('refetches after merging a view onto an already submitted controller', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending', owner: 'Ada' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open' })
+    await controller.submitQuery()
+    const requestCount = queryRequest.mock.calls.length
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest.mock.calls.length).toBeGreaterThan(requestCount))
+    expect(controller.getState().committedQuery).toEqual({
+      status: 'open',
+      owner: 'Ada',
+    })
+  })
+
+  it('applies a later view in full without the entry overlay', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [
+        {
+          id: 'custom-pending',
+          name: '待处理',
+          scope: 'custom',
+          order: 0,
+          snapshot: {
+            query: { status: 'pending', owner: 'Ada' },
+            columnPreferences: [],
+            sorter: null,
+          },
+        },
+      ],
+      activeViewId: 'custom-pending',
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('open'))
+    fireEvent.mouseDown(
+      document.querySelector('.ant-pro-view-management-selector [role="combobox"]')!,
+    )
+    fireEvent.click(
+      document.querySelector('.ant-pro-view-management-selector-option-name[title="默认视图"]')!,
+    )
+    await waitFor(() => expect(controller.getState().committedQuery).toEqual({
+      status: 'all',
+    }))
+  })
+
   it('restores defaultQuery when a saved view stored an empty field', async () => {
     const adapter = createTestAdapter<any>()
     adapter.load = vi.fn().mockResolvedValue({

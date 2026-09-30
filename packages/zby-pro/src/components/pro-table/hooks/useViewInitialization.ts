@@ -12,7 +12,8 @@ import {
 import type { ProTableController, ProTableViewSnapshot } from '../interface'
 import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewStore } from '../store'
-import { mergeSearchQuery, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
+import { mergeViewQueryWithOverlay, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
+import { consumeProTableQueryOverlay } from '../controller'
 
 type ViewInitializationParams<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
@@ -106,19 +107,27 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
         const initialSnapshot = normalizeSnapshotForCurrentSchema(
           activeView?.snapshot ?? defaultSnapshot,
         )
-        const initialQuery = mergeSearchQuery(
-          controller.getState().defaultQuery,
-          initialSnapshot.query,
-        )
+        const overlay = consumeProTableQueryOverlay(controller)
+        const controllerState = controller.getState()
         const actions = viewStore.getState()
+        const hasCustomSort = controllerState.sortField !== undefined
 
         actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)
         actions.setMergedFilterPreferences(initialSnapshot.filterPreferences)
-        controller.setViewState({
-          query: initialQuery,
-          ...(viewsEnabled ? { sorter: initialSnapshot.sorter ?? null } : {}),
-          committed: true,
-        })
+        if (viewsEnabled) {
+          controller.setViewState({
+            query: mergeViewQueryWithOverlay(
+              controllerState.defaultQuery,
+              initialSnapshot.query,
+              overlay,
+            ),
+            ...(hasCustomSort ? {} : { sorter: initialSnapshot.sorter ?? null }),
+            committed: true,
+          })
+          if (controllerState.requested === true) {
+            void controller.submitQuery({ resetPage: true }).catch(() => undefined)
+          }
+        }
         actions.setColumnsReady(true)
         initializedVersionRef.current = retryVersion
 

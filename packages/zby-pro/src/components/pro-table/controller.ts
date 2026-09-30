@@ -11,6 +11,7 @@ import type {
 import { isSearchValueEqual } from './utils/search'
 
 const CANCEL_REQUESTS = Symbol('ProTableCancelRequests')
+const QUERY_OVERLAY = Symbol('ProTableQueryOverlay')
 
 type InternalControllerState<
   RecordType,
@@ -19,9 +20,21 @@ type InternalControllerState<
 > = ProTableControllerState<RecordType, Query, Summary> & {
   selectedRowMap: Map<Key, RecordType>;
   requestSeq: number;
+  queryOverlay: Partial<Query>;
   queryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['queryRequest'];
   summaryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['summaryRequest'];
   rowKey?: ProTableControllerConfig<RecordType, Query, Summary>['rowKey'];
+}
+
+type OverlayableProTableController<
+  RecordType,
+  Query extends Record<string, unknown>,
+  Summary,
+> = ProTableController<RecordType, Query, Summary> & {
+  [QUERY_OVERLAY]?: {
+    consume: () => Partial<Query>
+    clear: () => void
+  }
 }
 
 type AbortableProTableController<
@@ -29,7 +42,7 @@ type AbortableProTableController<
   Query extends Record<string, unknown>,
   Summary,
 > = ProTableController<RecordType, Query, Summary> & {
-  [CANCEL_REQUESTS]?: () => void;
+  [CANCEL_REQUESTS]?: () => void
 }
 
 function toRecordKey(value: unknown): Key | undefined {
@@ -62,6 +75,13 @@ function cloneQuery<Query>(query: Query): Query {
   }
 
   return query
+}
+
+function mergeQueryOverlay<Query>(overlay: Partial<Query>, patch: Partial<Query>): Partial<Query> {
+  return {
+    ...(overlay as Record<string, unknown>),
+    ...(patch as Record<string, unknown>),
+  } as Partial<Query>
 }
 
 function mergeQueryPatch<Query>(query: Query, patch: Partial<Query>): Query {
@@ -208,6 +228,18 @@ export function cancelProTableControllerRequests(
   (controller as AbortableProTableController<any, any, any>)[CANCEL_REQUESTS]?.()
 }
 
+export function consumeProTableQueryOverlay<Query extends Record<string, unknown>>(
+  controller: ProTableController<any, Query, any>,
+): Partial<Query> {
+  return (
+    (controller as OverlayableProTableController<any, Query, any>)[QUERY_OVERLAY]?.consume() ?? {}
+  )
+}
+
+export function clearProTableQueryOverlay(controller: ProTableController<any, any, any>): void {
+  (controller as OverlayableProTableController<any, any, any>)[QUERY_OVERLAY]?.clear()
+}
+
 export function createProTableController<
   RecordType,
   Query extends Record<string, unknown>,
@@ -239,6 +271,7 @@ export function createProTableController<
     sortField: undefined,
     sortOrder: null,
     requestSeq: 0,
+    queryOverlay: {},
     queryRequest: config.queryRequest,
     summaryRequest: config.summaryRequest,
     rowKey: config.rowKey,
@@ -456,29 +489,45 @@ export function createProTableController<
     },
     setQueryField: (key, value) => {
       store.setState((state) => {
-        if (isSearchValueEqual((state.query as Record<string, unknown>)[key], value)) {
+        const currentValue = (state.query as Record<string, unknown>)[key]
+        const queryUnchanged = isSearchValueEqual(currentValue, value)
+        const overlayRecord = state.queryOverlay as Record<string, unknown>
+        // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
+        const overlayHasKey = Object.prototype.hasOwnProperty.call(overlayRecord, key)
+        const overlayUnchanged = overlayHasKey && isSearchValueEqual(overlayRecord[key], value)
+        if (queryUnchanged && overlayUnchanged) {
           return state
         }
 
         return {
-          query: setQueryValue(state.query, key, value),
+          ...(queryUnchanged ? {} : { query: setQueryValue(state.query, key, value) }),
+          queryOverlay: mergeQueryOverlay(state.queryOverlay, { [key]: value } as Partial<Query>),
         }
       })
     },
     setQuery: (patch) => {
       store.setState((state) => {
-        if (isQueryPatchEqual(state.query, patch)) {
+        const queryUnchanged = isQueryPatchEqual(state.query, patch)
+        const nextOverlay = mergeQueryOverlay(state.queryOverlay, patch)
+        const overlayUnchanged = isQueryPatchEqual(state.queryOverlay as Query, patch) &&
+          Object.keys(patch as Record<string, unknown>).every((key) =>
+            // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
+            Object.prototype.hasOwnProperty.call(state.queryOverlay, key),
+          )
+        if (queryUnchanged && overlayUnchanged) {
           return state
         }
 
         return {
-          query: mergeQueryPatch(state.query, patch),
+          ...(queryUnchanged ? {} : { query: mergeQueryPatch(state.query, patch) }),
+          queryOverlay: nextOverlay,
         }
       })
     },
     resetQuery: (patch) => {
       store.setState((state) => ({
         query: patch ? mergeQueryPatch(state.defaultQuery, patch) : cloneQuery(state.defaultQuery),
+        queryOverlay: patch ? mergeQueryOverlay({}, patch) : {},
       }))
     },
     submitQuery: async (options) => {
@@ -618,6 +667,20 @@ export function createProTableController<
   };
   (controller as AbortableProTableController<RecordType, Query, Summary>)[CANCEL_REQUESTS] =
     abortAllRequests
+  ;(controller as OverlayableProTableController<RecordType, Query, Summary>)[QUERY_OVERLAY] = {
+    consume: () => {
+      const overlay = cloneQuery(store.getState().queryOverlay)
+      store.setState({ queryOverlay: {} })
+      return overlay
+    },
+    clear: () => {
+      store.setState((state) =>
+        Object.keys(state.queryOverlay as Record<string, unknown>).length === 0
+          ? state
+          : { queryOverlay: {} },
+      )
+    },
+  }
 
   return controller
 }

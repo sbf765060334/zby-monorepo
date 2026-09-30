@@ -64,6 +64,23 @@ export function mergeSearchQuery<Query extends Record<string, unknown>>(
   return next as Query
 }
 
+export function mergeViewQueryWithOverlay<Query extends Record<string, unknown>>(
+  defaultQuery: Query,
+  viewQuery?: Partial<Query> | null,
+  overlay?: Partial<Query> | null,
+): Query {
+  const base = mergeSearchQuery(defaultQuery, viewQuery)
+  if (!overlay) {
+    return base
+  }
+
+  const next = { ...(base as Record<string, unknown>) }
+  Object.keys(overlay as Record<string, unknown>).forEach((key) => {
+    next[key] = (overlay as Record<string, unknown>)[key]
+  })
+  return next as Query
+}
+
 export function hasSearchFieldValue(value: unknown) {
   if (Array.isArray(value)) {
     return value.some((item) => item != null && item !== '')
