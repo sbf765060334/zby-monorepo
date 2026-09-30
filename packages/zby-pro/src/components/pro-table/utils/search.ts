@@ -1,6 +1,36 @@
 import type { ReactNode } from 'react'
+import dayjs from 'dayjs'
 
 import type { ProTableFilter } from '../interface'
+
+function getTimeMs(value: unknown) {
+  if (value instanceof Date) {
+    const time = value.getTime()
+    return Number.isNaN(time) ? undefined : time
+  }
+
+  if (dayjs.isDayjs(value) && value.isValid()) {
+    return value.valueOf()
+  }
+
+  return undefined
+}
+
+function parseDateStringMs(value: string) {
+  const parsed = dayjs(value)
+  return parsed.isValid() ? parsed.valueOf() : undefined
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  if (value instanceof Date || dayjs.isDayjs(value)) {
+    return false
+  }
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
 
 export function isSearchValueEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
@@ -15,20 +45,35 @@ export function isSearchValueEqual(left: unknown, right: unknown): boolean {
     return left.every((item, index) => isSearchValueEqual(item, right[index]))
   }
 
-  const leftValue =
-    left &&
-    typeof left === 'object' &&
-    typeof (left as { valueOf?: () => unknown }).valueOf === 'function'
-      ? (left as { valueOf: () => unknown }).valueOf()
-      : left
-  const rightValue =
-    right &&
-    typeof right === 'object' &&
-    typeof (right as { valueOf?: () => unknown }).valueOf === 'function'
-      ? (right as { valueOf: () => unknown }).valueOf()
-      : right
+  const leftTime = getTimeMs(left)
+  const rightTime = getTimeMs(right)
+  if (leftTime !== undefined && rightTime !== undefined) {
+    return leftTime === rightTime
+  }
+  if (leftTime !== undefined && typeof right === 'string') {
+    const parsed = parseDateStringMs(right)
+    return parsed !== undefined && leftTime === parsed
+  }
+  if (rightTime !== undefined && typeof left === 'string') {
+    const parsed = parseDateStringMs(left)
+    return parsed !== undefined && rightTime === parsed
+  }
 
-  return Object.is(leftValue, rightValue)
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left)
+    const rightKeys = Object.keys(right)
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key) =>
+          // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
+          Object.prototype.hasOwnProperty.call(right, key) &&
+          isSearchValueEqual(left[key], right[key]),
+      )
+    )
+  }
+
+  return false
 }
 
 export function pickSearchQuery<Query extends Record<string, unknown>>(
