@@ -183,12 +183,13 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
     }),
     shallow,
   )
+  const columnValueLocale = intl.locale
   const columnValueMessages = useMemo(
     () => ({
       booleanTrue: intl.getMessage('zby.pro.table.booleanTrue', '是'),
       booleanFalse: intl.getMessage('zby.pro.table.booleanFalse', '否'),
     }),
-    [intl],
+    [columnValueLocale, intl],
   )
   const getIndexPage = useCallback(() => {
     const state = controller.getState()
@@ -208,11 +209,19 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
             columnValueMessages,
             columnEmptyText,
             getIndexPage,
+            columnValueLocale,
           )
-        : normalizeTableColumns(columns, columnValueMessages, columnEmptyText, getIndexPage),
+        : normalizeTableColumns(
+            columns,
+            columnValueMessages,
+            columnEmptyText,
+            getIndexPage,
+            columnValueLocale,
+          ),
     [
       columnDefinitions,
       columnEmptyText,
+      columnValueLocale,
       columnValueMessages,
       columns,
       columnsStateEnabled,

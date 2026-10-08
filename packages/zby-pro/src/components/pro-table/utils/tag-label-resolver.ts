@@ -1,4 +1,5 @@
 import { createElement, type ReactNode } from 'react'
+import { useIntl } from '@zby/intl'
 
 import { SearchTagOverflowText } from './search-tag-overflow-text'
 
@@ -146,10 +147,8 @@ function joinWithOverflow(nodes: ReactNode[], separator: ReactNode): ReactNode {
 
   return createElement(SearchTagOverflowText, {
     full: joinNodes(nodes, separator),
-    children: [
-      joinNodes(nodes.slice(0, TAG_OPTION_PREVIEW_COUNT), separator),
-      `等${nodes.length}项`,
-    ],
+    count: nodes.length,
+    children: joinNodes(nodes.slice(0, TAG_OPTION_PREVIEW_COUNT), separator),
   })
 }
 
@@ -534,11 +533,19 @@ export function createTimeRangeTagTextResolver(
   return createRangeDateLikeResolver(config, DEFAULT_TIME_FORMAT)
 }
 
+function BooleanTagText({ value }: { value: boolean }) {
+  const intl = useIntl()
+  return intl.getMessage(
+    value ? 'zby.pro.table.booleanTrue' : 'zby.pro.table.booleanFalse',
+    value ? '是' : '否',
+  )
+}
+
 export function createBooleanTagTextResolver(
   config: ProTableBooleanTagTextResolverConfig = {},
 ): ProTableSearchTagTextResolver<any> {
-  const trueText = config.trueText ?? '是'
-  const falseText = config.falseText ?? '否'
+  const trueText = config.trueText ?? createElement(BooleanTagText, { value: true })
+  const falseText = config.falseText ?? createElement(BooleanTagText, { value: false })
 
   return ((value: unknown) => {
     if (isEmptyValue(value)) {

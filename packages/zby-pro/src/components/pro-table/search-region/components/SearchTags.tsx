@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { ReloadOutlined } from '@ant-design/icons'
+import { useIntl } from '@zby/intl'
 import { Tag } from 'antd'
 
 import type { ActiveSearchTagItem } from '../../utils'
@@ -13,6 +14,9 @@ export type SearchTagsProps = {
 }
 
 export const SearchTags = memo(({ onCloseTag, prefixCls, tags }: SearchTagsProps) => {
+  const intl = useIntl()
+  const labelSeparator = intl.getMessage('zby.pro.table.tagLabelSeparator', '：')
+
   if (tags.length === 0) {
     return null
   }
@@ -32,7 +36,7 @@ export const SearchTags = memo(({ onCloseTag, prefixCls, tags }: SearchTagsProps
           }}
         >
           {item.label}
-          ：
+          {labelSeparator}
           {item.text}
         </Tag>
       ))}

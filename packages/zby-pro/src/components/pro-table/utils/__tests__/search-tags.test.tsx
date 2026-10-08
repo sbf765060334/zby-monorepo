@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
-import { isValidElement, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { fireEvent, render, waitFor } from '@testing-library/react'
+import { ZbyIntlProvider } from '@zby/intl'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { zbyProIntlResources } from '../../../../locale/intl-resources'
 import {
   collectActiveSearchTagItems,
   countModifiedSearchFields,
@@ -37,20 +39,23 @@ beforeAll(() => {
   globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 })
 
-function textOf(node: ReactNode): string {
+function renderWithIntl(ui: ReactNode, locale = 'zh-CN') {
+  return render(
+    <ZbyIntlProvider locale={locale} resources={zbyProIntlResources}>
+      {ui}
+    </ZbyIntlProvider>,
+  )
+}
+
+function textOf(node: ReactNode, locale = 'zh-CN'): string {
   if (node == null || typeof node === 'boolean') {
     return ''
   }
 
-  if (Array.isArray(node)) {
-    return node.map(textOf).join('')
-  }
-
-  if (isValidElement(node)) {
-    return textOf((node.props as { children?: ReactNode }).children)
-  }
-
-  return String(node)
+  const { container, unmount } = renderWithIntl(<>{node}</>, locale)
+  const text = container.textContent ?? ''
+  unmount()
+  return text
 }
 
 function field(
@@ -136,6 +141,12 @@ describe('search tags', () => {
       textOf(formatter(['pending', 'shipping', 'done', 'canceled', 'draft', 'archived'], {})),
     ).toBe('待处理、运输中、已完成、已取消、草稿等6项')
     expect(
+      textOf(
+        formatter(['pending', 'shipping', 'done', 'canceled', 'draft', 'archived'], {}),
+        'en-US',
+      ),
+    ).toBe('待处理、运输中、已完成、已取消、草稿 and 6 items')
+    expect(
       hasSearchTagText(
         resolveSearchTagText(field('status', '状态', { tagTextFormatter: formatter }), 'pending', {}),
       ),
@@ -215,7 +226,7 @@ describe('search tags', () => {
         { label: '已归档', value: 'archived' },
       ],
     })
-    const { container } = render(
+    const { container } = renderWithIntl(
       formatter(['pending', 'shipping', 'done', 'canceled', 'draft', 'archived'], {}),
     )
 
@@ -261,6 +272,7 @@ describe('search tags', () => {
       '停用',
     )
     expect(textOf(createBooleanTagTextResolver()(true, {}))).toBe('是')
+    expect(textOf(createBooleanTagTextResolver()(true, {}), 'en-US')).toBe('Yes')
   })
 
   it('falls back to String(value) / array join when tagTextFormatter is omitted', () => {

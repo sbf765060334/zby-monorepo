@@ -42,6 +42,8 @@ const enUS = {
   batchActions: 'Batch actions ({{count}} selected)',
   booleanTrue: 'Yes',
   booleanFalse: 'No',
+  tagOverflow: ' and {{count}} items',
+  tagLabelSeparator: ': ',
 }
 
 export default enUS

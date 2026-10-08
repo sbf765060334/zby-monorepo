@@ -40,6 +40,18 @@ describe('formatColumnValue', () => {
     expect(formatColumnValue('2026-07', { dataRenderType: 'month' })).toBe('2026-07')
     expect(formatColumnValue(true, { valueType: 'boolean' })).toBe('是')
     expect(formatColumnValue(false, { valueType: 'boolean' })).toBe('否')
+    expect(
+      formatColumnValue(true, { valueType: 'boolean' }, 0, {
+        messages: { booleanTrue: 'Yes', booleanFalse: 'No' },
+      }),
+    ).toBe('Yes')
+  })
+
+  it('formats week cells with the current locale instead of always zh-cn', () => {
+    expect(formatColumnValue('2026-07-01', { valueType: 'week' })).toBe('2026-27周')
+    expect(formatColumnValue('2026-07-01', { valueType: 'week' }, 0, { locale: 'en-US' })).toBe(
+      '2026-27th',
+    )
   })
 
   it('keeps money formatting even when valueEnum is present', () => {

@@ -42,6 +42,8 @@ const zhCN = {
   batchActions: '批量操作（已选 {{count}} 个）',
   booleanTrue: '是',
   booleanFalse: '否',
+  tagOverflow: '等{{count}}项',
+  tagLabelSeparator: '：',
 }
 
 export default zhCN

@@ -761,6 +761,32 @@ describe('ProTable', () => {
     expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
+  it('uses the current locale for search tag punctuation', async () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open' })
+
+    render(
+      <ZbyIntlProvider locale="en-US" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[]}
+            filters={[searchInputField('status', '状态')]}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() =>
+      expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toContain(
+        '状态: open',
+      ),
+    )
+  })
+
   it('orders search tags by the current filter placement', async () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: {},

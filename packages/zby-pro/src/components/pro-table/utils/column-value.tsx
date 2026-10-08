@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
+import 'dayjs/locale/en'
 import 'dayjs/locale/zh-cn'
 
 import type {
@@ -172,8 +173,15 @@ function renderEnumDisplay(
   return text
 }
 
-function formatDateValue(value: unknown, template: string) {
-  const parsed = dayjs(value as string | number | Date).locale('zh-cn')
+function toDayjsLocale(locale?: string) {
+  if (!locale) {
+    return 'zh-cn'
+  }
+  return locale.toLowerCase().startsWith('zh') ? 'zh-cn' : 'en'
+}
+
+function formatDateValue(value: unknown, template: string, locale?: string) {
+  const parsed = dayjs(value as string | number | Date).locale(toDayjsLocale(locale))
   if (!parsed.isValid()) {
     return null
   }
@@ -396,7 +404,7 @@ export function formatColumnValue(
             : valueType === 'dateYear'
               ? 'YYYY'
               : 'YYYY-MM-DD'
-    const formatted = formatDateValue(value, fieldProps.format ?? template)
+    const formatted = formatDateValue(value, fieldProps.format ?? template, options?.locale)
     if (formatted === null) {
       return emptyText === false ? String(value) : emptyText
     }

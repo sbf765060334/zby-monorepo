@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react'
+import { useIntl } from '@zby/intl'
 import { Popover, theme } from 'antd'
 
 export function SearchTagOverflowText({
   children,
+  count,
   full,
 }: {
   children: ReactNode
+  count: number
   full: ReactNode
 }) {
+  const intl = useIntl()
   const { token } = theme.useToken()
+  const overflow = intl.getMessage('zby.pro.table.tagOverflow', '等{{count}}项', { count })
 
   return (
     <Popover
@@ -33,7 +38,10 @@ export function SearchTagOverflowText({
       }}
       trigger="hover"
     >
-      <span>{children}</span>
+      <span>
+        {children}
+        {overflow}
+      </span>
     </Popover>
   )
 }

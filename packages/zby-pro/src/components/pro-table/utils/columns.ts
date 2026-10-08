@@ -124,6 +124,7 @@ function normalizeColumn<RecordType>(
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
   getIndexPage?: FormatColumnValueOptions['getIndexPage'],
+  locale?: string,
 ): TableColumnsType<RecordType>[number] {
   const {
     children,
@@ -141,7 +142,7 @@ function normalizeColumn<RecordType>(
     return {
       ...rest,
       children: children.map((child) =>
-        normalizeColumn(child, messages, columnEmptyText, getIndexPage),
+        normalizeColumn(child, messages, columnEmptyText, getIndexPage, locale),
       ),
     } as TableColumnsType<RecordType>[number]
   }
@@ -159,7 +160,7 @@ function normalizeColumn<RecordType>(
                 : column.fieldProps,
           },
           index,
-          { emptyText: columnEmptyText, messages, getIndexPage },
+          { emptyText: columnEmptyText, locale, messages, getIndexPage },
         ),
     } as TableColumnsType<RecordType>[number]
   }
@@ -171,9 +172,10 @@ export function normalizeTableColumns<RecordType>(
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
   getIndexPage?: FormatColumnValueOptions['getIndexPage'],
+  locale?: string,
 ): TableColumnsType<RecordType> {
   return (columns ?? []).map((column) =>
-    normalizeColumn(column, messages, columnEmptyText, getIndexPage),
+    normalizeColumn(column, messages, columnEmptyText, getIndexPage, locale),
   )
 }
 
@@ -201,13 +203,14 @@ export function applyColumnPreferences<RecordType>(
   messages?: ProTableColumnValueMessages,
   columnEmptyText?: ReactNode | false,
   getIndexPage?: FormatColumnValueOptions['getIndexPage'],
+  locale?: string,
 ): TableColumnsType<RecordType> {
   const definitionMap = new Map(definitions.map((definition) => [definition.key, definition]))
   const preferenceMap = new Map(preferences.map((item) => [item.key, item]))
   const sourceMap = new Map(flattenColumnLeaves(columns).map((column) => [column.__proTableKey, column]))
 
   const toColumn = (column: ProTableColumnType<RecordType>) =>
-    normalizeColumn(column, messages, columnEmptyText, getIndexPage)
+    normalizeColumn(column, messages, columnEmptyText, getIndexPage, locale)
 
   const buildPreferredColumn = (preference: ProTableColumnPreference) => {
     const definition = definitionMap.get(preference.key)
