@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useIntl } from '@zby/intl'
 
 import ProViewManagement from '../../../pro-view-management'
@@ -16,13 +16,16 @@ type ProTableViewManagementProps<Query extends Record<string, unknown>> = {
   currentSnapshot: ProTableViewSnapshot<Query>
   defaultQuery: Query
   filters: ProTableFilter<Query>[]
-  initialStorageState?: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
   loading?: boolean
   loadError?: unknown
   onApplyView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => void | Promise<void>
   onRetryLoad?: () => void | Promise<void>
   onResetView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => void | Promise<void>
   onSaveView?: () => void | Promise<void>
+  onStorageStateChange: (
+    state: ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
+  ) => void
+  storageState: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
   prefixCls: string
   systemDefaultSnapshot: ProTableViewSnapshot<Query>
   viewManagementInstanceId: string
@@ -47,22 +50,21 @@ function ProTableViewManagementInner<Query extends Record<string, unknown>>({
   currentSnapshot,
   defaultQuery,
   filters,
-  initialStorageState,
   loading,
   loadError,
   onApplyView,
   onRetryLoad,
   onResetView,
   onSaveView,
+  onStorageStateChange,
   prefixCls,
+  storageState,
   systemDefaultSnapshot,
   viewManagementInstanceId,
 }: ProTableViewManagementProps<Query>) {
   const intl = useIntl()
   const defaultViewName = intl.getMessage('zby.pro.table.defaultView', DEFAULT_VIEW_LABEL)
-  const [appliedViewId, setAppliedViewId] = useState<string | null>(null)
-  const activeViewId =
-    appliedViewId ?? initialStorageState?.activeViewId ?? PRO_TABLE_DEFAULT_VIEW_ID
+  const activeViewId = storageState.activeViewId ?? PRO_TABLE_DEFAULT_VIEW_ID
   const systemViews = useMemo(() => {
     return [
       {
@@ -101,21 +103,16 @@ function ProTableViewManagementInner<Query extends Record<string, unknown>>({
       currentSnapshot={currentSnapshot}
       defaultSnapshot={systemDefaultSnapshot}
       getViewCount={getViewCount}
-      initialStorageState={initialStorageState}
       instanceId={viewManagementInstanceId}
       isSnapshotEqual={isSnapshotEqual}
       loading={loading}
       loadError={loadError}
-      onActiveViewChange={(view) => {
-        setAppliedViewId(view.id)
-      }}
-      onApplyView={async (view) => {
-        setAppliedViewId(view.id)
-        await onApplyView(view)
-      }}
+      onApplyView={onApplyView}
       onRetryLoad={onRetryLoad}
       onResetView={onResetView}
       onSaveView={onSaveView}
+      onStorageStateChange={onStorageStateChange}
+      storageState={storageState}
       popupWidth={240}
       showCount
       systemViews={systemViews}

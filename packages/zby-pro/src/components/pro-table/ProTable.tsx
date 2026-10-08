@@ -363,7 +363,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               viewManagementLoading={viewInitialization.loading && viewLoadingVisible}
               viewManagementLoadError={viewInitializationError}
               onRetryViewManagementLoad={handleRetryViewInitialization}
-              initialStorageState={viewInitialization.initialStorageState}
               buildSystemDefaultSnapshot={viewPersistence.buildSystemDefaultSnapshot}
               createCurrentSnapshot={viewPersistence.createCurrentSnapshot}
               onApplyManagedView={handleApplyManagedView}
@@ -489,7 +488,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       visibleFilters,
       showTable,
       stableTableProps,
-      viewInitialization.initialStorageState,
       viewInitialization.loading,
       viewInitializationError,
       viewLoadingVisible,

@@ -116,6 +116,10 @@ function viewActionRoot() {
   return document.querySelector('.ant-pro-view-management-actions') as HTMLElement | null
 }
 
+function activeViewSelectorTitle() {
+  return document.querySelector('.ant-pro-view-management-selector .ant-select-content')?.getAttribute('title')
+}
+
 function viewOptionCount(viewName: string) {
   const option = Array.from(
     document.querySelectorAll('.ant-pro-view-management-selector-option'),
@@ -1369,6 +1373,196 @@ describe('ProTable', () => {
     await waitFor(() => expect(queryRequest).toHaveBeenCalled())
     await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
     expect(screen.getByText('待处理')).toBeTruthy()
+  })
+
+  it('keeps the active custom view after entering fullscreen', async () => {
+    const adapter = createPendingCustomViewAdapter()
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{ rowKey: 'id' }}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        toolbar
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    fireEvent.click(screen.getByLabelText('全屏'))
+    await waitFor(() => expect(document.querySelector('.ant-pro-table-fullscreen')).toBeTruthy())
+    expect(activeViewSelectorTitle()).toBe('待处理')
+  })
+
+  it('adds a saved-as view to the selector', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        toolbar
+        views
+      />,
+    )
+
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('默认视图'))
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'open' },
+    })
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    fireEvent.click(viewActionRoot()!.querySelector('button') as HTMLElement)
+    fireEvent.click(await screen.findByRole('menuitem', { name: '另存为' }))
+    fireEvent.change(await screen.findByPlaceholderText('请输入视图名称'), {
+      target: { value: '进行中' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /创\s*建/ }))
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('进行中'))
+  })
+
+  it('loads stored views after views are enabled', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={false}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalled())
+    expect(adapter.load).not.toHaveBeenCalled()
+    expect(controller.getState().committedQuery.status).toBe('all')
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalled())
+    await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    expect(screen.getByText('待处理')).toBeTruthy()
+  })
+
+  it('loads stored views after persistenceKey is set', async () => {
+    const adapter = createTestAdapter<any>()
+    adapter.load = vi.fn(async (instanceId: string) => {
+      if (String(instanceId).includes('orders')) {
+        return {
+          views: [
+            {
+              id: 'custom-pending',
+              name: '待处理',
+              scope: 'custom' as const,
+              order: 0,
+              snapshot: {
+                query: { status: 'pending' },
+                columnPreferences: [],
+                sorter: null,
+              },
+            },
+          ],
+          activeViewId: 'custom-pending',
+        }
+      }
+      return { views: [], activeViewId: undefined }
+    })
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
+    expect(screen.queryByText('待处理')).toBeNull()
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            persistenceKey="orders"
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalledWith('orders:views'))
+    await waitFor(() => expect(screen.getByText('待处理')).toBeTruthy())
+    expect(controller.getState().committedQuery.status).toBe('pending')
+  })
+
+  it('does not reload views when only columns change', async () => {
+    const adapter = createTestAdapter<any>()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+    })
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        views={{ adapter }}
+      />,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(1))
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[
+              { key: 'id', title: 'ID' },
+              { key: 'name', title: '名称' },
+            ]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
+    expect(adapter.load).toHaveBeenCalledTimes(1)
   })
 
   it('keeps defaultQuery fields that a saved view did not write', async () => {

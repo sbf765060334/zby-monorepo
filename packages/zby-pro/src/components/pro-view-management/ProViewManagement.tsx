@@ -36,8 +36,9 @@ type PendingApply<TSnapshot> = {
   baseSnapshot: TSnapshot
 }
 
-type ApplyViewOptions = {
+type ApplyViewOptions<TSnapshot> = {
   persistActiveView?: boolean
+  customViews?: ProViewManagementView<TSnapshot>[]
 }
 
 function getViewCounts<TSnapshot>(
@@ -57,6 +58,19 @@ function getViewCounts<TSnapshot>(
   )
 }
 
+function isCountMapEqual(
+  left: Record<string, number | undefined | null>,
+  right: Record<string, number | undefined | null>,
+) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  return (
+    leftKeys.length === rightKeys.length &&
+    leftKeys.every((key) => left[key] === right[key])
+  )
+}
+
 export default function ProViewManagement<TSnapshot = unknown>({
   adapter: adapterProp,
   className,
@@ -64,7 +78,6 @@ export default function ProViewManagement<TSnapshot = unknown>({
   defaultSnapshot,
   dirty,
   getViewCount,
-  initialStorageState,
   instanceId,
   isSnapshotEqual,
   loadError: loadErrorProp,
@@ -76,7 +89,9 @@ export default function ProViewManagement<TSnapshot = unknown>({
   onResetView,
   onRetryLoad,
   onSaveView,
+  onStorageStateChange,
   onViewsChange,
+  storageState,
   popupWidth,
   prefixCls: customizePrefixCls,
   rootClassName,
@@ -123,42 +138,32 @@ export default function ProViewManagement<TSnapshot = unknown>({
     () => normalizeSystemViews(systemViews),
     [systemViews],
   )
-  const initialCustomViews = React.useMemo(
-    () => normalizeCustomViews(initialStorageState?.views ?? []),
-    [initialStorageState],
-  )
-  const initialActiveViewId = React.useMemo(
-    () =>
-      resolveActiveView(
-        initialStorageState?.activeViewId ?? null,
-        normalizedSystemViews,
-        initialCustomViews,
-      )?.id ?? null,
-    [
-      initialCustomViews,
-      initialStorageState?.activeViewId,
-      normalizedSystemViews,
-    ],
-  )
-  const [customViews, setCustomViews] = React.useState<
+  const isControlled = storageState !== undefined
+  const [internalCustomViews, setInternalCustomViews] = React.useState<
     ProViewManagementView<TSnapshot>[]
-  >(initialCustomViews)
-  const [activeViewId, setActiveViewIdState] = React.useState<string | null>(
-    initialActiveViewId,
+  >([])
+  const [internalActiveViewId, setInternalActiveViewId] = React.useState<
+    string | null
+  >(null)
+  const storageViews = storageState?.views
+  const controlledCustomViews = React.useMemo(
+    () => normalizeCustomViews(storageViews ?? []),
+    [storageViews],
   )
+  const customViews = isControlled ? controlledCustomViews : internalCustomViews
+  const activeViewId = isControlled
+    ? resolveActiveView(
+      storageState?.activeViewId ?? null,
+      normalizedSystemViews,
+      customViews,
+    )?.id ?? null
+    : internalActiveViewId
   const [createMode, setCreateMode] = React.useState<ViewCreateMode>('create')
   const [createOpen, setCreateOpen] = React.useState(false)
   const [managerOpen, setManagerOpen] = React.useState(false)
   const [pendingApply, setPendingApply] =
     React.useState<PendingApply<TSnapshot> | null>(null)
-  const externalLoadControlled =
-    loadingProp !== undefined ||
-    loadErrorProp !== undefined ||
-    onRetryLoad !== undefined
-  const shouldUseInternalLoad = !initialStorageState && !externalLoadControlled
-  const [internalLoading, setInternalLoading] = React.useState(
-    shouldUseInternalLoad,
-  )
+  const [internalLoading, setInternalLoading] = React.useState(!isControlled)
   const [internalLoadError, setInternalLoadError] = React.useState<unknown>()
   const [retryingLoad, setRetryingLoad] = React.useState(false)
   const [loadVersion, setLoadVersion] = React.useState(0)
@@ -184,8 +189,14 @@ export default function ProViewManagement<TSnapshot = unknown>({
   const onViewsChangeEvent = useEvent(
     (views: ProViewManagementView<TSnapshot>[]) => onViewsChange?.(views),
   )
+  const onStorageStateChangeEvent = useEvent(
+    (state: ProViewManagementStorageState<TSnapshot>) =>
+      onStorageStateChange?.(state),
+  )
   const getCurrentSnapshot = useEvent(() => currentSnapshot)
   const hasApplyView = useEvent(() => typeof onApplyView === 'function')
+  const normalizedSystemViewsRef = React.useRef(normalizedSystemViews)
+  normalizedSystemViewsRef.current = normalizedSystemViews
   const allViews = React.useMemo(
     () => normalizedSystemViews.concat(customViews),
     [customViews, normalizedSystemViews],
@@ -235,6 +246,25 @@ export default function ProViewManagement<TSnapshot = unknown>({
     [normalizedSystemViews, onViewsChangeEvent],
   )
 
+  const replaceStorage = React.useCallback(
+    (
+      nextCustomViews: ProViewManagementView<TSnapshot>[],
+      nextActiveViewId: string | null | undefined,
+    ) => {
+      const nextState: ProViewManagementStorageState<TSnapshot> = {
+        views: normalizeCustomViews(nextCustomViews),
+        activeViewId: nextActiveViewId ?? undefined,
+      }
+      if (!isControlled) {
+        setInternalCustomViews(nextState.views)
+        setInternalActiveViewId(nextState.activeViewId ?? null)
+      }
+      onStorageStateChangeEvent(nextState)
+      emitViewsChange(nextState.views)
+    },
+    [emitViewsChange, isControlled, onStorageStateChangeEvent],
+  )
+
   const persist = React.useCallback(
     (
       recipe: (
@@ -252,24 +282,24 @@ export default function ProViewManagement<TSnapshot = unknown>({
   const setActiveView = React.useCallback(
     async (
       view: ProViewManagementView<TSnapshot>,
-      options?: ApplyViewOptions,
+      options?: ApplyViewOptions<TSnapshot>,
     ) => {
-      setActiveViewIdState(view.id)
       if (options?.persistActiveView !== false) {
         await persist((current) => ({
           ...current,
           activeViewId: view.id,
         }))
       }
+      replaceStorage(options?.customViews ?? customViews, view.id)
       onActiveViewChangeEvent?.(view)
     },
-    [onActiveViewChangeEvent, persist],
+    [customViews, onActiveViewChangeEvent, persist, replaceStorage],
   )
 
   const applyView = React.useCallback(
     async (
       view: ProViewManagementView<TSnapshot>,
-      options?: ApplyViewOptions,
+      options?: ApplyViewOptions<TSnapshot>,
     ) => {
       markPendingApply(view.id)
       await setActiveView(view, options)
@@ -280,34 +310,27 @@ export default function ProViewManagement<TSnapshot = unknown>({
 
   const applyLoadedStorageState = React.useCallback(
     (
-      storageState: Partial<ProViewManagementStorageState<TSnapshot>>,
+      loaded: Partial<ProViewManagementStorageState<TSnapshot>>,
       options: {
         applyActiveView: boolean
       },
     ) => {
-      const nextCustomViews = normalizeCustomViews(storageState.views ?? [])
+      const nextCustomViews = normalizeCustomViews(loaded.views ?? [])
       const nextActiveView = resolveActiveView(
-        storageState.activeViewId ?? null,
-        normalizedSystemViews,
+        loaded.activeViewId ?? null,
+        normalizedSystemViewsRef.current,
         nextCustomViews,
       )
 
       if (options.applyActiveView && nextActiveView) {
         markPendingApply(nextActiveView.id)
       }
-      setCustomViews(nextCustomViews)
-      setActiveViewIdState(nextActiveView?.id ?? null)
-      onViewsChangeEvent?.(normalizedSystemViews.concat(nextCustomViews))
+      replaceStorage(nextCustomViews, nextActiveView?.id)
       if (options.applyActiveView && nextActiveView) {
         void onApplyViewEvent?.(nextActiveView)
       }
     },
-    [
-      markPendingApply,
-      normalizedSystemViews,
-      onApplyViewEvent,
-      onViewsChangeEvent,
-    ],
+    [markPendingApply, onApplyViewEvent, replaceStorage],
   )
 
   const handleRetryLoad = React.useCallback(async () => {
@@ -364,24 +387,15 @@ export default function ProViewManagement<TSnapshot = unknown>({
   }, [activeView?.id, currentSnapshot, pendingApply])
 
   React.useEffect(() => {
+    if (isControlled) {
+      return
+    }
+
     let cancelled = false
-
-    if (initialStorageState) {
-      // Preloaded state is intentionally pushed into the local state machine once on mount/update.
-      applyLoadedStorageState(initialStorageState, { applyActiveView: false })
-      return () => {
-        cancelled = true
-      }
-    }
-
-    if (!shouldUseInternalLoad) {
-      return () => {
-        cancelled = true
-      }
-    }
-
     setInternalLoading(true)
     setInternalLoadError(undefined)
+    setInternalCustomViews([])
+    setInternalActiveViewId(null)
 
     adapter
       .load(instanceId)
@@ -413,11 +427,10 @@ export default function ProViewManagement<TSnapshot = unknown>({
     adapter,
     applyLoadedStorageState,
     handleRetryLoad,
-    initialStorageState,
     instanceId,
+    isControlled,
     loadVersion,
     onLoadErrorEvent,
-    shouldUseInternalLoad,
   ])
 
   React.useEffect(() => {
@@ -437,7 +450,10 @@ export default function ProViewManagement<TSnapshot = unknown>({
         return
       }
 
-      setAsyncCounts(Object.fromEntries(entries))
+      const nextCounts = Object.fromEntries(entries)
+      setAsyncCounts((current) =>
+        isCountMapEqual(current, nextCounts) ? current : nextCounts,
+      )
     })
 
     return () => {
@@ -486,8 +502,7 @@ export default function ProViewManagement<TSnapshot = unknown>({
       views: normalizeCustomViews(current.views.concat(nextView)),
       activeViewId: nextView.id,
     }))
-    setCustomViews(nextCustomViews)
-    emitViewsChange(nextCustomViews)
+    replaceStorage(nextCustomViews, nextView.id)
     setCreateOpen(false)
     void messageApi.success(
       createMode === 'saveAs'
@@ -502,7 +517,10 @@ export default function ProViewManagement<TSnapshot = unknown>({
             { name },
           ),
     )
-    void applyView(nextView, { persistActiveView: false }).catch(() => undefined)
+    void applyView(nextView, {
+      persistActiveView: false,
+      customViews: nextCustomViews,
+    }).catch(() => undefined)
   }
 
   const handleSave = async () => {
@@ -532,13 +550,12 @@ export default function ProViewManagement<TSnapshot = unknown>({
         ),
       ),
     }))
-    setCustomViews(nextCustomViews)
-    emitViewsChange(nextCustomViews)
+    replaceStorage(nextCustomViews, nextView.id)
     void messageApi.success(
       intl.getMessage('zby.pro.viewManagement.saveSuccess', '保存成功'),
     )
     await onSaveViewEvent?.(nextView)
-    await setActiveView(nextView)
+    await setActiveView(nextView, { customViews: nextCustomViews })
   }
 
   const handleConfirmViews = async (
@@ -559,8 +576,10 @@ export default function ProViewManagement<TSnapshot = unknown>({
           ? current.activeViewId
           : undefined,
     }))
-    setCustomViews(normalized)
-    emitViewsChange(normalized)
+    replaceStorage(
+      normalized,
+      activeWasRemoved ? undefined : activeView?.id,
+    )
     setManagerOpen(false)
     void messageApi.success(
       intl.getMessage('zby.pro.viewManagement.manageSaveSuccess', '视图已保存'),
@@ -577,9 +596,9 @@ export default function ProViewManagement<TSnapshot = unknown>({
     )
 
     if (nextActiveView) {
-      void applyView(nextActiveView).catch(() => undefined)
-    } else {
-      setActiveViewIdState(null)
+      void applyView(nextActiveView, { customViews: normalized }).catch(
+        () => undefined,
+      )
     }
   }
 

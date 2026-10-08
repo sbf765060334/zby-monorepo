@@ -502,13 +502,13 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-columns-catalog-grid`]: {
         display: 'flex',
         flexWrap: 'wrap',
+        alignContent: 'flex-start',
         gap: marginXS,
       },
 
       [`${componentCls}-columns-catalog-item`]: {
         display: 'flex',
         alignItems: 'center',
-        minHeight: token.controlHeight,
         flex: '0 0 auto',
         minWidth: 0,
         maxWidth: '100%',

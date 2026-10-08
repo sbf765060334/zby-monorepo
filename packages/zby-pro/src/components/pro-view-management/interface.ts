@@ -53,7 +53,8 @@ export interface ProViewManagementProps<TSnapshot = unknown> {
   systemViews: ProViewManagementView<TSnapshot>[]
   defaultSnapshot: TSnapshot
   currentSnapshot: TSnapshot
-  initialStorageState?: ProViewManagementStorageState<TSnapshot>
+  /** Controlled storage. When set, the component does not load or keep a local copy. */
+  storageState?: ProViewManagementStorageState<TSnapshot>
   adapter?: ProViewManagementAdapter<TSnapshot>
   loading?: boolean
   loadError?: unknown
@@ -81,6 +82,7 @@ export interface ProViewManagementProps<TSnapshot = unknown> {
   ) => void | Promise<void>
   onActiveViewChange?: (view: ProViewManagementView<TSnapshot>) => void
   onViewsChange?: (views: ProViewManagementView<TSnapshot>[]) => void
+  onStorageStateChange?: (state: ProViewManagementStorageState<TSnapshot>) => void
   onRetryLoad?: () => void | Promise<void>
   onLoadError?: (
     error: unknown,

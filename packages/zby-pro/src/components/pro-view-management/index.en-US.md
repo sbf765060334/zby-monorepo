@@ -47,7 +47,7 @@ named `zby-pro-view-management`, and `instanceId` isolates data for each busines
 - `systemViews` are supplied by the caller and can be selected or reset, but not edited, deleted, or reordered;
 - `currentSnapshot` is the current business state used for switching, reset, save, and dirty detection;
 - `dirty` can override internal dirty detection; when omitted, `@rc-component/util` `isEqual` compares snapshots;
-- `initialStorageState` is useful for server or business-layer preloading and skips the initial `adapter.load` call;
+- Omit `storageState` to let the component `adapter.load` and own the list; pass `storageState` for controlled mode (no load, props are the source of truth);
 - `viewCounts` takes precedence over `getViewCount`, and counts may be synchronous or asynchronous;
 - Create and rename validate trimmed names against both system and custom views;
 - `maxCustomViews` limits create/save-as but not rename.
@@ -62,9 +62,9 @@ named `zby-pro-view-management`, and `instanceId` isolates data for each busines
 | systemViews | System views; they can be selected and reset | `ProViewManagementView<TSnapshot>[]` | - |
 | defaultSnapshot | Business state used when creating a new view | `TSnapshot` | - |
 | currentSnapshot | Current business state used for save, save-as, and dirty detection | `TSnapshot` | - |
-| initialStorageState | Preloaded storage state; skips the initial `load` call | `ProViewManagementStorageState<TSnapshot>` | - |
+| storageState | Controlled storage; skips `adapter.load` and does not keep a local copy of the list | `ProViewManagementStorageState<TSnapshot>` | - |
 | adapter | Persistence adapter; omitted value uses local IndexedDB | `ProViewManagementAdapter<TSnapshot>` | Built-in IndexedDB |
-| loading | Externally controlled loading state; prevents the internal first load | `boolean` | - |
+| loading | Loading presentation only; whether the component loads is determined by `storageState` | `boolean` | - |
 | loadError | Externally controlled load error; system views remain selectable | `unknown` | - |
 | dirty | External dirty-state override; omitted value compares snapshots | `boolean` | - |
 | isSnapshotEqual | Custom snapshot equality function | `(left: TSnapshot, right: TSnapshot) => boolean` | `isEqual` |
@@ -78,6 +78,7 @@ named `zby-pro-view-management`, and `instanceId` isolates data for each busines
 | onResetView | Called after reset; restore `view.snapshot` here | `(view) => void | Promise<void>` | - |
 | onActiveViewChange | Called when the active view changes | `(view) => void` | - |
 | onViewsChange | Called when the combined view list changes | `(views) => void` | - |
+| onStorageStateChange | Called when custom views or the active view id change; controlled parents should write this back to `storageState` | `(state) => void` | - |
 | onRetryLoad | Called when the user retries after a load failure | `() => void | Promise<void>` | - |
 | onLoadError | Called when internal `load` fails; `info` contains `retry` | `(error, info) => void` | - |
 | prefixCls | Custom style prefix. Defaults to `ConfigProvider.getPrefixCls('pro-view-management')` | `string` | `ant-pro-view-management` |

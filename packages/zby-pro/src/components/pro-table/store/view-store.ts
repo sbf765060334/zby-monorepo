@@ -1,7 +1,14 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 
-import type { ProTableColumnPreference, ProTableFilterPreference } from '../interface'
+import type { ProViewManagementStorageState } from '../../pro-view-management'
+import type {
+  ProTableColumnPreference,
+  ProTableFilterPreference,
+  ProTableViewSnapshot,
+} from '../interface'
 import { isFilterPreferencesEqual } from '../utils/filter-config'
+
+export type ProTableViewStorage = ProViewManagementStorageState<ProTableViewSnapshot>
 
 export interface ProTableViewState {
   columnsReady: boolean
@@ -9,6 +16,7 @@ export interface ProTableViewState {
   settingsModalOpen: boolean
   mergedFilterPreferences: ProTableFilterPreference[]
   fullscreenActive: boolean
+  viewStorage?: ProTableViewStorage
 }
 
 export interface ProTableViewActions {
@@ -17,6 +25,7 @@ export interface ProTableViewActions {
   setSettingsModalOpen: (open: boolean) => void
   setMergedFilterPreferences: (items: ProTableFilterPreference[]) => void
   setFullscreenActive: (active: boolean) => void
+  setViewStorage: (storage: ProTableViewStorage | undefined) => void
 }
 
 export type ProTableViewStore = StoreApi<ProTableViewState & ProTableViewActions>
@@ -58,6 +67,7 @@ export function createProTableViewStore(): ProTableViewStore {
     settingsModalOpen: false,
     mergedFilterPreferences: [],
     fullscreenActive: false,
+    viewStorage: undefined,
     setColumnsReady: (ready) => set(setBooleanValue('columnsReady')(ready)),
     setMergedColumnsPreferences: (items) =>
       set((state) =>
@@ -73,5 +83,20 @@ export function createProTableViewStore(): ProTableViewStore {
           : { mergedFilterPreferences: items },
       ),
     setFullscreenActive: (active) => set(setBooleanValue('fullscreenActive')(active)),
+    setViewStorage: (storage) =>
+      set((state) => {
+        if (state.viewStorage === storage) {
+          return state
+        }
+
+        if (
+          state.viewStorage?.activeViewId === storage?.activeViewId &&
+          state.viewStorage?.views === storage?.views
+        ) {
+          return state
+        }
+
+        return { viewStorage: storage }
+      }),
   }))
 }

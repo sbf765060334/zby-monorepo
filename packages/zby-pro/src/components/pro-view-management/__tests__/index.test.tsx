@@ -317,7 +317,7 @@ describe('ProViewManagement component', () => {
         adapter={adapter}
         currentSnapshot={customView.snapshot}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{
+        storageState={{
           views: [customView],
           activeViewId: systemView.id,
         }}
@@ -354,6 +354,100 @@ describe('ProViewManagement component', () => {
     })
   })
 
+  it('loads from the adapter when storageState is omitted', async () => {
+    const adapter = createTestAdapter<{ keyword: string }>()
+    adapter.load = vi.fn().mockResolvedValue({
+      views: [customView],
+      activeViewId: customView.id,
+    })
+
+    renderWithIntl(
+      <ProViewManagement
+        adapter={adapter}
+        currentSnapshot={customView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        instanceId="uncontrolled-instance"
+        systemViews={[systemView]}
+      />,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalledWith('uncontrolled-instance'))
+    await waitFor(() =>
+      expect(document.querySelector('.ant-select-content[title="Open records"]')).toBeTruthy(),
+    )
+  })
+
+  it('reloads from the adapter when instanceId changes', async () => {
+    const adapter = createTestAdapter<{ keyword: string }>()
+    adapter.load = vi
+      .fn()
+      .mockResolvedValueOnce({ views: [], activeViewId: systemView.id })
+      .mockResolvedValueOnce({
+        views: [customView],
+        activeViewId: customView.id,
+      })
+
+    const { rerender } = renderWithIntl(
+      <ProViewManagement
+        adapter={adapter}
+        currentSnapshot={systemView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        instanceId="instance-a"
+        systemViews={[systemView]}
+      />,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalledWith('instance-a'))
+
+    rerender(
+      <ZbyIntlProvider locale="en-US" resources={zbyProIntlResources}>
+        <ProViewManagement
+          adapter={adapter}
+          currentSnapshot={systemView.snapshot}
+          defaultSnapshot={systemView.snapshot}
+          instanceId="instance-b"
+          systemViews={[systemView]}
+        />
+      </ZbyIntlProvider>,
+    )
+
+    await waitFor(() => expect(adapter.load).toHaveBeenCalledWith('instance-b'))
+    await waitFor(() =>
+      expect(document.querySelector('.ant-select-content[title="Open records"]')).toBeTruthy(),
+    )
+  })
+
+  it('notifies onStorageStateChange after creating a controlled view', async () => {
+    const adapter = createTestAdapter<{ keyword: string }>()
+    const onStorageStateChange = vi.fn()
+
+    renderWithIntl(
+      <ProViewManagement
+        adapter={adapter}
+        currentSnapshot={systemView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        instanceId="controlled-create"
+        onStorageStateChange={onStorageStateChange}
+        storageState={{ views: [], activeViewId: systemView.id }}
+        systemViews={[systemView]}
+      />,
+      'zh-CN',
+    )
+
+    fireEvent.mouseDown(document.querySelector('[role="combobox"]')!)
+    fireEvent.click(await screen.findByText('新建视图'))
+    fireEvent.change(await screen.findByPlaceholderText('请输入视图名称'), {
+      target: { value: '我的视图' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /创\s*建/ }))
+
+    await waitFor(() => expect(onStorageStateChange).toHaveBeenCalled())
+    const nextState = onStorageStateChange.mock.calls[onStorageStateChange.mock.calls.length - 1]?.[0]
+    expect(nextState?.views).toHaveLength(1)
+    expect(nextState?.views[0]?.name).toBe('我的视图')
+    expect(adapter.load).not.toHaveBeenCalled()
+  })
+
   it('renders loading and error states with localized labels', () => {
     const { container, rerender } = renderWithIntl(
       <ProViewManagement
@@ -361,6 +455,7 @@ describe('ProViewManagement component', () => {
         defaultSnapshot={systemView.snapshot}
         instanceId="loading-instance"
         loading
+        storageState={{ views: [], activeViewId: systemView.id }}
         systemViews={[systemView]}
       />,
     )
@@ -374,6 +469,7 @@ describe('ProViewManagement component', () => {
           defaultSnapshot={systemView.snapshot}
           instanceId="error-instance"
           loadError={new Error('load failed')}
+          storageState={{ views: [], activeViewId: systemView.id }}
           systemViews={[systemView]}
         />
       </ZbyIntlProvider>,
@@ -392,7 +488,7 @@ describe('ProViewManagement component', () => {
           <ProViewManagement
             currentSnapshot={systemView.snapshot}
             defaultSnapshot={systemView.snapshot}
-            initialStorageState={{ views: [], activeViewId: systemView.id }}
+            storageState={{ views: [], activeViewId: systemView.id }}
             instanceId="style-instance"
             systemViews={[systemView]}
           />
@@ -412,7 +508,7 @@ describe('ProViewManagement component', () => {
         <ProViewManagement
           currentSnapshot={systemView.snapshot}
           defaultSnapshot={systemView.snapshot}
-          initialStorageState={{ views: [], activeViewId: systemView.id }}
+          storageState={{ views: [], activeViewId: systemView.id }}
           instanceId="prefix-instance"
           systemViews={[systemView]}
         />
@@ -428,7 +524,7 @@ describe('ProViewManagement component', () => {
       <ProViewManagement
         currentSnapshot={systemView.snapshot}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{ views: [], activeViewId: systemView.id }}
+        storageState={{ views: [], activeViewId: systemView.id }}
         instanceId="count-instance"
         showCount
         systemViews={[systemView]}
@@ -440,6 +536,28 @@ describe('ProViewManagement component', () => {
     expect(screen.getByText('(40)')).toBeTruthy()
   })
 
+  it('does not retrigger getViewCount when controlled storage is stable', async () => {
+    const getViewCount = vi.fn(() => 3)
+
+    renderWithIntl(
+      <ProViewManagement
+        currentSnapshot={systemView.snapshot}
+        defaultSnapshot={systemView.snapshot}
+        getViewCount={getViewCount}
+        instanceId="controlled-count-loop"
+        showCount
+        storageState={{ views: [], activeViewId: systemView.id }}
+        systemViews={[systemView]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('(3)')).toBeTruthy())
+    const calls = getViewCount.mock.calls.length
+    expect(calls).toBeGreaterThan(0)
+    await new Promise((resolve) => setTimeout(resolve, 40))
+    expect(getViewCount).toHaveBeenCalledTimes(calls)
+  })
+
   it('confirms saving a custom view and stays quiet on reset', async () => {
     const onResetView = vi.fn()
 
@@ -448,7 +566,7 @@ describe('ProViewManagement component', () => {
         adapter={createTestAdapter<{ keyword: string }>()}
         currentSnapshot={{ keyword: 'changed' }}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{
+        storageState={{
           views: [customView],
           activeViewId: customView.id,
         }}
@@ -473,7 +591,7 @@ describe('ProViewManagement component', () => {
         adapter={createTestAdapter<{ keyword: string }>()}
         currentSnapshot={{ keyword: 'changed' }}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{
+        storageState={{
           views: [customView],
           activeViewId: customView.id,
         }}
@@ -505,7 +623,7 @@ describe('ProViewManagement component', () => {
         adapter={createTestAdapter<{ keyword: string }>()}
         currentSnapshot={{ keyword: 'changed' }}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{
+        storageState={{
           views: [customView],
           activeViewId: customView.id,
         }}
@@ -533,7 +651,7 @@ describe('ProViewManagement component', () => {
         adapter={createTestAdapter<{ keyword: string }>()}
         currentSnapshot={systemView.snapshot}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{ views: [], activeViewId: systemView.id }}
+        storageState={{ views: [], activeViewId: systemView.id }}
         instanceId="create-instance"
         systemViews={[systemView]}
       />,
@@ -558,7 +676,7 @@ describe('ProViewManagement component', () => {
         adapter={adapter}
         currentSnapshot={customView.snapshot}
         defaultSnapshot={systemView.snapshot}
-        initialStorageState={{
+        storageState={{
           views: [customView],
           activeViewId: customView.id,
         }}
@@ -579,7 +697,8 @@ describe('ProViewManagement component', () => {
     expect(adapter.update).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByLabelText('Delete view'))
-    const confirmDelete = (await screen.findAllByRole('button', { name: 'Delete view' })).at(-1)!
+    const confirmButtons = await screen.findAllByRole('button', { name: 'Delete view' })
+    const confirmDelete = confirmButtons[confirmButtons.length - 1]!
     fireEvent.click(confirmDelete)
     expect(screen.queryByText(/Deleted/)).toBeNull()
     expect(adapter.update).not.toHaveBeenCalled()

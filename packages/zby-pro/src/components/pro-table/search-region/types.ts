@@ -2,7 +2,6 @@ import type * as React from 'react'
 
 import type {
   ProViewManagementAdapter,
-  ProViewManagementStorageState,
   ProViewManagementView,
 } from '../../pro-view-management'
 import type { ProTableViewStore } from '../store'
@@ -41,7 +40,6 @@ export type SearchRegionProps<RecordType, Query extends Record<string, unknown>,
   viewManagementLoading?: boolean
   viewManagementLoadError?: unknown
   onRetryViewManagementLoad?: () => void | Promise<void>
-  initialStorageState?: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>

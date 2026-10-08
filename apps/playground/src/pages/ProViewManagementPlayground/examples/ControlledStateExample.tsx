@@ -34,7 +34,7 @@ export default function ControlledStateExample() {
       <ProViewManagement<Snapshot>
         currentSnapshot={defaultSnapshot}
         defaultSnapshot={defaultSnapshot}
-        initialStorageState={{
+        storageState={{
           activeViewId: systemViews[0].id,
           views: [],
         }}

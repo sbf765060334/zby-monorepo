@@ -26,7 +26,6 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
   viewManagementLoading,
   viewManagementLoadError,
   onRetryViewManagementLoad,
-  initialStorageState,
   buildSystemDefaultSnapshot,
   createCurrentSnapshot,
   onApplyManagedView,
@@ -42,7 +41,6 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
           controller={controller}
           createCurrentSnapshot={createCurrentSnapshot}
           filters={searchFilters ?? filters}
-          initialStorageState={initialStorageState}
           onApplyManagedView={onApplyManagedView}
           onResetManagedView={onResetManagedView}
           onSaveManagedView={onSaveManagedView}
@@ -60,7 +58,6 @@ function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Su
       controller,
       createCurrentSnapshot,
       filters,
-      initialStorageState,
       onApplyManagedView,
       onResetManagedView,
       onSaveManagedView,

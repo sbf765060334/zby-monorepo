@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 
 import type {
   ProViewManagementAdapter,
@@ -11,12 +11,15 @@ import type { ProTableViewStore } from '../../store'
 import { isViewSnapshotEqual } from '../../utils'
 import { ProTableViewManagement } from './ProTableViewManagement'
 
+const EMPTY_VIEW_STORAGE: ProViewManagementStorageState<ProTableViewSnapshot> = {
+  views: [],
+}
+
 type SearchViewManagementMountProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   controller: ProTableController<RecordType, Query, Summary>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
   filters: ProTableFilter<Query>[]
-  initialStorageState?: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onResetManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onSaveManagedView: () => Promise<void>
@@ -38,7 +41,6 @@ const SearchViewManagementMountInner = <
   controller,
   createCurrentSnapshot,
   filters,
-  initialStorageState,
   onApplyManagedView,
   onResetManagedView,
   onSaveManagedView,
@@ -98,6 +100,13 @@ const SearchViewManagementMountInner = <
   }
 
   const currentSnapshot = currentSnapshotRef.current
+  const viewStorage = useViewStoreSelector(viewStore, (state) => state.viewStorage)
+  const handleStorageStateChange = useCallback(
+    (next: ProViewManagementStorageState<ProTableViewSnapshot<Query>>) => {
+      viewStore.getState().setViewStorage(next)
+    },
+    [viewStore],
+  )
 
   return (
     <ProTableViewManagement
@@ -105,14 +114,19 @@ const SearchViewManagementMountInner = <
       currentSnapshot={currentSnapshot}
       defaultQuery={searchSnapshotState.defaultQuery}
       filters={filters}
-      initialStorageState={initialStorageState}
       loading={viewManagementLoading}
       loadError={viewManagementLoadError}
       onApplyView={onApplyManagedView}
       onRetryLoad={onRetryViewManagementLoad}
       onResetView={onResetManagedView}
       onSaveView={onSaveManagedView}
+      onStorageStateChange={handleStorageStateChange}
       prefixCls={prefixCls}
+      storageState={
+        (viewStorage ?? EMPTY_VIEW_STORAGE) as ProViewManagementStorageState<
+          ProTableViewSnapshot<Query>
+        >
+      }
       systemDefaultSnapshot={systemDefaultSnapshot}
       viewManagementInstanceId={viewManagementInstanceId}
     />

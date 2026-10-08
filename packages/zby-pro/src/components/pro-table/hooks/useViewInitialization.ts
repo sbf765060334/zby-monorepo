@@ -27,11 +27,10 @@ type ViewInitializationParams<RecordType, Query extends Record<string, unknown>,
   viewManagementInstanceId: string
 }
 
-type ViewInitializationResult<Query extends Record<string, unknown>> = {
+type ViewInitializationResult = {
   error?: unknown
   loading: boolean
   ready: boolean
-  initialStorageState?: ProViewManagementStorageState<ProTableViewSnapshot<Query>>
 }
 
 const EMPTY_STORAGE_STATE = {
@@ -47,9 +46,20 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
   viewManagementAdapter,
   viewManagementInstanceId,
 }: ViewInitializationParams<RecordType, Query, Summary>) {
-  const initializedVersionRef = useRef<number | null>(null)
+  const applyContextRef = useRef({
+    buildSystemDefaultSnapshot,
+    controller,
+    normalizeSnapshotForCurrentSchema,
+    viewStore,
+  })
+  applyContextRef.current = {
+    buildSystemDefaultSnapshot,
+    controller,
+    normalizeSnapshotForCurrentSchema,
+    viewStore,
+  }
   const [retryVersion, setRetryVersion] = useState(0)
-  const [initialization, setInitialization] = useState<ViewInitializationResult<Query>>({
+  const [initialization, setInitialization] = useState<ViewInitializationResult>({
     loading: viewsEnabled,
     ready: false,
   })
@@ -63,14 +73,23 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
   }, [])
 
   useEffect(() => {
-    if (initializedVersionRef.current === retryVersion) {
-      return
-    }
-
     let cancelled = false
+    const {
+      buildSystemDefaultSnapshot: buildDefaultSnapshot,
+      controller: tableController,
+      normalizeSnapshotForCurrentSchema: normalizeSnapshot,
+      viewStore: store,
+    } = applyContextRef.current
 
-    const applyInitialSnapshot = async () => {
-      const defaultSnapshot = buildSystemDefaultSnapshot()
+    const applyLoadedStorageState = (
+      storageState: ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
+      error?: unknown,
+    ) => {
+      if (cancelled) {
+        return
+      }
+
+      const defaultSnapshot = buildDefaultSnapshot()
       const normalizedSystemViews = normalizeSystemViews([
         {
           id: PRO_TABLE_DEFAULT_VIEW_ID,
@@ -80,103 +99,83 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
           snapshot: defaultSnapshot,
         },
       ])
+      const normalizedCustomViews = normalizeCustomViews(storageState.views)
+      const activeView = viewsEnabled
+        ? resolveActiveView(
+            storageState.activeViewId ?? null,
+            normalizedSystemViews,
+            normalizedCustomViews,
+          )
+        : normalizedSystemViews[0]
+      const initialSnapshot = normalizeSnapshot(activeView?.snapshot ?? defaultSnapshot)
+      const overlay = consumeProTableQueryOverlay(tableController)
+      const controllerState = tableController.getState()
+      const actions = store.getState()
+      const hasCustomSort = controllerState.sort.length > 0
 
-      setInitialization((current) => ({
-        ...current,
-        error: undefined,
-        loading: viewsEnabled,
-        ready: current.ready,
-      }))
-
-      const applyLoadedStorageState = (
-        storageState: ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
-        error?: unknown,
-      ) => {
-        if (cancelled) {
-          return
-        }
-
-        const normalizedCustomViews = normalizeCustomViews(storageState.views)
-        const activeView = viewsEnabled
-          ? resolveActiveView(
-              storageState.activeViewId ?? null,
-              normalizedSystemViews,
-              normalizedCustomViews,
-            )
-          : normalizedSystemViews[0]
-        const initialSnapshot = normalizeSnapshotForCurrentSchema(
-          activeView?.snapshot ?? defaultSnapshot,
-        )
-        const overlay = consumeProTableQueryOverlay(controller)
-        const controllerState = controller.getState()
-        const actions = viewStore.getState()
-        const hasCustomSort = controllerState.sort.length > 0
-
-        actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)
-        actions.setMergedFilterPreferences(initialSnapshot.filterPreferences)
-        if (viewsEnabled) {
-          controller.setViewState({
-            query: mergeViewQueryWithOverlay(
-              controllerState.defaultQuery,
-              initialSnapshot.query,
-              overlay,
-            ),
-            ...(hasCustomSort ? {} : { sorter: initialSnapshot.sorter ?? null }),
-            committed: true,
-          })
-          if (controllerState.requested === true) {
-            ignoreProTableRequestError(controller.submitQuery({ resetPage: true }))
-          }
-        }
-        actions.setColumnsReady(true)
-        initializedVersionRef.current = retryVersion
-
-        setInitialization({
-          error,
-          loading: false,
-          ready: true,
-          initialStorageState: viewsEnabled
-            ? {
-                views: normalizedCustomViews,
-                activeViewId: activeView?.id,
-              }
-            : undefined,
+      actions.setMergedColumnsPreferences(initialSnapshot.columnPreferences)
+      actions.setMergedFilterPreferences(initialSnapshot.filterPreferences)
+      actions.setViewStorage(
+        viewsEnabled
+          ? {
+              views: normalizedCustomViews,
+              activeViewId: activeView?.id,
+            }
+          : undefined,
+      )
+      if (viewsEnabled) {
+        tableController.setViewState({
+          query: mergeViewQueryWithOverlay(
+            controllerState.defaultQuery,
+            initialSnapshot.query,
+            overlay,
+          ),
+          ...(hasCustomSort ? {} : { sorter: initialSnapshot.sorter ?? null }),
+          committed: true,
         })
+        if (controllerState.requested === true) {
+          ignoreProTableRequestError(tableController.submitQuery({ resetPage: true }))
+        }
       }
+      actions.setColumnsReady(true)
+      setInitialization({
+        error,
+        loading: false,
+        ready: true,
+      })
+    }
 
-      if (!viewsEnabled || !viewManagementAdapter) {
-        applyLoadedStorageState(
-          EMPTY_STORAGE_STATE as ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
-        )
-        return
-      }
+    setInitialization({
+      error: undefined,
+      loading: viewsEnabled,
+      ready: !viewsEnabled,
+    })
 
-      try {
-        const storageState = await viewManagementAdapter.load(viewManagementInstanceId)
-        applyLoadedStorageState(storageState)
-      } catch (error) {
-        applyLoadedStorageState(
-          EMPTY_STORAGE_STATE as ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
-          error,
-        )
+    if (!viewsEnabled || !viewManagementAdapter) {
+      applyLoadedStorageState(
+        EMPTY_STORAGE_STATE as ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
+      )
+      return () => {
+        cancelled = true
       }
     }
 
-    void applyInitialSnapshot()
+    void viewManagementAdapter
+      .load(viewManagementInstanceId)
+      .then((storageState) => {
+        applyLoadedStorageState(storageState)
+      })
+      .catch((error) => {
+        applyLoadedStorageState(
+          EMPTY_STORAGE_STATE as ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
+          error,
+        )
+      })
 
     return () => {
       cancelled = true
     }
-  }, [
-    buildSystemDefaultSnapshot,
-    controller,
-    normalizeSnapshotForCurrentSchema,
-    retryVersion,
-    viewManagementAdapter,
-    viewManagementInstanceId,
-    viewStore,
-    viewsEnabled,
-  ])
+  }, [retryVersion, viewManagementAdapter, viewManagementInstanceId, viewsEnabled])
 
   return {
     ...initialization,
