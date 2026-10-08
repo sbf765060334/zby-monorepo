@@ -394,7 +394,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       alignItems: 'center',
       justifyContent: 'flex-end',
       flexWrap: 'wrap',
-      gap: marginSM,
+      gap: marginXS,
       width: '100%',
 
       [`${antCls}-btn + ${antCls}-btn`]: {

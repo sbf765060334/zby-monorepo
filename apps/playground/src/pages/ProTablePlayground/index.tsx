@@ -282,7 +282,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     key: 'amount',
     title: '金额',
     dataIndex: 'amount',
-    width: 88,
+    width: 120,
     align: 'right',
     sorter: { multiple: 2 },
     valueType: { type: 'money', currency: 'CNY' },
@@ -322,7 +322,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     key: 'owner',
     title: '负责人',
     dataIndex: 'owner',
-    width: 88,
+    width: 120,
     valueEnum: {
       张敏: '张敏 / 运营',
       李想: '李想 / 调度',
@@ -368,14 +368,14 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     key: 'weekValue',
     title: '周',
     dataIndex: 'weekValue',
-    width: 88,
+    width: 112,
     valueType: 'week',
   },
   {
     key: 'monthValue',
     title: '月',
     dataIndex: 'monthValue',
-    width: 88,
+    width: 112,
     valueType: 'month',
   },
   {
@@ -590,55 +590,52 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
 
 export default function ProTablePlayground() {
   const { message } = App.useApp()
-  const tableColumns = useMemo<ProTableColumnType<PlaygroundRow>[]>(
-    () => [
-      ...columns,
-      {
-        key: 'actions',
-        title: '操作',
-        align: 'center',
-        width: 64,
-        fixed: 'right',
-        resizable: false,
-        fieldConfig: false,
-        render: (_value, record, index) => (
-          <ProTableActions
-            record={record}
-            index={index}
-            actions={[
-              {
-                key: 'view',
-                label: '查看',
-                onClick: () => {
-                  void message.info(`查看 ${record.orderNo}`)
+  const tableColumns = useMemo(() => {
+    const actionColumn: ProTableColumnType<PlaygroundRow> = {
+      key: 'actions',
+      title: '操作',
+      align: 'center',
+      width: 64,
+      fixed: 'right',
+      resizable: false,
+      fieldConfig: false,
+      render: (_value, record, index) => (
+        <ProTableActions
+          record={record}
+          index={index}
+          actions={[
+            {
+              key: 'view',
+              label: '查看',
+              onClick: () => {
+                void message.info(`查看 ${record.orderNo}`)
+              },
+            },
+            {
+              key: 'edit',
+              label: '编辑',
+              tooltip: '编辑订单',
+              onClick: () => {
+                void message.info(`编辑 ${record.orderNo}`)
+              },
+            },
+            {
+              key: 'delete',
+              label: '删除',
+              danger: true,
+              popconfirm: {
+                title: `确定删除 ${record.orderNo} 吗？`,
+                onConfirm: () => {
+                  void message.success(`已模拟删除 ${record.orderNo}`)
                 },
               },
-              {
-                key: 'edit',
-                label: '编辑',
-                tooltip: '编辑订单',
-                onClick: () => {
-                  void message.info(`编辑 ${record.orderNo}`)
-                },
-              },
-              {
-                key: 'delete',
-                label: '删除',
-                danger: true,
-                popconfirm: {
-                  title: `确定删除 ${record.orderNo} 吗？`,
-                  onConfirm: () => {
-                    void message.success(`已模拟删除 ${record.orderNo}`)
-                  },
-                },
-              },
-            ]}
-          />
-        ),
-      },
-    ],
-    [message],
-  )
+            },
+          ]}
+        />
+      ),
+    }
+    return [...columns, actionColumn]
+  }, [message])
 
   return (
     <ProLayoutContentContainer mode="fill">
