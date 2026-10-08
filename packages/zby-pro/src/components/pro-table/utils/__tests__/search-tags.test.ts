@@ -85,6 +85,16 @@ describe('search tags', () => {
     ])
   })
 
+  it('keeps the order of the filters it is given', () => {
+    expect(
+      collectActiveSearchTagItems(
+        [field('labels', '标签'), field('status', '状态')],
+        { status: 'open', labels: ['east'] },
+        {},
+      ).map((item) => item.key),
+    ).toEqual(['labels', 'status'])
+  })
+
   it('uses reset when defaultQuery has a value and hides the action at the default', () => {
     const filters = [field('status', '状态')]
 

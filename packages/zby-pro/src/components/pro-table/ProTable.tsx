@@ -136,6 +136,10 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     () => splitFiltersByPreference(filters, mergedFilterPreferences),
     [filters, mergedFilterPreferences],
   )
+  const searchTagFilters = useMemo(
+    () => [...visibleFilters, ...moreFilters],
+    [moreFilters, visibleFilters],
+  )
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
   useImperativeHandle(
@@ -379,7 +383,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               {searchEnabled ? (
                 <SearchTagsMount
                   controller={controller}
-                  filters={filters}
+                  filters={searchTagFilters}
                   prefixCls={resolvedConfig.prefixCls}
                 />
               ) : null}
@@ -458,6 +462,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       moreFiltersOpen,
       moreFilters,
       filters,
+      searchTagFilters,
       onTableChange,
       columns,
       resolvedConfig.columnPreferencesEnabled,

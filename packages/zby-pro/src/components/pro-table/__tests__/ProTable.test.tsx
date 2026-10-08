@@ -761,6 +761,42 @@ describe('ProTable', () => {
     expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
+  it('orders search tags by the current filter placement', async () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: {},
+      rowKey: 'id',
+    })
+    controller.setQuery({ status: 'open', owner: 'Ada' })
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(document.querySelector('.ant-pro-table-search-tags')).toBeTruthy())
+    expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toMatch(
+      /状态：open.*负责人：Ada/,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '状态' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '状态' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到更多筛选' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+
+    await waitFor(() =>
+      expect(document.querySelector('.ant-pro-table-search-tags')?.textContent).toMatch(
+        /负责人：Ada.*状态：open/,
+      ),
+    )
+  })
+
   it('resets a tag to defaultQuery without requesting and hides the icon at the default', async () => {
     const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
     const controller = createProTableController<Row, Query>({
