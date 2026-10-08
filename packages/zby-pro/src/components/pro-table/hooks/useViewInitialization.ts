@@ -13,7 +13,7 @@ import type { ProTableController, ProTableViewSnapshot } from '../interface'
 import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewStore } from '../store'
 import { mergeViewQueryWithOverlay, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
-import { consumeProTableQueryOverlay } from '../controller'
+import { consumeProTableQueryOverlay, ignoreProTableRequestError } from '../controller'
 
 type ViewInitializationParams<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
@@ -125,7 +125,7 @@ export function useViewInitialization<RecordType, Query extends Record<string, u
             committed: true,
           })
           if (controllerState.requested === true) {
-            void controller.submitQuery({ resetPage: true }).catch(() => undefined)
+            ignoreProTableRequestError(controller.submitQuery({ resetPage: true }))
           }
         }
         actions.setColumnsReady(true)

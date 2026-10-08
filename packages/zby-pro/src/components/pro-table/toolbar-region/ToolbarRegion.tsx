@@ -4,6 +4,7 @@ import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
 import { clsx } from 'clsx'
 
+import { ignoreProTableRequestError } from '../controller'
 import type { ProTableController, ProTableProps } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
@@ -48,7 +49,7 @@ const ToolbarRefreshButton = memo(
   }) => {
     const intl = useIntl()
     const handleReload = useCallback(() => {
-      void controller.reload()
+      ignoreProTableRequestError(controller.reload())
     }, [controller])
     const label = intl.getMessage('zby.pro.table.refresh', '刷新')
 

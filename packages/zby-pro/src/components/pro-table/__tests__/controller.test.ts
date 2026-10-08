@@ -76,6 +76,18 @@ describe('createProTableController', () => {
     expect(controller.getState().total).toBe(1)
   })
 
+  it('still rejects submitQuery when the list request fails', async () => {
+    const controller = createProTableController<Row, Query>({
+      queryRequest: async () => {
+        throw new Error('query failed')
+      },
+      rowKey: 'id',
+    })
+
+    await expect(controller.submitQuery()).rejects.toThrow('query failed')
+    expect(controller.getState().loading).toBe(false)
+  })
+
   it('does not write page or sort into query when paging, sorting, or reloading', async () => {
     const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
       data: [{ id: String(params.page), status: params.status ?? 'all' }],

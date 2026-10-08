@@ -180,6 +180,61 @@ describe('ProTable', () => {
     expect(screen.getByTestId('rows').textContent).toBe('1')
   })
 
+  it('swallows later UI request failures without unhandled rejections', async () => {
+    const queryRequest = vi.fn()
+      .mockResolvedValueOnce({ data: [{ id: '1', name: 'A' }], total: 1 })
+      .mockRejectedValue(new Error('query failed'))
+    const rejections: unknown[] = []
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      event.preventDefault()
+      rejections.push(event.reason)
+    }
+    window.addEventListener('unhandledrejection', onUnhandled)
+
+    try {
+      renderProTable(
+        <ProTable<Row, Query>
+          rowKey="id"
+          queryRequest={queryRequest}
+          columns={[]}
+          toolbar
+          filters={[searchInputField('status', '状态')]}
+        />,
+      )
+
+      await waitFor(() => expect(screen.getByTestId('rows').textContent).toBe('1'))
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
+      })
+      await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
+      expect(screen.getByTestId('rows').textContent).toBe('1')
+
+      await act(async () => {
+        screen.getByTestId('page').click()
+      })
+      await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
+      expect(screen.getByTestId('rows').textContent).toBe('1')
+
+      await act(async () => {
+        screen.getByTestId('sort').click()
+      })
+      await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(4))
+      await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
+
+      await act(async () => {
+        screen.getByRole('button', { name: '刷新' }).click()
+      })
+      await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(5))
+      await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'))
+      expect(screen.getByTestId('rows').textContent).toBe('1')
+      expect(rejections).toEqual([])
+    } finally {
+      window.removeEventListener('unhandledrejection', onUnhandled)
+    }
+  })
+
   it('uses external controller state and maps table events back to it', async () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: {},

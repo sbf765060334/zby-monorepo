@@ -9,7 +9,11 @@ import React, {
 import { createPortal } from 'react-dom'
 import { clsx } from 'clsx'
 
-import { cancelProTableControllerRequests, createProTableController } from './controller'
+import {
+  cancelProTableControllerRequests,
+  createProTableController,
+  ignoreProTableRequestError,
+} from './controller'
 import { SearchRegion } from './search-region'
 import { SearchMorePanel, SearchTagsMount } from './search-region/components'
 import type {
@@ -296,12 +300,12 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     shouldBlockViewContent && (viewLoadingVisible || Boolean(viewInitializationError))
   const handleSearch = useCallback(() => {
     setMoreFiltersOpen(false)
-    void controller.submitQuery({ resetPage: true })
+    ignoreProTableRequestError(controller.submitQuery({ resetPage: true }))
   }, [controller])
   const handleResetSearch = useCallback(() => {
     setMoreFiltersOpen(false)
     controller.resetQuery()
-    void controller.submitQuery({ resetPage: true })
+    ignoreProTableRequestError(controller.submitQuery({ resetPage: true }))
   }, [controller])
   const handleToggleMoreFilters = useCallback(() => {
     setMoreFiltersOpen((open) => !open)

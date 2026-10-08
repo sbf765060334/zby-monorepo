@@ -319,6 +319,10 @@ export function cancelProTableControllerRequests(
   (controller as AbortableProTableController<any, any, any>)[CANCEL_REQUESTS]?.()
 }
 
+export function ignoreProTableRequestError(task: Promise<unknown>) {
+  void task.catch(() => undefined)
+}
+
 export function consumeProTableQueryOverlay<Query extends Record<string, unknown>>(
   controller: ProTableController<any, Query, any>,
 ): Partial<Query> {

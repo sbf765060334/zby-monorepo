@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 
+import { ignoreProTableRequestError } from '../controller'
 import type { ProTableController } from '../interface'
 import { shallow, useControllerSelector } from './useStoreSelector'
 
@@ -44,7 +45,7 @@ export function useAutoRequest<RecordType, Query extends Record<string, unknown>
     }
 
     startedRef.current = true
-    void controller.submitQuery({ resetPage: true }).catch(() => undefined)
+    ignoreProTableRequestError(controller.submitQuery({ resetPage: true }))
   }, [
     autoRequest,
     controller,

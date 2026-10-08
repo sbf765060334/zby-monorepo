@@ -6,6 +6,7 @@ import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 
 import type { ProTableColumnDefinition } from '../utils/columns'
+import { ignoreProTableRequestError } from '../controller'
 import type { ProTableController, ProTablePaginationConfig, ProTableProps, ProTableViewSorter } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
@@ -368,14 +369,14 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
         const nextPageSize = nextPagination.pageSize ?? paginationState.pageSize
 
         if (nextPageSize !== paginationState.pageSize) {
-          void controller.setPageSize(nextPageSize)
+          ignoreProTableRequestError(controller.setPageSize(nextPageSize))
         } else if (nextCurrent !== paginationState.currentPage) {
-          void controller.setPage(nextCurrent)
+          ignoreProTableRequestError(controller.setPage(nextCurrent))
         }
       }
 
       if (extra.action === 'sort') {
-        void controller.setSort(toProTableSorters(sorter))
+        ignoreProTableRequestError(controller.setSort(toProTableSorters(sorter)))
       }
 
       onTableChange?.(nextPagination, filters, sorter, extra)

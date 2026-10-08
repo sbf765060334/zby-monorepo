@@ -12,6 +12,7 @@ import type {
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
+import { clearProTableQueryOverlay } from '../controller'
 import type { ProTableViewStore } from '../store'
 import {
   buildDefaultColumnPreferences,
@@ -26,7 +27,6 @@ import {
   pickSearchQuery,
 } from '../utils'
 import type { ProTableColumnDefinition } from '../utils/columns'
-import { clearProTableQueryOverlay } from '../controller'
 
 const UNPERSISTED_VIEW_MANAGEMENT_INSTANCE_ID = '__pro_table_unpersisted_views__'
 const DEFAULT_VIEW_MANAGEMENT_ADAPTER =
@@ -133,7 +133,11 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
         committed: true,
       })
       if (options?.submit !== false) {
-        await controller.submitQuery({ resetPage: true })
+        try {
+          await controller.submitQuery({ resetPage: true })
+        } catch {
+          // Keep the applied view snapshot; list identity is already restored.
+        }
       }
     },
     [controller, viewStore],
@@ -184,7 +188,11 @@ export function useViewPersistence<RecordType, Query extends Record<string, unkn
           (committedQuery as Record<string, unknown>)[key],
         )
       ) {
-        await controller.submitQuery({ resetPage: true })
+        try {
+          await controller.submitQuery({ resetPage: true })
+        } catch {
+          // Keep draft query; list identity is already restored.
+        }
         return
       }
     }
