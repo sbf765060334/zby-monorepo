@@ -526,6 +526,10 @@ export interface ProTableController<RecordType, Query extends Record<string, unk
   subscribe: (
     listener: (state: ProTableControllerState<RecordType, Query, Summary>) => void,
   ) => () => void
+  /**
+   * Patch live config. Present keys replace; explicit `undefined` resets that
+   * field to create-time defaults. Omitted keys stay.
+   */
   configure: (config: Partial<ProTableControllerConfig<RecordType, Query, Summary>>) => void
   setViewState: (state: {
     query: Query

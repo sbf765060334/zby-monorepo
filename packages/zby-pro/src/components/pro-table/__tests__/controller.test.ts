@@ -666,6 +666,70 @@ describe('createProTableController', () => {
     expect(controller.getState().pageSize).toBe(20)
   })
 
+  it('keeps omitted configure fields and clears present undefined to create defaults', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'pending' }],
+      total: 1,
+    }))
+    const summaryRequest = vi.fn(async () => ({ count: 1 }))
+    const controller = createProTableController<Row, Query, { count: number }>({
+      defaultQuery: { status: 'all' },
+      queryRequest,
+      summaryRequest,
+      rowKey: 'id',
+      localSortFields: ['amount'],
+      coerceEmptyQuery: false,
+      pagination: { defaultCurrent: 2, defaultPageSize: 8 },
+    })
+
+    controller.configure({ localSortFields: ['customer'] })
+    await controller.submitQuery()
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(summaryRequest).toHaveBeenCalledTimes(1)
+    expect(controller.getState().rowKey).toBe('id')
+    expect(controller.getState().defaultQuery).toEqual({ status: 'all' })
+
+    controller.configure({
+      queryRequest: undefined,
+      summaryRequest: undefined,
+      defaultQuery: undefined,
+      rowKey: undefined,
+      localSortFields: undefined,
+      coerceEmptyQuery: undefined,
+    })
+
+    expect(controller.getState().requestReady).toBe(false)
+    expect(controller.getState().rowKey).toBe('key')
+    expect(controller.getState().defaultQuery).toEqual({})
+    controller.resetQuery()
+    expect(controller.getState().query).toEqual({})
+    controller.setQueryField('status', '')
+    expect(controller.getState().query.status).toBeUndefined()
+
+    await controller.submitQuery()
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(summaryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('patches nested pagination without dropping sibling defaults', () => {
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+      pagination: { defaultCurrent: 3, defaultPageSize: 8 },
+    })
+
+    controller.configure({ pagination: { defaultPageSize: 20 } })
+    expect(controller.getState()).toMatchObject({
+      currentPage: 3,
+      pageSize: 20,
+    })
+
+    controller.configure({ pagination: undefined })
+    expect(controller.getState()).toMatchObject({
+      currentPage: 1,
+      pageSize: 10,
+    })
+  })
+
   it('keeps selected rows and supports row patching', () => {
     const controller = createProTableController<Row, Query>({
       rowKey: 'id',

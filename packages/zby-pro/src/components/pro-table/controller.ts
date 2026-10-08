@@ -59,6 +59,13 @@ function toRecordKey(value: unknown): Key | undefined {
 }
 
 const DEFAULT_ROW_KEY = 'key'
+const DEFAULT_PAGE_CURRENT = 1
+const DEFAULT_PAGE_SIZE = 10
+
+function hasOwnKey(object: object, key: PropertyKey) {
+  // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
+  return Object.prototype.hasOwnProperty.call(object, key)
+}
 
 function resolveRowKey<RecordType>(
   rowKey: ProTableControllerConfig<RecordType, any, any>['rowKey'],
@@ -353,8 +360,8 @@ export function createProTableController<
 >(
   config: ProTableControllerConfig<RecordType, Query, Summary> = {},
 ): ProTableController<RecordType, Query, Summary> {
-  const defaultCurrent = config.pagination?.defaultCurrent ?? 1
-  const defaultPageSize = config.pagination?.defaultPageSize ?? 10
+  const defaultCurrent = config.pagination?.defaultCurrent ?? DEFAULT_PAGE_CURRENT
+  const defaultPageSize = config.pagination?.defaultPageSize ?? DEFAULT_PAGE_SIZE
   const defaultQuery = cloneQuery((config.defaultQuery ?? {}) as Query)
   const initialSelectedRowKeys = cloneKeys(config.defaultSelectedRowKeys)
   const pendingExpandAllRows = Boolean(config.defaultExpandAllRows)
@@ -576,28 +583,40 @@ export function createProTableController<
     subscribe: (listener) => store.subscribe((state) => listener(toPublicState(state))),
     configure: (nextConfig) => {
       store.setState((state) => {
-        const nextDefaultQuery =
-          nextConfig.defaultQuery === undefined
-            ? state.defaultQuery
-            : cloneQuery(nextConfig.defaultQuery as Query)
-        const nextQueryRequest = nextConfig.queryRequest ?? state.queryRequest
-        const nextSummaryRequest = nextConfig.summaryRequest ?? state.summaryRequest
-        const nextRowKey =
-          nextConfig.rowKey === undefined ? state.rowKey : resolveRowKey(nextConfig.rowKey)
+        const nextDefaultQuery = hasOwnKey(nextConfig, 'defaultQuery')
+          ? cloneQuery((nextConfig.defaultQuery ?? {}) as Query)
+          : state.defaultQuery
+        const nextQueryRequest = hasOwnKey(nextConfig, 'queryRequest')
+          ? nextConfig.queryRequest
+          : state.queryRequest
+        const nextSummaryRequest = hasOwnKey(nextConfig, 'summaryRequest')
+          ? nextConfig.summaryRequest
+          : state.summaryRequest
+        const nextRowKey = hasOwnKey(nextConfig, 'rowKey')
+          ? resolveRowKey(nextConfig.rowKey)
+          : state.rowKey
         const nextRequestReady = Boolean(nextQueryRequest)
-        const nextLocalSortFields =
-          nextConfig.localSortFields === undefined
-            ? state.localSortFields
-            : [...nextConfig.localSortFields]
-        const paginationPatch = nextConfig.pagination
-        const nextDefaultCurrent =
-          paginationPatch?.defaultCurrent === undefined
-            ? state.defaultCurrent
-            : paginationPatch.defaultCurrent
-        const nextDefaultPageSize =
-          paginationPatch?.defaultPageSize === undefined
-            ? state.defaultPageSize
-            : paginationPatch.defaultPageSize
+        const nextLocalSortFields = hasOwnKey(nextConfig, 'localSortFields')
+          ? nextConfig.localSortFields
+            ? [...nextConfig.localSortFields]
+            : []
+          : state.localSortFields
+        let nextDefaultCurrent = state.defaultCurrent
+        let nextDefaultPageSize = state.defaultPageSize
+        if (hasOwnKey(nextConfig, 'pagination')) {
+          const paginationPatch = nextConfig.pagination
+          if (!paginationPatch) {
+            nextDefaultCurrent = DEFAULT_PAGE_CURRENT
+            nextDefaultPageSize = DEFAULT_PAGE_SIZE
+          } else {
+            if (hasOwnKey(paginationPatch, 'defaultCurrent')) {
+              nextDefaultCurrent = paginationPatch.defaultCurrent ?? DEFAULT_PAGE_CURRENT
+            }
+            if (hasOwnKey(paginationPatch, 'defaultPageSize')) {
+              nextDefaultPageSize = paginationPatch.defaultPageSize ?? DEFAULT_PAGE_SIZE
+            }
+          }
+        }
         const canSeedPage = state.requested !== true
         const nextCurrentPage =
           canSeedPage && state.currentPage === state.defaultCurrent
@@ -607,10 +626,9 @@ export function createProTableController<
           canSeedPage && state.pageSize === state.defaultPageSize
             ? nextDefaultPageSize
             : state.pageSize
-        const nextCoerceEmptyQuery =
-          nextConfig.coerceEmptyQuery === undefined
-            ? state.coerceEmptyQuery
-            : nextConfig.coerceEmptyQuery
+        const nextCoerceEmptyQuery = hasOwnKey(nextConfig, 'coerceEmptyQuery')
+          ? nextConfig.coerceEmptyQuery !== false
+          : state.coerceEmptyQuery
 
         if (
           isQueryEqual(state.defaultQuery, nextDefaultQuery) &&
