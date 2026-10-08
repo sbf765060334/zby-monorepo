@@ -220,6 +220,9 @@ export function TableSettings<Query extends Record<string, unknown>>({
         onCancel={() => setResetConfirmOpen(false)}
         getContainer={settingsPanel ?? getContainer}
         destroyOnHidden
+        mask={{
+          closable: true,
+        }}
         width={480}
         rootClassName={clsx(`${prefixCls}-settings-reset-modal`, hashId, cssVarCls)}
         footer={(

@@ -367,13 +367,17 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     [`${componentCls}-settings-reset-modal`]: {
       position: 'absolute',
       inset: 0,
+      pointerEvents: 'auto',
 
       [`${antCls}-modal-mask`]: {
         position: 'absolute',
+        inset: 0,
       },
 
       [`${antCls}-modal-wrap`]: {
         position: 'absolute',
+        inset: 0,
+        pointerEvents: 'auto',
       },
 
       [`${antCls}-modal`]: {
@@ -449,7 +453,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-columns-panel-layout`]: {
         display: 'grid',
-        gridTemplateColumns: '560px 240px',
+        gridTemplateColumns: 'minmax(0, 1fr) 240px',
         width: '100%',
         maxWidth: '100%',
         minHeight: 0,
