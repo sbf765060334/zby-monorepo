@@ -13,6 +13,17 @@ export function cloneColumnPreferences(items: ProTableColumnPreference[]) {
   return items.map((item) => ({ ...item }))
 }
 
+export function mergeColumnSettingsDraft(
+  draft: ProTableColumnPreference[],
+  currentPreferences: ProTableColumnPreference[],
+) {
+  const currentByKey = new Map(currentPreferences.map((item) => [item.key, item]))
+  return draft.map((item) => ({
+    ...item,
+    width: currentByKey.get(item.key)?.width ?? item.width,
+  }))
+}
+
 export function buildDefaultColumnPreferences(
   definitions: ProTableColumnDefinition[],
 ): ProTableColumnPreference[] {

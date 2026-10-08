@@ -12,6 +12,7 @@ export {
   applyVisibleColumnPin,
   buildDefaultColumnPreferences,
   cloneColumnPreferences,
+  mergeColumnSettingsDraft,
   moveVisibleColumnToTop,
   replaceVisibleColumnOrder,
   resolveColumnPreferences,

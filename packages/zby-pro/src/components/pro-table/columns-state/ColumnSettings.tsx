@@ -7,7 +7,7 @@ import { ProModal } from '../../pro-modal'
 import type { ProTableColumnPreference } from '../interface'
 import useStyle from '../style'
 import type { ProTableColumnDefinition } from '../utils/columns'
-import { buildDefaultColumnPreferences, cloneColumnPreferences } from '../utils/field-config'
+import { buildDefaultColumnPreferences, cloneColumnPreferences, mergeColumnSettingsDraft } from '../utils/field-config'
 import { ColumnSettingsPanel } from './ColumnSettingsPanel'
 
 export type ColumnSettingsProps = {
@@ -42,11 +42,13 @@ export function ColumnSettings({
   const intl = useIntl()
   const [hashId, cssVarCls] = useStyle(prefixCls)
   const [draft, setDraft] = React.useState<ProTableColumnPreference[]>(currentPreferences)
+  const wasOpenRef = React.useRef(false)
 
   React.useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setDraft(cloneColumnPreferences(currentPreferences))
     }
+    wasOpenRef.current = open
   }, [currentPreferences, open])
 
   return (
@@ -76,7 +78,11 @@ export function ColumnSettings({
             <Button autoInsertSpace={false} onClick={onCancel}>
               {intl.getMessage('zby.pro.table.cancel', '取消')}
             </Button>
-            <Button autoInsertSpace={false} type="primary" onClick={() => void onApply(draft)}>
+            <Button
+              autoInsertSpace={false}
+              type="primary"
+              onClick={() => void onApply(mergeColumnSettingsDraft(draft, currentPreferences))}
+            >
               {intl.getMessage('zby.pro.table.confirm', '确定')}
             </Button>
           </div>
