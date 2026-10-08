@@ -76,6 +76,22 @@ export function isSearchValueEqual(left: unknown, right: unknown): boolean {
   return false
 }
 
+export function hasSearchValue(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.some((item) => item != null && item !== '')
+  }
+
+  return value != null && value !== ''
+}
+
+export function toStoredQueryValue<T>(value: T, coerceEmptyQuery: boolean): T | undefined {
+  if (!coerceEmptyQuery) {
+    return value
+  }
+
+  return hasSearchValue(value) ? value : undefined
+}
+
 export function pickSearchQuery<Query extends Record<string, unknown>>(
   query: Partial<Query>,
   filters: Array<{ key: Extract<keyof Query, string> }>,
@@ -127,11 +143,7 @@ export function mergeViewQueryWithOverlay<Query extends Record<string, unknown>>
 }
 
 export function hasSearchFieldValue(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.some((item) => item != null && item !== '')
-  }
-
-  return value != null && value !== ''
+  return value !== undefined
 }
 
 export function hasSearchTagText(text: ReactNode) {

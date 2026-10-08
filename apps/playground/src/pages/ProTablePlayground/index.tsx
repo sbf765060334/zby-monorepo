@@ -410,10 +410,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         allowClear
         placeholder="客户名称"
         value={value ?? ''}
-        onChange={(event) => {
-          const next = event.target.value
-          setValue(next === '' ? undefined : next)
-        }}
+        onChange={(event) => setValue(event.target.value)}
       />
     ),
   },
@@ -429,7 +426,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         placeholder="状态"
         popupMatchSelectWidth={false}
         value={value}
-        onChange={(next) => setValue(next ?? undefined)}
+        onChange={(next) => setValue(next)}
       />
     ),
   },
@@ -446,7 +443,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         placeholder="标签"
         popupMatchSelectWidth={false}
         value={value}
-        onChange={(next) => setValue(next?.length ? next : undefined)}
+        onChange={(next) => setValue(next)}
       />
     ),
   },
@@ -464,7 +461,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         popupMatchSelectWidth={false}
         showCheckedStrategy={Cascader.SHOW_CHILD}
         value={value}
-        onChange={(next) => setValue(next?.length ? next : undefined)}
+        onChange={(next) => setValue(next)}
       />
     ),
   },
@@ -511,10 +508,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         allowClear
         placeholder="负责人"
         value={value ?? ''}
-        onChange={(event) => {
-          const next = event.target.value
-          setValue(next === '' ? undefined : next)
-        }}
+        onChange={(event) => setValue(event.target.value)}
       />
     ),
   },
@@ -534,7 +528,7 @@ const filters: ProTableFilter<PlaygroundQuery>[] = [
         treeData={WAREHOUSE_TREE}
         treeDefaultExpandAll
         value={value}
-        onChange={(next) => setValue(next?.length ? next : undefined)}
+        onChange={(next) => setValue(next)}
       />
     ),
   },

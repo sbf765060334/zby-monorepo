@@ -609,6 +609,38 @@ describe('createProTableController', () => {
     expect(controller.getState().currentPage).toBe(3)
   })
 
+  it('coerces empty search writes to undefined by default', () => {
+    type EmptyQuery = { status?: string; labels?: string[] }
+    const controller = createProTableController<Row, EmptyQuery>({
+      rowKey: 'id',
+    })
+
+    controller.setQueryField('status', '')
+    expect(controller.getState().query.status).toBeUndefined()
+
+    controller.setQuery({ status: 'pending', labels: [] })
+    expect(controller.getState().query).toMatchObject({ status: 'pending' })
+    expect(controller.getState().query.labels).toBeUndefined()
+  })
+
+  it('keeps empty search writes when coerceEmptyQuery is false', () => {
+    type EmptyQuery = { status?: string; labels?: string[] }
+    const controller = createProTableController<Row, EmptyQuery>({
+      rowKey: 'id',
+      coerceEmptyQuery: false,
+    })
+
+    controller.setQueryField('status', '')
+    expect(controller.getState().query.status).toBe('')
+
+    controller.setQuery({ labels: [] })
+    expect(controller.getState().query.labels).toEqual([])
+
+    controller.configure({ coerceEmptyQuery: true })
+    controller.setQueryField('status', '')
+    expect(controller.getState().query.status).toBeUndefined()
+  })
+
   it('seeds live page size from configure only before the first request', async () => {
     const queryRequest = vi.fn(async () => ({
       data: [{ id: '1', status: 'pending' }],

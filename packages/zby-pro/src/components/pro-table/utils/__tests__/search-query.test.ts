@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import dayjs from 'dayjs'
 
-import { isSearchValueEqual, mergeSearchQuery, mergeViewQueryWithOverlay, pickSearchQuery } from '../search'
+import {
+  hasSearchValue,
+  isSearchValueEqual,
+  mergeSearchQuery,
+  mergeViewQueryWithOverlay,
+  pickSearchQuery,
+  toStoredQueryValue,
+} from '../search'
 
 const filters = [{ key: 'status' as const }, { key: 'owner' as const }, { key: 'urgent' as const }]
 
@@ -45,28 +52,66 @@ describe('pickSearchQuery', () => {
     ).toEqual({ status: 'pending', urgent: false })
   })
 
-  it('omits empty fields even without defaultQuery', () => {
+  it('omits only undefined fields, and keeps empty strings and arrays', () => {
     expect(
-      pickSearchQuery({ status: '', owner: 'Ada', labels: [] as never }, [
+      pickSearchQuery({ status: '', owner: 'Ada', labels: [] as never, missing: undefined }, [
         { key: 'status' as const },
         { key: 'owner' as const },
         { key: 'labels' as const },
+        { key: 'missing' as const },
       ]),
-    ).toEqual({ owner: 'Ada' })
+    ).toEqual({ status: '', owner: 'Ada', labels: [] })
+  })
+})
+
+describe('toStoredQueryValue', () => {
+  it('turns empty strings, empty arrays, and null into undefined when coerce is on', () => {
+    expect(toStoredQueryValue('', true)).toBeUndefined()
+    expect(toStoredQueryValue([], true)).toBeUndefined()
+    expect(toStoredQueryValue([''], true)).toBeUndefined()
+    expect(toStoredQueryValue(null, true)).toBeUndefined()
+    expect(toStoredQueryValue(0, true)).toBe(0)
+    expect(toStoredQueryValue(false, true)).toBe(false)
+    expect(toStoredQueryValue(['east'], true)).toEqual(['east'])
+  })
+
+  it('keeps empty values when coerce is off', () => {
+    expect(toStoredQueryValue('', false)).toBe('')
+    expect(toStoredQueryValue([], false)).toEqual([])
+    expect(toStoredQueryValue(null, false)).toBeNull()
+  })
+
+  it('does not change the layout emptiness check', () => {
+    expect(hasSearchValue('')).toBe(false)
+    expect(hasSearchValue([])).toBe(false)
+    expect(hasSearchValue(['east'])).toBe(true)
+    expect(hasSearchValue(false)).toBe(true)
   })
 })
 
 describe('mergeSearchQuery', () => {
-  it('keeps defaultQuery for missing, undefined, and empty snapshot fields', () => {
+  it('keeps defaultQuery for missing and undefined snapshot fields', () => {
     expect(
       mergeSearchQuery(
         { status: 'all', owner: 'Ada', warehouse: '上海仓' },
-        { status: 'pending', owner: undefined, warehouse: '' },
+        { status: 'pending', owner: undefined },
       ),
     ).toEqual({
       status: 'pending',
       owner: 'Ada',
       warehouse: '上海仓',
+    })
+  })
+
+  it('applies empty strings and arrays from the snapshot', () => {
+    expect(
+      mergeSearchQuery(
+        { status: 'all', labels: ['east'] },
+        { status: '', labels: [] },
+      ),
+    ).toEqual({
+      status: '',
+      labels: [],
     })
   })
 

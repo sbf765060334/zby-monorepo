@@ -12,7 +12,6 @@ import type { ProTableController, ProTableFilter, ProTableFilterRenderContext } 
 import {
   getAutoWidthKind,
   getElementName,
-  hasSearchValue,
   resolveAutoWidthMaxTagCount,
   resolveInlineSearchControlStyle,
 } from '../search-control-layout'
@@ -45,10 +44,6 @@ const OVERLAY_DRAWER_STYLES = {
   section: { height: 'auto', maxHeight: '90%', boxShadow: 'none' },
   body: { paddingTop: 0, paddingInline: 0 },
 } as const
-
-function toQueryFieldValue<T>(value: T) {
-  return hasSearchValue(value) ? value : undefined
-}
 
 function resolveControlMeta(type: ReactElement['type']) {
   const mapped = AUTO_WIDTH_TYPES.get(type)
@@ -140,7 +135,7 @@ function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summ
   const key = field.key
   const value = query[key]
   const setValue: ProTableFilterRenderContext<Query>['setValue'] = (next) => {
-    controller.setQueryField(key, toQueryFieldValue(next) as Query[typeof key])
+    controller.setQueryField(key, next as Query[typeof key])
   }
   const labelId = `${prefixCls}-search-field-${String(key)}`
 

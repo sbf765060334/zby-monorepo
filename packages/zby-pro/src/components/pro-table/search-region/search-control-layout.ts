@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react'
 
+import { hasSearchValue } from '../utils/search'
+
+export { hasSearchValue }
+
 export type AutoWidthKind = 'input' | 'picker' | 'select'
 
 export type SearchControlFieldNames = {
@@ -90,14 +94,6 @@ export function getAutoWidthKind(name: string): AutoWidthKind | null {
   }
 
   return null
-}
-
-export function hasSearchValue(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.some((item) => item != null && item !== '')
-  }
-
-  return value != null && value !== ''
 }
 
 export function hasExplicitWidth(width: CSSProperties['width']) {

@@ -482,6 +482,11 @@ export interface ProTableControllerConfig<RecordType, Query extends Record<strin
   rowKey?: TableProps<RecordType>['rowKey']
   queryRequest?: ProTableQueryRequest<RecordType, Query>
   summaryRequest?: ProTableSummaryRequest<Query, Summary>
+  /**
+   * When true (default), `''` / `[]` / `null` written through `setQuery` /
+   * `setQueryField` become `undefined`. Layout still uses `hasSearchValue`.
+   */
+  coerceEmptyQuery?: boolean
   localSortFields?: readonly string[]
   /**
    * Page defaults. Live `currentPage` / `pageSize` follow these only before the

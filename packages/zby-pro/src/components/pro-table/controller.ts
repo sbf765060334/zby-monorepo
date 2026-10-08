@@ -8,7 +8,7 @@ import type {
   ProTableRequestParams,
   ProTableViewSorter,
 } from './interface'
-import { isSearchValueEqual } from './utils/search'
+import { isSearchValueEqual, toStoredQueryValue } from './utils/search'
 import { cloneSort, isSorterListEqual, normalizeSortItems, toRequestSort } from './utils/sort'
 
 const CANCEL_REQUESTS = Symbol('ProTableCancelRequests')
@@ -28,6 +28,7 @@ type InternalControllerState<
   pendingExpandAllRows: boolean;
   defaultCurrent: number;
   defaultPageSize: number;
+  coerceEmptyQuery: boolean;
 }
 
 type OverlayableProTableController<
@@ -172,6 +173,14 @@ function setQueryValue<Query>(query: Query, key: string, value: unknown): Query 
     ...(query as Record<string, unknown>),
     [key]: value,
   } as Query
+}
+
+function coerceQueryPatch<Query>(patch: Partial<Query>, coerceEmptyQuery: boolean): Partial<Query> {
+  const next: Record<string, unknown> = {}
+  Object.keys(patch as Record<string, unknown>).forEach((key) => {
+    next[key] = toStoredQueryValue((patch as Record<string, unknown>)[key], coerceEmptyQuery)
+  })
+  return next as Partial<Query>
 }
 
 function areKeyArraysEqual(left: Key[], right: readonly Key[]) {
@@ -380,6 +389,7 @@ export function createProTableController<
     localSortFields: config.localSortFields ? [...config.localSortFields] : [],
     defaultCurrent,
     defaultPageSize,
+    coerceEmptyQuery: config.coerceEmptyQuery !== false,
   }))
   let listAbortController: AbortController | null = null
   let summaryAbortController: AbortController | null = null
@@ -597,6 +607,10 @@ export function createProTableController<
           canSeedPage && state.pageSize === state.defaultPageSize
             ? nextDefaultPageSize
             : state.pageSize
+        const nextCoerceEmptyQuery =
+          nextConfig.coerceEmptyQuery === undefined
+            ? state.coerceEmptyQuery
+            : nextConfig.coerceEmptyQuery
 
         if (
           isQueryEqual(state.defaultQuery, nextDefaultQuery) &&
@@ -608,7 +622,8 @@ export function createProTableController<
           nextDefaultCurrent === state.defaultCurrent &&
           nextDefaultPageSize === state.defaultPageSize &&
           nextCurrentPage === state.currentPage &&
-          nextPageSize === state.pageSize
+          nextPageSize === state.pageSize &&
+          nextCoerceEmptyQuery === state.coerceEmptyQuery
         ) {
           return state
         }
@@ -626,6 +641,7 @@ export function createProTableController<
           defaultPageSize: nextDefaultPageSize,
           currentPage: nextCurrentPage,
           pageSize: nextPageSize,
+          coerceEmptyQuery: nextCoerceEmptyQuery,
         }
       })
 
@@ -660,28 +676,30 @@ export function createProTableController<
     },
     setQueryField: (key, value) => {
       store.setState((state) => {
+        const storedValue = toStoredQueryValue(value, state.coerceEmptyQuery)
         const currentValue = (state.query as Record<string, unknown>)[key]
-        const queryUnchanged = isSearchValueEqual(currentValue, value)
+        const queryUnchanged = isSearchValueEqual(currentValue, storedValue)
         const overlayRecord = state.queryOverlay as Record<string, unknown>
         // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
         const overlayHasKey = Object.prototype.hasOwnProperty.call(overlayRecord, key)
-        const overlayUnchanged = overlayHasKey && isSearchValueEqual(overlayRecord[key], value)
+        const overlayUnchanged = overlayHasKey && isSearchValueEqual(overlayRecord[key], storedValue)
         if (queryUnchanged && overlayUnchanged) {
           return state
         }
 
         return {
-          ...(queryUnchanged ? {} : { query: setQueryValue(state.query, key, value) }),
-          queryOverlay: mergeQueryOverlay(state.queryOverlay, { [key]: value } as Partial<Query>),
+          ...(queryUnchanged ? {} : { query: setQueryValue(state.query, key, storedValue) }),
+          queryOverlay: mergeQueryOverlay(state.queryOverlay, { [key]: storedValue } as Partial<Query>),
         }
       })
     },
     setQuery: (patch) => {
       store.setState((state) => {
-        const queryUnchanged = isQueryPatchEqual(state.query, patch)
-        const nextOverlay = mergeQueryOverlay(state.queryOverlay, patch)
-        const overlayUnchanged = isQueryPatchEqual(state.queryOverlay as Query, patch) &&
-          Object.keys(patch as Record<string, unknown>).every((key) =>
+        const storedPatch = coerceQueryPatch(patch, state.coerceEmptyQuery)
+        const queryUnchanged = isQueryPatchEqual(state.query, storedPatch)
+        const nextOverlay = mergeQueryOverlay(state.queryOverlay, storedPatch)
+        const overlayUnchanged = isQueryPatchEqual(state.queryOverlay as Query, storedPatch) &&
+          Object.keys(storedPatch as Record<string, unknown>).every((key) =>
             // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
             Object.prototype.hasOwnProperty.call(state.queryOverlay, key),
           )
@@ -690,16 +708,21 @@ export function createProTableController<
         }
 
         return {
-          ...(queryUnchanged ? {} : { query: mergeQueryPatch(state.query, patch) }),
+          ...(queryUnchanged ? {} : { query: mergeQueryPatch(state.query, storedPatch) }),
           queryOverlay: nextOverlay,
         }
       })
     },
     resetQuery: (patch) => {
-      store.setState((state) => ({
-        query: patch ? mergeQueryPatch(state.defaultQuery, patch) : cloneQuery(state.defaultQuery),
-        queryOverlay: patch ? mergeQueryOverlay({}, patch) : {},
-      }))
+      store.setState((state) => {
+        const storedPatch = patch ? coerceQueryPatch(patch, state.coerceEmptyQuery) : undefined
+        return {
+          query: storedPatch
+            ? mergeQueryPatch(state.defaultQuery, storedPatch)
+            : cloneQuery(state.defaultQuery),
+          queryOverlay: storedPatch ? mergeQueryOverlay({}, storedPatch) : {},
+        }
+      })
     },
     submitQuery: async (options) => {
       const resetPage = options?.resetPage !== false
