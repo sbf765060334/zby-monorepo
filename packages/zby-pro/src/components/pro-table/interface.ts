@@ -444,11 +444,10 @@ export interface ProTableToolbarConfig<
   fullscreen?: boolean
 }
 
-export interface ProTablePaginationConfig
-  extends Omit<TablePaginationConfig, 'current' | 'pageSize' | 'total'> {
-  defaultCurrent?: number
-  defaultPageSize?: number
-}
+export type ProTablePaginationConfig = Omit<
+  TablePaginationConfig,
+  'current' | 'pageSize' | 'total' | 'defaultCurrent' | 'defaultPageSize'
+>
 
 /** Assembled request payload: filters + page + pageSize + sort. */
 export type ProTableRequestParams<Query extends Record<string, unknown> = Record<string, unknown>> =
@@ -484,7 +483,10 @@ export interface ProTableControllerConfig<RecordType, Query extends Record<strin
   queryRequest?: ProTableQueryRequest<RecordType, Query>
   summaryRequest?: ProTableSummaryRequest<Query, Summary>
   localSortFields?: readonly string[]
-  /** Create-time page defaults. Runtime page lives on controller state. */
+  /**
+   * Page defaults. Live `currentPage` / `pageSize` follow these only before the
+   * first request, while they still match the previous defaults.
+   */
   pagination?: ProTableControllerPaginationConfig
   /** Initial selected keys. Later selection lives on controller state. */
   defaultSelectedRowKeys?: Key[]
@@ -511,6 +513,7 @@ export interface ProTableControllerState<RecordType, Query extends Record<string
   selectedRowKeys: Key[]
   expandedRowKeys: Key[]
   sort: ProTableViewSorter[]
+  rowKey: NonNullable<TableProps<RecordType>['rowKey']>
 }
 
 export interface ProTableController<RecordType, Query extends Record<string, unknown>, Summary> {
@@ -599,35 +602,30 @@ export interface ProTableRef<
   controller: ProTableController<RecordType, Query, Summary>
 }
 
-export interface ProTableProps<
+type ProTableUiProps<
   RecordType = Record<string, unknown>,
   Query extends Record<string, unknown> = Record<string, unknown>,
   Summary = unknown,
-> extends Omit<
-    TableProps<RecordType>,
-    | 'classNames'
-    | 'columns'
-    | 'columnResize'
-    | 'dataSource'
-    | 'height'
-    | 'loading'
-    | 'onChange'
-    | 'prefixCls'
-    | 'rootClassName'
-    | 'styles'
-    | 'pagination'
-    | 'rowSelection'
-    | 'expandable'
-  > {
-  controller?: ProTableController<RecordType, Query, Summary>
-  controllerConfig?: Partial<ProTableControllerConfig<RecordType, Query, Summary>>
-  queryRequest?: ProTableQueryRequest<RecordType, Query>
-  summaryRequest?: ProTableSummaryRequest<Query, Summary>
+> = Omit<
+  TableProps<RecordType>,
+  | 'classNames'
+  | 'columns'
+  | 'columnResize'
+  | 'dataSource'
+  | 'height'
+  | 'loading'
+  | 'onChange'
+  | 'prefixCls'
+  | 'rootClassName'
+  | 'styles'
+  | 'pagination'
+  | 'rowSelection'
+  | 'expandable'
+  | 'rowKey'
+> & {
   autoRequest?: boolean
-  defaultQuery?: Query
   onControllerReady?: (controller: ProTableController<RecordType, Query, Summary>) => void
   columns: ProTableColumnsType<RecordType>
-  rowKey?: TableProps<RecordType>['rowKey']
   filters?: ProTableFilter<Query>[]
   /** 筛选设置。有筛选时默认显示；`false` 隐藏入口。无视图时只留内存。 */
   filterSetting?: boolean
@@ -653,6 +651,27 @@ export interface ProTableProps<
   classNames?: ProTableClassNamesType
   styles?: ProTableStylesType
 }
+
+type ProTableControllerSource<
+  RecordType,
+  Query extends Record<string, unknown>,
+  Summary,
+> =
+  | {
+    controller: ProTableController<RecordType, Query, Summary>
+    controllerConfig?: never
+  }
+  | {
+    controller?: never
+    controllerConfig?: ProTableControllerConfig<RecordType, Query, Summary>
+  }
+
+export type ProTableProps<
+  RecordType = Record<string, unknown>,
+  Query extends Record<string, unknown> = Record<string, unknown>,
+  Summary = unknown,
+> = ProTableUiProps<RecordType, Query, Summary> &
+  ProTableControllerSource<RecordType, Query, Summary>
 
 export interface ProTableConfig<
   RecordType = Record<string, unknown>,

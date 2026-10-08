@@ -609,6 +609,31 @@ describe('createProTableController', () => {
     expect(controller.getState().currentPage).toBe(3)
   })
 
+  it('seeds live page size from configure only before the first request', async () => {
+    const queryRequest = vi.fn(async () => ({
+      data: [{ id: '1', status: 'pending' }],
+      total: 1,
+    }))
+    const controller = createProTableController<Row, Query>({
+      queryRequest,
+      rowKey: 'id',
+      pagination: { defaultPageSize: 10 },
+    })
+
+    controller.configure({ pagination: { defaultPageSize: 20 } })
+    expect(controller.getState().pageSize).toBe(20)
+    expect(controller.getState().rowKey).toBe('id')
+
+    await controller.submitQuery()
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      { page: 1, pageSize: 20 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+
+    controller.configure({ pagination: { defaultPageSize: 50 } })
+    expect(controller.getState().pageSize).toBe(20)
+  })
+
   it('keeps selected rows and supports row patching', () => {
     const controller = createProTableController<Row, Query>({
       rowKey: 'id',

@@ -24,9 +24,10 @@ type InternalControllerState<
   queryOverlay: Partial<Query>;
   queryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['queryRequest'];
   summaryRequest?: ProTableControllerConfig<RecordType, Query, Summary>['summaryRequest'];
-  rowKey?: ProTableControllerConfig<RecordType, Query, Summary>['rowKey'];
   localSortFields: string[];
   pendingExpandAllRows: boolean;
+  defaultCurrent: number;
+  defaultPageSize: number;
 }
 
 type OverlayableProTableController<
@@ -246,6 +247,7 @@ function toPublicState<RecordType, Query extends Record<string, unknown>, Summar
     selectedRowKeys: state.selectedRowKeys,
     expandedRowKeys: state.expandedRowKeys,
     sort: state.sort,
+    rowKey: state.rowKey,
   }
 }
 
@@ -376,6 +378,8 @@ export function createProTableController<
     summaryRequest: config.summaryRequest,
     rowKey: resolveRowKey(config.rowKey),
     localSortFields: config.localSortFields ? [...config.localSortFields] : [],
+    defaultCurrent,
+    defaultPageSize,
   }))
   let listAbortController: AbortController | null = null
   let summaryAbortController: AbortController | null = null
@@ -575,6 +579,24 @@ export function createProTableController<
           nextConfig.localSortFields === undefined
             ? state.localSortFields
             : [...nextConfig.localSortFields]
+        const paginationPatch = nextConfig.pagination
+        const nextDefaultCurrent =
+          paginationPatch?.defaultCurrent === undefined
+            ? state.defaultCurrent
+            : paginationPatch.defaultCurrent
+        const nextDefaultPageSize =
+          paginationPatch?.defaultPageSize === undefined
+            ? state.defaultPageSize
+            : paginationPatch.defaultPageSize
+        const canSeedPage = state.requested !== true
+        const nextCurrentPage =
+          canSeedPage && state.currentPage === state.defaultCurrent
+            ? nextDefaultCurrent
+            : state.currentPage
+        const nextPageSize =
+          canSeedPage && state.pageSize === state.defaultPageSize
+            ? nextDefaultPageSize
+            : state.pageSize
 
         if (
           isQueryEqual(state.defaultQuery, nextDefaultQuery) &&
@@ -582,7 +604,11 @@ export function createProTableController<
           nextSummaryRequest === state.summaryRequest &&
           Object.is(nextRowKey, state.rowKey) &&
           nextRequestReady === state.requestReady &&
-          areStringArraysEqual(state.localSortFields, nextLocalSortFields)
+          areStringArraysEqual(state.localSortFields, nextLocalSortFields) &&
+          nextDefaultCurrent === state.defaultCurrent &&
+          nextDefaultPageSize === state.defaultPageSize &&
+          nextCurrentPage === state.currentPage &&
+          nextPageSize === state.pageSize
         ) {
           return state
         }
@@ -596,8 +622,25 @@ export function createProTableController<
           summaryRequest: nextSummaryRequest,
           rowKey: nextRowKey,
           localSortFields: nextLocalSortFields,
+          defaultCurrent: nextDefaultCurrent,
+          defaultPageSize: nextDefaultPageSize,
+          currentPage: nextCurrentPage,
+          pageSize: nextPageSize,
         }
       })
+
+      const next = store.getState()
+      if (
+        next.requested !== true &&
+        (next.currentPage !== lastSettledIdentity.currentPage ||
+          next.pageSize !== lastSettledIdentity.pageSize)
+      ) {
+        lastSettledIdentity = {
+          ...lastSettledIdentity,
+          currentPage: next.currentPage,
+          pageSize: next.pageSize,
+        }
+      }
     },
     setViewState: (viewState) => {
       const { query, sorter, committed = false } = viewState

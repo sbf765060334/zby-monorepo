@@ -648,10 +648,13 @@ export default function ProTablePlayground() {
   return (
     <ProLayoutContentContainer mode="fill">
       <ProTable<PlaygroundRow, PlaygroundQuery>
-        rowKey="id"
+        controllerConfig={{
+          rowKey: 'id',
+          queryRequest: queryOrders,
+          pagination: { defaultPageSize: 10 },
+        }}
         heightMode="fill"
         persistenceKey="playground-pro-table"
-        queryRequest={queryOrders}
         columns={tableColumns}
         filters={filters}
         views
@@ -659,7 +662,6 @@ export default function ProTablePlayground() {
         rowHighlight
         thinScrollbar
         pagination={{
-          defaultPageSize: 10,
           showSizeChanger: true,
         }}
         toolbar={{

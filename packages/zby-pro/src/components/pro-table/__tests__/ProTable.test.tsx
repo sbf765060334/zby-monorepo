@@ -166,8 +166,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
-        queryRequest={queryRequest}
+        controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[]}
       />,
     )
@@ -178,6 +177,27 @@ describe('ProTable', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     )
     expect(screen.getByTestId('rows').textContent).toBe('1')
+  })
+
+  it('uses controllerConfig request and page defaults for the first automatic request', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{
+          rowKey: 'id',
+          queryRequest,
+          pagination: { defaultPageSize: 20 },
+        }}
+        columns={[]}
+      />,
+    )
+
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledWith(
+      { page: 1, pageSize: 20 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
   })
 
   it('swallows later UI request failures without unhandled rejections', async () => {
@@ -194,8 +214,7 @@ describe('ProTable', () => {
     try {
       renderProTable(
         <ProTable<Row, Query>
-          rowKey="id"
-          queryRequest={queryRequest}
+          controllerConfig={{ rowKey: 'id', queryRequest }}
           columns={[]}
           toolbar
           filters={[searchInputField('status', '状态')]}
@@ -330,11 +349,13 @@ describe('ProTable', () => {
     renderProTable(
       <ProTable<Row, Query>
         ref={ref}
-        rowKey="id"
         columns={[]}
         rowSelection={{}}
-        controllerConfig={{ defaultSelectedRowKeys: ['1'] }}
-        queryRequest={async () => ({ data: [{ id: '1', name: 'A' }], total: 1 })}
+        controllerConfig={{
+          rowKey: 'id',
+          defaultSelectedRowKeys: ['1'],
+          queryRequest: async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }),
+        }}
       />,
     )
 
@@ -428,9 +449,11 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
-        defaultQuery={{ status: 'all' }}
-        queryRequest={queryRequest}
+        controllerConfig={{
+          rowKey: 'id',
+          defaultQuery: { status: 'all' },
+          queryRequest,
+        }}
         columns={[]}
         filters={[
           searchInputField('status', '状态'),
@@ -495,8 +518,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
-        queryRequest={queryRequest}
+        controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[
           searchInputField('status', '状态'),
@@ -523,7 +545,7 @@ describe('ProTable', () => {
   it('hides filter settings when filterSetting is false', async () => {
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
+        controllerConfig={{ rowKey: 'id' }}
         columns={[{ key: 'id', title: 'ID' }]}
         filterSetting={false}
         filters={[
@@ -569,7 +591,7 @@ describe('ProTable', () => {
   it('moves a row field into more filters from filter settings', async () => {
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
+        controllerConfig={{ rowKey: 'id' }}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[
           searchInputField('status', '状态'),
@@ -616,7 +638,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
+        controllerConfig={{ rowKey: 'id' }}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[
           searchInputField('status', '状态'),
@@ -686,7 +708,10 @@ describe('ProTable', () => {
       return (
         next.views
           .find((view) => view.id === 'custom-pending')
-          ?.snapshot.filterPreferences?.find((item) => item.key === 'owner')?.placement === 'row'
+          ?.snapshot
+          .filterPreferences
+          ?.find((item) => item.key === 'owner')
+          ?.placement === 'row'
       )
     })
     expect(persisted).toBe(true)
@@ -1364,8 +1389,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
-        rowKey="id"
-        queryRequest={queryRequest}
+        controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
         views

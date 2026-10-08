@@ -65,12 +65,8 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const {
     controller: controllerProp,
     controllerConfig,
-    queryRequest,
-    summaryRequest,
-    defaultQuery,
     onControllerReady,
     columns,
-    rowKey,
     views,
     toolbar,
     columnResize,
@@ -115,21 +111,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   })
   const internalControllerRef = useRef<ProTableController<RecordType, Query, Summary> | null>(null)
   if (!controllerProp && !internalControllerRef.current) {
-    internalControllerRef.current = createProTableController<RecordType, Query, Summary>({
-      ...controllerConfig,
-      defaultQuery,
-      queryRequest,
-      summaryRequest,
-      rowKey,
-      pagination: {
-        defaultCurrent:
-          (pagination && typeof pagination === 'object' ? pagination.defaultCurrent : undefined) ??
-          controllerConfig?.pagination?.defaultCurrent,
-        defaultPageSize:
-          (pagination && typeof pagination === 'object' ? pagination.defaultPageSize : undefined) ??
-          controllerConfig?.pagination?.defaultPageSize,
-      },
-    })
+    internalControllerRef.current = createProTableController<RecordType, Query, Summary>(
+      controllerConfig ?? {},
+    )
   }
 
   const controller = controllerProp ?? internalControllerRef.current!
@@ -163,16 +147,12 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   )
 
   useEffect(() => {
-    if (!controllerProp) {
-      controller.configure({
-        ...controllerConfig,
-        defaultQuery,
-        queryRequest,
-        summaryRequest,
-        rowKey,
-      })
+    if (controllerProp || !controllerConfig) {
+      return
     }
-  }, [controller, controllerConfig, controllerProp, defaultQuery, queryRequest, rowKey, summaryRequest])
+
+    controller.configure(controllerConfig)
+  }, [controller, controllerConfig, controllerProp])
 
   useEffect(() => {
     controller.configure({ localSortFields })
@@ -444,7 +424,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
                     heightMode={resolvedConfig.mergedHeightMode}
                     loadingOverride={loading}
                     onTableChange={onTableChange}
-                    rowKey={rowKey ?? 'key'}
                     rowSelection={resolvedConfig.mergedRowSelection}
                     expandable={resolvedConfig.mergedExpandable}
                     pagination={resolvedConfig.mergedPagination}
@@ -502,7 +481,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       resolvedConfig.mergedToolbar,
       resolvedConfig.mergedViews,
       resolvedConfig.prefixCls,
-      rowKey,
       searchEnabled,
       showSearchRow,
       visibleFilters,

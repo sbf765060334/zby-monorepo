@@ -7,7 +7,7 @@ import { clsx } from 'clsx'
 
 import type { ProTableColumnDefinition } from '../utils/columns'
 import { ignoreProTableRequestError } from '../controller'
-import type { ProTableController, ProTablePaginationConfig, ProTableProps, ProTableViewSorter } from '../interface'
+import type { ProTableController, ProTableProps, ProTableViewSorter } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
 import { applyColumnPreferences, extractColumnKey, normalizeTableColumns, sortCurrentPageRows, toDisplaySorter, toProTableSorters } from '../utils'
@@ -30,7 +30,6 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
   heightMode: NonNullable<ProTableProps<RecordType, Query, Summary>['heightMode']>
   loadingOverride?: ProTableProps<RecordType, Query, Summary>['loading']
   onTableChange?: ProTableProps<RecordType, Query, Summary>['onTableChange']
-  rowKey?: ProTableProps<RecordType, Query, Summary>['rowKey']
   rowSelection?: ProTableProps<RecordType, Query, Summary>['rowSelection']
   expandable?: ProTableProps<RecordType, Query, Summary>['expandable']
   pagination?: ProTableProps<RecordType, Query, Summary>['pagination']
@@ -44,12 +43,8 @@ type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary
     | 'classNames'
     | 'controller'
     | 'controllerConfig'
-    | 'queryRequest'
-    | 'summaryRequest'
-    | 'defaultQuery'
     | 'onControllerReady'
     | 'columns'
-    | 'rowKey'
     | 'search'
     | 'views'
     | 'toolbar'
@@ -111,18 +106,6 @@ function applyControlledSorter<RecordType>(
   return changed ? nextColumns : columns
 }
 
-function toTablePagination(pagination: ProTableProps<any, any, any>['pagination']) {
-  if (pagination === false || pagination === undefined) {
-    return pagination
-  }
-  const {
-    defaultCurrent: _defaultCurrent,
-    defaultPageSize: _defaultPageSize,
-    ...tablePagination
-  } = pagination as ProTablePaginationConfig
-  return tablePagination
-}
-
 function toTableRowSelection<RecordType>(
   rowSelection: NonNullable<ProTableProps<RecordType, any, any>['rowSelection']>,
 ) {
@@ -159,7 +142,6 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
   heightMode,
   loadingOverride,
   onTableChange,
-  rowKey,
   rowSelection,
   expandable,
   pagination,
@@ -181,6 +163,7 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
   )
   const selectedRowKeys = useControllerSelector(controller, (state) => state.selectedRowKeys)
   const expandedRowKeys = useControllerSelector(controller, (state) => state.expandedRowKeys)
+  const rowKey = useControllerSelector(controller, (state) => state.rowKey)
   const paginationState = useControllerSelector(
     controller,
     (state) => ({
@@ -311,12 +294,11 @@ function TableRegionInner<RecordType, Query extends Record<string, unknown>, Sum
   )
 
   const mergedPagination = useMemo(() => {
-    const tablePagination = toTablePagination(pagination)
-    return tablePagination === false
+    return pagination === false
       ? false
       : {
-          ...tablePagination,
-          showTotal: tablePagination?.showTotal ?? defaultPaginationShowTotal,
+          ...pagination,
+          showTotal: pagination?.showTotal ?? defaultPaginationShowTotal,
           current: paginationState.currentPage,
           pageSize: paginationState.pageSize,
           total: paginationState.total,
