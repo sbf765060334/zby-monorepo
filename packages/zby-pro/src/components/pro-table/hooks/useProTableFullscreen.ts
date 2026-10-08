@@ -52,8 +52,8 @@ export function useProTableFullscreen({
         return
       }
 
-      const { columnsModalOpen, filtersModalOpen } = viewStore.getState()
-      if (columnsModalOpen || filtersModalOpen || moreFiltersOpen || hasOpenPopupOverlay()) {
+      const { settingsModalOpen } = viewStore.getState()
+      if (settingsModalOpen || moreFiltersOpen || hasOpenPopupOverlay()) {
         return
       }
 

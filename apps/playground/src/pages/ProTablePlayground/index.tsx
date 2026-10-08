@@ -293,7 +293,7 @@ const columns: ProTableColumnType<PlaygroundRow>[] = [
     dataIndex: 'rate',
     width: 88,
     align: 'right',
-    valueType: { type: 'percent', precision: 1, showColor: true },
+    valueType: { type: 'percent', precision: 1 },
   },
   {
     key: 'quantity',

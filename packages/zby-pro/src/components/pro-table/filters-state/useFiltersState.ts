@@ -61,7 +61,6 @@ export function useFiltersState<Query extends Record<string, unknown>>({
     async (items: ProTableFilterPreference[]) => {
       const actions = viewStore.getState()
       actions.setMergedFilterPreferences(resolveFilterPreferences(filters, items))
-      actions.setFiltersModalOpen(false)
     },
     [filters, viewStore],
   )

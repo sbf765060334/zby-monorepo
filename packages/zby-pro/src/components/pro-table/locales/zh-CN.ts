@@ -1,7 +1,7 @@
 const zhCN = {
   defaultView: '默认视图',
   refresh: '刷新',
-  columnSetting: '列设置',
+  columnSetting: '设置',
   columnsModalTitle: '列设置',
   confirm: '确定',
   cancel: '取消',
@@ -15,6 +15,10 @@ const zhCN = {
   selectAll: '全选',
   deselectAll: '取消全选',
   resetDefault: '恢复默认',
+  resetDefaultDescription:
+    '此操作会将草稿恢复为系统默认，未保存的调整将丢失。你可以仅恢复当前页签，或同时恢复列设置和筛选设置。',
+  resetAllDefault: '全部恢复默认',
+  resetCurrentDefault: '仅恢复{{name}}',
   selectedCount: '已选 {{count}}',
   selectedMax: '最多 {{count}}',
   maxFixed: '最多可固定 {{count}} 项',

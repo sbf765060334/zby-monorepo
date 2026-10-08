@@ -29,8 +29,6 @@ export type SearchRegionProps<RecordType, Query extends Record<string, unknown>,
   searchEnabled?: boolean
   searchFilters?: ProTableFilter<Query>[]
   showMore?: boolean
-  filterSettingEnabled?: boolean
-  onOpenFilterSettings?: () => void
   style?: React.CSSProperties
   onResetSearch?: () => void
   onSearch?: () => void

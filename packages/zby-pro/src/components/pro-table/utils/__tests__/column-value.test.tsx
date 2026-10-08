@@ -4,6 +4,8 @@ import * as React from 'react'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { ConfigProvider, theme } from 'antd'
+
 import { formatColumnValue } from '../column-value'
 
 afterEach(() => {
@@ -159,12 +161,65 @@ describe('formatColumnValue', () => {
     ).toBe('#1')
   })
 
-  it('ignores index formatting when the cell already has a value', () => {
+  it('generates index numbers when the column has no dataIndex', () => {
+    expect(
+      textOf(formatColumnValue({ id: 'row-1' }, { key: 'serial', valueType: 'index' }, 0)),
+    ).toBe('#1')
+    expect(formatColumnValue('A-01', { valueType: 'index' }, 0)).toBe('#1')
+  })
+
+  it('shows the field value as-is when an index column has dataIndex', () => {
     expect(
       formatColumnValue(3, { valueType: 'index', dataIndex: 'orderIndex' }, 0, {
         getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
       }),
     ).toBe(3)
-    expect(formatColumnValue('A-01', { valueType: 'index' }, 0)).toBe('A-01')
+    expect(
+      formatColumnValue(undefined, { valueType: 'index', dataIndex: 'orderIndex' }, 0),
+    ).toBe('-')
+  })
+
+  it('colors percent cells with theme tokens when showColor is on', () => {
+    function PercentColorSample({ value }: { value: number }) {
+      const { cssVar, token } = theme.useToken()
+      const palette = cssVar ?? token
+      return (
+        <>
+          {formatColumnValue(value, { valueType: { type: 'percent', showColor: true } })}
+          <span data-testid="error">{palette.colorError}</span>
+          <span data-testid="success">{palette.colorSuccess}</span>
+          <span data-testid="secondary">{palette.colorTextSecondary}</span>
+        </>
+      )
+    }
+
+    const positive = render(
+      <ConfigProvider>
+        <PercentColorSample value={12.5} />
+      </ConfigProvider>,
+    )
+    expect(positive.container.querySelector('span:not([data-testid])')?.style.color).toBe(
+      positive.getByTestId('error').textContent,
+    )
+    positive.unmount()
+
+    const negative = render(
+      <ConfigProvider>
+        <PercentColorSample value={-3} />
+      </ConfigProvider>,
+    )
+    expect(negative.container.querySelector('span:not([data-testid])')?.style.color).toBe(
+      negative.getByTestId('success').textContent,
+    )
+    negative.unmount()
+
+    const zero = render(
+      <ConfigProvider>
+        <PercentColorSample value={0} />
+      </ConfigProvider>,
+    )
+    expect(zero.container.querySelector('span:not([data-testid])')?.style.color).toBe(
+      zero.getByTestId('secondary').textContent,
+    )
   })
 })

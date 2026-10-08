@@ -60,6 +60,7 @@ describe('normalizeTableColumns empty text', () => {
     }>
 
     expect(column.renderText?.(undefined, {}, 0)).toBe('#1')
+    expect(column.renderText?.({ id: 'row-1' }, { id: 'row-1' }, 0)).toBe('#1')
     currentPage = 2
     expect(column.renderText?.(undefined, {}, 0)).toBe('#11')
   })

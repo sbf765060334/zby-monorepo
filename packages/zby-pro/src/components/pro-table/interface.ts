@@ -323,7 +323,7 @@ export type ProTableColumns<RecordType = Record<string, unknown>> =
 
 export type ProTableNewColumnPolicy = 'prepend' | 'append' | 'default-order'
 
-/** 列设置约束。`toolbar.columnSetting` 不传或为 `true` 时走这份默认（无可见/固定上限）。 */
+/** 列设置约束。`toolbar.setting.columns` 不传时无可见/固定上限。 */
 export interface ProTableColumnsStateConfig {
   maxVisible?: number
   maxFixed?: number
@@ -331,6 +331,11 @@ export interface ProTableColumnsStateConfig {
 }
 
 export type ProTableColumnSettingConfig = ProTableColumnsStateConfig
+
+/** 表格设置。列约束放 `columns`；筛选侧暂无配置项。 */
+export interface ProTableSettingConfig {
+  columns?: ProTableColumnSettingConfig
+}
 
 export type ProTableColumnResizeKey = string | number
 export type ProTableColumnWidthMap = Record<ProTableColumnResizeKey, number>
@@ -437,9 +442,10 @@ export interface ProTableToolbarConfig<
   /** 刷新。工具栏开启后默认显示；`false` 隐藏。 */
   refresh?: boolean
   /**
-   * 列设置。工具栏开启后默认显示；`false` 隐藏齿轮；对象覆盖 `maxVisible` 等约束。
+   * 表格设置。工具栏开启后默认显示齿轮；`false` 隐藏。
+   * 对象时 `columns` 覆盖列约束。弹窗内列设置、筛选设置两个 tab 始终都在。
    */
-  columnSetting?: boolean | ProTableColumnSettingConfig
+  setting?: boolean | ProTableSettingConfig
   /** 全屏。工具栏开启后默认显示并启用能力；`false` 关闭。 */
   fullscreen?: boolean
 }
@@ -636,11 +642,9 @@ type ProTableUiProps<
   onControllerReady?: (controller: ProTableController<RecordType, Query, Summary>) => void
   columns: ProTableColumnsType<RecordType>
   filters?: ProTableFilter<Query>[]
-  /** 筛选设置。有筛选时默认显示；`false` 隐藏入口。无视图时只留内存。 */
-  filterSetting?: boolean
   /** `true` 开默认视图；`false` / 缺省关闭；对象为配置。 */
   views?: boolean | ProTableViewsConfig<Query>
-  /** `true` 出刷新 / 列设置 / 全屏；`false` / 缺省关闭；对象为工具栏配置。 */
+  /** `true` 出刷新 / 表格设置 / 全屏；`false` / 缺省关闭；对象为工具栏配置。 */
   toolbar?: boolean | ProTableToolbarConfig<RecordType, Query, Summary>
   columnResize?: boolean | ProTableColumnResizeConfig<RecordType>
   persistenceKey?: string

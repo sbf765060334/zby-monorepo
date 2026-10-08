@@ -22,7 +22,7 @@ type ToolbarConfigValue<RecordType, Query extends Record<string, unknown>, Summa
 type ToolbarRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   toolbar: ToolbarConfigValue<RecordType, Query, Summary>
-  columnSettingEnabled: boolean
+  settingEnabled: boolean
   fullscreenEnabled: boolean
   viewStore: ProTableViewStore
   prefixCls: string
@@ -70,11 +70,11 @@ ToolbarRefreshButton.displayName = 'ProTableToolbarRefreshButton'
 
 const ToolbarColumnsStateButton = memo(({ viewStore }: { viewStore: ProTableViewStore }) => {
   const intl = useIntl()
-  const columnsModalOpen = useViewStoreSelector(viewStore, (state) => state.columnsModalOpen)
-  const handleOpenColumnsModal = useCallback(() => {
-    viewStore.getState().setColumnsModalOpen(true)
+  const settingsModalOpen = useViewStoreSelector(viewStore, (state) => state.settingsModalOpen)
+  const handleOpenSettingsModal = useCallback(() => {
+    viewStore.getState().setSettingsModalOpen(true)
   }, [viewStore])
-  const label = intl.getMessage('zby.pro.table.columnSetting', '列设置')
+  const label = intl.getMessage('zby.pro.table.columnSetting', '设置')
 
   return (
     <ActionIcon
@@ -82,8 +82,8 @@ const ToolbarColumnsStateButton = memo(({ viewStore }: { viewStore: ProTableView
       icon={SETTING_ICON}
       title={label}
       aria-label={label}
-      selected={columnsModalOpen}
-      onClick={handleOpenColumnsModal}
+      selected={settingsModalOpen}
+      onClick={handleOpenSettingsModal}
     />
   )
 })
@@ -117,7 +117,7 @@ ToolbarFullscreenButton.displayName = 'ProTableToolbarFullscreenButton'
 function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
   controller,
   toolbar,
-  columnSettingEnabled,
+  settingEnabled,
   fullscreenEnabled,
   viewStore,
   prefixCls,
@@ -144,10 +144,10 @@ function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, S
   const left = resolveNode(toolbar.actions, actions)
   const right = resolveNode(toolbar.extra, actions)
   const showRefresh = toolbar.refresh !== false
-  const showColumnSetting = columnSettingEnabled
+  const showSetting = settingEnabled
   const showFullscreen = fullscreenEnabled && toolbar.fullscreen !== false
 
-  if (!left && !right && !showRefresh && !showColumnSetting && !showFullscreen) {
+  if (!left && !right && !showRefresh && !showSetting && !showFullscreen) {
     return null
   }
 
@@ -159,7 +159,7 @@ function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, S
         {showRefresh && (
           <ToolbarRefreshButton controller={controller} loading={toolbarState.loading} />
         )}
-        {showColumnSetting && <ToolbarColumnsStateButton viewStore={viewStore} />}
+        {showSetting && <ToolbarColumnsStateButton viewStore={viewStore} />}
         {showFullscreen && <ToolbarFullscreenButton viewStore={viewStore} />}
       </div>
     </div>

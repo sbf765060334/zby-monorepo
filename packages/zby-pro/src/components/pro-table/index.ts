@@ -65,6 +65,7 @@ export type {
   ProTableConfig,
   ProTableStylesType,
   ProTableToolbarConfig,
+  ProTableToolbarContext,
   ProTableViewsConfig,
   ProTableViewSnapshot,
 } from './interface'
@@ -90,4 +91,5 @@ export type {
   ProTableTableChange,
   ProTableColumnsStateConfig,
   ProTableColumnSettingConfig,
+  ProTableSettingConfig,
 } from './interface'

@@ -18,15 +18,21 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
 
   return {
     [componentCls]: {
-      [`${antCls}-modal`]: {
-        [modalMaxHeightVar]: viewportBudget,
-        maxHeight: `var(${modalMaxHeightVar})`,
+        [`${antCls}-modal`]: {
+          [modalMaxHeightVar]: viewportBudget,
+          maxHeight: `var(${modalMaxHeightVar})`,
 
-        [`${antCls}-modal-container`]: {
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: 'inherit',
-        },
+          [`${antCls}-modal-render`]: {
+            maxHeight: 'inherit',
+            minHeight: 0,
+          },
+
+          [`${antCls}-modal-container`]: {
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 'inherit',
+            minHeight: 0,
+          },
 
         [`${antCls}-modal-header`]: {
           flexShrink: 0,
@@ -47,6 +53,10 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
       [`&${componentCls}-body-height-mode-height`]: {
         [`${antCls}-modal`]: {
           height: `var(${modalMaxHeightVar})`,
+
+          [`${antCls}-modal-render`]: {
+            height: '100%',
+          },
 
           [`${antCls}-modal-container`]: {
             height: '100%',

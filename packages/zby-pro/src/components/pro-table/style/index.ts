@@ -43,6 +43,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
   } = token
 
   const line = (color: string) => `${unit(lineWidth)} ${lineType} ${color}`
+  const columnsSettingsBodyWidth = 800
 
   return {
     [componentCls]: {
@@ -357,6 +358,46 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       },
     },
 
+    [`${componentCls}-settings-modal-tabs`]: {
+      [`${antCls}-tabs-nav`]: {
+        margin: 0,
+      },
+    },
+
+    [`${componentCls}-settings-reset-modal`]: {
+      position: 'absolute',
+      inset: 0,
+
+      [`${antCls}-modal-mask`]: {
+        position: 'absolute',
+      },
+
+      [`${antCls}-modal-wrap`]: {
+        position: 'absolute',
+      },
+
+      [`${antCls}-modal`]: {
+        height: 'fit-content !important',
+      },
+    },
+
+    [`${componentCls}-settings-reset-description`]: {
+      color: colorTextDescription,
+    },
+
+    [`${componentCls}-settings-reset-footer`]: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      flexWrap: 'wrap',
+      gap: marginSM,
+      width: '100%',
+
+      [`${antCls}-btn + ${antCls}-btn`]: {
+        marginInlineStart: 0,
+      },
+    },
+
     [`${componentCls}-columns-modal`]: {
       [`${componentCls}-columns-modal-footer`]: {
         display: 'flex',
@@ -375,9 +416,25 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-columns-modal-body`]: {
         display: 'flex',
         flexDirection: 'column',
+        flex: 1,
+        width: columnsSettingsBodyWidth,
+        maxWidth: '100%',
         height: '100%',
         minHeight: 0,
         overflow: 'hidden',
+      },
+
+      [`${componentCls}-settings-tab-panel`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        overflow: 'hidden',
+
+        '&[hidden]': {
+          display: 'none',
+        },
       },
 
       [`${componentCls}-columns-panel`]: {
@@ -393,7 +450,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-columns-panel-layout`]: {
         display: 'grid',
         gridTemplateColumns: '560px 240px',
-        width: 'max-content',
+        width: '100%',
         maxWidth: '100%',
         minHeight: 0,
         height: '100%',
@@ -609,13 +666,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       },
     },
 
-    [`${componentCls}-filters-modal-body`]: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      minHeight: 0,
-    },
-
     [`${componentCls}-filters-panel`]: {
       display: 'flex',
       flexDirection: 'column',
@@ -634,7 +684,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         gridTemplateColumns: 'minmax(260px, 1fr) auto minmax(260px, 1fr)',
         alignItems: 'stretch',
         gap: paddingSM,
-        width: 720,
+        width: '100%',
         maxWidth: '100%',
         minHeight: 0,
         height: '100%',

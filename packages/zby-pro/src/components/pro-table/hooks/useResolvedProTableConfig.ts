@@ -5,10 +5,10 @@ import { ConfigProvider } from 'antd'
 import type { ModalScopeProps, ViewsConfigValue } from '../search-region/types'
 import type {
   ProTableClassNamesType,
-  ProTableColumnSettingConfig,
   ProTableConfig,
   ProTableFilter,
   ProTableProps,
+  ProTableSettingConfig,
   ProTableStylesType,
   ProTableToolbarConfig,
   ProTableViewsConfig,
@@ -47,13 +47,13 @@ function resolveToolbarConfig<RecordType, Query extends Record<string, unknown>,
   return toolbar
 }
 
-function resolveColumnSetting(
+function resolveToolbarSetting(
   toolbar: false | ProTableToolbarConfig<any, any, any>,
-): false | ProTableColumnSettingConfig {
+): false | ProTableSettingConfig {
   if (toolbar === false) {
     return false
   }
-  const value = toolbar.columnSetting
+  const value = toolbar.setting
   if (value === false) {
     return false
   }
@@ -112,8 +112,7 @@ export interface ResolvedProTableConfig<
   mergedFilters: ProTableFilter<Query>[]
   mergedViews: false | ViewsConfigValue<Query>
   mergedToolbar: false | ProTableToolbarConfig<RecordType, Query, Summary>
-  mergedColumnSetting: false | ProTableColumnSettingConfig
-  mergedFilterSetting: false | Record<string, never>
+  mergedSetting: false | ProTableSettingConfig
   columnPreferencesEnabled: boolean
   mergedColumnResize: ProTableProps<RecordType, Query, Summary>['columnResize']
   mergedLayout: ProTableConfig<RecordType, Query, Summary>['layout']
@@ -147,7 +146,6 @@ export function useResolvedProTableConfig<
   const stableProps = useShallowStableRecord(props as unknown as SemanticProps)
   const {
     filters,
-    filterSetting,
     views: viewsProp,
     toolbar,
     heightMode = 'content',
@@ -173,9 +171,8 @@ export function useResolvedProTableConfig<
   )
   const mergedViews = resolveToggleConfig<ProTableViewsConfig<Query>>(viewsProp)
   const mergedToolbar = resolveToolbarConfig(toolbar)
-  const mergedColumnSetting = resolveColumnSetting(mergedToolbar)
-  const mergedFilterSetting = filterSetting === false ? false : {}
-  const columnPreferencesEnabled = mergedViews !== false || mergedColumnSetting !== false
+  const mergedSetting = resolveToolbarSetting(mergedToolbar)
+  const columnPreferencesEnabled = mergedViews !== false || mergedSetting !== false
   const mergedColumnResize = columnResize ?? true
   const mergedLayout = layout
   const mergedEmptyState = emptyState
@@ -211,14 +208,14 @@ export function useResolvedProTableConfig<
       styles,
       toolbar: mergedToolbar,
       views: mergedViews,
-      columnSetting: mergedColumnSetting,
+      setting: mergedSetting,
     }),
     [
       className,
       fullscreenEnabled,
       mergedAutoRequest,
       mergedColumnResize,
-      mergedColumnSetting,
+      mergedSetting,
       mergedEmptyState,
       mergedExpandable,
       mergedHeightMode,
@@ -258,8 +255,7 @@ export function useResolvedProTableConfig<
     mergedFilters,
     mergedViews,
     mergedToolbar,
-    mergedColumnSetting,
-    mergedFilterSetting,
+    mergedSetting,
     columnPreferencesEnabled,
     mergedColumnResize,
     mergedLayout,

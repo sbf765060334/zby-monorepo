@@ -51,7 +51,7 @@ describe('useProTableFullscreen', () => {
   it('does not exit fullscreen when column settings are open', () => {
     const viewStore = createProTableViewStore()
     viewStore.getState().setFullscreenActive(true)
-    viewStore.getState().setColumnsModalOpen(true)
+    viewStore.getState().setSettingsModalOpen(true)
     render(<Probe moreFiltersOpen={false} viewStore={viewStore} />)
 
     fireEvent.keyDown(document, { key: 'Escape' })

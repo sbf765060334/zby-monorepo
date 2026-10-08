@@ -23,8 +23,9 @@ import type {
   ProTableProps,
   ProTableRef,
 } from './interface'
-import { ColumnsModalMount, useColumnsState } from './columns-state'
-import { FiltersModalMount, useFiltersState } from './filters-state'
+import { useColumnsState } from './columns-state'
+import { useFiltersState } from './filters-state'
+import { TableSettingsMount } from './table-settings'
 import {
   useAutoRequest,
   useProTableFullscreen,
@@ -89,7 +90,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     expandable,
     pagination,
     scroll,
-    filterSetting: _filterSetting,
     ...tableProps
   } = props
   const resolvedConfig = useResolvedProTableConfig({
@@ -184,8 +184,8 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     persistenceKey,
     filters,
     columnDefinitions,
-    newColumnPolicy: resolvedConfig.mergedColumnSetting
-      ? resolvedConfig.mergedColumnSetting.newColumnPolicy
+    newColumnPolicy: resolvedConfig.mergedSetting
+      ? resolvedConfig.mergedSetting.columns?.newColumnPolicy
       : undefined,
   })
 
@@ -206,7 +206,9 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   })
 
   const columnsStateActions = useColumnsState({
-    columnSetting: resolvedConfig.mergedColumnSetting,
+    columnSetting: resolvedConfig.mergedSetting === false
+      ? false
+      : resolvedConfig.mergedSetting.columns ?? {},
     preferencesEnabled: resolvedConfig.columnPreferencesEnabled,
     viewStore,
     columnDefinitions,
@@ -218,9 +220,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     viewInitializationReady: viewInitialization.ready,
   })
   const viewsEnabled = resolvedConfig.mergedViews !== false
-  const columnSettingEnabled = resolvedConfig.mergedColumnSetting !== false
-  const filterSettingEnabled =
-    resolvedConfig.mergedFilterSetting !== false && filters.length > 0
+  const settingEnabled = resolvedConfig.mergedSetting !== false
   const shouldWaitForViewInitialization = viewsEnabled && !viewInitialization.ready
   const viewInitializationError = viewInitialization.error
   const [viewLoadingVisible, setViewLoadingVisible] = useState(false)
@@ -299,9 +299,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
   const handleCloseMoreFilters = useCallback(() => {
     setMoreFiltersOpen(false)
   }, [])
-  const handleOpenFilterSettings = useCallback(() => {
-    viewStore.getState().setFiltersModalOpen(true)
-  }, [viewStore])
   const handleApplyManagedView = useCallback(
     async (view: Parameters<typeof viewPersistence.handleApplyManagedView>[0]) => {
       setMoreFiltersOpen(false)
@@ -354,8 +351,6 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
               searchEnabled={searchEnabled}
               searchFilters={filters}
               showMore={moreFilters.length > 0}
-              filterSettingEnabled={filterSettingEnabled}
-              onOpenFilterSettings={handleOpenFilterSettings}
               views={resolvedConfig.mergedViews}
               viewStore={viewStore}
               prefixCls={resolvedConfig.prefixCls}
@@ -395,7 +390,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
                     <ToolbarRegion
                       controller={controller}
                       toolbar={resolvedConfig.mergedToolbar}
-                      columnSettingEnabled={columnSettingEnabled}
+                      settingEnabled={settingEnabled}
                       fullscreenEnabled={resolvedConfig.fullscreenEnabled}
                       viewStore={viewStore}
                       prefixCls={resolvedConfig.prefixCls}
@@ -455,9 +450,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       handleResetSearch,
       handleSearch,
       handleToggleMoreFilters,
-      handleOpenFilterSettings,
-      columnSettingEnabled,
-      filterSettingEnabled,
+      settingEnabled,
       controller,
       handleRetryViewInitialization,
       loading,
@@ -552,25 +545,18 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
       )}
     >
       {contentNode}
-      {columnSettingEnabled && resolvedConfig.mergedColumnSetting && (
-        <ColumnsModalMount
+      {settingEnabled && resolvedConfig.mergedSetting ? (
+        <TableSettingsMount
           viewStore={viewStore}
           definitions={columnDefinitions}
-          maxVisible={resolvedConfig.mergedColumnSetting.maxVisible}
-          maxFixed={resolvedConfig.mergedColumnSetting.maxFixed}
-          onApply={columnsStateActions.applyColumnsState}
+          maxVisible={resolvedConfig.mergedSetting.columns?.maxVisible}
+          maxFixed={resolvedConfig.mergedSetting.columns?.maxFixed}
+          filters={filters}
+          onApplyColumns={columnsStateActions.applyColumnsState}
+          onApplyFilters={filtersStateActions.applyFiltersState}
           getContainer={fullscreenMounted ? getOverlayContainer : undefined}
           prefixCls={resolvedConfig.prefixCls}
           modalProps={resolvedConfig.columnsModalProps}
-        />
-      )}
-      {filterSettingEnabled ? (
-        <FiltersModalMount
-          viewStore={viewStore}
-          filters={filters}
-          onApply={filtersStateActions.applyFiltersState}
-          getContainer={fullscreenMounted ? getOverlayContainer : undefined}
-          prefixCls={resolvedConfig.prefixCls}
         />
       ) : null}
     </div>

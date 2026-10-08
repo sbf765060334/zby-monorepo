@@ -6,18 +6,16 @@ import { isFilterPreferencesEqual } from '../utils/filter-config'
 export interface ProTableViewState {
   columnsReady: boolean
   mergedColumnsPreferences: ProTableColumnPreference[]
-  columnsModalOpen: boolean
+  settingsModalOpen: boolean
   mergedFilterPreferences: ProTableFilterPreference[]
-  filtersModalOpen: boolean
   fullscreenActive: boolean
 }
 
 export interface ProTableViewActions {
   setColumnsReady: (ready: boolean) => void
   setMergedColumnsPreferences: (items: ProTableColumnPreference[]) => void
-  setColumnsModalOpen: (open: boolean) => void
+  setSettingsModalOpen: (open: boolean) => void
   setMergedFilterPreferences: (items: ProTableFilterPreference[]) => void
-  setFiltersModalOpen: (open: boolean) => void
   setFullscreenActive: (active: boolean) => void
 }
 
@@ -27,7 +25,7 @@ const setBooleanValue =
   <
     Key extends keyof Pick<
       ProTableViewState,
-      'columnsModalOpen' | 'columnsReady' | 'filtersModalOpen' | 'fullscreenActive'
+      'columnsReady' | 'fullscreenActive' | 'settingsModalOpen'
     >,
   >(
     key: Key,
@@ -57,9 +55,8 @@ export function createProTableViewStore(): ProTableViewStore {
   return createStore<ProTableViewState & ProTableViewActions>((set) => ({
     columnsReady: false,
     mergedColumnsPreferences: [],
-    columnsModalOpen: false,
+    settingsModalOpen: false,
     mergedFilterPreferences: [],
-    filtersModalOpen: false,
     fullscreenActive: false,
     setColumnsReady: (ready) => set(setBooleanValue('columnsReady')(ready)),
     setMergedColumnsPreferences: (items) =>
@@ -68,14 +65,13 @@ export function createProTableViewStore(): ProTableViewStore {
           ? state
           : { mergedColumnsPreferences: items },
       ),
-    setColumnsModalOpen: (open) => set(setBooleanValue('columnsModalOpen')(open)),
+    setSettingsModalOpen: (open) => set(setBooleanValue('settingsModalOpen')(open)),
     setMergedFilterPreferences: (items) =>
       set((state) =>
         isFilterPreferencesEqual(state.mergedFilterPreferences, items)
           ? state
           : { mergedFilterPreferences: items },
       ),
-    setFiltersModalOpen: (open) => set(setBooleanValue('filtersModalOpen')(open)),
     setFullscreenActive: (active) => set(setBooleanValue('fullscreenActive')(active)),
   }))
 }

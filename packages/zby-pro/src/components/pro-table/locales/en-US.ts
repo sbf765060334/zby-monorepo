@@ -1,7 +1,7 @@
 const enUS = {
   defaultView: 'Default view',
   refresh: 'Refresh',
-  columnSetting: 'Column settings',
+  columnSetting: 'Settings',
   columnsModalTitle: 'Column settings',
   confirm: 'OK',
   cancel: 'Cancel',
@@ -15,6 +15,10 @@ const enUS = {
   selectAll: 'Select all',
   deselectAll: 'Clear all',
   resetDefault: 'Reset',
+  resetDefaultDescription:
+    'This restores the draft to system defaults. Unsaved changes will be lost. You can reset the current tab only, or reset both column and filter settings.',
+  resetAllDefault: 'Reset all',
+  resetCurrentDefault: 'Reset {{name}} only',
   selectedCount: '{{count}} selected',
   selectedMax: 'max {{count}}',
   maxFixed: 'Pin up to {{count}}',

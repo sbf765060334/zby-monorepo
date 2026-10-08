@@ -1,6 +1,6 @@
 import * as React from 'react'
 import type { ReactNode } from 'react'
-import { Badge, Progress, Space, Tag } from 'antd'
+import { Badge, Progress, Space, Tag, theme } from 'antd'
 import type { BadgeProps } from 'antd'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
@@ -53,6 +53,14 @@ export type FormatColumnValueOptions = {
 
 function isEmptyCellValue(value: unknown) {
   return value === undefined || value === null || value === ''
+}
+
+function hasColumnDataIndex(column: ProTableColumnType<any>) {
+  const { dataIndex } = column
+  if (dataIndex === undefined || dataIndex === null || dataIndex === '') {
+    return false
+  }
+  return !Array.isArray(dataIndex) || dataIndex.length > 0
 }
 
 function resolveEmptyText(
@@ -220,11 +228,17 @@ function formatMoneyValue(
   })
 }
 
-function formatPercentValue(
-  value: number,
-  typeConfig: ObjectValueTypeConfig,
-  fieldProps: Record<string, any>,
-) {
+function PercentValue({
+  value,
+  typeConfig,
+  fieldProps,
+}: {
+  value: number
+  typeConfig: ObjectValueTypeConfig
+  fieldProps: Record<string, any>
+}) {
+  const { cssVar, token } = theme.useToken()
+  const palette = cssVar ?? token
   const precision = typeConfig.precision ?? fieldProps.precision ?? 2
   const showColor = typeConfig.showColor ?? fieldProps.showColor
   const showSymbolProp = fieldProps.showSymbol ?? typeConfig.showSymbol
@@ -234,10 +248,10 @@ function formatPercentValue(
   const suffix = fieldProps.suffix ?? '%'
   const color = showColor
     ? value === 0
-      ? '#595959'
+      ? palette.colorTextSecondary
       : value > 0
-        ? '#ff4d4f'
-        : '#52c41a'
+        ? palette.colorError
+        : palette.colorSuccess
     : undefined
   const symbol = showSymbol || value < 0 ? (value > 0 ? '+' : value < 0 ? '-' : null) : null
 
@@ -313,7 +327,7 @@ export function formatColumnValue(
     if (amount === null) {
       return emptyText === false ? (value as ReactNode) : emptyText
     }
-    return formatPercentValue(amount, typeConfig, fieldProps)
+    return <PercentValue fieldProps={fieldProps} typeConfig={typeConfig} value={amount} />
   }
 
   if (valueType === 'digit') {
@@ -347,10 +361,13 @@ export function formatColumnValue(
   }
 
   if (valueType === 'index') {
+    if (!hasColumnDataIndex(column)) {
+      return renderIndex(index, options)
+    }
     if (!isEmptyCellValue(value)) {
       return value as ReactNode
     }
-    return renderIndex(index, options)
+    return emptyText === false ? (value as ReactNode) : emptyText
   }
 
   if (valueType === 'progress') {

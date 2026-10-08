@@ -127,7 +127,6 @@ export function useColumnsState({
       actions.setMergedColumnsPreferences(
         reconcileColumnPreferences(columnDefinitions, items, newColumnPolicy),
       )
-      actions.setColumnsModalOpen(false)
     },
     [columnDefinitions, newColumnPolicy, viewStore],
   )

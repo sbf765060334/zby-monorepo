@@ -64,6 +64,11 @@ function renderProTable(ui: React.ReactElement) {
   )
 }
 
+function openFilterSettings() {
+  fireEvent.click(screen.getByLabelText('设置'))
+  fireEvent.click(screen.getByRole('tab', { name: '筛选设置' }))
+}
+
 function searchInputField(key: keyof Query, label: string, extra?: { hidden?: boolean }) {
   return {
     key,
@@ -520,6 +525,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[{ key: 'id', title: 'ID' }]}
+        toolbar
         filters={[
           searchInputField('status', '状态'),
           searchInputField('owner', '负责人', { hidden: true }),
@@ -529,9 +535,10 @@ describe('ProTable', () => {
 
     await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
     expect(screen.queryByRole('textbox', { name: /负责人/ })).toBeNull()
-    expect(screen.getByRole('button', { name: '筛选设置' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '筛选设置' })).toBeNull()
+    expect(screen.getByLabelText('设置')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    openFilterSettings()
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
     fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
@@ -542,12 +549,43 @@ describe('ProTable', () => {
     expect(queryRequest).toHaveBeenCalledTimes(1)
   })
 
-  it('hides filter settings when filterSetting is false', async () => {
+  it('applies column and filter drafts together from the settings modal', async () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{ rowKey: 'id' }}
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称' },
+        ]}
+        toolbar
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
+    fireEvent.click(screen.getByLabelText('设置'))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '名称' }))
+    fireEvent.click(screen.getByRole('tab', { name: '筛选设置' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
+    fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
+    fireEvent.click(screen.getByRole('button', { name: '确定' }))
+
+    await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
+    expect(screen.getByRole('textbox', { name: /负责人/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '更多筛选' })).toBeNull()
+  })
+
+  it('hides the settings gear when toolbar.setting is false', async () => {
     renderProTable(
       <ProTable<Row, Query>
         controllerConfig={{ rowKey: 'id' }}
         columns={[{ key: 'id', title: 'ID' }]}
-        filterSetting={false}
+        toolbar={{ setting: false }}
         filters={[
           searchInputField('status', '状态'),
           searchInputField('owner', '负责人', { hidden: true }),
@@ -556,6 +594,7 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy())
+    expect(screen.queryByLabelText('设置')).toBeNull()
     expect(screen.queryByRole('button', { name: '筛选设置' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: /负责人/ })).toBeNull()
     expect(screen.getByRole('button', { name: '更多筛选' })).toBeTruthy()
@@ -567,6 +606,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
+        toolbar
         views
         filters={[
           searchInputField('status', '状态'),
@@ -578,7 +618,7 @@ describe('ProTable', () => {
     await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
     expect(viewActionRoot()).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    openFilterSettings()
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
     fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
@@ -593,6 +633,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controllerConfig={{ rowKey: 'id' }}
         columns={[{ key: 'id', title: 'ID' }]}
+        toolbar
         filters={[
           searchInputField('status', '状态'),
           searchInputField('owner', '负责人', { hidden: true }),
@@ -601,7 +642,7 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(screen.getByRole('textbox', { name: /状态/ })).toBeTruthy())
-    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    openFilterSettings()
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '状态' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '状态' }))
     fireEvent.click(screen.getByRole('button', { name: '移到更多筛选' }))
@@ -665,6 +706,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
+        toolbar
         filters={[
           searchInputField('status', '状态'),
           searchInputField('owner', '负责人', { hidden: true }),
@@ -674,7 +716,7 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
-    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    openFilterSettings()
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '负责人' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '负责人' }))
     fireEvent.click(screen.getByRole('button', { name: '移到默认展示' }))
@@ -798,6 +840,7 @@ describe('ProTable', () => {
       <ProTable<Row, Query>
         controller={controller}
         columns={[]}
+        toolbar
         filters={[
           searchInputField('status', '状态'),
           searchInputField('owner', '负责人', { hidden: true }),
@@ -810,7 +853,7 @@ describe('ProTable', () => {
       /状态：open.*负责人：Ada/,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '筛选设置' }))
+    openFilterSettings()
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '状态' })).toBeTruthy())
     fireEvent.click(screen.getByRole('checkbox', { name: '状态' }))
     fireEvent.click(screen.getByRole('button', { name: '移到更多筛选' }))
@@ -902,10 +945,10 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
-    expect(screen.getByLabelText('列设置')).toBeTruthy()
+    expect(screen.getByLabelText('设置')).toBeTruthy()
 
     act(() => {
-      screen.getByLabelText('列设置').click()
+      screen.getByLabelText('设置').click()
     })
     await waitFor(() => expect(screen.getByText('字段信息')).toBeTruthy())
     expect(screen.getByText('恢复默认')).toBeTruthy()
@@ -938,7 +981,7 @@ describe('ProTable', () => {
 
     await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
     expect(screen.getByLabelText('刷新')).toBeTruthy()
-    expect(screen.getByLabelText('列设置')).toBeTruthy()
+    expect(screen.getByLabelText('设置')).toBeTruthy()
     expect(screen.getByLabelText('全屏')).toBeTruthy()
   })
 
@@ -957,7 +1000,7 @@ describe('ProTable', () => {
 
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
     expect(screen.getByText('默认视图')).toBeTruthy()
-    expect(screen.queryByLabelText('列设置')).toBeNull()
+    expect(screen.queryByLabelText('设置')).toBeNull()
   })
 
   it('keeps column preferences in memory only when views are off', async () => {
@@ -975,7 +1018,7 @@ describe('ProTable', () => {
 
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
     act(() => {
-      screen.getByLabelText('列设置').click()
+      screen.getByLabelText('设置').click()
     })
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
     act(() => {
@@ -1000,7 +1043,7 @@ describe('ProTable', () => {
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('1'))
   })
 
-  it('does not apply column preferences when columnSetting is false', async () => {
+  it('does not apply column preferences when toolbar.setting is false', async () => {
     const controller = createProTableController<Row, Query>({ rowKey: 'id' })
     renderProTable(
       <ProTable<Row, Query>
@@ -1009,12 +1052,12 @@ describe('ProTable', () => {
           { key: 'id', title: 'ID' },
           { key: 'name', title: '名称', fieldConfig: { defaultPreference: { visible: false } } },
         ]}
-        toolbar={{ columnSetting: false }}
+        toolbar={{ setting: false }}
       />,
     )
 
     await waitFor(() => expect(screen.getByTestId('columns').textContent).toBe('2'))
-    expect(screen.queryByLabelText('列设置')).toBeNull()
+    expect(screen.queryByLabelText('设置')).toBeNull()
     expect(screen.getByLabelText('刷新')).toBeTruthy()
   })
 
@@ -1029,7 +1072,7 @@ describe('ProTable', () => {
       />,
     )
     expect(screen.queryByLabelText('刷新')).toBeNull()
-    expect(screen.getByLabelText('列设置')).toBeTruthy()
+    expect(screen.getByLabelText('设置')).toBeTruthy()
 
     rerender(
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
@@ -1037,13 +1080,13 @@ describe('ProTable', () => {
           <ProTable<Row, Query>
             controller={controller}
             columns={[{ key: 'id', title: 'ID' }]}
-            toolbar={{ columnSetting: false }}
+            toolbar={{ setting: false }}
           />
         </ConfigProvider>
       </ZbyIntlProvider>,
     )
     expect(screen.getByLabelText('刷新')).toBeTruthy()
-    expect(screen.queryByLabelText('列设置')).toBeNull()
+    expect(screen.queryByLabelText('设置')).toBeNull()
 
     rerender(
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
@@ -1142,7 +1185,7 @@ describe('ProTable', () => {
     )
 
     fireEvent.click(screen.getByLabelText('全屏'))
-    fireEvent.click(screen.getByLabelText('列设置'))
+    fireEvent.click(screen.getByLabelText('设置'))
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
 
     const fullscreenRoot = document.querySelector('.ant-pro-table-fullscreen') as HTMLElement
@@ -1208,7 +1251,7 @@ describe('ProTable', () => {
 
     await waitFor(() => expect(screen.getByText('默认视图')).toBeTruthy())
     act(() => {
-      screen.getByLabelText('列设置').click()
+      screen.getByLabelText('设置').click()
     })
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
     act(() => {
@@ -1795,7 +1838,7 @@ describe('ProTable', () => {
     const requestCount = queryRequest.mock.calls.length
 
     act(() => {
-      screen.getByLabelText('列设置').click()
+      screen.getByLabelText('设置').click()
     })
     await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
     act(() => {
