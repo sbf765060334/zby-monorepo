@@ -173,9 +173,12 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     [controller, controllerProp],
   )
 
+  const onControllerReadyRef = useRef(onControllerReady)
+  onControllerReadyRef.current = onControllerReady
+
   useEffect(() => {
-    onControllerReady?.(controller)
-  }, [controller, onControllerReady])
+    onControllerReadyRef.current?.(controller)
+  }, [controller])
 
   const viewPersistence = useViewPersistence<RecordType, Query, Summary>({
     controller,

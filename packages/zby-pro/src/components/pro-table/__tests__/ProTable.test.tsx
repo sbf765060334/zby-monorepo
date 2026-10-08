@@ -425,6 +425,70 @@ describe('ProTable', () => {
     expect(ref.current?.controller).toBe(controller)
   })
 
+  it('does not re-run onControllerReady when only the callback identity changes', () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const ready = vi.fn()
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        onControllerReady={(next) => ready(next)}
+      />,
+    )
+
+    expect(ready).toHaveBeenCalledTimes(1)
+    expect(ready).toHaveBeenCalledWith(controller)
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[]}
+            onControllerReady={(next) => ready(next)}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    expect(ready).toHaveBeenCalledTimes(1)
+  })
+
+  it('runs onControllerReady again when the controller instance changes', () => {
+    const first = createProTableController<Row, Query>({ rowKey: 'id' })
+    const second = createProTableController<Row, Query>({ rowKey: 'id' })
+    const firstReady = vi.fn()
+    const secondReady = vi.fn()
+
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query>
+        controller={first}
+        columns={[]}
+        onControllerReady={firstReady}
+      />,
+    )
+
+    expect(firstReady).toHaveBeenCalledTimes(1)
+    expect(firstReady).toHaveBeenCalledWith(first)
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={second}
+            columns={[]}
+            onControllerReady={secondReady}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    expect(firstReady).toHaveBeenCalledTimes(1)
+    expect(secondReady).toHaveBeenCalledTimes(1)
+    expect(secondReady).toHaveBeenCalledWith(second)
+  })
+
   it('renders inline filters and hides the more button when no field is hidden', async () => {
     const controller = createProTableController<Row, Query>({
       defaultQuery: { status: 'all' },
