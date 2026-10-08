@@ -3,6 +3,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import type { ProTableColumnType } from '../../interface'
 import { createProTableViewStore } from '../../store'
 import {
   buildColumnDefinitions,
@@ -98,5 +99,58 @@ describe('useProTableColumnResize persist', () => {
     expect(viewStore.getState().mergedColumnsPreferences.find((preference) => preference.key === 'name')?.width).toBe(
       200,
     )
+  })
+})
+
+describe('useProTableColumnResize resizable', () => {
+  function renderResize(columns: ProTableColumnType<Row>[]) {
+    const columnDefinitions = buildColumnDefinitions(columns)
+    const viewStore = createProTableViewStore()
+    viewStore.getState().setMergedColumnsPreferences(buildDefaultColumnPreferences(columnDefinitions))
+    viewStore.getState().setColumnsReady(true)
+
+    return renderHook(() =>
+      useProTableColumnResize<Row, Record<string, never>, unknown>({
+        columns,
+        visibleColumns: columns,
+        columnDefinitions,
+        columnResize: true,
+        mergedColumnsPreferences: viewStore.getState().mergedColumnsPreferences,
+        viewStore,
+        defaultPersist: true,
+      }),
+    )
+  }
+
+  function resizableOf(
+    result: { current: { columns: Array<{ key?: string; resizable?: boolean }> } },
+    key: string,
+  ) {
+    return result.current.columns.find((column) => column.key === key)?.resizable
+  }
+
+  it('does not treat action-named columns as non-resizable by default', () => {
+    const { result } = renderResize([
+      { key: 'actions', title: '操作', width: 64 },
+      { key: 'operator', title: '操作人', width: 100 },
+    ])
+
+    expect(resizableOf(result, 'actions')).toBe(true)
+    expect(resizableOf(result, 'operator')).toBe(true)
+  })
+
+  it('honors column.resizable and fieldConfig.capabilities.resizing', () => {
+    const { result } = renderResize([
+      { key: 'actions', title: '操作', width: 64, resizable: false },
+      {
+        key: 'name',
+        title: '名称',
+        width: 120,
+        fieldConfig: { capabilities: { resizing: false } },
+      },
+    ])
+
+    expect(resizableOf(result, 'actions')).toBe(false)
+    expect(resizableOf(result, 'name')).toBe(false)
   })
 })

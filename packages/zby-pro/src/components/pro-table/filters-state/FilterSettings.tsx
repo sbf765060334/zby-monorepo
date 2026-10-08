@@ -15,6 +15,7 @@ export type FilterSettingsProps<Query extends Record<string, unknown>> = {
   currentPreferences: ProTableFilterPreference[]
   onApply: (items: ProTableFilterPreference[]) => void | Promise<void>
   onCancel: () => void
+  getContainer?: () => HTMLElement
   prefixCls?: string
 }
 
@@ -24,6 +25,7 @@ export function FilterSettings<Query extends Record<string, unknown>>({
   currentPreferences,
   onApply,
   onCancel,
+  getContainer,
   prefixCls: customizePrefixCls,
 }: FilterSettingsProps<Query>) {
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
@@ -43,6 +45,7 @@ export function FilterSettings<Query extends Record<string, unknown>>({
       title={intl.getMessage('zby.pro.table.filtersModalTitle', '筛选设置')}
       open={open}
       onCancel={onCancel}
+      getContainer={getContainer}
       destroyOnHidden
       width="fit-content"
       bodyHeightMode="height"

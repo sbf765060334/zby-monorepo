@@ -18,6 +18,7 @@ export type ColumnSettingsProps = {
   maxFixed?: number
   onApply: (items: ProTableColumnPreference[]) => void | Promise<void>
   onCancel: () => void
+  getContainer?: () => HTMLElement
   prefixCls?: string
   className?: string
   rootClassName?: string
@@ -32,6 +33,7 @@ export function ColumnSettings({
   maxFixed,
   onApply,
   onCancel,
+  getContainer,
   prefixCls: customizePrefixCls,
   className,
   rootClassName,
@@ -56,6 +58,7 @@ export function ColumnSettings({
       title={intl.getMessage('zby.pro.table.columnsModalTitle', '列设置')}
       open={open}
       onCancel={onCancel}
+      getContainer={getContainer}
       destroyOnHidden
       width="fit-content"
       bodyHeightMode="height"

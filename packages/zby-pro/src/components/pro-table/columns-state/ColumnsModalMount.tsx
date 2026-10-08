@@ -13,6 +13,7 @@ type ColumnsModalMountProps = {
   maxVisible?: number
   maxFixed?: number
   onApply: (items: ProTableColumnPreference[]) => Promise<void>
+  getContainer?: () => HTMLElement
   prefixCls: string
   modalProps: ModalScopeProps
 }
@@ -23,6 +24,7 @@ function ColumnsModalMount({
   maxVisible,
   maxFixed,
   onApply,
+  getContainer,
   prefixCls,
   modalProps,
 }: ColumnsModalMountProps) {
@@ -44,6 +46,7 @@ function ColumnsModalMount({
       maxFixed={maxFixed}
       onApply={onApply}
       onCancel={handleCancel}
+      getContainer={getContainer}
       prefixCls={prefixCls}
       className={modalProps.className}
       rootClassName={modalProps.rootClassName}

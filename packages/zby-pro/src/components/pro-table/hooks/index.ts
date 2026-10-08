@@ -1,5 +1,6 @@
 export { useAutoRequest } from './useAutoRequest'
 export { useProTableController } from './useController'
+export { useProTableFullscreen } from './useProTableFullscreen'
 export { useResolvedProTableConfig } from './useResolvedProTableConfig'
 export { useControllerSelector, shallow, useViewStoreSelector } from './useStoreSelector'
 export { useViewInitialization } from './useViewInitialization'

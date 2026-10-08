@@ -44,15 +44,6 @@ function parsePixelWidth(value: unknown) {
   return undefined
 }
 
-function textFromTitle(title: unknown) {
-  return typeof title === 'string' || typeof title === 'number' ? String(title) : ''
-}
-
-function isActionColumn<RecordType>(column: ProTableColumnType<RecordType>, key: string) {
-  const text = `${key} ${textFromTitle(column.title)}`.toLowerCase()
-  return /(action|actions|operation|operate|操作)/.test(text)
-}
-
 function buildColumnMap<RecordType>(columns: ProTableColumnType<RecordType>[] | undefined) {
   const map = new Map<string, ProTableColumnType<RecordType>>()
   flattenColumnLeaves(columns).forEach((column) => {
@@ -206,10 +197,7 @@ export function useProTableColumnResize<
       const sourceColumn = sourceColumnMap.get(key) ?? (column as ProTableColumnType<RecordType>)
       const fieldConfig = sourceColumn.fieldConfig
       const resizingEnabled = fieldConfig ? fieldConfig.capabilities?.resizing !== false : true
-      const resizable =
-        column.resizable !== undefined
-          ? column.resizable
-          : resizingEnabled && !isActionColumn(sourceColumn, key)
+      const resizable = column.resizable ?? resizingEnabled
       return {
         ...column,
         key,

@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { ConfigProvider } from 'antd'
 import { clsx } from 'clsx'
 
 import {
@@ -26,6 +27,7 @@ import { ColumnsModalMount, useColumnsState } from './columns-state'
 import { FiltersModalMount, useFiltersState } from './filters-state'
 import {
   useAutoRequest,
+  useProTableFullscreen,
   useResolvedProTableConfig,
   useViewInitialization,
   useViewStoreSelector,
@@ -507,18 +509,47 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
     () => mergeInlineStyles(resolvedConfig.mergedSemanticStyles.root, resolvedConfig.mergedStyle),
     [resolvedConfig.mergedSemanticStyles.root, resolvedConfig.mergedStyle],
   )
+  const fullscreenActive = useViewStoreSelector(viewStore, (state) => state.fullscreenActive)
+  const fullscreenMounted = Boolean(
+    resolvedConfig.fullscreenEnabled && fullscreenActive && typeof document !== 'undefined',
+  )
+  const rootRef = useRef<HTMLDivElement>(null)
+  const getOverlayContainer = useCallback(
+    () => rootRef.current ?? document.body,
+    [],
+  )
+  const getPopupContainer = useCallback((triggerNode: HTMLElement) => {
+    return rootRef.current ?? triggerNode.parentElement ?? document.body
+  }, [])
+
+  useProTableFullscreen({
+    active: fullscreenMounted,
+    moreFiltersOpen,
+    viewStore,
+  })
+  useEffect(() => {
+    if (!resolvedConfig.fullscreenEnabled) {
+      viewStore.getState().setFullscreenActive(false)
+    }
+  }, [resolvedConfig.fullscreenEnabled, viewStore])
 
   const content = (
     <div
+      ref={rootRef}
       className={clsx(
         resolvedConfig.prefixCls,
         resolvedConfig.rootStyleClassName,
         resolvedConfig.mergedHeightMode === 'fill' && `${resolvedConfig.prefixCls}-fill`,
+        fullscreenMounted && `${resolvedConfig.prefixCls}-fullscreen`,
+        fullscreenMounted && resolvedConfig.mergedSemanticClassNames.fullscreen,
         resolvedConfig.mergedClassName,
         resolvedConfig.mergedRootClassName,
         resolvedConfig.mergedSemanticClassNames.root,
       )}
-      style={rootStyle}
+      style={mergeInlineStyles(
+        rootStyle,
+        fullscreenMounted ? resolvedConfig.mergedSemanticStyles.fullscreen : undefined,
+      )}
     >
       {contentNode}
       {columnSettingEnabled && resolvedConfig.mergedColumnSetting && (
@@ -528,6 +559,7 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
           maxVisible={resolvedConfig.mergedColumnSetting.maxVisible}
           maxFixed={resolvedConfig.mergedColumnSetting.maxFixed}
           onApply={columnsStateActions.applyColumnsState}
+          getContainer={fullscreenMounted ? getOverlayContainer : undefined}
           prefixCls={resolvedConfig.prefixCls}
           modalProps={resolvedConfig.columnsModalProps}
         />
@@ -537,31 +569,26 @@ function ProTableInner<RecordType extends object, Query extends Record<string, u
           viewStore={viewStore}
           filters={filters}
           onApply={filtersStateActions.applyFiltersState}
+          getContainer={fullscreenMounted ? getOverlayContainer : undefined}
           prefixCls={resolvedConfig.prefixCls}
         />
       ) : null}
     </div>
   )
 
-  const fullscreenActive = useViewStoreSelector(viewStore, (state) => state.fullscreenActive)
+  const scopedContent = fullscreenMounted
+    ? (
+        <ConfigProvider getPopupContainer={getPopupContainer}>
+          {content}
+        </ConfigProvider>
+      )
+    : content
 
-  if (resolvedConfig.fullscreenEnabled && fullscreenActive && typeof document !== 'undefined') {
-    return createPortal(
-      <div
-        className={clsx(
-          `${resolvedConfig.prefixCls}-fullscreen`,
-          resolvedConfig.rootStyleClassName,
-          resolvedConfig.mergedSemanticClassNames.fullscreen,
-        )}
-        style={resolvedConfig.mergedSemanticStyles.fullscreen}
-      >
-        {content}
-      </div>,
-      document.body,
-    )
+  if (fullscreenMounted) {
+    return createPortal(scopedContent, document.body)
   }
 
-  return content
+  return scopedContent
 }
 
 const ProTable = React.forwardRef(ProTableInner) as ProTableComponent

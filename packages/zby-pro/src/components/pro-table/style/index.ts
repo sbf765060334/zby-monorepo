@@ -27,8 +27,11 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     colorTextTertiary,
     componentCls,
     controlHeight,
+    fontFamily,
+    fontSize,
     fullscreenPadding,
     iconCls,
+    lineHeight,
     lineType,
     lineWidth,
     marginSM,
@@ -48,6 +51,10 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       gap: shellPadding,
       width: '100%',
       maxWidth: '100%',
+      color: colorText,
+      fontFamily,
+      fontSize,
+      lineHeight,
 
       '&, *': {
         boxSizing: 'border-box',
@@ -56,6 +63,25 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       '&-fill': {
         minHeight: '100%',
         height: '100%',
+      },
+
+      '&-fullscreen': {
+        position: 'fixed',
+        inset: 0,
+        zIndex: zIndexPopupBase,
+        overflow: 'hidden',
+        width: 'auto',
+        maxWidth: 'none',
+        minHeight: 0,
+        height: 'auto',
+        padding: fullscreenPadding,
+        background: colorBgContainer,
+
+        [`${componentCls}-content`]: {
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+        },
       },
 
       [`${componentCls}-search-row`]: {
@@ -712,15 +738,6 @@ function genProTableStyle(token: ProTableToken): CSSObject {
           gridColumn: 'auto',
         },
       },
-    },
-
-    [`${componentCls}-fullscreen`]: {
-      position: 'fixed',
-      inset: 0,
-      zIndex: zIndexPopupBase,
-      overflow: 'auto',
-      padding: fullscreenPadding,
-      background: colorBgContainer,
     },
 
     [`${antCls}-modal ${componentCls}-columns-modal`]: {

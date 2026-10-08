@@ -599,6 +599,7 @@ export default function ProTablePlayground() {
         align: 'center',
         width: 64,
         fixed: 'right',
+        resizable: false,
         fieldConfig: false,
         render: (_value, record, index) => (
           <ProTableActions

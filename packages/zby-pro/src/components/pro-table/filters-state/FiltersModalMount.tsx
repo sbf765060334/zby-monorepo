@@ -9,6 +9,7 @@ type FiltersModalMountProps<Query extends Record<string, unknown>> = {
   viewStore: ProTableViewStore
   filters: ProTableFilter<Query>[]
   onApply: (items: ProTableFilterPreference[]) => Promise<void>
+  getContainer?: () => HTMLElement
   prefixCls: string
 }
 
@@ -16,6 +17,7 @@ function FiltersModalMount<Query extends Record<string, unknown>>({
   viewStore,
   filters,
   onApply,
+  getContainer,
   prefixCls,
 }: FiltersModalMountProps<Query>) {
   const open = useViewStoreSelector(viewStore, (state) => state.filtersModalOpen)
@@ -34,6 +36,7 @@ function FiltersModalMount<Query extends Record<string, unknown>>({
       currentPreferences={currentPreferences}
       onApply={onApply}
       onCancel={handleCancel}
+      getContainer={getContainer}
       prefixCls={prefixCls}
     />
   )

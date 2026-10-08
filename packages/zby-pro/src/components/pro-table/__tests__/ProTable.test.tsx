@@ -1073,6 +1073,111 @@ describe('ProTable', () => {
     expect(screen.getByLabelText('全屏')).toBeTruthy()
   })
 
+  it('portals the same table root into body, locks scroll, and exits on Escape', () => {
+    const { container } = renderProTable(
+      <ProTable<Row, Query> columns={[{ key: 'id', title: 'ID' }]} toolbar />,
+    )
+
+    fireEvent.click(screen.getByLabelText('全屏'))
+
+    const fullscreenRoot = document.querySelector('.ant-pro-table.ant-pro-table-fullscreen') as HTMLElement
+    expect(fullscreenRoot).toBeTruthy()
+    expect(container.contains(fullscreenRoot)).toBe(false)
+    expect(document.body.contains(fullscreenRoot)).toBe(true)
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(screen.getByLabelText('退出全屏')).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(document.querySelector('.ant-pro-table-fullscreen')).toBeNull()
+    expect(container.querySelector('.ant-pro-table')).toBeTruthy()
+    expect(screen.getByLabelText('全屏')).toBeTruthy()
+    expect(document.body.style.overflow).not.toBe('hidden')
+  })
+
+  it('clears fullscreen when the toolbar flag turns the feature off', () => {
+    const { rerender } = renderProTable(
+      <ProTable<Row, Query> columns={[{ key: 'id', title: 'ID' }]} toolbar />,
+    )
+
+    fireEvent.click(screen.getByLabelText('全屏'))
+    expect(document.querySelector('.ant-pro-table-fullscreen')).toBeTruthy()
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            columns={[{ key: 'id', title: 'ID' }]}
+            toolbar={{ fullscreen: false }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    expect(document.querySelector('.ant-pro-table-fullscreen')).toBeNull()
+    expect(screen.queryByLabelText('全屏')).toBeNull()
+    expect(document.body.style.overflow).not.toBe('hidden')
+
+    rerender(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query> columns={[{ key: 'id', title: 'ID' }]} toolbar />
+        </ConfigProvider>
+      </ZbyIntlProvider>,
+    )
+
+    expect(screen.getByLabelText('全屏')).toBeTruthy()
+    expect(document.querySelector('.ant-pro-table-fullscreen')).toBeNull()
+  })
+
+  it('keeps column settings inside the fullscreen root and does not exit on overlay Escape', async () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        columns={[
+          { key: 'id', title: 'ID' },
+          { key: 'name', title: '名称' },
+        ]}
+        toolbar
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText('全屏'))
+    fireEvent.click(screen.getByLabelText('列设置'))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: '名称' })).toBeTruthy())
+
+    const fullscreenRoot = document.querySelector('.ant-pro-table-fullscreen') as HTMLElement
+    expect(
+      fullscreenRoot.querySelector('.ant-modal-root, .ant-modal-wrap, .ant-pro-modal'),
+    ).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByLabelText('退出全屏')).toBeTruthy()
+    expect(document.body.style.overflow).toBe('hidden')
+  })
+
+  it('does not exit fullscreen when Escape closes more filters', () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[
+          searchInputField('status', '状态'),
+          searchInputField('owner', '负责人', { hidden: true }),
+        ]}
+        toolbar
+      />,
+    )
+
+    fireEvent.click(screen.getByLabelText('全屏'))
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.getByLabelText('退出全屏')).toBeTruthy()
+    expect(document.body.style.overflow).toBe('hidden')
+  })
+
   it('renders toolbar actions on the left', () => {
     const controller = createProTableController<Row, Query>({ rowKey: 'id' })
     renderProTable(
