@@ -1,5 +1,5 @@
 /**
- * 文件职责：提供持久化数据的清洗规则，以及 IndexedDB/远程存储适配器实现。
+ * 文件职责：提供持久化数据的清洗规则，以及默认 IndexedDB 存储适配器。
  *
  * 它只解决“数据怎么读写”，不决定何时加载。Adapter 对外只有 load 和
  * update(latest => next)；同一个 storageKey 的两次调用会排队。
@@ -99,35 +99,6 @@ export function createIndexedDBRouterStorageAdapter(): RouterStorageAdapter {
             (current) => recipe(normalizeRouterStorageState(current)),
             store,
           ),
-      )
-    },
-  }
-}
-
-/**
- * 包装业务提供的远程适配器，为它补上输入清洗和同一 storageKey 的串行 load/update。
- *
- * 远程接口本身仍由调用方实现；本函数只保证 Core 调用它时的数据边界与写入顺序一致。
- */
-export function createRemoteRouterStorageAdapter(
-  config: RouterStorageAdapter,
-): RouterStorageAdapter {
-  const enqueueWrite = createStorageWriteQueue()
-
-  return {
-    async load(storageKey) {
-      let loaded = normalizeRouterStorageState()
-      await enqueueWrite(storageKey, async () => {
-        loaded = normalizeRouterStorageState(await config.load(storageKey))
-      })
-      return loaded
-    },
-    update(storageKey, recipe) {
-      return enqueueWrite(
-        storageKey,
-        () =>
-          config.update(storageKey, (current) =>
-            recipe(normalizeRouterStorageState(current))),
       )
     },
   }

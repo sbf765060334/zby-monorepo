@@ -527,7 +527,7 @@ Router-core persists fixed-tab keys, the concrete pathname mapping needed by sha
 
 - Omit `storageAdapter` to use the built-in IndexedDB adapter.
 - Set `storageAdapter: false` for memory-only behavior.
-- Use `createRemoteRouterStorageAdapter` to normalize data and serialize same-key `load` and `update` calls.
+- Pass a custom `storageAdapter` object to use a remote API or other backend. The core normalizes data and serializes `load`/`update` for the same adapter and `storageKey`.
 - Writes always go through `update(latest => next)`: fixed tabs and favorites last-write-win as whole fields; dynamic pathnames patch or delete one key. Hydration revises the latest disk snapshot instead of writing back a stale loaded copy.
 - `onStorageError` reports failures; the core does not retry an old snapshot over newer state.
 
@@ -572,7 +572,6 @@ Router-core persists fixed-tab keys, the concrete pathname mapping needed by sha
 | `preloadRoute(route?)` | `RouterRoute \| null` | Calls route.preload or element.preload; errors never escape. |
 | `normalizeRouterStorageState(state?)` | `Partial<RouterStorageState> \| null` | Cleans and fills a complete storage state. |
 | `createIndexedDBRouterStorageAdapter()` | none | Returns the built-in IndexedDB adapter. |
-| `createRemoteRouterStorageAdapter(config)` | `RouterStorageAdapter` | Adds boundary normalization and same-key serialized load/update. |
 
 ## Development
 

@@ -27,10 +27,9 @@ export type {
   RouteRegistry,
 } from './registry'
 
-/** 默认 IndexedDB、远程 Adapter 包装与持久化数据标准化能力。 */
+/** 默认 IndexedDB Adapter 与持久化数据标准化能力。 */
 export {
   createIndexedDBRouterStorageAdapter,
-  createRemoteRouterStorageAdapter,
   normalizeRouterStorageState,
 } from './storage'
 

@@ -259,7 +259,10 @@ export interface CreateRouterCoreOptions<
   isSameTitle?: (left: RouterTitle, right: RouterTitle) => boolean
   /** 固定的页面实例缓存策略；省略时等同于 true。 */
   keepAlive?: boolean | RouterKeepAliveConfig<Route>
-  /** 固定的持久化驱动；false 表示本实例仅使用内存状态。 */
+  /**
+   * 固定的持久化驱动。省略时使用内置 IndexedDB；`false` 表示仅内存；
+   * 传入对象则使用自定义 Adapter（接口或其它存储）。
+   */
   storageAdapter?: false | RouterStorageAdapter
   /** 固定的持久化命名空间；省略时使用 `default`。 */
   storageKey?: string

@@ -7,7 +7,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  createRemoteRouterStorageAdapter,
   createRouteRegistry,
   createRouterCore,
   matchRoutePath,
@@ -2393,8 +2392,8 @@ describe('createRouterCore', () => {
     })
   })
 
-  /** 包装后的 Adapter 让后打开的 Core 等到排队中的收藏写入完成再 load。 */
-  it('loads through the remote write queue after a queued favorite save', async () => {
+  /** 同一 Adapter 实例经 Core 调用时串行，后打开的 Core 会等到排队中的收藏写入完成再 load。 */
+  it('loads through the adapter write queue after a queued favorite save', async () => {
     const disk = normalizeRouterStorageState()
     let releaseSave!: () => void
     const saveGate = new Promise<void>((resolve) => {
@@ -2404,7 +2403,7 @@ describe('createRouterCore', () => {
     const saveStarted = new Promise<void>((resolve) => {
       markSaveStarted = resolve
     })
-    const adapter = createRemoteRouterStorageAdapter({
+    const adapter: RouterStorageAdapter = {
       async load() {
         return {
           fixedTabs: [...disk.fixedTabs],
@@ -2422,7 +2421,7 @@ describe('createRouterCore', () => {
         })
         disk.favoriteRoutePaths = [...next.favoriteRoutePaths]
       },
-    })
+    }
     const windowA = createRouterCore({ routes, storageAdapter: adapter })
     await windowA.hydrateStorage()
     expect(windowA.toggleFavoriteRoute('/settings/profile')).toBe(true)
