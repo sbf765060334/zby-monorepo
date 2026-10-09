@@ -530,4 +530,79 @@ describe('@zby/request core', () => {
   it('selectData returns response data', () => {
     expect(selectData({ errCode: '0', errMessage: '', data: [1, 2], total: 2 })).toEqual([1, 2])
   })
+
+  it('returns a file for blob responses', async () => {
+    const bytes = new Uint8Array([9, 8, 7])
+    const client = createClient({
+      transport: createTransport(() => ({
+        ok: true,
+        status: 200,
+        url: 'https://example.com/orders/export',
+        headers: new Headers({
+          'content-type': 'application/octet-stream',
+          'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent('订单.xlsx')}`,
+        }),
+        body: new Blob([bytes], { type: 'application/octet-stream' }),
+      })),
+    })
+
+    const file = await client.get('/orders/export', { responseType: 'blob' })
+
+    expect(file.fileName).toBe('订单.xlsx')
+    expect(new Uint8Array(await file.blob.arrayBuffer())).toEqual(bytes)
+  })
+
+  it('treats a JSON blob response as a business error', async () => {
+    const onError = vi.fn()
+    const onSessionInvalid = vi.fn()
+    const client = createClient({
+      onError,
+      onSessionInvalid,
+      transport: createTransport(() => ({
+        ok: true,
+        status: 200,
+        url: 'https://example.com/orders/export',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: new Blob([JSON.stringify({
+          errCode: '500',
+          errMessage: '导出失败',
+          data: null,
+        })]),
+      })),
+    })
+
+    await expect(client.post('/orders/export', { status: 'open' }, { responseType: 'blob' })).rejects.toMatchObject({
+      errCode: '500',
+      errMessage: '导出失败',
+      businessError: true,
+    })
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onSessionInvalid).not.toHaveBeenCalled()
+  })
+
+  it('treats a JSON blob session error as session invalid', async () => {
+    const onError = vi.fn()
+    const onSessionInvalid = vi.fn()
+    const client = createClient({
+      onError,
+      onSessionInvalid,
+      transport: createTransport(() => ({
+        ok: true,
+        status: 200,
+        url: 'https://example.com/orders/export',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        body: new Blob([JSON.stringify({
+          errCode: '100001',
+          errMessage: '登录失效',
+          data: null,
+        })]),
+      })),
+    })
+
+    await expect(client.get('/orders/export', { responseType: 'blob' })).rejects.toMatchObject({
+      sessionInvalid: true,
+    })
+    expect(onSessionInvalid).toHaveBeenCalledTimes(1)
+    expect(onError).not.toHaveBeenCalled()
+  })
 })

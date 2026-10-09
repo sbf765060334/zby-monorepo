@@ -61,6 +61,7 @@ export type TransportRequest = {
   body?: BodyInit | null
   credentials?: RequestCredentials
   signal?: AbortSignal
+  responseType?: 'blob'
 }
 
 export type TransportResponse = {
@@ -102,23 +103,53 @@ export type RequestOptions = {
   signal?: AbortSignal
   /** 为 true 时不调用 onAttemptError / onError，错误仍然抛出 */
   silent?: boolean
+  /** 为 blob 时按文件读取，返回 FileResponse */
+  responseType?: 'blob'
+}
+
+export type FileResponse = {
+  blob: Blob
+  fileName?: string
 }
 
 export type MethodOptions = Omit<RequestOptions, 'url' | 'method' | 'body'> & {
   body?: RequestBody
 }
 
+export type JsonMethodOptions = Omit<MethodOptions, 'responseType'>
+export type JsonRequestOptions = Omit<RequestOptions, 'responseType'>
+export type BlobMethodOptions = MethodOptions & { responseType: 'blob' }
+export type BlobRequestOptions = RequestOptions & { responseType: 'blob' }
+
 export type ApiClient = {
-  request: <T = unknown>(options: RequestOptions) => Promise<ApiResponse<T>>
-  requestData: <T = unknown>(options: RequestOptions) => Promise<T | T[] | undefined>
-  get: <T = unknown>(url: string, options?: MethodOptions) => Promise<ApiResponse<T>>
-  post: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<ApiResponse<T>>
-  put: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<ApiResponse<T>>
-  patch: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<ApiResponse<T>>
-  delete: <T = unknown>(url: string, options?: MethodOptions) => Promise<ApiResponse<T>>
-  getData: <T = unknown>(url: string, options?: MethodOptions) => Promise<T | T[] | undefined>
-  postData: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<T | T[] | undefined>
-  putData: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<T | T[] | undefined>
-  patchData: <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions) => Promise<T | T[] | undefined>
-  deleteData: <T = unknown>(url: string, options?: MethodOptions) => Promise<T | T[] | undefined>
+  request: {
+    (options: BlobRequestOptions): Promise<FileResponse>
+    <T = unknown>(options: RequestOptions): Promise<ApiResponse<T>>
+  }
+  requestData: <T = unknown>(options: JsonRequestOptions) => Promise<T | T[] | undefined>
+  get: {
+    (url: string, options: BlobMethodOptions): Promise<FileResponse>
+    <T = unknown>(url: string, options?: MethodOptions): Promise<ApiResponse<T>>
+  }
+  post: {
+    (url: string, body: RequestBody | undefined, options: BlobMethodOptions): Promise<FileResponse>
+    <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions): Promise<ApiResponse<T>>
+  }
+  put: {
+    (url: string, body: RequestBody | undefined, options: BlobMethodOptions): Promise<FileResponse>
+    <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions): Promise<ApiResponse<T>>
+  }
+  patch: {
+    (url: string, body: RequestBody | undefined, options: BlobMethodOptions): Promise<FileResponse>
+    <T = unknown>(url: string, body?: RequestBody, options?: MethodOptions): Promise<ApiResponse<T>>
+  }
+  delete: {
+    (url: string, options: BlobMethodOptions): Promise<FileResponse>
+    <T = unknown>(url: string, options?: MethodOptions): Promise<ApiResponse<T>>
+  }
+  getData: <T = unknown>(url: string, options?: JsonMethodOptions) => Promise<T | T[] | undefined>
+  postData: <T = unknown>(url: string, body?: RequestBody, options?: JsonMethodOptions) => Promise<T | T[] | undefined>
+  putData: <T = unknown>(url: string, body?: RequestBody, options?: JsonMethodOptions) => Promise<T | T[] | undefined>
+  patchData: <T = unknown>(url: string, body?: RequestBody, options?: JsonMethodOptions) => Promise<T | T[] | undefined>
+  deleteData: <T = unknown>(url: string, options?: JsonMethodOptions) => Promise<T | T[] | undefined>
 }

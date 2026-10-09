@@ -107,6 +107,27 @@ function appendParam(searchParams: URLSearchParams, key: string, value: unknown)
   searchParams.append(key, String(value))
 }
 
+export function fileNameFromContentDisposition(header: string | null): string | undefined {
+  if (!header) return undefined
+
+  const encoded = /filename\*\s*=\s*([^;]+)/i.exec(header)
+  if (encoded) {
+    let value = encoded[1].trim()
+    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
+    const parts = value.split('\'')
+    const name = parts.length >= 3 ? parts.slice(2).join('\'') : value
+    try {
+      return decodeURIComponent(name)
+    } catch {
+      return name
+    }
+  }
+
+  const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/i.exec(header)
+  if (!plain) return undefined
+  return (plain[2] ?? plain[1]).trim()
+}
+
 export async function resolveHeaders(
   configHeaders: ClientConfig['headers'],
   requestHeaders: HeadersInit | undefined,

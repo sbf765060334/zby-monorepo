@@ -11,13 +11,17 @@ import type {
   ApiResponse,
   ClientConfig,
   ErrorRetryContext,
+  FileResponse,
   HttpMethod,
+  JsonMethodOptions,
+  JsonRequestOptions,
   MethodOptions,
   RequestBody,
   RequestContext,
   RequestOptions,
 } from './types'
 import {
+  fileNameFromContentDisposition,
   isApiResponse,
   isSessionInvalidResponse,
   isSuccessResponse,
@@ -34,7 +38,7 @@ const TIMEOUT_ERROR_CODE = 'TIMEOUT'
 export function createClient(config: ClientConfig = {}): ApiClient {
   const transport = config.transport ?? fetchTransport
 
-  async function request<T = unknown>(options: RequestOptions): Promise<ApiResponse<T>> {
+  async function request<T = unknown>(options: RequestOptions): Promise<ApiResponse<T> | FileResponse> {
     const lifecycle = lookupSignalLifecycle(options.signal)
     const method = normalizeMethod(options.method)
     const begin = Date.now()
@@ -60,6 +64,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
         body,
         credentials: options.credentials ?? config.credentials,
         signal: linked.signal,
+        responseType: options.responseType,
       })
       const duration = Date.now() - begin
       const context: RequestContext = {
@@ -69,12 +74,21 @@ export function createClient(config: ClientConfig = {}): ApiClient {
         duration,
         status: rawResponse.status,
       }
+      const responseBody = await readResponseBody(rawResponse.body, rawResponse.headers, options.responseType)
 
-      if (!rawResponse.ok) {
-        throw createHttpError(rawResponse.body, context)
+      if (options.responseType === 'blob' && responseBody instanceof Blob) {
+        if (!rawResponse.ok) throw createHttpError(responseBody, context)
+        return {
+          blob: responseBody,
+          fileName: fileNameFromContentDisposition(rawResponse.headers.get('content-disposition')),
+        }
       }
 
-      if (!isApiResponse(rawResponse.body)) {
+      if (!rawResponse.ok) {
+        throw createHttpError(responseBody, context)
+      }
+
+      if (!isApiResponse(responseBody)) {
         throw new ApiError({
           message: 'Invalid API response',
           status: rawResponse.status,
@@ -85,8 +99,23 @@ export function createClient(config: ClientConfig = {}): ApiClient {
         })
       }
 
-      const response = rawResponse.body as ApiResponse<T>
+      const response = responseBody as ApiResponse<T>
       if (isSuccessResponse(response, context, config)) {
+        if (options.responseType === 'blob') {
+          throw new ApiError({
+            message: 'Expected a file response',
+            response,
+            errCode: response.errCode,
+            errMessage: response.errMessage,
+            traceId: response.traceId,
+            status: context.status,
+            url: context.url,
+            method: context.method,
+            begin: context.begin,
+            duration: context.duration,
+            businessError: false,
+          })
+        }
         return response
       }
 
@@ -124,46 +153,46 @@ export function createClient(config: ClientConfig = {}): ApiClient {
     }
   }
 
-  function requestData<T = unknown>(options: RequestOptions): Promise<T | T[] | undefined> {
-    return request<T>(options).then(selectResponseData<T>)
+  function requestData<T = unknown>(options: JsonRequestOptions): Promise<T | T[] | undefined> {
+    return request<T>(options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function getData<T = unknown>(
     url: string,
-    options?: MethodOptions,
+    options?: JsonMethodOptions,
   ): Promise<T | T[] | undefined> {
-    return methodRequest<T>('GET', url, options).then(selectResponseData<T>)
+    return methodRequest<T>('GET', url, options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function postData<T = unknown>(
     url: string,
     body?: RequestBody,
-    options?: MethodOptions,
+    options?: JsonMethodOptions,
   ): Promise<T | T[] | undefined> {
-    return methodRequest<T>('POST', url, body, options).then(selectResponseData<T>)
+    return methodRequest<T>('POST', url, body, options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function putData<T = unknown>(
     url: string,
     body?: RequestBody,
-    options?: MethodOptions,
+    options?: JsonMethodOptions,
   ): Promise<T | T[] | undefined> {
-    return methodRequest<T>('PUT', url, body, options).then(selectResponseData<T>)
+    return methodRequest<T>('PUT', url, body, options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function patchData<T = unknown>(
     url: string,
     body?: RequestBody,
-    options?: MethodOptions,
+    options?: JsonMethodOptions,
   ): Promise<T | T[] | undefined> {
-    return methodRequest<T>('PATCH', url, body, options).then(selectResponseData<T>)
+    return methodRequest<T>('PATCH', url, body, options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function deleteData<T = unknown>(
     url: string,
-    options?: MethodOptions,
+    options?: JsonMethodOptions,
   ): Promise<T | T[] | undefined> {
-    return methodRequest<T>('DELETE', url, options).then(selectResponseData<T>)
+    return methodRequest<T>('DELETE', url, options).then((response) => selectResponseData(response as ApiResponse<T>))
   }
 
   function methodRequest<T = unknown>(
@@ -171,7 +200,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
     url: string,
     bodyOrOptions?: RequestBody | MethodOptions,
     options?: MethodOptions,
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResponse<T> | FileResponse> {
     const requestOptions = method === 'GET' || method === 'DELETE'
       ? { ...(bodyOrOptions as MethodOptions | undefined), url, method }
       : { ...(options ?? {}), url, method, body: bodyOrOptions as RequestBody }
@@ -179,13 +208,13 @@ export function createClient(config: ClientConfig = {}): ApiClient {
   }
 
   return {
-    request,
+    request: request as ApiClient['request'],
     requestData,
-    get: (url, options) => methodRequest('GET', url, options),
-    post: (url, body, options) => methodRequest('POST', url, body, options),
-    put: (url, body, options) => methodRequest('PUT', url, body, options),
-    patch: (url, body, options) => methodRequest('PATCH', url, body, options),
-    delete: (url, options) => methodRequest('DELETE', url, options),
+    get: ((url: string, options?: MethodOptions) => methodRequest('GET', url, options)) as ApiClient['get'],
+    post: ((url: string, body?: RequestBody, options?: MethodOptions) => methodRequest('POST', url, body, options)) as ApiClient['post'],
+    put: ((url: string, body?: RequestBody, options?: MethodOptions) => methodRequest('PUT', url, body, options)) as ApiClient['put'],
+    patch: ((url: string, body?: RequestBody, options?: MethodOptions) => methodRequest('PATCH', url, body, options)) as ApiClient['patch'],
+    delete: ((url: string, options?: MethodOptions) => methodRequest('DELETE', url, options)) as ApiClient['delete'],
     getData,
     postData,
     putData,
@@ -196,6 +225,20 @@ export function createClient(config: ClientConfig = {}): ApiClient {
 
 function selectResponseData<T>(response: ApiResponse<T>): T | T[] | undefined {
   return selectData<T>(response)
+}
+
+async function readResponseBody(
+  body: unknown,
+  headers: Headers,
+  responseType: RequestOptions['responseType'],
+): Promise<unknown> {
+  if (responseType !== 'blob' || !(body instanceof Blob)) return body
+
+  const contentType = headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) return body
+
+  const text = await body.text()
+  return text ? JSON.parse(text) : undefined
 }
 
 function createTimeoutReason(timeout: number): unknown {

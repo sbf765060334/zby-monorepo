@@ -10,7 +10,7 @@ import {
   type QueryKey,
   type UndefinedInitialDataOptions,
 } from '@tanstack/react-query'
-import { isApiError, type ApiClient } from '@zby/request'
+import { isApiError, type ApiClient, type MethodOptions, type RequestBody, type RequestOptions } from '@zby/request'
 import {
   getMaxRetries,
   getOrCreateSignalLifecycle,
@@ -182,13 +182,13 @@ function bindMutationOptions<
 
 function bindClient(client: ApiClient, signal: AbortSignal): ApiClient {
   return {
-    request: (options) => client.request({ ...options, signal }),
+    request: ((options: RequestOptions) => client.request({ ...options, signal })) as ApiClient['request'],
     requestData: (options) => client.requestData({ ...options, signal }),
-    get: (url, options) => client.get(url, { ...options, signal }),
-    post: (url, body, options) => client.post(url, body, { ...options, signal }),
-    put: (url, body, options) => client.put(url, body, { ...options, signal }),
-    patch: (url, body, options) => client.patch(url, body, { ...options, signal }),
-    delete: (url, options) => client.delete(url, { ...options, signal }),
+    get: ((url: string, options?: MethodOptions) => client.get(url, { ...options, signal })) as ApiClient['get'],
+    post: ((url: string, body?: RequestBody, options?: MethodOptions) => client.post(url, body, { ...options, signal })) as ApiClient['post'],
+    put: ((url: string, body?: RequestBody, options?: MethodOptions) => client.put(url, body, { ...options, signal })) as ApiClient['put'],
+    patch: ((url: string, body?: RequestBody, options?: MethodOptions) => client.patch(url, body, { ...options, signal })) as ApiClient['patch'],
+    delete: ((url: string, options?: MethodOptions) => client.delete(url, { ...options, signal })) as ApiClient['delete'],
     getData: (url, options) => client.getData(url, { ...options, signal }),
     postData: (url, body, options) => client.postData(url, body, { ...options, signal }),
     putData: (url, body, options) => client.putData(url, body, { ...options, signal }),

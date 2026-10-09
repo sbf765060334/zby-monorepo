@@ -16,7 +16,9 @@ export const fetchTransport: Transport = async (
     status: response.status,
     url: response.url || request.url,
     headers: response.headers,
-    body: await parseFetchBody(response),
+    body: request.responseType === 'blob'
+      ? await response.blob()
+      : await parseFetchBody(response),
   }
 }
 

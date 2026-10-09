@@ -42,4 +42,23 @@ describe('fetchTransport', () => {
 
     expect(response.body).toBe('plain text')
   })
+
+  it('returns a blob when responseType is blob', async () => {
+    const bytes = new Uint8Array([1, 2, 3])
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(bytes, {
+        status: 200,
+        headers: { 'content-type': 'application/octet-stream' },
+      }),
+    )
+
+    const response = await fetchTransport({
+      url: 'https://example.com/file',
+      method: 'GET',
+      responseType: 'blob',
+    })
+
+    expect(response.body).toBeInstanceOf(Blob)
+    expect(await (response.body as Blob).arrayBuffer()).toEqual(bytes.buffer)
+  })
 })

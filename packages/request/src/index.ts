@@ -14,6 +14,7 @@ export type {
   ApiResponse,
   ClientConfig,
   ErrorRetryContext,
+  FileResponse,
   HttpMethod,
   MethodOptions,
   MultiResponse,
