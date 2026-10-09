@@ -389,6 +389,27 @@ describe('@zby/request core', () => {
     expect(request.signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('serializes nested query objects as JSON', async () => {
+    const seen = vi.fn()
+    const client = createClient({
+      transport: createTransport((request) => {
+        seen(request)
+        return createResponse({ errCode: '0', errMessage: '', data: true })
+      }),
+    })
+
+    await client.get('/orders', {
+      params: {
+        page: 1,
+        filter: { warehouseId: 'A1', ownerId: 'U2' },
+        empty: null,
+      },
+    })
+
+    const request = seen.mock.calls[0][0] as TransportRequest
+    expect(request.url).toBe('/orders?page=1&filter=%7B%22warehouseId%22%3A%22A1%22%2C%22ownerId%22%3A%22U2%22%7D')
+  })
+
   it('does not notify error reporters when external signal aborts the request', async () => {
     const controller = new AbortController()
     const onAttemptError = vi.fn()

@@ -99,6 +99,11 @@ function appendParam(searchParams: URLSearchParams, key: string, value: unknown)
     return
   }
 
+  if (typeof value === 'object') {
+    searchParams.append(key, JSON.stringify(value))
+    return
+  }
+
   searchParams.append(key, String(value))
 }
 
