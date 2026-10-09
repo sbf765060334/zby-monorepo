@@ -201,6 +201,8 @@ export function createRouterCore<Route extends RouterRoute>(
     clearBeforeCloseHook,
     closeTab,
     confirmPendingTabClose,
+    getInFlightTabClose,
+    getPendingCloseTabKey,
     waitForPendingTabClose,
     ensureTabState,
     publishPageLocation,
@@ -624,6 +626,35 @@ export function createRouterCore<Route extends RouterRoute>(
     return task
   }
 
+  /**
+   * 先等名单里已经开始的关闭。落点可能排在它前面，不能等循环走到它才停。
+   * 守卫拒绝后页还在的，循环里不再关第二次。
+   */
+  async function waitForClosesAlreadyUnderway(
+    tabKeys: readonly string[],
+    errors: unknown[],
+  ) {
+    const underway = tabKeys.filter((tabKey) =>
+      getInFlightTabClose(tabKey) || getPendingCloseTabKey() === tabKey,
+    )
+    for (const tabKey of underway) {
+      const inFlight = getInFlightTabClose(tabKey)
+      if (!inFlight)
+        continue
+      try {
+        await inFlight
+      } catch (error) {
+        errors.push(error)
+      }
+    }
+    const pendingKey = getPendingCloseTabKey()
+    if (pendingKey)
+      await waitForActiveCloseToSettle(pendingKey)
+    return new Set(underway.filter((tabKey) =>
+      getState().tabs.some((tab) => tab.key === tabKey),
+    ))
+  }
+
   async function runCloseTabs(
     tabKeys: readonly string[],
     options: RouterCloseTabsOptions,
@@ -633,7 +664,15 @@ export function createRouterCore<Route extends RouterRoute>(
       return false
 
     const errors: unknown[] = []
+    // 没有进行中的关闭时不要 await：async 函数即使立刻返回也会多让出一次微任务。
+    const hasUnderwayClose = Boolean(getPendingCloseTabKey())
+      || tabKeys.some((tabKey) => getInFlightTabClose(tabKey))
+    const leftOpen = hasUnderwayClose
+      ? await waitForClosesAlreadyUnderway(tabKeys, errors)
+      : new Set<string>()
     for (const tabKey of tabKeys) {
+      if (leftOpen.has(tabKey))
+        continue
       if (tabKey === anchorKey)
         continue
       if (getState().tabs.length <= 1)
@@ -668,12 +707,27 @@ export function createRouterCore<Route extends RouterRoute>(
     })
   }
 
+  /** 这次关闭已经发出活动页跳转时，等宿主确认离开后再继续批量关闭。 */
+  async function waitForActiveCloseToSettle(tabKey: string) {
+    const pending = waitForPendingTabClose(tabKey)
+    if (pending)
+      await pending
+  }
+
   /**
    * 守卫结束后仍是活动页则 replace 到 anchor，并等宿主确认离开。
    * 开始时是不是活动页不算数：等待期间用户可能点开这一页。
    * 仍然是后台页则当场关闭，不发导航。
+   * 这页已经有一次关闭在进行时，等那一次自己结束，不另发跳转。
    */
   async function closeTabTowardAnchor(tabKey: string, anchorKey: string) {
+    const inFlight = getInFlightTabClose(tabKey)
+    if (inFlight) {
+      await inFlight
+      await waitForActiveCloseToSettle(tabKey)
+      return
+    }
+
     const host = runtime.host
     const accepted = await closeTab(tabKey, undefined, {
       canCommit: () => runtime.host === host && host !== null,
@@ -688,12 +742,12 @@ export function createRouterCore<Route extends RouterRoute>(
         },
       },
     })
-    if (!accepted)
+    if (!accepted) {
+      // Promise 已经结束但活动页还在等宿主时，锁仍在。这里补上等确认。
+      await waitForActiveCloseToSettle(tabKey)
       return
-    // 没有 pending 时同步返回，避免后台页之间多让出一次微任务。
-    const pending = waitForPendingTabClose(tabKey)
-    if (pending)
-      await pending
+    }
+    await waitForActiveCloseToSettle(tabKey)
   }
 
   /** 批量关闭结束时，右键保留的页签还不是当前页就切换过去。 */

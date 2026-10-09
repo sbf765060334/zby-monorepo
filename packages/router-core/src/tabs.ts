@@ -110,6 +110,9 @@ export function createRouterTabs<Route extends RouterRoute>(
   >()
   // 防止同一页签并发关闭。活动页在宿主确认已经离开被关页之前都占着这把锁。
   const closingTabKeys = new Set<string>()
+  // 这一次关闭自己的 Promise。对外第二次 closeTab 仍立即返回 false；
+  // 批量关闭可以等它结束，而不是把它当成守卫拒绝。
+  const inFlightTabCloses = new Map<string, Promise<boolean>>()
   // 活动页签必须等宿主确认已经离开被关页后再删除，避免导航被阻止时丢失当前页面。
   let pendingTabClose: {
     tabKey: string
@@ -406,6 +409,16 @@ export function createRouterTabs<Route extends RouterRoute>(
     waiters.forEach((resolve) => resolve())
   }
 
+  /** 批量关闭用来等待已经开始的那一次关闭；没有进行中的关闭时返回 undefined。 */
+  function getInFlightTabClose(tabKey: string) {
+    return inFlightTabCloses.get(tabKey)
+  }
+
+  /** 活动页已经发出跳转、还在等宿主确认时，返回那一页。 */
+  function getPendingCloseTabKey() {
+    return pendingTabClose?.tabKey
+  }
+
   /** 执行关闭守卫；活动页签以宿主 location 确认为删除事务的提交点。 */
   async function closeTab(
     tabKey: string,
@@ -417,12 +430,29 @@ export function createRouterTabs<Route extends RouterRoute>(
     const opensAnotherPage = Boolean(transaction?.navigation) && !transaction?.onlyWhenActive
     if (!getState().tabs.some((tab) => tab.key === tabKey))
       return false
+    // 第二次关闭不加入进行中的 Promise，避免改写已经发出的跳转。
     if (closingTabKeys.has(tabKey))
       return false
     // 只剩一个页签时关掉会变成空工作区，或经 / 再被默认页打开。普通 closeTab 直接拒绝。
     if (getState().tabs.length === 1 && !opensAnotherPage)
       return false
 
+    const attempt = runCloseAttempt(tabKey, closeOptions, transaction, opensAnotherPage)
+    inFlightTabCloses.set(tabKey, attempt)
+    try {
+      return await attempt
+    } finally {
+      if (inFlightTabCloses.get(tabKey) === attempt)
+        inFlightTabCloses.delete(tabKey)
+    }
+  }
+
+  async function runCloseAttempt(
+    tabKey: string,
+    closeOptions: RouterCloseOptions | undefined,
+    transaction: CloseTabTransaction | undefined,
+    opensAnotherPage: boolean,
+  ) {
     closingTabKeys.add(tabKey)
     try {
       if (!closeOptions?.skipBeforeClose) {
@@ -644,6 +674,8 @@ export function createRouterTabs<Route extends RouterRoute>(
   // 只暴露 createRouterCore 真正需要的页签命令，内部 Map/Set 保持实例私有。
   return {
     confirmPendingTabClose,
+    getInFlightTabClose,
+    getPendingCloseTabKey,
     ensureTabState,
     reorderTabs,
     setTabLabel,

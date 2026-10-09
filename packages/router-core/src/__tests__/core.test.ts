@@ -1764,7 +1764,116 @@ describe('createRouterCore', () => {
     expect(router.getState().activeTabKey).toBeNull()
   })
 
-  /** 固定页签没有豁免；未关闭当前页时，结束后切换到 anchor。 */
+  /** 单页关闭还在等守卫时，批量关闭等它结束，不提前删后面的页，也不改它的落点。 */
+  it('waits for an in-flight close before closing the following tabs', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    let dashboardSeen = false
+    router.addBeforeCloseHook(() => {
+      dashboardSeen = true
+      return false
+    }, '/dashboard')
+    let started = false
+    let releaseGuard: (value: boolean) => void = () => undefined
+    router.addBeforeCloseHook(() => {
+      started = true
+      return new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      })
+    }, '/settings/profile')
+
+    const singleClose = router.closeTab('/settings/profile')
+    await vi.waitFor(() => expect(started).toBe(true))
+
+    let batchSettled = false
+    const batch = router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/task/1' },
+    ).then((result) => {
+      batchSettled = true
+      return result
+    })
+    await Promise.resolve()
+    expect(dashboardSeen).toBe(false)
+    expect(batchSettled).toBe(false)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+      '/task/1',
+    ])
+    expect(navigate).not.toHaveBeenCalled()
+    expect(await router.closeTab('/settings/profile')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+
+    releaseGuard(true)
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce())
+    expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+    expect(batchSettled).toBe(false)
+    expect(router.getState().tabs.some((tab) => tab.key === '/project/:id')).toBe(true)
+    expect(await singleClose).toBe(true)
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(await batch).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/task/1',
+    ])
+    expect(navigate).toHaveBeenLastCalledWith('/task/1')
+    expect(navigate).toHaveBeenCalledTimes(2)
+  })
+
+  /** 活动页跳转已经发出、还在等宿主时，批量关闭也不提前删落点。 */
+  it('waits for a pending active close before closing its landing tab', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(await router.closeTab('/settings/profile')).toBe(true)
+    expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+    navigate.mockClear()
+
+    let batchSettled = false
+    const batch = router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/task/1' },
+    ).then((result) => {
+      batchSettled = true
+      return result
+    })
+    await Promise.resolve()
+    expect(batchSettled).toBe(false)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+      '/task/1',
+    ])
+    expect(navigate).not.toHaveBeenCalled()
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/task/1', { replace: true }))
+    expect(router.getState().tabs.some((tab) => tab.key === '/project/:id')).toBe(true)
+
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    expect(await batch).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/task/1'])
+    expect(router.getState().activeTabKey).toBe('/task/1')
+  })
   it('closes a fixed tab and activates the anchor when the active tab stays open', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })
     const navigate = bindSyncNavigate(router)
