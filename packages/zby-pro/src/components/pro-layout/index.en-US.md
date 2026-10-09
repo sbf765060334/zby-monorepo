@@ -7,7 +7,7 @@ description: An application shell for menus, global tabs, breadcrumbs, retained 
 
 ## When To Use
 
-Use ProLayout when a back-office application needs a consistent navigation shell. It provides an icon sider, multilevel drawer menus, global tabs, pinning and drag sorting, menu favorites, breadcrumbs, retained pages, exception pages, and browser-title synchronization.
+Use ProLayout when a back-office application needs a consistent navigation shell. It provides an icon sider, multilevel drawer menus, global tabs, pinning and drag sorting, a tab context menu, menu favorites, breadcrumbs, retained pages, exception pages, and browser-title synchronization.
 
 `ReactRouterProLayout` is the recommended entry point. Create one stable `RouterCore` outside the React tree, then pass that instance to the layout. `@zby/router-core` is ProLayout's internal engine and is not published as a standalone package. Route registration, authorization, tab state, KeepAlive, and persistence belong to it; ProLayout owns UI and browser effects.
 
@@ -226,6 +226,12 @@ export function OrderPage() {
 ```
 
 The global breadcrumb is rendered by ProLayout, not by the content container. Set `showBreadcrumb={false}` when a page provides its own navigation hierarchy.
+
+## Tab Context Menu
+
+Right-click a visible tab to close it, close tabs to its left, close tabs to its right, or close the other tabs. A batch closes from left to right. If a tab's close guard does not return `true`, or throws, that tab stays open and the following tabs still close. A thrown guard also shows the close-failure message. The right-clicked tab stays open and becomes the current tab when the batch finishes. Pinned tabs are closed too.
+
+With only one tab, every action is disabled. On the leftmost tab, "Close tabs to the left" is disabled. On the rightmost tab, "Close tabs to the right" is disabled. Tabs that have collapsed into the tab bar overflow menu do not have a context menu yet.
 
 ## API
 

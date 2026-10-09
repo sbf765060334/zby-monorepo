@@ -637,6 +637,14 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
       },
 
+      [`.${prefixCls}-tab-context-menu`]: {
+        [`${antCls}-dropdown-menu`]: {
+          minWidth: unit(alignToGrid(
+            token.fontSize * 6 + token.paddingSM * 2 + token.paddingXS,
+          )),
+        },
+      },
+
       [`.${prefixCls}-tabs-dropdown`]: {
         [`${antCls}-tabs-dropdown-menu-item > span`]: {
           minWidth: 0,

@@ -24,6 +24,7 @@ import {
 import type {
   CreateRouterCoreOptions,
   RouterCloseOptions,
+  RouterCloseTabsOptions,
   RouterCore,
   RouterCoreState,
   RouterHost,
@@ -200,6 +201,7 @@ export function createRouterCore<Route extends RouterRoute>(
     clearBeforeCloseHook,
     closeTab,
     confirmPendingTabClose,
+    waitForPendingTabClose,
     ensureTabState,
     publishPageLocation,
     reorderTabs,
@@ -603,6 +605,106 @@ export function createRouterCore<Route extends RouterRoute>(
     return executeNavigationPlan(target)
   }
 
+  // 同时只跑一批关闭。上一批的守卫或宿主确认还没结束时，下一批在队列里等。
+  let closeTabsQueue: Promise<void> = Promise.resolve()
+
+  /**
+   * 按顺序关闭页签。某一页的守卫拒绝或抛错时留下该页，后面的页签继续关。
+   *
+   * closeTab 在活动页的 replace 发出后就返回，真正删除要等宿主确认。批量关闭必须等
+   * 这次确认结束，否则下一页会在浏览器还停在旧地址时被删掉，落点也可能被提前关闭。
+   */
+  function closeTabs(
+    tabKeys: readonly string[],
+    options: RouterCloseTabsOptions,
+  ) {
+    const run = () => runCloseTabs(tabKeys, options)
+    const task = closeTabsQueue.then(run, run)
+    closeTabsQueue = task.then(() => undefined, () => undefined)
+    return task
+  }
+
+  async function runCloseTabs(
+    tabKeys: readonly string[],
+    options: RouterCloseTabsOptions,
+  ) {
+    const anchorKey = options.anchorKey
+    if (!getState().tabs.some((tab) => tab.key === anchorKey))
+      return false
+
+    const errors: unknown[] = []
+    for (const tabKey of tabKeys) {
+      if (tabKey === anchorKey)
+        continue
+      if (getState().tabs.length <= 1)
+        break
+      if (!getState().tabs.some((tab) => tab.key === tabKey))
+        continue
+      if (!getState().tabs.some((tab) => tab.key === anchorKey))
+        break
+      try {
+        await closeTabTowardAnchor(tabKey, anchorKey)
+      } catch (error) {
+        errors.push(error)
+      }
+    }
+
+    try {
+      moveToAnchor(anchorKey)
+    } catch (error) {
+      errors.push(error)
+    }
+
+    if (errors.length)
+      throw errors[0]
+    return true
+  }
+
+  function anchorPlan(anchorKey: string) {
+    if (!getState().tabs.some((tab) => tab.key === anchorKey))
+      return null
+    return resolveNavigationPlan({
+      pathname: cache.getParamsPath(anchorKey) || anchorKey,
+    })
+  }
+
+  /**
+   * 守卫结束后仍是活动页则 replace 到 anchor，并等宿主确认离开。
+   * 开始时是不是活动页不算数：等待期间用户可能点开这一页。
+   * 仍然是后台页则当场关闭，不发导航。
+   */
+  async function closeTabTowardAnchor(tabKey: string, anchorKey: string) {
+    const host = runtime.host
+    const accepted = await closeTab(tabKey, undefined, {
+      canCommit: () => runtime.host === host && host !== null,
+      onlyWhenActive: true,
+      navigation: {
+        getPathname: () => anchorPlan(anchorKey)?.pathname || '/',
+        execute: () => {
+          const plan = anchorPlan(anchorKey)
+          if (!host || runtime.host !== host || !plan || plan.tabKey === tabKey)
+            return false
+          return executeNavigationPlan(plan, { replace: true })
+        },
+      },
+    })
+    if (!accepted)
+      return
+    // 没有 pending 时同步返回，避免后台页之间多让出一次微任务。
+    const pending = waitForPendingTabClose(tabKey)
+    if (pending)
+      await pending
+  }
+
+  /** 批量关闭结束时，右键保留的页签还不是当前页就切换过去。 */
+  function moveToAnchor(anchorKey: string) {
+    if (!runtime.host || getState().activeTabKey === anchorKey)
+      return
+    if (!getState().tabs.some((tab) => tab.key === anchorKey))
+      return
+    jumpTo({ pathname: cache.getParamsPath(anchorKey) || anchorKey })
+  }
+
   // 对外只暴露领域查询与命令；Cache、runtime 和持久化协调函数继续封装在实例闭包内。
   return {
     registry,
@@ -639,6 +741,7 @@ export function createRouterCore<Route extends RouterRoute>(
     toggleFixed,
     toggleFavoriteRoute,
     closeTab,
+    closeTabs,
     closeThisTabOpenNewOne,
     addBeforeCloseHook,
     clearBeforeCloseHook,

@@ -13,21 +13,29 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Tabs } from 'antd'
+import { Dropdown, Tabs } from 'antd'
 import { clsx } from 'clsx'
-import { Children, cloneElement, isValidElement, useMemo } from 'react'
+import { Children, cloneElement, isValidElement, useMemo, useState } from 'react'
 
 import type { DragEndEvent } from '@dnd-kit/core'
-import type { TabsProps } from 'antd'
+import type { MenuProps, TabsProps } from 'antd'
 import type { KeyboardEventHandler, ReactNode } from 'react'
 
 export type TabReorderRejection = 'unfixedBeforeFixed' | 'fixedAfterUnfixed'
+
+/** 单个页签的右键菜单。同一时间只打开一个，避免多个页签各弹一层。 */
+export interface TabContextMenuConfig {
+  className?: string
+  getItems: (tabKey: string) => NonNullable<MenuProps['items']>
+  onAction: (tabKey: string, action: string) => void
+}
 
 /** Header 页签拖拽层对 antd Tabs 的扩展属性。 */
 export interface SortableTabsProps extends Omit<TabsProps, 'items' | 'renderTabBar'> {
   prefixCls: string
   items: NonNullable<TabsProps['items']>
   fixedKeys: readonly string[]
+  tabContextMenu: TabContextMenuConfig
   onReorder: (keys: string[]) => boolean
   onReorderRejected?: (reason: TabReorderRejection) => void
 }
@@ -41,8 +49,10 @@ export default function SortableTabs(props: SortableTabsProps) {
     onReorder,
     onReorderRejected,
     prefixCls,
+    tabContextMenu,
     ...tabsProps
   } = props
+  const [contextTabKey, setContextTabKey] = useState<string | null>(null)
   const orderedItems = useMemo(
     () => sortByFixedGroup(items, fixedKeys),
     [fixedKeys, items],
@@ -100,6 +110,16 @@ export default function SortableTabs(props: SortableTabsProps) {
               active={String(activeKey) === String(node.key)}
               activePrevious={previousKey === String(node.key)}
               activeNext={nextKey === String(node.key)}
+              contextMenu={tabContextMenu}
+              menuOpen={contextTabKey === String(node.key)}
+              onMenuOpenChange={(open) => {
+                const tabKey = String(node.key)
+                setContextTabKey((current) => {
+                  if (open)
+                    return tabKey
+                  return current === tabKey ? null : current
+                })
+              }}
             >
               {node}
             </SortableTabNode>
@@ -125,6 +145,9 @@ function SortableTabNode(props: {
   active: boolean
   activePrevious: boolean
   activeNext: boolean
+  contextMenu: TabContextMenuConfig
+  menuOpen: boolean
+  onMenuOpenChange: (open: boolean) => void
   children: ReactNode
 }) {
   const {
@@ -132,7 +155,10 @@ function SortableTabNode(props: {
     activeNext,
     activePrevious,
     children,
+    contextMenu,
     id,
+    menuOpen,
+    onMenuOpenChange,
     prefixCls,
   } = props
   const {
@@ -149,31 +175,62 @@ function SortableTabNode(props: {
     (event) => listeners?.onKeyDown?.(event),
     attributes['aria-describedby'],
   )
+  const tab = (
+    <div
+      ref={setNodeRef}
+      className={clsx(`${prefixCls}-tab-node`, {
+        [`${prefixCls}-tab-node-active`]: active,
+        [`${prefixCls}-tab-node-active-prev`]: activePrevious,
+        [`${prefixCls}-tab-node-active-next`]: activeNext,
+        [`${prefixCls}-tab-node-dragging`]: isDragging,
+        [`${prefixCls}-tab-node-dropping`]: isOver,
+      })}
+      style={{
+        transform: CSS.Transform.toString(
+          transform ? { ...transform, y: 0, scaleX: 1, scaleY: 1 } : null,
+        ),
+        transition,
+      }}
+      onPointerDown={(event) => {
+        // 右键用来打开菜单，不能同时开始拖拽。
+        if (event.button !== 0)
+          return
+        if (!isNestedInteractiveControl(event.target))
+          listeners?.onPointerDown?.(event)
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        onMenuOpenChange(true)
+      }}
+    >
+      {tabNode}
+    </div>
+  )
 
   return (
     <>
-      <div
-        ref={setNodeRef}
-        className={clsx(`${prefixCls}-tab-node`, {
-          [`${prefixCls}-tab-node-active`]: active,
-          [`${prefixCls}-tab-node-active-prev`]: activePrevious,
-          [`${prefixCls}-tab-node-active-next`]: activeNext,
-          [`${prefixCls}-tab-node-dragging`]: isDragging,
-          [`${prefixCls}-tab-node-dropping`]: isOver,
-        })}
-        style={{
-          transform: CSS.Transform.toString(
-            transform ? { ...transform, y: 0, scaleX: 1, scaleY: 1 } : null,
-          ),
-          transition,
-        }}
-        onPointerDown={(event) => {
-          if (!isNestedInteractiveControl(event.target))
-            listeners?.onPointerDown?.(event)
-        }}
-      >
-        {tabNode}
-      </div>
+      {menuOpen
+        ? (
+            <Dropdown
+              trigger={['click']}
+              open
+              placement="bottomLeft"
+              getPopupContainer={() => document.body}
+              classNames={{ root: contextMenu.className }}
+              menu={{
+                items: contextMenu.getItems(id),
+                onClick: ({ key, domEvent }) => {
+                  domEvent.stopPropagation()
+                  onMenuOpenChange(false)
+                  contextMenu.onAction(id, String(key))
+                },
+              }}
+              onOpenChange={onMenuOpenChange}
+            >
+              {tab}
+            </Dropdown>
+          )
+        : tab}
       <div
         className={clsx(`${prefixCls}-tab-split`, {
           [`${prefixCls}-tab-split-hidden`]: active || activePrevious,

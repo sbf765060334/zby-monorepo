@@ -61,6 +61,25 @@ function createMemoryStorage(initial?: Partial<RouterStorageState>) {
   return { disk, adapter }
 }
 
+/** 宿主在 navigate 里同步回传 location，用来断言批量关闭的最终页签，而不是 pending 中间态。 */
+function bindSyncNavigate(router: ReturnType<typeof createRouterCore>) {
+  const navigate = vi.fn((
+    target: string | { pathname: string, search?: string, hash?: string },
+  ) => {
+    const href = typeof target === 'string'
+      ? target
+      : `${target.pathname}${target.search || ''}${target.hash || ''}`
+    const url = new URL(href, 'http://localhost')
+    router.syncLocation({
+      pathname: url.pathname,
+      search: url.search,
+      hash: url.hash,
+    })
+  })
+  router.bindHost({ navigate })
+  return navigate
+}
+
 /** 只关心 load 行为、不检查落盘内容时使用。 */
 function createNoopStorageAdapter(
   load: RouterStorageAdapter['load'] = async () => ({}),
@@ -1514,6 +1533,333 @@ describe('createRouterCore', () => {
     expect(await router.closeTab('/settings/profile')).toBe(true)
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(false)
+  })
+
+  /** 守卫拒绝只留下这一页，活动页直接落到 anchor，不会先跳到下一个待关页签。 */
+  it('skips a rejected tab and lands on the batch anchor', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const navigate = bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    const seenTabs: string[] = []
+    router.addBeforeCloseHook(() => {
+      seenTabs.push(router.getState().tabs.map((tab) => tab.key).join(','))
+      return false
+    }, '/settings/profile')
+
+    expect(await router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/project/:id' },
+    )).toBe(true)
+    expect(seenTabs).toEqual(['/settings/profile,/project/:id'])
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+      '/project/:id',
+    ])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+  })
+
+  /** 活动页守卫拒绝后，其余页签继续关，最后再切到右键保留的页签。 */
+  it('continues the batch when the active tab guard declines and then activates the anchor', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const navigate = bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+    router.addBeforeCloseHook(() => false, '/dashboard')
+
+    expect(await router.closeTabs(
+      ['/dashboard', '/settings/profile'],
+      { anchorKey: '/project/:id' },
+    )).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate).toHaveBeenCalledWith('/project/42')
+  })
+
+  /** 守卫抛错留下该页，后面的页签仍关闭，整批结束后抛出这个错误。 */
+  it('continues after a throwing close guard and rejects with that error', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    const error = new Error('profile guard failed')
+    router.addBeforeCloseHook(() => {
+      throw error
+    }, '/settings/profile')
+
+    await expect(router.closeTabs(
+      ['/dashboard', '/settings/profile'],
+      { anchorKey: '/project/:id' },
+    )).rejects.toBe(error)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+      '/project/:id',
+    ])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+  })
+
+  /** 活动页的关闭请求返回后，下一个页签要等宿主确认离开再开始。 */
+  it('waits until the host leaves the active tab before closing the next tab', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    const events: string[] = []
+    router.addBeforeCloseHook(() => {
+      events.push('dashboard')
+      return true
+    }, '/dashboard')
+    router.addBeforeCloseHook(() => {
+      events.push('profile')
+      return true
+    }, '/settings/profile')
+
+    const closing = router.closeTabs(
+      ['/dashboard', '/settings/profile'],
+      { anchorKey: '/project/:id' },
+    )
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce())
+    expect(events).toEqual(['dashboard'])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+    ])
+    expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
+
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    await closing
+    expect(events).toEqual(['dashboard', 'profile'])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/project/:id'])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+    expect(navigate).toHaveBeenCalledOnce()
+  })
+
+  /** 守卫等待期间后台页被点成活动页后，改 replace 到 anchor，并等宿主离开再关下一个。 */
+  it('replaces to the anchor when a background tab becomes active during its guard', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+
+    let started = false
+    let releaseGuard: (value: boolean) => void = () => undefined
+    router.addBeforeCloseHook(() => {
+      started = true
+      return new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      })
+    }, '/dashboard')
+
+    const closing = router.closeTabs(
+      ['/dashboard', '/settings/profile'],
+      { anchorKey: '/project/:id' },
+    )
+    await vi.waitFor(() => expect(started).toBe(true))
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+    navigate.mockClear()
+
+    releaseGuard(true)
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce())
+    expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+    ])
+
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    await closing
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/project/:id'])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+    expect(navigate).toHaveBeenCalledOnce()
+  })
+
+  /** 后台页的守卫等待期间宿主解绑，这一页仍然当场删除，不因为 canCommit 留下。 */
+  it('closes a background tab when the host unbinds during its guard', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+
+    let started = false
+    let releaseGuard: (value: boolean) => void = () => undefined
+    router.addBeforeCloseHook(() => {
+      started = true
+      return new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      })
+    }, '/dashboard')
+
+    const closing = router.closeTabs(
+      ['/dashboard'],
+      { anchorKey: '/project/:id' },
+    )
+    await vi.waitFor(() => expect(started).toBe(true))
+    router.bindHost(null)
+    releaseGuard(true)
+    await closing
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+      '/project/:id',
+    ])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+  })
+
+  /** anchor 在守卫期间消失后，剩下的最后一页不能被 onlyWhenActive 的导航放行删掉。 */
+  it('keeps the last tab when the anchor disappears during its guard', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    let started = false
+    let releaseGuard: (value: boolean) => void = () => undefined
+    router.addBeforeCloseHook(() => {
+      started = true
+      return new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      })
+    }, '/dashboard')
+
+    const closing = router.closeTabs(
+      ['/dashboard'],
+      { anchorKey: '/settings/profile' },
+    )
+    await vi.waitFor(() => expect(started).toBe(true))
+    const anchorClose = router.closeTab('/settings/profile')
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled())
+    router.syncLocation({ pathname: '/unknown', search: '', hash: '' })
+    await anchorClose
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(router.getState().activeTabKey).toBeNull()
+
+    releaseGuard(true)
+    expect(await closing).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(router.getState().activeTabKey).toBeNull()
+  })
+
+  /** 固定页签没有豁免；未关闭当前页时，结束后切换到 anchor。 */
+  it('closes a fixed tab and activates the anchor when the active tab stays open', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const navigate = bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    expect(router.toggleFixed('/settings/profile')).toBe(true)
+    navigate.mockClear()
+
+    expect(await router.closeTabs(
+      ['/project/:id'],
+      { anchorKey: '/settings/profile' },
+    )).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/settings/profile',
+      '/dashboard',
+    ])
+    expect(router.getState().fixedSet).toEqual(['/settings/profile'])
+    expect(router.getState().activeTabKey).toBe('/settings/profile')
+    expect(navigate).toHaveBeenCalledWith('/settings/profile', { replace: true })
+
+    expect(await router.closeTabs(
+      ['/settings/profile'],
+      { anchorKey: '/dashboard' },
+    )).toBe(true)
+    expect(router.getState().fixedSet).toEqual([])
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+  })
+
+  /** 未知 anchor 整批不做；只剩 anchor 自己时也不跑它的守卫。 */
+  it('rejects an unknown anchor and keeps the last remaining tab', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const navigate = bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    const guard = vi.fn(() => true)
+    router.addBeforeCloseHook(guard, '/dashboard')
+    router.addBeforeCloseHook(guard, '/settings/profile')
+
+    expect(await router.closeTabs(
+      ['/settings/profile'],
+      { anchorKey: '/missing' },
+    )).toBe(false)
+    expect(guard).not.toHaveBeenCalled()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+
+    expect(await router.closeTabs(
+      ['/dashboard', '/settings/profile'],
+      { anchorKey: '/dashboard' },
+    )).toBe(true)
+    expect(guard).toHaveBeenCalledOnce()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+  })
+
+  /** 上一批还停在守卫上时，下一批不能插进来关别的页签。 */
+  it('queues a second batch until the first close guard settles', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+
+    let releaseFirst: (value: boolean) => void = () => undefined
+    router.addBeforeCloseHook(
+      () => new Promise<boolean>((resolve) => {
+        releaseFirst = resolve
+      }),
+      '/settings/profile',
+    )
+    const secondStarted = vi.fn(() => true)
+    router.addBeforeCloseHook(secondStarted, '/project/42')
+
+    const first = router.closeTabs(
+      ['/settings/profile'],
+      { anchorKey: '/dashboard' },
+    )
+    const second = router.closeTabs(
+      ['/project/:id'],
+      { anchorKey: '/dashboard' },
+    )
+    await Promise.resolve()
+    expect(secondStarted).not.toHaveBeenCalled()
+
+    releaseFirst(true)
+    await first
+    await second
+    expect(secondStarted).toHaveBeenCalledOnce()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/dashboard'])
   })
 
   /** 组合命令关闭旧页后只导航一次新地址，不先跳到相邻页。 */

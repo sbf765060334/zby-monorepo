@@ -279,6 +279,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
 | `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 按注册顺序串行执行关闭守卫，遇到第一个不是 `true` 的立刻拒绝；只剩一个页签时返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
+| `closeTabs(tabKeys, options)` | `readonly string[], RouterCloseTabsOptions` | `Promise<boolean>` | 按给定顺序逐个关闭。守卫拒绝或抛错时留下该页，后续页签继续关；抛错会在整批结束后抛出第一个错误。活动页 replace 到 `anchorKey`，并等宿主确认离开后再关下一个。结束时若 anchor 不是当前页则切换过去。anchor 未打开时返回 false。至少保留一个页签。 |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。适合保存成功后的详情页替换。这次导航同样使用 replace。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
@@ -287,6 +288,8 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 `jumpTo` 和 `smartNavigate` 需要先绑定宿主。`RouterCoreProvider` 会自动管理 `bindHost` 和 `syncLocation`，因此必须位于 React Router 内部。pathname 导航请求只会进入 `navigating`，不会提前修改 `currentPathname`、`activeTabKey` 或 `activePage`；只有宿主回传的 `syncLocation` 才会激活目标页签和页面。未具体化且没有可恢复缓存的 pattern 不会发起导航，并打印控制台警告。字符串形式的查询串按 `URL.search` 保留，不再经 `URLSearchParams` 重编码。
 
 `closeTab` 返回 `true` 表示关闭请求已被接受。只剩一个页签时返回 `false`，避免关完经根路径重定向后再被打开。非活动页签普通关闭会在返回前完成清理；若组合命令还要跳转，则先导航，成功后再删。导航过程中该页签若已成为活动页则不再删除。关闭活动页签时，当前页会保留到宿主确认已经离开被关页，这次跳转使用 replace。宿主确认前同一页签不能再关一次，避免连点或交错的 `closeThisTabOpenNewOne` 覆盖 pending。尾斜杠或编码差异仍视为同一页；已经离开被关页则提交删除，不要求回传字符串精确等于下一页。宿主不可用或导航同步失败时不会提前删除当前页。
+
+`closeTabs` 用于一次关掉多页，例如关闭左侧、右侧或其它页签。`tabKeys` 是待关页签，按数组顺序逐个处理；`options.anchorKey` 是保留页，也是结束后的当前页。某一页的守卫没有返回 `true` 时，这一页留下，下一页继续。守卫抛错同样留下该页并继续，整批结束后抛出第一个错误。活动页被关闭时直接 replace 到 anchor，不会先跳到另一个待关页签；宿主确认离开后才处理下一个。并发调用会排队。固定页签没有豁免。
 
 ### Core 方法依赖类型
 
@@ -333,6 +336,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | --- | --- | --- |
 | `RouterBeforeCloseHook` | `() => boolean \| Promise<boolean>` | 按注册顺序串行执行；必须明确返回 `true` 才继续，否则关闭被拒绝且后续守卫不会运行。 |
 | `RouterCloseOptions.skipBeforeClose` | `boolean` | 受信调用方跳过关闭守卫；普通业务关闭通常不要设置。 |
+| `RouterCloseTabsOptions.anchorKey` | `string` | 批量关闭时保留的页签，也是活动页被关掉后的落点。 |
 | `RouterRuntimeOptions.onTabClose` | `(tabKey, info) => void \| Promise<void>` | 关闭已经提交后的通知，不能撤销关闭。 |
 | `RouterAfterTabCloseInfo.pathname` | `string` | 被关闭页签最后对应的真实 pathname。 |
 | `RouterRuntimeOptions.onStorageError` | `(error, info) => void \| Promise<void>` | 加载或保存失败通知。回调失败会被隔离。 |

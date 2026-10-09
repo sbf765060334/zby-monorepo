@@ -29,9 +29,14 @@ import { buildUrl, parseUrl } from './urlState'
 import type { RouterUrlCache } from './urlState'
 
 export interface CloseTabTransaction {
-  /** 守卫完成后、提交删除前再次确认外部条件仍成立。 */
+  /** 守卫完成后、提交删除前再次确认外部条件仍成立。只在这次关闭真的要导航时检查。 */
   canCommit?: () => boolean
-  /** 组合命令提供的最终导航。活动页签等宿主离开被关页后再删；非活动页签先跳，成功后再删。 */
+  /**
+   * 为 true 时，navigation 只用于守卫结束后仍是活动页的情况。
+   * 后台页当场删除，且这次导航不能作为关掉最后一个页签的理由。
+   */
+  onlyWhenActive?: boolean
+  /** 组合命令提供的最终导航。默认后台页也会先跳再删；onlyWhenActive 时后台页不跳。 */
   navigation?: {
     getPathname: () => string
     execute: () => boolean
@@ -110,6 +115,8 @@ export function createRouterTabs<Route extends RouterRoute>(
     tabKey: string
     closedPathname: string
   } | null = null
+  // 批量关闭在 closeTab 返回后仍要等活动页签真正删除，避免下一次关闭提前删掉落点。
+  const pendingCloseWaiters = new Map<string, Array<() => void>>()
 
   /** 确保 pathname 对应的页签存在，并按需要创建或刷新页面实例。 */
   function ensureTabState(pathname: string, ensurePage: boolean) {
@@ -367,11 +374,36 @@ export function createRouterTabs<Route extends RouterRoute>(
 
     pendingTabClose = null
     closingTabKeys.delete(pending.tabKey)
-    if (!commitTabClose(pending.tabKey))
+    const committed = commitTabClose(pending.tabKey)
+    // 通知批量关闭可以继续。await 要等这次 syncLocation 返回后才恢复，落点会先被激活。
+    settlePendingCloseWaiters(pending.tabKey)
+    if (!committed)
       return
 
     // Core 完成目标 pathname 的页面激活和 location 发布后再执行关闭通知。
     return () => notifyTabClose(pending.tabKey, { pathname: pending.closedPathname })
+  }
+
+  /**
+   * 活动页还在等宿主确认时返回等待；已经结束或本来就没有 pending 时同步返回，
+   * 调用方据此决定要不要让出一次微任务。
+   */
+  function waitForPendingTabClose(tabKey: string): Promise<void> | void {
+    if (pendingTabClose?.tabKey !== tabKey)
+      return
+    return new Promise<void>((resolve) => {
+      const waiters = pendingCloseWaiters.get(tabKey) || []
+      waiters.push(resolve)
+      pendingCloseWaiters.set(tabKey, waiters)
+    })
+  }
+
+  function settlePendingCloseWaiters(tabKey: string) {
+    const waiters = pendingCloseWaiters.get(tabKey)
+    if (!waiters)
+      return
+    pendingCloseWaiters.delete(tabKey)
+    waiters.forEach((resolve) => resolve())
   }
 
   /** 执行关闭守卫；活动页签以宿主 location 确认为删除事务的提交点。 */
@@ -380,13 +412,15 @@ export function createRouterTabs<Route extends RouterRoute>(
     closeOptions?: RouterCloseOptions,
     transaction?: CloseTabTransaction,
   ) {
+    // 组合命令的最终新地址关完还会打开另一页。onlyWhenActive 只在该页仍是活动页时
+    // 导航，后台页删掉后没有替补，不能用来放行最后一个页签。
+    const opensAnotherPage = Boolean(transaction?.navigation) && !transaction?.onlyWhenActive
     if (!getState().tabs.some((tab) => tab.key === tabKey))
       return false
     if (closingTabKeys.has(tabKey))
       return false
     // 只剩一个页签时关掉会变成空工作区，或经 / 再被默认页打开。普通 closeTab 直接拒绝。
-    // 组合命令带了最终新地址，关完还会打开另一页，不走这条限制。
-    if (getState().tabs.length === 1 && !transaction?.navigation)
+    if (getState().tabs.length === 1 && !opensAnotherPage)
       return false
 
     closingTabKeys.add(tabKey)
@@ -404,19 +438,24 @@ export function createRouterTabs<Route extends RouterRoute>(
       const state = getState()
       if (!state.tabs.some((tab) => tab.key === tabKey))
         return false
-      if (state.tabs.length === 1 && !transaction?.navigation)
+      if (state.tabs.length === 1 && !opensAnotherPage)
         return false
-      if (transaction?.canCommit && !transaction.canCommit())
+      const isActive = state.activeTabKey === tabKey
+      // onlyWhenActive 要等守卫结束后再看。等待期间变成活动页就改走 anchor，
+      // 仍然是后台页则忽略这次导航，当场删除。
+      const useTransactionNavigation = Boolean(transaction?.navigation)
+        && (isActive || !transaction?.onlyWhenActive)
+      if (useTransactionNavigation && transaction?.canCommit && !transaction.canCommit())
         return false
       const closedIndex = state.tabs.findIndex((tab) => tab.key === tabKey)
       const nextTabs = state.tabs.filter((tab) => tab.key !== tabKey)
       // 关闭活动页时优先选择左侧相邻页，没有左侧再选原位置右侧页。
-      const nextActive =
-        state.activeTabKey === tabKey
-          ? nextTabs[Math.max(0, closedIndex - 1)] || nextTabs[closedIndex] || null
-          : null
+      const nextActive = isActive
+        ? nextTabs[Math.max(0, closedIndex - 1)] || nextTabs[closedIndex] || null
+        : null
       const closedPathname = cache.getParamsPath(tabKey) || tabKey
-      const navigation = transaction?.navigation ?? (nextActive
+      const providedNavigation = useTransactionNavigation ? transaction?.navigation : undefined
+      const navigation = providedNavigation ?? (nextActive
         ? (() => {
             const target = buildUrl({
               pathname: cache.getParamsPath(nextActive.key) || nextActive.key,
@@ -428,7 +467,7 @@ export function createRouterTabs<Route extends RouterRoute>(
               execute: () => requestCloseNavigation(target),
             }
           })()
-        : state.activeTabKey === tabKey
+        : isActive
           ? {
               getPathname: () => '/',
               execute: () => requestCloseNavigation('/'),
@@ -602,7 +641,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     })
   }
 
-  // 只暴露 createRouterCore 真正需要的页签命令，三个内部 Map/Set 保持实例私有。
+  // 只暴露 createRouterCore 真正需要的页签命令，内部 Map/Set 保持实例私有。
   return {
     confirmPendingTabClose,
     ensureTabState,
@@ -611,6 +650,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     toggleFixed,
     toggleFavoriteRoute,
     closeTab,
+    waitForPendingTabClose,
     addBeforeCloseHook,
     clearBeforeCloseHook,
     subscribePageLocation,

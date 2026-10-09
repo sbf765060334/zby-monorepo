@@ -3,12 +3,12 @@ import { CloseOutlined, PushpinFilled, PushpinOutlined } from '@ant-design/icons
 import { useIntl } from '@zby/intl'
 import { Flex, message } from 'antd'
 import { clsx } from 'clsx'
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useRef } from 'react'
 
 import { resolveProLayoutTitle } from '../title'
 
 import type { RouterCoreState } from '@zby/router-core'
-import type { TabsProps } from 'antd'
+import type { MenuProps, TabsProps } from 'antd'
 import type { ProLayoutRoute } from '../types'
 import FavoriteMenuPanel from './FavoriteMenuPanel'
 import SortableTabs from './SortableTabs'
@@ -42,6 +42,20 @@ function PageTabs(props: PageTabsProps) {
       state.storageHydrated || state.storageLoadError !== undefined,
   )
   const fixedKeySet = useMemo(() => new Set(fixedKeys), [fixedKeys])
+  const orderedKeys = useMemo(
+    () => orderTabKeys(tabs.map((tab) => tab.key), fixedKeys),
+    [fixedKeys, tabs],
+  )
+  const closingBatchRef = useRef(false)
+  const reportCloseFailure = (error: unknown) => {
+    console.error('[ProLayout] Failed to close tab.', error)
+    void messageApi.error(
+      intl.getMessage(
+        'zby.pro.layout.tabs.closeFailed',
+        '页签关闭失败，请稍后重试',
+      ),
+    )
+  }
   const items = useMemo<NonNullable<TabsProps['items']>>(
     () => tabs.map((tab) => {
       const fixed = fixedKeySet.has(tab.key)
@@ -137,18 +151,61 @@ function PageTabs(props: PageTabsProps) {
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
-    if (action !== 'remove')
+    if (action !== 'remove' || closingBatchRef.current)
       return
 
-    void router.closeTab(String(key)).catch((error) => {
-      console.error('[ProLayout] Failed to close tab.', error)
-      void messageApi.error(
-        intl.getMessage(
-          'zby.pro.layout.tabs.closeFailed',
-          '页签关闭失败，请稍后重试',
-        ),
-      )
-    })
+    void router.closeTab(String(key)).catch(reportCloseFailure)
+  }
+
+  const handleTabContextAction = (anchorKey: string, action: string) => {
+    if (closingBatchRef.current || !isTabContextAction(action))
+      return
+    const disabled = getTabContextMenuDisabled(orderedKeys, anchorKey)
+    if (disabled[action])
+      return
+    if (action === 'close') {
+      void router.closeTab(anchorKey).catch(reportCloseFailure)
+      return
+    }
+
+    const keys = getTabCloseKeys(orderedKeys, anchorKey, action)
+    closingBatchRef.current = true
+    void router.closeTabs(keys, { anchorKey })
+      .catch(reportCloseFailure)
+      .finally(() => {
+        closingBatchRef.current = false
+      })
+  }
+
+  const tabContextMenu = {
+    className: clsx(`${prefixCls}-tab-context-menu`, hashId),
+    getItems: (tabKey: string) => {
+      const disabled = getTabContextMenuDisabled(orderedKeys, tabKey)
+      const items: NonNullable<MenuProps['items']> = [
+        {
+          key: 'close',
+          label: intl.getMessage('zby.pro.layout.tabs.close', '关闭'),
+          disabled: disabled.close,
+        },
+        {
+          key: 'closeRight',
+          label: intl.getMessage('zby.pro.layout.tabs.closeRight', '关闭右侧页签'),
+          disabled: disabled.closeRight,
+        },
+        {
+          key: 'closeLeft',
+          label: intl.getMessage('zby.pro.layout.tabs.closeLeft', '关闭左侧页签'),
+          disabled: disabled.closeLeft,
+        },
+        {
+          key: 'closeOthers',
+          label: intl.getMessage('zby.pro.layout.tabs.closeOthers', '关闭其它页签'),
+          disabled: disabled.closeOthers,
+        },
+      ]
+      return items
+    },
+    onAction: handleTabContextAction,
   }
 
   const tabType = items.length <= 1 ? 'card' : 'editable-card'
@@ -163,6 +220,7 @@ function PageTabs(props: PageTabsProps) {
         prefixCls={prefixCls}
         items={items}
         fixedKeys={fixedKeys}
+        tabContextMenu={tabContextMenu}
         activeKey={activeKey ?? ''}
         type={tabType}
         size="middle"
@@ -198,6 +256,63 @@ function PageTabs(props: PageTabsProps) {
 
 function stopEvent(event: { stopPropagation: () => void }) {
   event.stopPropagation()
+}
+
+type TabContextAction = 'close' | 'closeLeft' | 'closeRight' | 'closeOthers'
+
+function isTabContextAction(action: string): action is TabContextAction {
+  return action === 'close' ||
+    action === 'closeLeft' ||
+    action === 'closeRight' ||
+    action === 'closeOthers'
+}
+
+/** 固定页签在前，其余页签保持打开顺序，和页签栏上看到的顺序一致。 */
+function orderTabKeys(tabKeys: readonly string[], fixedKeys: readonly string[]) {
+  const present = new Set(tabKeys)
+  const fixed = new Set(fixedKeys)
+  return [
+    ...fixedKeys.filter((key) => present.has(key)),
+    ...tabKeys.filter((key) => !fixed.has(key)),
+  ]
+}
+
+/** 只剩一页时四项都不可用；已在最左或最右时，对应方向不可用。 */
+function getTabContextMenuDisabled(
+  orderedKeys: readonly string[],
+  anchorKey: string,
+): Record<TabContextAction, boolean> {
+  const index = orderedKeys.indexOf(anchorKey)
+  if (index < 0 || orderedKeys.length <= 1) {
+    return {
+      close: true,
+      closeLeft: true,
+      closeRight: true,
+      closeOthers: true,
+    }
+  }
+  return {
+    close: false,
+    closeLeft: index === 0,
+    closeRight: index === orderedKeys.length - 1,
+    closeOthers: false,
+  }
+}
+
+/** 批量关闭按页签栏从左到右的顺序，不包含右键点中的那一页。 */
+function getTabCloseKeys(
+  orderedKeys: readonly string[],
+  anchorKey: string,
+  action: Exclude<TabContextAction, 'close'>,
+) {
+  const index = orderedKeys.indexOf(anchorKey)
+  if (index < 0)
+    return []
+  if (action === 'closeLeft')
+    return orderedKeys.slice(0, index)
+  if (action === 'closeRight')
+    return orderedKeys.slice(index + 1)
+  return orderedKeys.filter((key) => key !== anchorKey)
 }
 
 export default memo(PageTabs)
