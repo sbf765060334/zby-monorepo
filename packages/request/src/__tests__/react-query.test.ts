@@ -9,7 +9,7 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from '../index'
-import { createQueryClient, mutationOptions, queryOptions, shouldRetry } from '../react-query'
+import { createQueryClient, createRequestQuery, shouldRetry } from '../react-query'
 
 function createTransport(
   resolver: (request: TransportRequest) => TransportResponse | Promise<TransportResponse>,
@@ -73,7 +73,7 @@ describe('@zby/request react-query', () => {
   })
 
   it('keeps queryOptions response and select type inference', () => {
-    const options = queryOptions({
+    const options = createRequestQuery(createClient()).queryOptions({
       queryKey: ['user', 'detail', '1'],
       queryFn: async (): Promise<ApiResponse<{ id: string }>> => ({
         errCode: '0',
@@ -113,13 +113,14 @@ describe('@zby/request react-query', () => {
       }),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
 
     await expect(
       queryClient.fetchQuery(
-        queryOptions({
+        requestQuery.queryOptions({
           queryKey: ['retry-query-success'],
           retryDelay: 0,
-          queryFn: ({ signal }) => apiClient.get('/retry-query-success', { signal }),
+          queryFn: ({ request }) => request.get('/retry-query-success'),
         }),
       ),
     ).resolves.toMatchObject({ data: { ok: true } })
@@ -150,15 +151,16 @@ describe('@zby/request react-query', () => {
       transport: createTransport(() => Promise.reject(new Error('network'))),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
 
     await expect(
       queryClient.fetchQuery(
-        queryOptions({
+        requestQuery.queryOptions({
           queryKey: ['retry-query-fail'],
           retryDelay: 0,
-          queryFn: async ({ signal }) => {
+          queryFn: async ({ request }) => {
             await Promise.resolve()
-            return apiClient.get('/retry-query-fail', { signal })
+            return request.get('/retry-query-fail')
           },
         }),
       ),
@@ -185,6 +187,7 @@ describe('@zby/request react-query', () => {
       transport: createTransport(() => Promise.reject(new Error('network'))),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
     const context = {
       client: queryClient,
       queryKey: ['rerender'],
@@ -193,9 +196,9 @@ describe('@zby/request react-query', () => {
     }
 
     const run = () => {
-      const options = queryOptions({
+      const options = requestQuery.queryOptions({
         queryKey: ['rerender'],
-        queryFn: ({ signal }) => apiClient.get('/rerender', { signal }),
+        queryFn: ({ request }) => request.get('/rerender'),
       })
       const queryFn = options.queryFn
       if (typeof queryFn !== 'function') {
@@ -234,16 +237,13 @@ describe('@zby/request react-query', () => {
       }),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
     const mutation = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      requestQuery.mutationOptions({
         retry: 1,
         retryDelay: 0,
-        mutationFn: (_variables, context) => apiClient.post(
-          '/retry-mutation-success',
-          undefined,
-          { signal: context.signal },
-        ),
+        mutationFn: (_variables, { request }) => request.post('/retry-mutation-success'),
       }),
     )
 
@@ -275,14 +275,15 @@ describe('@zby/request react-query', () => {
       transport: createTransport(() => Promise.reject(new Error('network'))),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
     const mutation = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      requestQuery.mutationOptions({
         retry: 1,
         retryDelay: 0,
-        mutationFn: async (_variables, context) => {
+        mutationFn: async (_variables, { request }) => {
           await Promise.resolve()
-          return apiClient.post('/retry-mutation-fail', undefined, { signal: context.signal })
+          return request.post('/retry-mutation-fail')
         },
       }),
     )
@@ -308,7 +309,7 @@ describe('@zby/request react-query', () => {
     const queryClient = createQueryClient()
     const mutation = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({ mutationFn }),
+      createRequestQuery(createClient()).mutationOptions({ mutationFn }),
     )
 
     await mutation.execute({ id: 1 })
@@ -318,6 +319,10 @@ describe('@zby/request react-query', () => {
       expect.objectContaining({
         client: queryClient,
         signal: expect.any(AbortSignal),
+        request: expect.objectContaining({
+          get: expect.any(Function),
+          post: expect.any(Function),
+        }),
       }),
     )
   })
@@ -348,19 +353,20 @@ describe('@zby/request react-query', () => {
       }),
     })
     const queryClient = createQueryClient()
+    const requestQuery = createRequestQuery(apiClient)
     const slow = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      requestQuery.mutationOptions({
         retry: 0,
-        mutationFn: (_variables, context) => apiClient.post('/slow', undefined, { signal: context.signal }),
+        mutationFn: (_variables, { request }) => request.post('/slow'),
       }),
     )
     const fast = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      requestQuery.mutationOptions({
         retry: 4,
         retryDelay: 0,
-        mutationFn: (_variables, context) => apiClient.post('/fast', undefined, { signal: context.signal }),
+        mutationFn: (_variables, { request }) => request.post('/fast'),
       }),
     )
 
@@ -379,7 +385,7 @@ describe('@zby/request react-query', () => {
     expect(onError).toHaveBeenCalledTimes(2)
   })
 
-  it('warns once when a query does not pass its signal to the client', async () => {
+  it('warns once when a query calls the outer client', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const onError = vi.fn()
     const apiClient = createClient({
@@ -390,7 +396,7 @@ describe('@zby/request react-query', () => {
 
     await expect(
       queryClient.fetchQuery(
-        queryOptions({
+        createRequestQuery(apiClient).queryOptions({
           queryKey: ['missing-signal'],
           retryDelay: 0,
           queryFn: () => apiClient.get('/missing-signal'),
@@ -401,7 +407,7 @@ describe('@zby/request react-query', () => {
     expect(onError).toHaveBeenCalledTimes(3)
     expect(onError.mock.calls.map((call) => call[1].willRetry)).toEqual([false, false, false])
     expect(warn).toHaveBeenCalledTimes(1)
-    expect(warn.mock.calls[0]?.[0]).toContain('signal')
+    expect(warn.mock.calls[0]?.[0]).toContain('request')
     warn.mockRestore()
   })
 
@@ -415,13 +421,13 @@ describe('@zby/request react-query', () => {
     const queryClient = createQueryClient()
     const mutation = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      createRequestQuery(apiClient).mutationOptions({
         retry: 1,
         retryDelay: 0,
         mutationFn: async (_variables, context) => {
           signals.push(context.signal)
           await Promise.resolve()
-          return apiClient.post('/shared-signal', undefined, { signal: context.signal })
+          return context.request.post('/shared-signal')
         },
       }),
     )
@@ -434,7 +440,8 @@ describe('@zby/request react-query', () => {
     expect(onError.mock.calls[0]?.[1]).toMatchObject({ attempt: 2, willRetry: false })
   })
 
-  it('reports every mutation attempt when signal is omitted', async () => {
+  it('reports every mutation attempt when the outer client is used', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const onError = vi.fn()
     const apiClient = createClient({
       onError,
@@ -443,7 +450,7 @@ describe('@zby/request react-query', () => {
     const queryClient = createQueryClient()
     const mutation = queryClient.getMutationCache().build(
       queryClient,
-      mutationOptions({
+      createRequestQuery(apiClient).mutationOptions({
         retry: 1,
         retryDelay: 0,
         mutationFn: async () => {
@@ -457,5 +464,30 @@ describe('@zby/request react-query', () => {
 
     expect(onError).toHaveBeenCalledTimes(2)
     expect(onError.mock.calls.map((call) => call[1].willRetry)).toEqual([false, false])
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  })
+
+  it('keeps retry state when request options include another signal', async () => {
+    const onError = vi.fn()
+    const apiClient = createClient({
+      onError,
+      transport: createTransport(() => Promise.reject(new Error('network'))),
+    })
+    const queryClient = createQueryClient()
+    const local = new AbortController()
+    const mutation = queryClient.getMutationCache().build(
+      queryClient,
+      createRequestQuery(apiClient).mutationOptions({
+        retry: 1,
+        retryDelay: 0,
+        mutationFn: (_variables, { request }) => request.post('/override', undefined, { signal: local.signal }),
+      }),
+    )
+
+    await expect(mutation.execute()).rejects.toMatchObject({ message: 'network' })
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError.mock.calls[0]?.[1]).toMatchObject({ attempt: 2, willRetry: false })
   })
 })

@@ -10,7 +10,7 @@ import {
   type QueryKey,
   type UndefinedInitialDataOptions,
 } from '@tanstack/react-query'
-import { isApiError } from '@zby/request'
+import { isApiError, type ApiClient } from '@zby/request'
 import {
   getMaxRetries,
   getOrCreateSignalLifecycle,
@@ -26,12 +26,13 @@ export type RequestQueryClientConfig = QueryClientConfig
 
 export type RequestMutationContext = MutationFunctionContext & {
   signal: AbortSignal
+  request: ApiClient
 }
 
-const QUERY_SIGNAL_WARNING = '[@zby/request] 把 queryFn 收到的 signal 传给请求客户端，同一次查询的取消和重试才会作用在同一次请求上。'
+const SIGNAL_WARNING = '[@zby/request] 使用 queryFn / mutationFn 收到的 request 发请求，同一次查询或 mutation 的取消和重试才会作用在同一次请求上。'
 const mutationSignals = new WeakMap<object, AbortSignal>()
 const warnedSignals = new WeakSet<AbortSignal>()
-let warnedMissingQuerySignal = false
+let warnedMissingSignal = false
 
 export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (isApiError(error) && (error.businessError || error.sessionInvalid)) {
@@ -57,46 +58,100 @@ export function createQueryClient(config: RequestQueryClientConfig = {}): QueryC
   })
 }
 
+type WithBoundRequest<TOptions> = TOptions extends { queryFn?: infer TQueryFn }
+  ? Omit<TOptions, 'queryFn'> & {
+    queryFn?: TQueryFn extends (context: infer TContext) => infer TResult
+      ? (context: TContext & { request: ApiClient }) => TResult
+      : TQueryFn
+  }
+  : TOptions
+
+export type RequestQuery = {
+  queryOptions: {
+    <
+      TQueryFnData = unknown,
+      TError = DefaultError,
+      TData = TQueryFnData,
+      TQueryKey extends QueryKey = QueryKey,
+    >(
+      options: WithBoundRequest<UndefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>>,
+    ): UndefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey> & {
+      queryKey: DataTag<TQueryKey, TData>
+    }
+    <
+      TQueryFnData = unknown,
+      TError = DefaultError,
+      TData = TQueryFnData,
+      TQueryKey extends QueryKey = QueryKey,
+    >(
+      options: WithBoundRequest<DefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>>,
+    ): DefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey> & {
+      queryKey: DataTag<TQueryKey, TData>
+    }
+  }
+  mutationOptions: <
+    TData = unknown,
+    TError = Error,
+    TVariables = void,
+    TContext = unknown,
+  >(
+    options: Omit<MutationOptions<TData, TError, TVariables, TContext>, 'mutationFn'> & {
+      mutationFn?: (variables: TVariables, context: RequestMutationContext) => Promise<TData>
+    },
+  ) => MutationOptions<TData, TError, TVariables, TContext>
+}
+
 /**
- * 同一次 fetch 的取消和重试共用 `queryFn` 收到的 `signal`。
- * 调用请求客户端时把这个 `signal` 传进去。
+ * `queryFn` / `mutationFn` 收到的 `request` 已经带上这次的 `signal`。
+ * 用它发请求时，取消和重试都落在同一次查询或 mutation 上。
  */
-export function queryOptions<
-  TQueryFnData = unknown,
-  TError = DefaultError,
-  TData = TQueryFnData,
-  TQueryKey extends QueryKey = QueryKey,
->(
-  options: UndefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>,
-): UndefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey> & {
-  queryKey: DataTag<TQueryKey, TData>
+export function createRequestQuery(client: ApiClient): RequestQuery {
+  return {
+    queryOptions(options) {
+      return tanstackQueryOptions(wrapQueryOptions(client, options as QueryOptionsLike) as never)
+    },
+    mutationOptions(options) {
+      return bindMutationOptions(client, options)
+    },
+  }
 }
 
-export function queryOptions<
-  TQueryFnData = unknown,
-  TError = DefaultError,
-  TData = TQueryFnData,
-  TQueryKey extends QueryKey = QueryKey,
->(
-  options: DefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey>,
-): DefinedInitialDataOptions<TQueryFnData, TError, TData, TQueryKey> & {
-  queryKey: DataTag<TQueryKey, TData>
+type QueryOptionsLike = {
+  queryFn?: (context: { signal?: AbortSignal, request: ApiClient }) => unknown
+  retry?: RetryValue
 }
 
-export function queryOptions(options: unknown): unknown {
-  return tanstackQueryOptions(wrapQueryOptions(options as QueryOptionsLike) as never)
+function wrapQueryOptions(client: ApiClient, options: QueryOptionsLike) {
+  const retryValue = options.retry ?? shouldRetry
+  const maxRetries = maxRetriesFor(retryValue)
+  const queryFn = options.queryFn
+
+  return {
+    ...options,
+    retry: (failureCount: number, error: unknown) => resolveWillRetry(retryValue, failureCount, error),
+    queryFn: queryFn
+      ? (context: { signal?: AbortSignal }) => {
+          const { signal } = context
+          if (signal) getOrCreateSignalLifecycle(signal, retryValue, maxRetries)
+          const request = signal ? bindClient(client, signal) : client
+          return Promise.resolve(queryFn({ ...context, request })).then((data) => {
+            releaseSignalLifecycle(signal)
+            return data
+          }).finally(() => {
+            warnIfSignalUnused(signal)
+          })
+        }
+      : queryFn,
+  }
 }
 
-/**
- * 同一次 `execute` 的重试共用 `context.signal`。
- * `mutationFn` 调用请求客户端时传入它；客户端再把它和超时信号合并。
- */
-export function mutationOptions<
-  TData = unknown,
-  TError = Error,
-  TVariables = void,
-  TContext = unknown,
+function bindMutationOptions<
+  TData,
+  TError,
+  TVariables,
+  TContext,
 >(
+  client: ApiClient,
   options: Omit<MutationOptions<TData, TError, TVariables, TContext>, 'mutationFn'> & {
     mutationFn?: (variables: TVariables, context: RequestMutationContext) => Promise<TData>
   },
@@ -112,41 +167,33 @@ export function mutationOptions<
       ? (variables, context) => {
           const signal = signalForMutation(context)
           getOrCreateSignalLifecycle(signal, retryValue, maxRetries)
-          return Promise.resolve(mutationFn(variables, { ...context, signal })).then((data) => {
+          const request = bindClient(client, signal)
+          return Promise.resolve(mutationFn(variables, { ...context, signal, request })).then((data) => {
             mutationSignals.delete(context)
             releaseSignalLifecycle(signal)
             return data
+          }).finally(() => {
+            warnIfSignalUnused(signal)
           })
         }
       : undefined,
   }
 }
 
-type QueryOptionsLike = {
-  queryFn?: (context: { signal?: AbortSignal }) => unknown
-  retry?: RetryValue
-}
-
-function wrapQueryOptions<TOptions extends QueryOptionsLike>(options: TOptions): TOptions {
-  const retryValue = options.retry ?? shouldRetry
-  const maxRetries = maxRetriesFor(retryValue)
-  const queryFn = options.queryFn
-
+function bindClient(client: ApiClient, signal: AbortSignal): ApiClient {
   return {
-    ...options,
-    retry: (failureCount: number, error: unknown) => resolveWillRetry(retryValue, failureCount, error),
-    queryFn: queryFn
-      ? (context: { signal?: AbortSignal }) => {
-          const { signal } = context
-          if (signal) getOrCreateSignalLifecycle(signal, retryValue, maxRetries)
-          return Promise.resolve(queryFn(context)).then((data) => {
-            releaseSignalLifecycle(signal)
-            return data
-          }).finally(() => {
-            warnIfQuerySignalUnused(signal)
-          })
-        }
-      : queryFn,
+    request: (options) => client.request({ ...options, signal }),
+    requestData: (options) => client.requestData({ ...options, signal }),
+    get: (url, options) => client.get(url, { ...options, signal }),
+    post: (url, body, options) => client.post(url, body, { ...options, signal }),
+    put: (url, body, options) => client.put(url, body, { ...options, signal }),
+    patch: (url, body, options) => client.patch(url, body, { ...options, signal }),
+    delete: (url, options) => client.delete(url, { ...options, signal }),
+    getData: (url, options) => client.getData(url, { ...options, signal }),
+    postData: (url, body, options) => client.postData(url, body, { ...options, signal }),
+    putData: (url, body, options) => client.putData(url, body, { ...options, signal }),
+    patchData: (url, body, options) => client.patchData(url, body, { ...options, signal }),
+    deleteData: (url, options) => client.deleteData(url, { ...options, signal }),
   }
 }
 
@@ -165,15 +212,15 @@ function signalForMutation(context: object): AbortSignal {
 
 declare const process: { env: { NODE_ENV?: string } }
 
-function warnIfQuerySignalUnused(signal: AbortSignal | undefined): void {
+function warnIfSignalUnused(signal: AbortSignal | undefined): void {
   if (process.env.NODE_ENV === 'production') return
   if (!signal) {
-    if (warnedMissingQuerySignal) return
-    warnedMissingQuerySignal = true
-    console.warn(QUERY_SIGNAL_WARNING)
+    if (warnedMissingSignal) return
+    warnedMissingSignal = true
+    console.warn(SIGNAL_WARNING)
     return
   }
   if (wasSignalObserved(signal) || warnedSignals.has(signal)) return
   warnedSignals.add(signal)
-  console.warn(QUERY_SIGNAL_WARNING)
+  console.warn(SIGNAL_WARNING)
 }
