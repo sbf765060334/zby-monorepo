@@ -1376,7 +1376,7 @@ describe('ReactRouterProLayout', () => {
 
     await screen.findByTestId('dashboard-page')
     fireEvent.contextMenu(screen.getByRole('tab', { name: /工作台/ }))
-    for (const label of ['关闭', '关闭右侧页签', '关闭左侧页签', '关闭其它页签']) {
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签']) {
       expect(screen.getByRole('menuitem', { name: label }).getAttribute('aria-disabled')).toBe('true')
     }
 
@@ -1389,7 +1389,7 @@ describe('ReactRouterProLayout', () => {
     expect(menuItemDisabled('关闭左侧页签')).toBe(true)
     expect(menuItemDisabled('关闭右侧页签')).toBe(false)
     expect(menuItemDisabled('关闭')).toBe(false)
-    expect(menuItemDisabled('关闭其它页签')).toBe(false)
+    expect(menuItemDisabled('关闭其他页签')).toBe(false)
 
     fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
     expect(menuItemDisabled('关闭右侧页签')).toBe(true)
@@ -1421,7 +1421,7 @@ describe('ReactRouterProLayout', () => {
     })
   })
 
-  it('关闭其它页签时跳过拒绝关闭的页签，并落到右键页签', async () => {
+  it('关闭其他页签时跳过拒绝关闭的页签，并落到右键页签', async () => {
     const router = createTestRouter()
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -1439,7 +1439,7 @@ describe('ReactRouterProLayout', () => {
     router.addBeforeCloseHook(() => false, '/orders/list')
 
     fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
-    fireEvent.click(screen.getByRole('menuitem', { name: '关闭其它页签' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '关闭其他页签' }))
     await waitFor(() => {
       expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
         '/orders/list',

@@ -188,6 +188,11 @@ function PageTabs(props: PageTabsProps) {
           disabled: disabled.close,
         },
         {
+          key: 'closeOthers',
+          label: intl.getMessage('zby.pro.layout.tabs.closeOthers', '关闭其他页签'),
+          disabled: disabled.closeOthers,
+        },
+        {
           key: 'closeRight',
           label: intl.getMessage('zby.pro.layout.tabs.closeRight', '关闭右侧页签'),
           disabled: disabled.closeRight,
@@ -196,11 +201,6 @@ function PageTabs(props: PageTabsProps) {
           key: 'closeLeft',
           label: intl.getMessage('zby.pro.layout.tabs.closeLeft', '关闭左侧页签'),
           disabled: disabled.closeLeft,
-        },
-        {
-          key: 'closeOthers',
-          label: intl.getMessage('zby.pro.layout.tabs.closeOthers', '关闭其它页签'),
-          disabled: disabled.closeOthers,
         },
       ]
       return items
