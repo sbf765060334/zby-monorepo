@@ -4,6 +4,7 @@ import {
   type DataTag,
   type DefinedInitialDataOptions,
   type DefaultError,
+  type MutationFunctionContext,
   type MutationOptions,
   type QueryClientConfig,
   type QueryKey,
@@ -12,18 +13,25 @@ import {
 import { isApiError } from '@zby/request'
 import {
   getMaxRetries,
-  getOrCreateMutationLifecycle,
   getOrCreateSignalLifecycle,
-  releaseMutationLifecycle,
   releaseSignalLifecycle,
   resolveWillRetry,
-  runWithLifecycle,
+  wasSignalObserved,
   type RetryValue,
 } from '@zby/request/internal'
 
 export const DEFAULT_MAX_RETRIES = 2
 
 export type RequestQueryClientConfig = QueryClientConfig
+
+export type RequestMutationContext = MutationFunctionContext & {
+  signal: AbortSignal
+}
+
+const QUERY_SIGNAL_WARNING = '[@zby/request] 把 queryFn 收到的 signal 传给请求客户端，同一次查询的取消和重试才会作用在同一次请求上。'
+const mutationSignals = new WeakMap<object, AbortSignal>()
+const warnedSignals = new WeakSet<AbortSignal>()
+let warnedMissingQuerySignal = false
 
 export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (isApiError(error) && (error.businessError || error.sessionInvalid)) {
@@ -49,6 +57,10 @@ export function createQueryClient(config: RequestQueryClientConfig = {}): QueryC
   })
 }
 
+/**
+ * 同一次 fetch 的取消和重试共用 `queryFn` 收到的 `signal`。
+ * 调用请求客户端时把这个 `signal` 传进去。
+ */
 export function queryOptions<
   TQueryFnData = unknown,
   TError = DefaultError,
@@ -75,13 +87,19 @@ export function queryOptions(options: unknown): unknown {
   return tanstackQueryOptions(wrapQueryOptions(options as QueryOptionsLike) as never)
 }
 
+/**
+ * 同一次 `execute` 的重试共用 `context.signal`。
+ * `mutationFn` 调用请求客户端时传入它；客户端再把它和超时信号合并。
+ */
 export function mutationOptions<
   TData = unknown,
   TError = Error,
   TVariables = void,
   TContext = unknown,
 >(
-  options: MutationOptions<TData, TError, TVariables, TContext>,
+  options: Omit<MutationOptions<TData, TError, TVariables, TContext>, 'mutationFn'> & {
+    mutationFn?: (variables: TVariables, context: RequestMutationContext) => Promise<TData>
+  },
 ): MutationOptions<TData, TError, TVariables, TContext> {
   const retryValue = (options.retry as RetryValue | undefined) ?? shouldRetry
   const maxRetries = maxRetriesFor(retryValue)
@@ -92,14 +110,15 @@ export function mutationOptions<
     retry: (failureCount, error) => resolveWillRetry(retryValue, failureCount, error),
     mutationFn: mutationFn
       ? (variables, context) => {
-          const lifecycle = getOrCreateMutationLifecycle(context, retryValue, maxRetries)
-          return runWithLifecycle(lifecycle, () =>
-            Promise.resolve(mutationFn(variables, context)).then((data) => {
-              releaseMutationLifecycle(context)
-              return data
-            }))
+          const signal = signalForMutation(context)
+          getOrCreateSignalLifecycle(signal, retryValue, maxRetries)
+          return Promise.resolve(mutationFn(variables, { ...context, signal })).then((data) => {
+            mutationSignals.delete(context)
+            releaseSignalLifecycle(signal)
+            return data
+          })
         }
-      : mutationFn,
+      : undefined,
   }
 }
 
@@ -118,12 +137,14 @@ function wrapQueryOptions<TOptions extends QueryOptionsLike>(options: TOptions):
     retry: (failureCount: number, error: unknown) => resolveWillRetry(retryValue, failureCount, error),
     queryFn: queryFn
       ? (context: { signal?: AbortSignal }) => {
-          const lifecycle = getOrCreateSignalLifecycle(context.signal, retryValue, maxRetries)
-          return runWithLifecycle(lifecycle, () =>
-            Promise.resolve(queryFn(context)).then((data) => {
-              releaseSignalLifecycle(context.signal)
-              return data
-            }))
+          const { signal } = context
+          if (signal) getOrCreateSignalLifecycle(signal, retryValue, maxRetries)
+          return Promise.resolve(queryFn(context)).then((data) => {
+            releaseSignalLifecycle(signal)
+            return data
+          }).finally(() => {
+            warnIfQuerySignalUnused(signal)
+          })
         }
       : queryFn,
   }
@@ -131,4 +152,28 @@ function wrapQueryOptions<TOptions extends QueryOptionsLike>(options: TOptions):
 
 function maxRetriesFor(retry: RetryValue): number {
   return retry === shouldRetry ? DEFAULT_MAX_RETRIES : getMaxRetries(retry)
+}
+
+function signalForMutation(context: object): AbortSignal {
+  const current = mutationSignals.get(context)
+  if (current) return current
+
+  const signal = new AbortController().signal
+  mutationSignals.set(context, signal)
+  return signal
+}
+
+declare const process: { env: { NODE_ENV?: string } }
+
+function warnIfQuerySignalUnused(signal: AbortSignal | undefined): void {
+  if (process.env.NODE_ENV === 'production') return
+  if (!signal) {
+    if (warnedMissingQuerySignal) return
+    warnedMissingQuerySignal = true
+    console.warn(QUERY_SIGNAL_WARNING)
+    return
+  }
+  if (wasSignalObserved(signal) || warnedSignals.has(signal)) return
+  warnedSignals.add(signal)
+  console.warn(QUERY_SIGNAL_WARNING)
 }

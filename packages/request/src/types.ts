@@ -100,6 +100,8 @@ export type RequestOptions = {
   credentials?: RequestCredentials
   timeout?: number
   signal?: AbortSignal
+  /** 为 true 时不调用 onAttemptError / onError，错误仍然抛出 */
+  silent?: boolean
 }
 
 export type MethodOptions = Omit<RequestOptions, 'url' | 'method' | 'body'> & {

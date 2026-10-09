@@ -13,7 +13,7 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from '../index'
-import { withRetryLifecycle } from '../retry-context'
+import { getOrCreateSignalLifecycle } from '../retry-context'
 
 function createTransport(
   resolver: (request: TransportRequest) => TransportResponse | Promise<TransportResponse>,
@@ -159,6 +159,58 @@ describe('@zby/request core', () => {
     )
   })
 
+  it('silent skips error callbacks but still rejects and reports', async () => {
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onReport = vi.fn()
+    const onSessionInvalid = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onReport,
+      onSessionInvalid,
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '500',
+          errMessage: '业务失败',
+          data: null,
+        }),
+      ),
+    })
+
+    await expect(client.post('/fail', { a: 1 }, { silent: true })).rejects.toMatchObject({
+      errCode: '500',
+      errMessage: '业务失败',
+      businessError: true,
+    })
+    expect(onAttemptError).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+    expect(onSessionInvalid).not.toHaveBeenCalled()
+    expect(onReport).toHaveBeenCalledTimes(1)
+  })
+
+  it('silent still notifies session invalid', async () => {
+    const onError = vi.fn()
+    const onSessionInvalid = vi.fn()
+    const client = createClient({
+      onError,
+      onSessionInvalid,
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '100001',
+          errMessage: '登录失效',
+          data: null,
+        }),
+      ),
+    })
+
+    await expect(client.get('/whoami', { silent: true })).rejects.toMatchObject({
+      sessionInvalid: true,
+    })
+    expect(onSessionInvalid).toHaveBeenCalledTimes(1)
+    expect(onError).not.toHaveBeenCalled()
+  })
+
   it('notifies only attempt callbacks when retry context will retry', async () => {
     const controller = new AbortController()
     const onAttemptError = vi.fn()
@@ -173,10 +225,11 @@ describe('@zby/request core', () => {
       transport: createTransport(() => Promise.reject(new Error('network'))),
     })
 
-    await expect(
-      withRetryLifecycle({ failureCount: 0, retry: 1, maxRetries: 1 }, controller.signal, () =>
-        client.get('/retry', { signal: controller.signal })),
-    ).rejects.toMatchObject({ message: 'network' })
+    getOrCreateSignalLifecycle(controller.signal, 1, 1)
+
+    await expect(client.get('/retry', { signal: controller.signal })).rejects.toMatchObject({
+      message: 'network',
+    })
 
     const expectedContext: ErrorRetryContext = {
       attempt: 1,
@@ -205,10 +258,12 @@ describe('@zby/request core', () => {
       transport: createTransport(() => Promise.reject(new Error('network'))),
     })
 
-    await expect(
-      withRetryLifecycle({ failureCount: 1, retry: 1, maxRetries: 1 }, controller.signal, () =>
-        client.get('/retry', { signal: controller.signal })),
-    ).rejects.toMatchObject({ message: 'network' })
+    const lifecycle = getOrCreateSignalLifecycle(controller.signal, 1, 1)
+    lifecycle.failureCount = 1
+
+    await expect(client.get('/retry', { signal: controller.signal })).rejects.toMatchObject({
+      message: 'network',
+    })
 
     const expectedContext: ErrorRetryContext = {
       attempt: 2,

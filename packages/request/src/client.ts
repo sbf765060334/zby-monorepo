@@ -1,7 +1,6 @@
 import {
   createErrorRetryContext,
   lookupSignalLifecycle,
-  peekActiveLifecycle,
 } from '@zby/request/internal'
 
 import { ApiError } from './error'
@@ -36,7 +35,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
   const transport = config.transport ?? fetchTransport
 
   async function request<T = unknown>(options: RequestOptions): Promise<ApiResponse<T>> {
-    const lifecycle = lookupSignalLifecycle(options.signal) ?? peekActiveLifecycle()
+    const lifecycle = lookupSignalLifecycle(options.signal)
     const method = normalizeMethod(options.method)
     const begin = Date.now()
     const url = resolveURL(options.url, config.baseURL, options.params, config.paramsSerializer)
@@ -117,7 +116,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
               cause: error,
             })
 
-      notifyError(apiError, config, createErrorRetryContext(apiError, lifecycle))
+      notifyError(apiError, config, createErrorRetryContext(apiError, lifecycle), options.silent)
       throw apiError
     } finally {
       if (timer !== undefined) clearTimeout(timer)
@@ -266,11 +265,16 @@ function createHttpError(body: unknown, context: RequestContext): ApiError {
   })
 }
 
-function notifyError(error: ApiError, config: ClientConfig, retryContext: ErrorRetryContext): void {
+function notifyError(
+  error: ApiError,
+  config: ClientConfig,
+  retryContext: ErrorRetryContext,
+  silent = false,
+): void {
   if (error.sessionInvalid) {
     if (retryContext.willRetry) {
       const reportPayload = createReportPayload(error)
-      config.onAttemptError?.(error, retryContext)
+      if (!silent) config.onAttemptError?.(error, retryContext)
       config.onAttemptReport?.(reportPayload, retryContext)
       return
     }
@@ -279,12 +283,12 @@ function notifyError(error: ApiError, config: ClientConfig, retryContext: ErrorR
   }
 
   const reportPayload = createReportPayload(error)
-  config.onAttemptError?.(error, retryContext)
+  if (!silent) config.onAttemptError?.(error, retryContext)
   config.onAttemptReport?.(reportPayload, retryContext)
 
   if (retryContext.willRetry) return
 
-  config.onError?.(error, retryContext)
+  if (!silent) config.onError?.(error, retryContext)
   config.onReport?.(reportPayload, retryContext)
 }
 
