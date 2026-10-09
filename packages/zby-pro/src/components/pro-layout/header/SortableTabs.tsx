@@ -198,10 +198,6 @@ function SortableTabNode(props: {
         if (!isNestedInteractiveControl(event.target))
           listeners?.onPointerDown?.(event)
       }}
-      onContextMenu={(event) => {
-        event.preventDefault()
-        onMenuOpenChange(true)
-      }}
     >
       {tabNode}
     </div>
@@ -209,28 +205,27 @@ function SortableTabNode(props: {
 
   return (
     <>
-      {menuOpen
-        ? (
-            <Dropdown
-              trigger={['click']}
-              open
-              placement="bottomLeft"
-              getPopupContainer={() => document.body}
-              classNames={{ root: contextMenu.className }}
-              menu={{
-                items: contextMenu.getItems(id),
-                onClick: ({ key, domEvent }) => {
-                  domEvent.stopPropagation()
-                  onMenuOpenChange(false)
-                  contextMenu.onAction(id, String(key))
-                },
-              }}
-              onOpenChange={onMenuOpenChange}
-            >
-              {tab}
-            </Dropdown>
-          )
-        : tab}
+      {/* 始终挂着 Dropdown，右键只切换 open。按需套上会换掉父节点，页签 DOM 会被拆掉重建。 */}
+      <Dropdown
+        trigger={['contextMenu']}
+        open={menuOpen}
+        placement="bottomLeft"
+        transitionName=""
+        destroyOnHidden
+        getPopupContainer={() => document.body}
+        classNames={{ root: contextMenu.className }}
+        menu={{
+          items: contextMenu.getItems(id),
+          onClick: ({ key, domEvent }) => {
+            domEvent.stopPropagation()
+            onMenuOpenChange(false)
+            contextMenu.onAction(id, String(key))
+          },
+        }}
+        onOpenChange={onMenuOpenChange}
+      >
+        {tab}
+      </Dropdown>
       <div
         className={clsx(`${prefixCls}-tab-split`, {
           [`${prefixCls}-tab-split-hidden`]: active || activePrevious,
