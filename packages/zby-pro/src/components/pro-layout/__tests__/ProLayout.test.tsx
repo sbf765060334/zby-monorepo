@@ -1421,7 +1421,7 @@ describe('ReactRouterProLayout', () => {
     })
   })
 
-  it('关闭其他页签时跳过拒绝关闭的页签，并落到右键页签', async () => {
+  it('关闭其他页签时跳过拒绝关闭的页签，并停在该页', async () => {
     const router = createTestRouter()
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -1445,7 +1445,7 @@ describe('ReactRouterProLayout', () => {
         '/orders/list',
         '/analytics/overview',
       ])
-      expect(router.getState().activeTabKey).toBe('/analytics/overview')
+      expect(router.getState().activeTabKey).toBe('/orders/list')
     })
   })
 
@@ -1478,11 +1478,52 @@ describe('ReactRouterProLayout', () => {
         '/orders/list',
         '/analytics/overview',
       ])
+      expect(router.getState().activeTabKey).toBe('/orders/list')
     })
     expect(consoleError).toHaveBeenCalledWith(
       '[ProLayout] Failed to close tab.',
       error,
     )
+  })
+
+  it('批量关闭停在异步守卫时禁用关闭图标和右键菜单，图标仍然显示', async () => {
+    let releaseGuard: (value: boolean) => void = () => undefined
+    const router = createTestRouter()
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    act(() => router.jumpTo('/analytics/overview'))
+    await screen.findByTestId('reports-page')
+    router.addBeforeCloseHook(
+      () => new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      }),
+      '/orders/list',
+    )
+
+    fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '关闭其他页签' }))
+    await waitFor(() => expect(router.getState().batchCloseAwaitingGuard).toBe(true))
+
+    expect(container.querySelector('.ant-tabs')?.className).toContain('tabs-close-disabled')
+    expect(container.querySelectorAll('.ant-tabs-tab-remove').length).toBeGreaterThan(0)
+    fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签'])
+      expect(menuItemDisabled(label)).toBe(true)
+
+    const tabKeys = router.getState().tabs.map((tab) => tab.key)
+    fireEvent.click(container.querySelector('.ant-tabs-tab-remove') as HTMLElement)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(tabKeys)
+
+    releaseGuard(true)
+    await waitFor(() => expect(router.getState().batchCloseAwaitingGuard).toBe(false))
+    expect(container.querySelector('.ant-tabs')?.className).not.toContain('tabs-close-disabled')
   })
 })
 

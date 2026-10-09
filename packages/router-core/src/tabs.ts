@@ -41,6 +41,8 @@ export interface CloseTabTransaction {
     getPathname: () => string
     execute: () => boolean
   }
+  /** 批量关闭等待异步守卫时通知 UI。同步返回的守卫不调用。 */
+  onAsyncGuard?: (waiting: boolean) => void
 }
 
 /** 关页确认把尾斜杠和百分号编码当成同一页，避免 /dashboard 和 /dashboard/ 对不上。 */
@@ -82,6 +84,12 @@ interface CreateRouterTabsOptions<Route extends RouterRoute> {
   persistFixedTabs: (value: readonly string[]) => void
   /** 收藏路由变化后的持久化命令。 */
   persistFavoriteRoutePaths: (value: readonly string[]) => void
+  /**
+   * 有守卫的后台页要先变成活动页，用户才能看到确认框。
+   * 已经是活动页或同步宿主时直接返回 boolean，避免多让出一次微任务。
+   * 返回 false 表示没能打开这一页，调用方应留下页签。
+   */
+  activateTabForClose: (tabKey: string) => boolean | Promise<boolean>
 }
 
 /** 创建页签、页面缓存、关闭事务和页面订阅控制器。 */
@@ -100,6 +108,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     getOnTabClose,
     persistFixedTabs,
     persistFavoriteRoutePaths,
+    activateTabForClose,
   } = options
   // 每个页签可以有多个关闭守卫，全部返回 true 才能真正关闭。
   const beforeCloseMap = new Map<string, RouterBeforeCloseHook[]>()
@@ -419,6 +428,10 @@ export function createRouterTabs<Route extends RouterRoute>(
     return pendingTabClose?.tabKey
   }
 
+  function hasBeforeCloseHook(tabKey: string) {
+    return Boolean(beforeCloseMap.get(tabKey)?.length)
+  }
+
   /** 执行关闭守卫；活动页签以宿主 location 确认为删除事务的提交点。 */
   async function closeTab(
     tabKey: string,
@@ -455,11 +468,32 @@ export function createRouterTabs<Route extends RouterRoute>(
   ) {
     closingTabKeys.add(tabKey)
     try {
+      // 组合关闭自己带着最终地址，不先把后台页打开。普通关闭和批量关闭要先让用户看到这一页。
+      const shouldPresent = hasBeforeCloseHook(tabKey)
+        && getState().activeTabKey !== tabKey
+        && (!transaction?.navigation || transaction.onlyWhenActive)
+      if (shouldPresent) {
+        const presented = activateTabForClose(tabKey)
+        if (!(typeof presented === 'boolean' ? presented : await presented))
+          return false
+      }
+
       if (!closeOptions?.skipBeforeClose) {
         // 按注册顺序一个一个问；不是 true 就停，后面的守卫不会再跑。
         const hooks = [...(beforeCloseMap.get(tabKey) || [])]
         for (const hook of hooks) {
-          if ((await hook()) !== true)
+          const result = hook()
+          if (typeof result === 'object' && result !== null && typeof result.then === 'function') {
+            transaction?.onAsyncGuard?.(true)
+            try {
+              if ((await result) !== true)
+                return false
+            } finally {
+              transaction?.onAsyncGuard?.(false)
+            }
+            continue
+          }
+          if (result !== true)
             return false
         }
       }
@@ -676,6 +710,7 @@ export function createRouterTabs<Route extends RouterRoute>(
     confirmPendingTabClose,
     getInFlightTabClose,
     getPendingCloseTabKey,
+    hasBeforeCloseHook,
     ensureTabState,
     reorderTabs,
     setTabLabel,

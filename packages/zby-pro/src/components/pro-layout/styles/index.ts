@@ -305,6 +305,18 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-header-scrolled`]: { boxShadow: surfaceShadow },
 
+        [`${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove,
+          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove,
+          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove,
+          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:hover,
+          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:active,
+          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:focus-visible`]: {
+          color: styleToken.colorTextDisabled,
+          cursor: 'not-allowed',
+          pointerEvents: 'none',
+          background: 'transparent',
+        },
+
         [`${componentCls}-tabs`]: {
           display: 'flex',
           minWidth: 0,

@@ -147,6 +147,7 @@ export function createRouterCore<Route extends RouterRoute>(
     fixedSet: [],
     favoriteRoutePaths: [],
     pathnameDescriptionMap: {},
+    batchCloseAwaitingGuard: false,
     // 固定配置随首个 Store 快照一起建立，宿主首次同步 location 时即可直接使用。
     storageKey: options.storageKey ?? 'default',
     maxFixedTabCount: normalizeMaxFixedTabCount(options.maxFixedTabCount),
@@ -183,6 +184,9 @@ export function createRouterCore<Route extends RouterRoute>(
     persistFavoriteRoutePaths,
     persistFixedTabs,
   } = persistence
+  // executeNavigationPlan 在后面才定义，关闭流程通过这个绑定调用最终实现。
+  let activateTabForCloseImpl: (tabKey: string) => boolean | Promise<boolean> = () => false
+  const activationWaiters: Array<() => void> = []
   const tabs = createRouterTabs({
     registry,
     cache,
@@ -195,6 +199,7 @@ export function createRouterCore<Route extends RouterRoute>(
     getOnTabClose: () => runtime.onTabClose,
     persistFixedTabs,
     persistFavoriteRoutePaths,
+    activateTabForClose: (tabKey) => activateTabForCloseImpl(tabKey),
   })
   const {
     addBeforeCloseHook,
@@ -203,6 +208,7 @@ export function createRouterCore<Route extends RouterRoute>(
     confirmPendingTabClose,
     getInFlightTabClose,
     getPendingCloseTabKey,
+    hasBeforeCloseHook,
     waitForPendingTabClose,
     ensureTabState,
     publishPageLocation,
@@ -387,6 +393,9 @@ export function createRouterCore<Route extends RouterRoute>(
     // 补发当前快照。
     if (tabKey)
       publishPageLocation(tabKey, locationPayload)
+    const arrived = activationWaiters.splice(0)
+    for (const resolve of arrived)
+      resolve()
     notifyConfirmedTabClose?.()
   }
 
@@ -488,6 +497,73 @@ export function createRouterCore<Route extends RouterRoute>(
 
     commitNavigate(buildNavigationTarget(plan))
     return true
+  }
+
+  function waitUntilTabActive(tabKey: string): Promise<void> | void {
+    if (getState().activeTabKey === tabKey)
+      return
+    return new Promise((resolve) => {
+      activationWaiters.push(resolve)
+    })
+  }
+
+  activateTabForCloseImpl = (tabKey) => {
+    if (getState().activeTabKey === tabKey)
+      return true
+    const plan = resolveNavigationPlan({
+      pathname: cache.getParamsPath(tabKey) || tabKey,
+    })
+    if (!plan || plan.tabKey !== tabKey)
+      return false
+    if (!executeNavigationPlan(plan, { replace: true }))
+      return false
+    if (getState().activeTabKey === tabKey)
+      return true
+    const pending = waitUntilTabActive(tabKey)
+    if (!pending)
+      return getState().activeTabKey === tabKey
+    return pending.then(() => getState().activeTabKey === tabKey)
+  }
+
+  function setBatchCloseAwaitingGuard(waiting: boolean) {
+    setState((state) => state.batchCloseAwaitingGuard === waiting
+      ? state
+      : { ...state, batchCloseAwaitingGuard: waiting })
+  }
+
+  /** 关掉当前页之后要落在下一张带守卫的页；没有的话回到上次没关掉的守卫页，否则回到 anchor。 */
+  function batchCloseDestination(
+    tabKeys: readonly string[],
+    index: number,
+    anchorKey: string,
+    lastKeptGuardedTab: string | null,
+  ) {
+    for (let cursor = index + 1; cursor < tabKeys.length; cursor += 1) {
+      const key = tabKeys[cursor]
+      if (key === anchorKey)
+        continue
+      if (!getState().tabs.some((tab) => tab.key === key))
+        continue
+      if (hasBeforeCloseHook(key))
+        return key
+    }
+    if (
+      lastKeptGuardedTab
+      && getState().tabs.some((tab) => tab.key === lastKeptGuardedTab)
+    )
+      return lastKeptGuardedTab
+    return anchorKey
+  }
+
+  function replaceToOpenTab(tabKey: string) {
+    if (!runtime.host || getState().activeTabKey === tabKey)
+      return
+    if (!getState().tabs.some((tab) => tab.key === tabKey))
+      return
+    const plan = anchorPlan(tabKey)
+    if (!plan)
+      return
+    executeNavigationPlan(plan, { replace: true })
   }
 
   /** 生成交给宿主的最终 URL，但不提前创建或激活任何页签和页面。 */
@@ -670,28 +746,43 @@ export function createRouterCore<Route extends RouterRoute>(
     const leftOpen = hasUnderwayClose
       ? await waitForClosesAlreadyUnderway(tabKeys, errors)
       : new Set<string>()
-    for (const tabKey of tabKeys) {
-      if (leftOpen.has(tabKey))
-        continue
-      if (tabKey === anchorKey)
-        continue
-      if (getState().tabs.length <= 1)
-        break
-      if (!getState().tabs.some((tab) => tab.key === tabKey))
-        continue
-      if (!getState().tabs.some((tab) => tab.key === anchorKey))
-        break
-      try {
-        await closeTabTowardAnchor(tabKey, anchorKey)
-      } catch (error) {
-        errors.push(error)
-      }
-    }
-
+    let lastKeptGuardedTab: string | null = null
     try {
-      moveToAnchor(anchorKey)
-    } catch (error) {
-      errors.push(error)
+      for (let index = 0; index < tabKeys.length; index += 1) {
+        const tabKey = tabKeys[index]
+        if (leftOpen.has(tabKey))
+          continue
+        if (tabKey === anchorKey)
+          continue
+        if (getState().tabs.length <= 1)
+          break
+        if (!getState().tabs.some((tab) => tab.key === tabKey))
+          continue
+        if (!getState().tabs.some((tab) => tab.key === anchorKey))
+          break
+        const hadGuard = hasBeforeCloseHook(tabKey)
+        try {
+          await closeTabTowardAnchor(
+            tabKey,
+            batchCloseDestination(tabKeys, index, anchorKey, lastKeptGuardedTab),
+          )
+        } catch (error) {
+          errors.push(error)
+        }
+        if (
+          hadGuard
+          && getState().tabs.some((tab) => tab.key === tabKey)
+        )
+          lastKeptGuardedTab = tabKey
+      }
+
+      const landing = lastKeptGuardedTab
+        && getState().tabs.some((tab) => tab.key === lastKeptGuardedTab)
+        ? lastKeptGuardedTab
+        : anchorKey
+      replaceToOpenTab(landing)
+    } finally {
+      setBatchCloseAwaitingGuard(false)
     }
 
     if (errors.length)
@@ -715,12 +806,10 @@ export function createRouterCore<Route extends RouterRoute>(
   }
 
   /**
-   * 守卫结束后仍是活动页则 replace 到 anchor，并等宿主确认离开。
-   * 开始时是不是活动页不算数：等待期间用户可能点开这一页。
-   * 仍然是后台页则当场关闭，不发导航。
-   * 这页已经有一次关闭在进行时，等那一次自己结束，不另发跳转。
+   * 有守卫的后台页会先被打开。确认后若仍是活动页，replace 到 destination 并等宿主离开。
+   * 没有守卫的后台页当场关闭。这页已经有一次关闭在进行时，等那一次自己结束。
    */
-  async function closeTabTowardAnchor(tabKey: string, anchorKey: string) {
+  async function closeTabTowardAnchor(tabKey: string, destinationKey: string) {
     const inFlight = getInFlightTabClose(tabKey)
     if (inFlight) {
       await inFlight
@@ -732,10 +821,11 @@ export function createRouterCore<Route extends RouterRoute>(
     const accepted = await closeTab(tabKey, undefined, {
       canCommit: () => runtime.host === host && host !== null,
       onlyWhenActive: true,
+      onAsyncGuard: setBatchCloseAwaitingGuard,
       navigation: {
-        getPathname: () => anchorPlan(anchorKey)?.pathname || '/',
+        getPathname: () => anchorPlan(destinationKey)?.pathname || '/',
         execute: () => {
-          const plan = anchorPlan(anchorKey)
+          const plan = anchorPlan(destinationKey)
           if (!host || runtime.host !== host || !plan || plan.tabKey === tabKey)
             return false
           return executeNavigationPlan(plan, { replace: true })
@@ -748,15 +838,6 @@ export function createRouterCore<Route extends RouterRoute>(
       return
     }
     await waitForActiveCloseToSettle(tabKey)
-  }
-
-  /** 批量关闭结束时，右键保留的页签还不是当前页就切换过去。 */
-  function moveToAnchor(anchorKey: string) {
-    if (!runtime.host || getState().activeTabKey === anchorKey)
-      return
-    if (!getState().tabs.some((tab) => tab.key === anchorKey))
-      return
-    jumpTo({ pathname: cache.getParamsPath(anchorKey) || anchorKey })
   }
 
   // 对外只暴露领域查询与命令；Cache、runtime 和持久化协调函数继续封装在实例闭包内。

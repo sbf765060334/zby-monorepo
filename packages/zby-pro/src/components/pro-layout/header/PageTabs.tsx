@@ -46,6 +46,9 @@ function PageTabs(props: PageTabsProps) {
     () => orderTabKeys(tabs.map((tab) => tab.key), fixedKeys),
     [fixedKeys, tabs],
   )
+  const batchCloseAwaitingGuard = useRouterCoreSelector(
+    (state: RouterCoreState<ProLayoutRoute>) => state.batchCloseAwaitingGuard,
+  )
   const closingBatchRef = useRef(false)
   const reportCloseFailure = (error: unknown, batch = false) => {
     console.error('[ProLayout] Failed to close tab.', error)
@@ -154,14 +157,14 @@ function PageTabs(props: PageTabsProps) {
   )
 
   const handleEdit: NonNullable<TabsProps['onEdit']> = (key, action) => {
-    if (action !== 'remove' || closingBatchRef.current)
+    if (action !== 'remove' || closingBatchRef.current || batchCloseAwaitingGuard)
       return
 
     void router.closeTab(String(key)).catch(reportCloseFailure)
   }
 
   const handleTabContextAction = (anchorKey: string, action: string) => {
-    if (closingBatchRef.current || !isTabContextAction(action))
+    if (closingBatchRef.current || batchCloseAwaitingGuard || !isTabContextAction(action))
       return
     const disabled = getTabContextMenuDisabled(orderedKeys, anchorKey)
     if (disabled[action])
@@ -188,22 +191,22 @@ function PageTabs(props: PageTabsProps) {
         {
           key: 'close',
           label: intl.getMessage('zby.pro.layout.tabs.close', '关闭'),
-          disabled: disabled.close,
+          disabled: batchCloseAwaitingGuard || disabled.close,
         },
         {
           key: 'closeOthers',
           label: intl.getMessage('zby.pro.layout.tabs.closeOthers', '关闭其他页签'),
-          disabled: disabled.closeOthers,
+          disabled: batchCloseAwaitingGuard || disabled.closeOthers,
         },
         {
           key: 'closeRight',
           label: intl.getMessage('zby.pro.layout.tabs.closeRight', '关闭右侧页签'),
-          disabled: disabled.closeRight,
+          disabled: batchCloseAwaitingGuard || disabled.closeRight,
         },
         {
           key: 'closeLeft',
           label: intl.getMessage('zby.pro.layout.tabs.closeLeft', '关闭左侧页签'),
-          disabled: disabled.closeLeft,
+          disabled: batchCloseAwaitingGuard || disabled.closeLeft,
         },
       ]
       return items
@@ -221,6 +224,7 @@ function PageTabs(props: PageTabsProps) {
       {messageContextHolder}
       <SortableTabs
         prefixCls={prefixCls}
+        className={batchCloseAwaitingGuard ? `${prefixCls}-tabs-close-disabled` : undefined}
         items={items}
         fixedKeys={fixedKeys}
         tabContextMenu={tabContextMenu}

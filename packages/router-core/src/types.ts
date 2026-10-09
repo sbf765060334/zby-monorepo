@@ -347,6 +347,8 @@ export interface RouterCoreState<Route extends RouterRoute = RouterRoute> {
   readonly storageLoading: boolean
   /** 最近一次 hydration 错误；重试开始时会清空。 */
   readonly storageLoadError: unknown
+  /** 批量关闭正在等待异步关闭守卫。单页关闭和同步守卫不会把它设为 true。 */
+  readonly batchCloseAwaitingGuard: boolean
 }
 
 /**
@@ -424,14 +426,15 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
   toggleFixed: (tabKey: string) => boolean
   /** 收藏或取消收藏注册页面路由；path 无法解析为页面时返回 false。 */
   toggleFavoriteRoute: (path: string) => boolean
-  /** 按注册顺序串行运行关闭守卫；最后一个页签不会关闭。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。非活动页签立即清理；组合关闭若仍需跳转则先导航，成功后再清理，若该页签在导航中已成为活动页则不再删除。关页跳转使用 replace。 */
+  /** 按注册顺序串行运行关闭守卫；最后一个页签不会关闭。有守卫且当前不是活动页时，先 replace 到该页并等宿主确认，再执行守卫；拒绝则留在该页。活动页签在宿主确认已离开被关页后清理，确认前同一页签的第二次关闭返回 false。没有守卫的非活动页签立即清理。关页跳转使用 replace。 */
   closeTab: (tabKey: string, options?: RouterCloseOptions) => Promise<boolean>
   /**
-   * 按给定顺序逐个关闭页签，并在结束后落到 `anchorKey`。
+   * 按给定顺序逐个关闭页签。
    *
+   * 有关闭守卫的页先 replace 打开，等用户确认后再继续。没有守卫的后台页当场关闭。
    * 守卫未返回 true 或抛错时留下该页签，后续页签继续关闭。抛错会在整批结束后抛出第一个错误。
-   * 活动页签会 replace 到 anchor，并等宿主确认离开后再处理下一个。至少保留一个页签。
-   * anchor 当前没打开时返回 false，且不关闭任何页签。
+   * 结束后停在最后一次因此留下的页签；全部通过则 replace 回 `anchorKey`。
+   * 至少保留一个页签。anchor 当前没打开时返回 false，且不关闭任何页签。
    */
   closeTabs: (
     tabKeys: readonly string[],
