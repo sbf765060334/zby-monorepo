@@ -1,0 +1,457 @@
+import { describe, expect, it, vi } from 'vitest'
+
+import {
+  ApiError,
+  createClient,
+  isApiError,
+  isBusinessError,
+  isSessionInvalidError,
+  isTimeoutError,
+  selectData,
+  type ErrorRetryContext,
+  type Transport,
+  type TransportRequest,
+  type TransportResponse,
+} from '../index'
+import { withRetryLifecycle } from '../retry-context'
+
+function createTransport(
+  resolver: (request: TransportRequest) => TransportResponse | Promise<TransportResponse>,
+): Transport {
+  return async (request) => resolver(request)
+}
+
+function createResponse(
+  body: unknown,
+  overrides: Partial<TransportResponse> = {},
+): TransportResponse {
+  return {
+    ok: true,
+    status: 200,
+    url: 'https://example.com/api',
+    headers: new Headers({ 'content-type': 'application/json' }),
+    body,
+    ...overrides,
+  }
+}
+
+describe('@zby/request core', () => {
+  it('returns full response by default and preserves pagination fields', async () => {
+    const client = createClient({
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '0',
+          errMessage: '',
+          data: [{ id: 1 }],
+          total: 12,
+          traceId: 'trace-1',
+        }),
+      ),
+    })
+
+    const response = await client.get<{ id: number }>('/users')
+
+    expect(response.data).toEqual([{ id: 1 }])
+    expect('total' in response ? response.total : undefined).toBe(12)
+    expect(response.traceId).toBe('trace-1')
+  })
+
+  it('getData returns response.data for simple endpoints', async () => {
+    const client = createClient({
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '0',
+          errMessage: '',
+          data: { id: 1, name: 'demo' },
+        }),
+      ),
+    })
+
+    await expect(client.getData<{ id: number, name: string }>('/user')).resolves.toEqual({
+      id: 1,
+      name: 'demo',
+    })
+  })
+
+  it('does not notify error callbacks or reports for successful requests', async () => {
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onAttemptReport = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onAttemptReport,
+      onReport,
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '0',
+          errMessage: '',
+          data: { ok: true },
+        }),
+      ),
+    })
+
+    await expect(client.get('/ok')).resolves.toMatchObject({ data: { ok: true } })
+
+    expect(onAttemptError).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+    expect(onAttemptReport).not.toHaveBeenCalled()
+    expect(onReport).not.toHaveBeenCalled()
+  })
+
+  it('throws ApiError for business errors and reports final context', async () => {
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onAttemptReport = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onAttemptReport,
+      onReport,
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '500',
+          errMessage: '业务失败',
+          data: null,
+          traceId: 'trace-2',
+        }),
+      ),
+    })
+
+    await expect(client.post('/fail', { a: 1 })).rejects.toMatchObject({
+      errCode: '500',
+      errMessage: '业务失败',
+      traceId: 'trace-2',
+      businessError: true,
+    })
+
+    const expectedContext: ErrorRetryContext = {
+      attempt: 1,
+      retryCount: 0,
+      maxRetries: 0,
+      maxAttempts: 1,
+      willRetry: false,
+    }
+    const error = onError.mock.calls[0][0] as ApiError
+    expect(isApiError(error)).toBe(true)
+    expect(isBusinessError(error)).toBe(true)
+    expect(onAttemptError).toHaveBeenCalledWith(error, expectedContext)
+    expect(onError).toHaveBeenCalledWith(error, expectedContext)
+    expect(onAttemptReport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        api: 'https://example.com/api',
+        code: '500',
+        traceId: 'trace-2',
+        success: false,
+      }),
+      expectedContext,
+    )
+    expect(onReport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        api: 'https://example.com/api',
+        code: '500',
+        traceId: 'trace-2',
+        success: false,
+      }),
+      expectedContext,
+    )
+  })
+
+  it('notifies only attempt callbacks when retry context will retry', async () => {
+    const controller = new AbortController()
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onAttemptReport = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onAttemptReport,
+      onReport,
+      transport: createTransport(() => Promise.reject(new Error('network'))),
+    })
+
+    await expect(
+      withRetryLifecycle({ failureCount: 0, retry: 1, maxRetries: 1 }, controller.signal, () =>
+        client.get('/retry', { signal: controller.signal })),
+    ).rejects.toMatchObject({ message: 'network' })
+
+    const expectedContext: ErrorRetryContext = {
+      attempt: 1,
+      retryCount: 0,
+      maxRetries: 1,
+      maxAttempts: 2,
+      willRetry: true,
+    }
+    expect(onAttemptError).toHaveBeenCalledWith(expect.any(ApiError), expectedContext)
+    expect(onAttemptReport).toHaveBeenCalledWith(expect.any(Object), expectedContext)
+    expect(onError).not.toHaveBeenCalled()
+    expect(onReport).not.toHaveBeenCalled()
+  })
+
+  it('notifies final callbacks once when retry context is exhausted', async () => {
+    const controller = new AbortController()
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onAttemptReport = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onAttemptReport,
+      onReport,
+      transport: createTransport(() => Promise.reject(new Error('network'))),
+    })
+
+    await expect(
+      withRetryLifecycle({ failureCount: 1, retry: 1, maxRetries: 1 }, controller.signal, () =>
+        client.get('/retry', { signal: controller.signal })),
+    ).rejects.toMatchObject({ message: 'network' })
+
+    const expectedContext: ErrorRetryContext = {
+      attempt: 2,
+      retryCount: 1,
+      maxRetries: 1,
+      maxAttempts: 2,
+      willRetry: false,
+    }
+    const error = onError.mock.calls[0][0] as ApiError
+    expect(onAttemptError).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onAttemptError).toHaveBeenCalledWith(error, expectedContext)
+    expect(onError).toHaveBeenCalledWith(error, expectedContext)
+    expect(onAttemptReport).toHaveBeenCalledTimes(1)
+    expect(onReport).toHaveBeenCalledTimes(1)
+  })
+
+  it('detects session invalid errors without treating them as generic business errors', async () => {
+    const onSessionInvalid = vi.fn()
+    const onError = vi.fn()
+    const onReport = vi.fn()
+    const onAttemptError = vi.fn()
+    const client = createClient({
+      onSessionInvalid,
+      onError,
+      onReport,
+      onAttemptError,
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '100001',
+          errMessage: '登录失效',
+          data: null,
+        }),
+      ),
+    })
+
+    try {
+      await client.get('/whoami')
+      throw new Error('should not resolve')
+    } catch (error) {
+      expect(isSessionInvalidError(error)).toBe(true)
+      expect(isBusinessError(error)).toBe(false)
+    }
+    expect(onSessionInvalid).toHaveBeenCalledTimes(1)
+    expect(onError).not.toHaveBeenCalled()
+    expect(onReport).not.toHaveBeenCalled()
+    expect(onAttemptError).not.toHaveBeenCalled()
+    expect(onSessionInvalid.mock.calls[0][1]).toMatchObject({
+      attempt: 1,
+      retryCount: 0,
+      maxRetries: 0,
+      maxAttempts: 1,
+      willRetry: false,
+    })
+  })
+
+  it('supports custom success codes', async () => {
+    const client = createClient({
+      successCodes: ['SUCCESS'],
+      transport: createTransport(() =>
+        createResponse({
+          errCode: 'SUCCESS',
+          errMessage: '',
+          data: { ok: true },
+        }),
+      ),
+    })
+
+    await expect(client.get('/ok')).resolves.toMatchObject({
+      errCode: 'SUCCESS',
+      data: { ok: true },
+    })
+  })
+
+  it('accepts API responses without data field', async () => {
+    const client = createClient({
+      transport: createTransport(() =>
+        createResponse({
+          errCode: '0',
+          errMessage: '',
+          traceId: 'trace-empty',
+        }),
+      ),
+    })
+
+    await expect(client.get('/empty')).resolves.toMatchObject({
+      errCode: '0',
+      traceId: 'trace-empty',
+    })
+    await expect(client.getData('/empty')).resolves.toBeUndefined()
+  })
+
+  it('passes params, headers, json body, credentials and signal to transport', async () => {
+    const controller = new AbortController()
+    const seen = vi.fn()
+    const client = createClient({
+      baseURL: 'https://example.com/api',
+      credentials: 'include',
+      headers: async () => ({ 'x-global': '1' }),
+      transport: createTransport((request) => {
+        seen(request)
+        return createResponse({ errCode: '0', errMessage: '', data: true })
+      }),
+    })
+
+    await client.post(
+      '/users',
+      { name: 'demo' },
+      {
+        params: { page: 1, tags: ['a', 'b'] },
+        headers: { 'x-local': '2' },
+        signal: controller.signal,
+      },
+    )
+
+    const request = seen.mock.calls[0][0] as TransportRequest
+    expect(request.url).toBe('https://example.com/api/users?page=1&tags=a&tags=b')
+    expect(new Headers(request.headers).get('x-global')).toBe('1')
+    expect(new Headers(request.headers).get('x-local')).toBe('2')
+    expect(new Headers(request.headers).get('content-type')).toBe('application/json')
+    expect(request.body).toBe(JSON.stringify({ name: 'demo' }))
+    expect(request.credentials).toBe('include')
+    expect(request.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('does not notify error reporters when external signal aborts the request', async () => {
+    const controller = new AbortController()
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onSessionInvalid = vi.fn()
+    const onAttemptReport = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onSessionInvalid,
+      onAttemptReport,
+      onReport,
+      transport: createTransport(() => {
+        controller.abort()
+        return Promise.reject(new DOMException('Aborted', 'AbortError'))
+      }),
+    })
+
+    await expect(client.get('/users', { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    })
+    expect(onAttemptError).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+    expect(onSessionInvalid).not.toHaveBeenCalled()
+    expect(onAttemptReport).not.toHaveBeenCalled()
+    expect(onReport).not.toHaveBeenCalled()
+  })
+
+  it('does not report when the caller aborts with a custom reason', async () => {
+    const controller = new AbortController()
+    const onAttemptError = vi.fn()
+    const onError = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      onAttemptError,
+      onError,
+      onReport,
+      transport: createTransport(() => {
+        const reason = new Error('stop')
+        controller.abort(reason)
+        return Promise.reject(reason)
+      }),
+    })
+
+    await expect(client.get('/users', { signal: controller.signal })).rejects.toMatchObject({
+      message: 'stop',
+    })
+    expect(onAttemptError).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+    expect(onReport).not.toHaveBeenCalled()
+  })
+
+  it('marks internal timeout errors and notifies error reporters', async () => {
+    vi.useFakeTimers()
+    const onError = vi.fn()
+    const onReport = vi.fn()
+    const client = createClient({
+      timeout: 100,
+      onError,
+      onReport,
+      transport: createTransport(
+        (request) =>
+          new Promise((_, reject) => {
+            request.signal?.addEventListener(
+              'abort',
+              () => reject(request.signal?.reason ?? new DOMException('Aborted', 'AbortError')),
+              { once: true },
+            )
+          }),
+      ),
+    })
+
+    try {
+      const request = expect(client.get('/slow')).rejects.toMatchObject({
+        errCode: 'TIMEOUT',
+        timeout: true,
+        businessError: false,
+      })
+      await vi.advanceTimersByTimeAsync(100)
+      await request
+      const error = onError.mock.calls[0][0] as ApiError
+      expect(isTimeoutError(error)).toBe(true)
+      expect(error.message).toBe('Request timeout after 100ms')
+      expect(onReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'TIMEOUT',
+          msg: 'Request timeout after 100ms',
+          success: false,
+        }),
+        expect.objectContaining({
+          attempt: 1,
+          retryCount: 0,
+          willRetry: false,
+        }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('throws ApiError for non-2xx responses', async () => {
+    const client = createClient({
+      transport: createTransport(() =>
+        createResponse('server error', {
+          ok: false,
+          status: 500,
+        }),
+      ),
+    })
+
+    await expect(client.get('/500')).rejects.toMatchObject({
+      status: 500,
+      businessError: false,
+    })
+  })
+
+  it('selectData returns response data', () => {
+    expect(selectData({ errCode: '0', errMessage: '', data: [1, 2], total: 2 })).toEqual([1, 2])
+  })
+})
