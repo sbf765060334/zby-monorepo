@@ -47,14 +47,17 @@ function PageTabs(props: PageTabsProps) {
     [fixedKeys, tabs],
   )
   const closingBatchRef = useRef(false)
-  const reportCloseFailure = (error: unknown) => {
+  const reportCloseFailure = (error: unknown, batch = false) => {
     console.error('[ProLayout] Failed to close tab.', error)
-    void messageApi.error(
-      intl.getMessage(
-        'zby.pro.layout.tabs.closeFailed',
-        '页签关闭失败，请稍后重试',
-      ),
-    )
+    void messageApi.error(batch
+      ? intl.getMessage(
+          'zby.pro.layout.tabs.closeBatchFailed',
+          '有页签未能关闭',
+        )
+      : intl.getMessage(
+          'zby.pro.layout.tabs.closeFailed',
+          '页签关闭失败，请稍后重试',
+        ))
   }
   const items = useMemo<NonNullable<TabsProps['items']>>(
     () => tabs.map((tab) => {
@@ -171,7 +174,7 @@ function PageTabs(props: PageTabsProps) {
     const keys = getTabCloseKeys(orderedKeys, anchorKey, action)
     closingBatchRef.current = true
     void router.closeTabs(keys, { anchorKey })
-      .catch(reportCloseFailure)
+      .catch((error) => reportCloseFailure(error, true))
       .finally(() => {
         closingBatchRef.current = false
       })

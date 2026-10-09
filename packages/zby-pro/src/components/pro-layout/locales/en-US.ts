@@ -39,6 +39,7 @@ const enUS = {
     closeLeft: 'Close tabs to the left',
     closeOthers: 'Close other tabs',
     closeFailed: 'Failed to close the tab. Please try again.',
+    closeBatchFailed: 'Some tabs could not be closed.',
     maxFixedTabs: 'You can pin up to {{count}} tabs. Unpin one tab first.',
     unfixedBeforeFixed: 'Unpinned tabs cannot be moved before pinned tabs',
     fixedAfterUnfixed: 'Pinned tabs cannot be moved after unpinned tabs',

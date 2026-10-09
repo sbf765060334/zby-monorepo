@@ -39,6 +39,7 @@ const zhCN = {
     closeLeft: '关闭左侧页签',
     closeOthers: '关闭其他页签',
     closeFailed: '页签关闭失败，请稍后重试',
+    closeBatchFailed: '有页签未能关闭',
     maxFixedTabs: '最多钉住{{count}}个标签，请先取消一个钉住标签',
     unfixedBeforeFixed: '非固定标签不能拖动到固定标签之前',
     fixedAfterUnfixed: '固定标签不能拖动到非固定标签之后',

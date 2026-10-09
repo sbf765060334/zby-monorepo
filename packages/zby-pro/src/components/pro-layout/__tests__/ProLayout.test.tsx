@@ -1448,6 +1448,42 @@ describe('ReactRouterProLayout', () => {
       expect(router.getState().activeTabKey).toBe('/analytics/overview')
     })
   })
+
+  it('批量关闭有页签抛错时提示部分失败，并保留已经关掉的页签', async () => {
+    const error = new Error('save draft failed')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const router = createTestRouter()
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    act(() => router.jumpTo('/analytics/overview'))
+    await screen.findByTestId('reports-page')
+    router.addBeforeCloseHook(() => {
+      throw error
+    }, '/orders/list')
+
+    fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '关闭其他页签' }))
+
+    expect(await screen.findByText('有页签未能关闭')).toBeTruthy()
+    expect(screen.queryByText('页签关闭失败，请稍后重试')).toBeNull()
+    await waitFor(() => {
+      expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+        '/orders/list',
+        '/analytics/overview',
+      ])
+    })
+    expect(consoleError).toHaveBeenCalledWith(
+      '[ProLayout] Failed to close tab.',
+      error,
+    )
+  })
 })
 
 function menuItemDisabled(name: string) {
