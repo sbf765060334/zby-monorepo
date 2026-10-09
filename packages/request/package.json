@@ -25,7 +25,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/index.en-US.md",
+    "src/index.zh-CN.md"
   ],
   "sideEffects": false,
   "scripts": {

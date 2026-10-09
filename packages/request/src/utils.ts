@@ -1,3 +1,7 @@
+/**
+ * 协议判断、URL 拼接和请求体规范化。
+ * 这些函数在 `request` 的 `try` 之外执行。这里抛出的错误是原始异常，不会包装成 `ApiError`。
+ */
 import type {
   ApiResponse,
   ClientConfig,
@@ -7,13 +11,20 @@ import type {
   RequestParams,
 } from './types'
 
+/** 默认业务成功码。比较前会把 `errCode` 转成字符串。 */
 export const DEFAULT_SUCCESS_CODES = ['0']
+/** 默认登录失效码。命中后只走 `onSessionInvalid`。 */
 export const DEFAULT_SESSION_INVALID_CODES = ['100001', '100002']
 
+/** 取出业务包里的 `data`。列表接口的 `data` 是数组。 */
 export function selectData<T>(response: ApiResponse<T>): T | T[] | undefined {
   return response.data as T | T[] | undefined
 }
 
+/**
+ * 判断响应是不是业务包。命中后成功与否只看 `errCode`，不看 `success`。
+ * 业务接口约定始终带 `errCode`。
+ */
 export function isApiResponse(value: unknown): value is ApiResponse {
   if (!value || typeof value !== 'object') return false
   return (
@@ -73,6 +84,11 @@ export function isAbsoluteURL(url: string): boolean {
   return /^[a-z][a-z\d+\-.]*:/i.test(url)
 }
 
+/**
+ * 把 `params` 编进查询串。
+ * `null` 和 `undefined` 会跳过。数组重复同一个参数名。`Date` 使用 ISO 字符串。
+ * 普通对象使用 `JSON.stringify`，避免变成 `[object Object]`。
+ */
 export function serializeParams(
   params: Record<string, unknown>,
   paramsSerializer: ClientConfig['paramsSerializer'],
@@ -107,6 +123,10 @@ function appendParam(searchParams: URLSearchParams, key: string, value: unknown)
   searchParams.append(key, String(value))
 }
 
+/**
+ * 优先读取 RFC 5987 的 `filename*`，否则读取 `filename`。
+ * 服务端没给文件名时返回 `undefined`。
+ */
 export function fileNameFromContentDisposition(header: string | null): string | undefined {
   if (!header) return undefined
 
@@ -145,6 +165,11 @@ export function normalizeMethod(method: HttpMethod | undefined): HttpMethod {
   return method ?? 'GET'
 }
 
+/**
+ * 准备请求体。
+ * `FormData` 和 `Blob` 原样返回，调用方不要在全局头里写死 JSON 的 `Content-Type`。
+ * 普通对象在缺少 `Content-Type` 时补上 `application/json` 并序列化。
+ */
 export function normalizeBody(body: RequestBody, headers: Headers): BodyInit | null | undefined {
   if (body === undefined) return undefined
   if (body === null) return null

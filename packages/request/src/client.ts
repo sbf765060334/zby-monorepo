@@ -1,3 +1,12 @@
+/**
+ * 业务请求客户端。
+ *
+ * 一次请求先组好 URL、请求头和 body，再进入 try。组参阶段抛出的是原始错误，
+ * 不会变成 ApiError，也不会进 onError。进入 try 之后的失败都会包装成 ApiError。
+ *
+ * 重试次数只认 options.signal 上登记的生命周期。直接调用 apiClient 时没有这次生命周期，
+ * willRetry 为 false，失败会立刻走 onError。查询和 mutation 要使用回调里的 request。
+ */
 import {
   createErrorRetryContext,
   lookupSignalLifecycle,
@@ -35,10 +44,12 @@ import {
 const DEFAULT_TIMEOUT = 9000
 const TIMEOUT_ERROR_CODE = 'TIMEOUT'
 
+/** 创建一个请求客户端。全局提示放在 onError，单个请求用 silent 跳过提示。 */
 export function createClient(config: ClientConfig = {}): ApiClient {
   const transport = config.transport ?? fetchTransport
 
   async function request<T = unknown>(options: RequestOptions): Promise<ApiResponse<T> | FileResponse> {
+    // 先登记这次 signal。URL、headers、body 在 try 之外，失败不会进错误回调。
     const lifecycle = lookupSignalLifecycle(options.signal)
     const method = normalizeMethod(options.method)
     const begin = Date.now()
@@ -76,6 +87,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
       }
       const responseBody = await readResponseBody(rawResponse.body, rawResponse.headers, options.responseType)
 
+      // 文件响应。JSON 业务包已在 readResponseBody 里还原，不会走到这里。
       if (options.responseType === 'blob' && responseBody instanceof Blob) {
         if (!rawResponse.ok) throw createHttpError(responseBody, context)
         return {
@@ -101,6 +113,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
 
       const response = responseBody as ApiResponse<T>
       if (isSuccessResponse(response, context, config)) {
+        // 要文件却拿到成功的 JSON 业务包，按协议错误处理，不把 JSON 当文件返回。
         if (options.responseType === 'blob') {
           throw new ApiError({
             message: 'Expected a file response',
@@ -122,6 +135,7 @@ export function createClient(config: ClientConfig = {}): ApiClient {
       const sessionInvalid = isSessionInvalidResponse(response, context, config)
       throw createBusinessError(response, context, sessionInvalid)
     } catch (error) {
+      // 调用方主动取消时原样抛出，不记超时，也不弹错误。
       if (options.signal?.aborted) {
         throw error
       }
@@ -227,6 +241,10 @@ function selectResponseData<T>(response: ApiResponse<T>): T | T[] | undefined {
   return selectData<T>(response)
 }
 
+/**
+ * 文件请求里如果 Content-Type 是 JSON，按业务包解析。
+ * 这样下载接口返回 errCode 失败时，仍走业务错误和登录失效，而不是把错误 JSON 当成文件。
+ */
 async function readResponseBody(
   body: unknown,
   headers: Headers,
@@ -308,6 +326,13 @@ function createHttpError(body: unknown, context: RequestContext): ApiError {
   })
 }
 
+/**
+ * 统一分发失败回调。
+ * 登录失效且不再重试时，只调用 onSessionInvalid，不调用 onError 和 onReport。
+ * 登录失效但还会重试时，走 onAttemptError 和 onAttemptReport。默认的 shouldRetry 不会重试登录失效。
+ * 其它失败先走 onAttemptError 和 onAttemptReport。还会重试就到此为止。
+ * 最后一次失败再走 onError 和 onReport。silent 只跳过两个错误回调，上报和登录失效仍执行。
+ */
 function notifyError(
   error: ApiError,
   config: ClientConfig,
@@ -348,6 +373,10 @@ function createReportPayload(error: ApiError): ApiReportPayload {
   }
 }
 
+/**
+ * 超时和调用方的取消共用一个 signal。
+ * 生命周期仍挂在原来的 signal 上，超时合并发生在查完生命周期之后。
+ */
 function linkAbortSignals(
   userSignal: AbortSignal | undefined,
   timeoutSignal: AbortSignal,

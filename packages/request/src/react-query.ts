@@ -1,3 +1,10 @@
+/**
+ * TanStack Query 适配。
+ *
+ * createQueryClient 只负责默认重试策略。createRequestQuery 把同一次查询或 mutation 的
+ * signal 绑到回调里的 request 上，取消和重试次数才会落在同一次请求上。
+ * 回调里继续使用外部 apiClient 时，开发环境会警告一次。
+ */
 import {
   QueryClient,
   queryOptions as tanstackQueryOptions,
@@ -34,6 +41,10 @@ const mutationSignals = new WeakMap<object, AbortSignal>()
 const warnedSignals = new WeakSet<AbortSignal>()
 let warnedMissingSignal = false
 
+/**
+ * 默认重试。业务失败和登录失效不重试。
+ * 网络错误、超时和其它非业务失败最多再试 2 次，加上第一次一共 3 次。
+ */
 export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (isApiError(error) && (error.businessError || error.sessionInvalid)) {
     return false
@@ -41,6 +52,7 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < DEFAULT_MAX_RETRIES
 }
 
+/** 创建带默认重试的 QueryClient。调用方自己的 retry 会覆盖这个默认值。 */
 export function createQueryClient(config: RequestQueryClientConfig = {}): QueryClient {
   return new QueryClient({
     ...config,
@@ -180,6 +192,7 @@ function bindMutationOptions<
   }
 }
 
+/** 每个方法都带上同一次查询或 mutation 的 signal，调用方传入的 signal 不会替换它。 */
 function bindClient(client: ApiClient, signal: AbortSignal): ApiClient {
   return {
     request: ((options: RequestOptions) => client.request({ ...options, signal })) as ApiClient['request'],
@@ -201,6 +214,10 @@ function maxRetriesFor(retry: RetryValue): number {
   return retry === shouldRetry ? DEFAULT_MAX_RETRIES : getMaxRetries(retry)
 }
 
+/**
+ * TanStack 的 mutation 上下文没有 signal。这里为同一次 execute 生成一个，
+ * 重试时复用，成功后丢掉。
+ */
 function signalForMutation(context: object): AbortSignal {
   const current = mutationSignals.get(context)
   if (current) return current
@@ -212,6 +229,7 @@ function signalForMutation(context: object): AbortSignal {
 
 declare const process: { env: { NODE_ENV?: string } }
 
+/** 开发环境提示：回调里没有用收到的 request 发请求。生产环境不提示。 */
 function warnIfSignalUnused(signal: AbortSignal | undefined): void {
   if (process.env.NODE_ENV === 'production') return
   if (!signal) {
