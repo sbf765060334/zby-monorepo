@@ -531,12 +531,11 @@ export function createRouterCore<Route extends RouterRoute>(
       : { ...state, batchCloseAwaitingGuard: waiting })
   }
 
-  /** 关掉当前页之后要落在下一张带守卫的页；没有的话回到上次没关掉的守卫页，否则回到 anchor。 */
+  /** 关掉当前页之后先去下一张带守卫的页；没有下一张就回到 anchor。 */
   function batchCloseDestination(
     tabKeys: readonly string[],
     index: number,
     anchorKey: string,
-    lastKeptGuardedTab: string | null,
   ) {
     for (let cursor = index + 1; cursor < tabKeys.length; cursor += 1) {
       const key = tabKeys[cursor]
@@ -547,11 +546,6 @@ export function createRouterCore<Route extends RouterRoute>(
       if (hasBeforeCloseHook(key))
         return key
     }
-    if (
-      lastKeptGuardedTab
-      && getState().tabs.some((tab) => tab.key === lastKeptGuardedTab)
-    )
-      return lastKeptGuardedTab
     return anchorKey
   }
 
@@ -746,7 +740,8 @@ export function createRouterCore<Route extends RouterRoute>(
     const leftOpen = hasUnderwayClose
       ? await waitForClosesAlreadyUnderway(tabKeys, errors)
       : new Set<string>()
-    let lastKeptGuardedTab: string | null = null
+    // 只看最后一次守卫：留下则停在那一页，关掉则回到右键页。
+    let lastGuard: { tabKey: string, kept: boolean } | null = null
     try {
       for (let index = 0; index < tabKeys.length; index += 1) {
         const tabKey = tabKeys[index]
@@ -764,21 +759,22 @@ export function createRouterCore<Route extends RouterRoute>(
         try {
           await closeTabTowardAnchor(
             tabKey,
-            batchCloseDestination(tabKeys, index, anchorKey, lastKeptGuardedTab),
+            batchCloseDestination(tabKeys, index, anchorKey),
           )
         } catch (error) {
           errors.push(error)
         }
-        if (
-          hadGuard
-          && getState().tabs.some((tab) => tab.key === tabKey)
-        )
-          lastKeptGuardedTab = tabKey
+        if (hadGuard) {
+          lastGuard = {
+            tabKey,
+            kept: getState().tabs.some((tab) => tab.key === tabKey),
+          }
+        }
       }
 
-      const landing = lastKeptGuardedTab
-        && getState().tabs.some((tab) => tab.key === lastKeptGuardedTab)
-        ? lastKeptGuardedTab
+      const landing = lastGuard?.kept
+        && getState().tabs.some((tab) => tab.key === lastGuard.tabKey)
+        ? lastGuard.tabKey
         : anchorKey
       replaceToOpenTab(landing)
     } finally {

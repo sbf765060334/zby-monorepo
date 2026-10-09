@@ -1569,6 +1569,54 @@ describe('createRouterCore', () => {
     expect(router.getState().activeTabKey).toBe('/settings/profile')
   })
 
+  /** 前面的守卫留下、后面的守卫关掉时，结束回到右键页，而不是停在留下的第一页。 */
+  it('returns to the anchor when a later guard accepts after an earlier guard keeps its tab', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.addBeforeCloseHook(() => false, '/dashboard')
+    router.addBeforeCloseHook(() => true, '/settings/profile')
+    router.addBeforeCloseHook(() => true, '/project/:id')
+
+    expect(await router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/task/1' },
+    )).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/task/1',
+    ])
+    expect(router.getState().activeTabKey).toBe('/task/1')
+  })
+
+  /** 守卫都选择留下时，停在最后一次留下的页签。 */
+  it('stays on the last kept guarded tab when every later guard also keeps its tab', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.addBeforeCloseHook(() => false, '/dashboard')
+    router.addBeforeCloseHook(() => false, '/settings/profile')
+    router.addBeforeCloseHook(() => false, '/project/:id')
+
+    expect(await router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/task/1' },
+    )).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+      '/task/1',
+    ])
+    expect(router.getState().activeTabKey).toBe('/project/:id')
+  })
+
   /** 活动页守卫拒绝后，其余无守卫页继续关，并留在被拒绝的这一页。 */
   it('keeps the active tab when its guard declines and closes the other tabs', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })

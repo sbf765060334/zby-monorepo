@@ -279,7 +279,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
 | `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 按注册顺序串行执行关闭守卫，遇到第一个不是 `true` 的立刻拒绝；只剩一个页签时返回 false。有守卫且当前不是活动页时，先 replace 到该页再执行守卫，拒绝则留在该页。没有守卫的非活动页签立即清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
-| `closeTabs(tabKeys, options)` | `readonly string[], RouterCloseTabsOptions` | `Promise<boolean>` | 按给定顺序逐个关闭。有守卫的页先打开再确认；没有守卫的后台页当场关闭。守卫拒绝或抛错时留下该页，后续页签继续关；抛错会在整批结束后抛出第一个错误。结束后停在最后一次因此留下的页签，全部通过则 replace 回 `anchorKey`。anchor 未打开时返回 false。至少保留一个页签。 |
+| `closeTabs(tabKeys, options)` | `readonly string[], RouterCloseTabsOptions` | `Promise<boolean>` | 按给定顺序逐个关闭。有守卫的页先打开再确认；没有守卫的后台页当场关闭。守卫拒绝或抛错时留下该页，后续页签继续关；抛错会在整批结束后抛出第一个错误。最后一次守卫留下该页时停在那一页；最后一次守卫通过，或没有守卫，则 replace 回 `anchorKey`。anchor 未打开时返回 false。至少保留一个页签。 |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。适合保存成功后的详情页替换。这次导航同样使用 replace。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |

@@ -433,7 +433,7 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
    *
    * 有关闭守卫的页先 replace 打开，等用户确认后再继续。没有守卫的后台页当场关闭。
    * 守卫未返回 true 或抛错时留下该页签，后续页签继续关闭。抛错会在整批结束后抛出第一个错误。
-   * 结束后停在最后一次因此留下的页签；全部通过则 replace 回 `anchorKey`。
+   * 最后一次守卫留下该页时停在那一页；最后一次守卫通过，或没有守卫，则 replace 回 `anchorKey`。
    * 至少保留一个页签。anchor 当前没打开时返回 false，且不关闭任何页签。
    */
   closeTabs: (
