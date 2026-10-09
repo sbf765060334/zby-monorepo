@@ -19,6 +19,7 @@ const menuZhCN = {
     external: '外部系统',
     directShortcut: '二级直达菜单',
     directRisk: '风险待办',
+    guardTag: '守卫',
     customer: {
       title: '三级菜单组',
       profile: '客户画像',
@@ -168,6 +169,7 @@ const menuEnUS = {
     external: 'External',
     directShortcut: 'Shortcut',
     directRisk: 'Risk',
+    guardTag: 'Guard',
     customer: {
       title: 'Level 3',
       profile: 'Profile',
@@ -315,6 +317,14 @@ export const playgroundZhCN = {
         menuTitle: '当前菜单',
         pathname: '当前路径',
       },
+      guardedClose: {
+        title: '关闭守卫页面',
+        subtitle: '关闭这个页签前会先打开本页，并弹出确认框。点「留下」会停在这里。',
+        confirmTitle: '关闭这个页签？',
+        confirmContent: '「{{title}}」有关闭守卫。确定后才会关闭。',
+        confirmOk: '关闭',
+        confirmCancel: '留下',
+      },
     },
   },
 } satisfies ZbyLocalePack
@@ -334,6 +344,14 @@ export const playgroundEnUS = {
         subtitle: 'Every workbench leaf opens this same page so you can inspect ProLayout with a large menu, column Drawer, and tabs.',
         menuTitle: 'Menu',
         pathname: 'Path',
+      },
+      guardedClose: {
+        title: 'Guarded page',
+        subtitle: 'Closing this tab opens the page first and asks for confirmation. Cancel leaves you here.',
+        confirmTitle: 'Close this tab?',
+        confirmContent: '“{{title}}” has a close guard. It closes only after you confirm.',
+        confirmOk: 'Close',
+        confirmCancel: 'Keep',
       },
     },
   },

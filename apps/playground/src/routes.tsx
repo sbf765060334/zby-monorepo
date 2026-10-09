@@ -17,6 +17,7 @@ const TablePlayground = lazyPage(() => import('./pages/TablePlayground'))
 const WorkbenchMenuFixture = lazyPage(
   () => import('./pages/WorkbenchMenuFixture'),
 )
+const GuardedClosePage = lazyPage(() => import('./pages/GuardedClosePage'))
 
 /**
  * 路由标题统一写成 `{ key, defaultMessage }` 描述符，不写成品文案。
@@ -60,6 +61,23 @@ const createMenuLeaves = (
   createMenuPage(path, titleKey, defaultMessage)
 ))
 
+const guardTag = {
+  text: menuTitle('workbench.guardTag', '守卫'),
+  color: 'orange' as const,
+}
+
+/** 带关闭确认的独立页面，菜单右侧用标签标出来。 */
+const createGuardedMenuPage = (
+  path: string,
+  titleKey: string,
+  defaultMessage: string,
+): ProLayoutRoute => ({
+  path,
+  title: menuTitle(titleKey, defaultMessage),
+  element: GuardedClosePage,
+  tag: guardTag,
+})
+
 const workbenchRoutes: ProLayoutRoute[] = [
   {
     path: '/workbench/wip',
@@ -87,20 +105,24 @@ const workbenchRoutes: ProLayoutRoute[] = [
   },
   ...createMenuLeaves([
     ['/workbench/direct-shortcut', 'workbench.directShortcut', '二级直达菜单'],
-    ['/workbench/direct-risk', 'workbench.directRisk', '风险待办'],
   ]),
-  createMenuGroup('/workbench/customer', 'workbench.customer.title', '三级菜单组', createMenuLeaves([
-    ['/workbench/customer/profile', 'workbench.customer.profile', '客户画像'],
-    ['/workbench/customer/segment', 'workbench.customer.segment', '客群分层'],
-    ['/workbench/customer/reach', 'workbench.customer.reach', '触达计划'],
-    ['/workbench/customer/retention', 'workbench.customer.retention', '复购留存'],
-  ])),
-  createMenuGroup('/workbench/product', 'workbench.product.title', '商品中心', createMenuLeaves([
-    ['/workbench/product/list', 'workbench.product.list', '商品列表'],
-    ['/workbench/product/category', 'workbench.product.category', '类目管理'],
-    ['/workbench/product/price', 'workbench.product.price', '价格策略'],
-    ['/workbench/product/stock', 'workbench.product.stock', '库存预警'],
-  ])),
+  createGuardedMenuPage('/workbench/direct-risk', 'workbench.directRisk', '风险待办'),
+  createMenuGroup('/workbench/customer', 'workbench.customer.title', '三级菜单组', [
+    createGuardedMenuPage('/workbench/customer/profile', 'workbench.customer.profile', '客户画像'),
+    ...createMenuLeaves([
+      ['/workbench/customer/segment', 'workbench.customer.segment', '客群分层'],
+      ['/workbench/customer/reach', 'workbench.customer.reach', '触达计划'],
+      ['/workbench/customer/retention', 'workbench.customer.retention', '复购留存'],
+    ]),
+  ]),
+  createMenuGroup('/workbench/product', 'workbench.product.title', '商品中心', [
+    ...createMenuLeaves([
+      ['/workbench/product/list', 'workbench.product.list', '商品列表'],
+      ['/workbench/product/category', 'workbench.product.category', '类目管理'],
+      ['/workbench/product/price', 'workbench.product.price', '价格策略'],
+    ]),
+    createGuardedMenuPage('/workbench/product/stock', 'workbench.product.stock', '库存预警'),
+  ]),
   createMenuGroup('/workbench/material', 'workbench.material.title', '四级菜单组', [
     createMenuGroup('/workbench/material/assets', 'workbench.material.assets.title', '素材资产', [
       {
