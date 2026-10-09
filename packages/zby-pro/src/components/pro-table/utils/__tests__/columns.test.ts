@@ -64,6 +64,19 @@ describe('normalizeTableColumns empty text', () => {
     currentPage = 2
     expect(column.renderText?.(undefined, {}, 0)).toBe('#11')
   })
+
+  it('keeps a custom render for index columns', () => {
+    const render = () => 'custom'
+    const [column] = normalizeTableColumns([
+      { key: 'serial', title: '序号', valueType: 'index', render },
+    ]) as Array<{
+      render?: typeof render
+      renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown
+    }>
+
+    expect(column.render).toBe(render)
+    expect(column.renderText).toBeUndefined()
+  })
 })
 
 type Row = {

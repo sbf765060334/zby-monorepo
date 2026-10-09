@@ -55,14 +55,6 @@ function isEmptyCellValue(value: unknown) {
   return value === undefined || value === null || value === ''
 }
 
-function hasColumnDataIndex(column: ProTableColumnType<any>) {
-  const { dataIndex } = column
-  if (dataIndex === undefined || dataIndex === null || dataIndex === '') {
-    return false
-  }
-  return !Array.isArray(dataIndex) || dataIndex.length > 0
-}
-
 function resolveEmptyText(
   column: ProTableColumnType<any>,
   options?: FormatColumnValueOptions,
@@ -361,13 +353,7 @@ export function formatColumnValue(
   }
 
   if (valueType === 'index') {
-    if (!hasColumnDataIndex(column)) {
-      return renderIndex(index, options)
-    }
-    if (!isEmptyCellValue(value)) {
-      return value as ReactNode
-    }
-    return emptyText === false ? (value as ReactNode) : emptyText
+    return renderIndex(index, options)
   }
 
   if (valueType === 'progress') {

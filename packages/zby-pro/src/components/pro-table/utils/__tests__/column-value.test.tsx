@@ -168,15 +168,17 @@ describe('formatColumnValue', () => {
     expect(formatColumnValue('A-01', { valueType: 'index' }, 0)).toBe('#1')
   })
 
-  it('shows the field value as-is when an index column has dataIndex', () => {
+  it('renders generated index numbers even when the column has dataIndex', () => {
     expect(
-      formatColumnValue(3, { valueType: 'index', dataIndex: 'orderIndex' }, 0, {
-        getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
-      }),
-    ).toBe(3)
+      textOf(
+        formatColumnValue(3, { valueType: 'index', dataIndex: 'orderIndex' }, 0, {
+          getIndexPage: () => ({ currentPage: 2, pageSize: 10, paginated: true }),
+        }),
+      ),
+    ).toBe('#11')
     expect(
-      formatColumnValue(undefined, { valueType: 'index', dataIndex: 'orderIndex' }, 0),
-    ).toBe('-')
+      textOf(formatColumnValue(undefined, { valueType: 'index', dataIndex: 'orderIndex' }, 0)),
+    ).toBe('#1')
   })
 
   it('colors percent cells with theme tokens when showColor is on', () => {
