@@ -36,7 +36,6 @@ const enUS = {
     unfixedSuccess: 'Tab unpinned',
     close: 'Close',
     closeRight: 'Close tabs to the right',
-    closeLeft: 'Close tabs to the left',
     closeOthers: 'Close other tabs',
     closeFailed: 'Failed to close the tab. Please try again.',
     closeBatchFailed: 'Some tabs could not be closed.',

@@ -36,7 +36,6 @@ const zhCN = {
     unfixedSuccess: '已取消页签固定',
     close: '关闭',
     closeRight: '关闭右侧页签',
-    closeLeft: '关闭左侧页签',
     closeOthers: '关闭其他页签',
     closeFailed: '页签关闭失败，请稍后重试',
     closeBatchFailed: '有页签未能关闭',

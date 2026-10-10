@@ -203,11 +203,6 @@ function PageTabs(props: PageTabsProps) {
           label: intl.getMessage('zby.pro.layout.tabs.closeRight', '关闭右侧页签'),
           disabled: batchCloseAwaitingGuard || disabled.closeRight,
         },
-        {
-          key: 'closeLeft',
-          label: intl.getMessage('zby.pro.layout.tabs.closeLeft', '关闭左侧页签'),
-          disabled: batchCloseAwaitingGuard || disabled.closeLeft,
-        },
       ]
       return items
     },
@@ -269,11 +264,10 @@ function stopEvent(event: { stopPropagation: () => void }) {
   event.stopPropagation()
 }
 
-type TabContextAction = 'close' | 'closeLeft' | 'closeRight' | 'closeOthers'
+type TabContextAction = 'close' | 'closeRight' | 'closeOthers'
 
 function isTabContextAction(action: string): action is TabContextAction {
   return action === 'close' ||
-    action === 'closeLeft' ||
     action === 'closeRight' ||
     action === 'closeOthers'
 }
@@ -288,7 +282,7 @@ function orderTabKeys(tabKeys: readonly string[], fixedKeys: readonly string[]) 
   ]
 }
 
-/** 只剩一页时四项都不可用；已在最左或最右时，对应方向不可用。 */
+/** 只剩一页时三项都不可用；已在最右时，关闭右侧不可用。 */
 function getTabContextMenuDisabled(
   orderedKeys: readonly string[],
   anchorKey: string,
@@ -297,14 +291,12 @@ function getTabContextMenuDisabled(
   if (index < 0 || orderedKeys.length <= 1) {
     return {
       close: true,
-      closeLeft: true,
       closeRight: true,
       closeOthers: true,
     }
   }
   return {
     close: false,
-    closeLeft: index === 0,
     closeRight: index === orderedKeys.length - 1,
     closeOthers: false,
   }
@@ -319,8 +311,6 @@ function getTabCloseKeys(
   const index = orderedKeys.indexOf(anchorKey)
   if (index < 0)
     return []
-  if (action === 'closeLeft')
-    return orderedKeys.slice(0, index)
   if (action === 'closeRight')
     return orderedKeys.slice(index + 1)
   return orderedKeys.filter((key) => key !== anchorKey)

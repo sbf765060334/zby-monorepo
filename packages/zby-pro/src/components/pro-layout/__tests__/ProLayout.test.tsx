@@ -1366,7 +1366,7 @@ describe('ReactRouterProLayout', () => {
     })
   })
 
-  it('只剩一个页签时禁用全部右键动作，并按位置禁用左右关闭', async () => {
+  it('只剩一个页签时禁用全部右键动作，并在最右侧禁用关闭右侧', async () => {
     const router = createTestRouter()
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -1376,9 +1376,10 @@ describe('ReactRouterProLayout', () => {
 
     await screen.findByTestId('dashboard-page')
     fireEvent.contextMenu(screen.getByRole('tab', { name: /工作台/ }))
-    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签']) {
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签']) {
       expect(screen.getByRole('menuitem', { name: label }).getAttribute('aria-disabled')).toBe('true')
     }
+    expect(screen.queryByRole('menuitem', { name: '关闭左侧页签' })).toBeNull()
 
     act(() => router.jumpTo('/orders/list'))
     await screen.findByTestId('orders-page')
@@ -1386,14 +1387,13 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('reports-page')
 
     fireEvent.contextMenu(screen.getByRole('tab', { name: /工作台/ }))
-    expect(menuItemDisabled('关闭左侧页签')).toBe(true)
     expect(menuItemDisabled('关闭右侧页签')).toBe(false)
     expect(menuItemDisabled('关闭')).toBe(false)
     expect(menuItemDisabled('关闭其他页签')).toBe(false)
 
     fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
     expect(menuItemDisabled('关闭右侧页签')).toBe(true)
-    expect(menuItemDisabled('关闭左侧页签')).toBe(false)
+    expect(screen.queryByRole('menuitem', { name: '关闭左侧页签' })).toBeNull()
   })
 
   it('从右键菜单关闭页签，固定页签同样会被关闭', async () => {
@@ -1514,7 +1514,7 @@ describe('ReactRouterProLayout', () => {
     expect(container.querySelector('.ant-tabs')?.className).toContain('tabs-close-disabled')
     expect(container.querySelectorAll('.ant-tabs-tab-remove').length).toBeGreaterThan(0)
     fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
-    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签'])
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签'])
       expect(menuItemDisabled(label)).toBe(true)
 
     const tabKeys = router.getState().tabs.map((tab) => tab.key)
@@ -1574,7 +1574,7 @@ describe('ReactRouterProLayout', () => {
       rule.includes('var(--ant-pro-layout-tab-theme-color-text-disabled)')
     ))).toBe(true)
     fireEvent.contextMenu(screen.getByRole('tab', { name: /订单列表/ }))
-    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签'])
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签'])
       expect(menuItemDisabled(label)).toBe(true)
 
     releaseGuard(false)

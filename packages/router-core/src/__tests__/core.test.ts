@@ -1617,6 +1617,57 @@ describe('createRouterCore', () => {
     expect(router.getState().activeTabKey).toBe('/project/:id')
   })
 
+  /** 活动页没被关掉、也没为了守卫离开时，不导航到右键页。 */
+  it('stays on the active tab when the batch never closes it or opens a guard', async () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    const navigate = bindSyncNavigate(router)
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    expect(await router.closeTabs(
+      ['/project/:id'],
+      { anchorKey: '/settings/profile' },
+    )).toBe(true)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+    ])
+    expect(router.getState().activeTabKey).toBe('/dashboard')
+  })
+
+  /** 无守卫时先删完后台页，再一次性离开活动页回到右键页。 */
+  it('deletes unguarded background tabs before the final navigation to the anchor', async () => {
+    const navigate = vi.fn()
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.bindHost({ navigate })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    navigate.mockClear()
+
+    const closing = router.closeTabs(
+      ['/dashboard', '/settings/profile', '/project/:id'],
+      { anchorKey: '/task/1' },
+    )
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce())
+    expect(navigate).toHaveBeenCalledWith('/task/1', { replace: true })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/task/1',
+    ])
+
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    expect(await closing).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual(['/task/1'])
+    expect(router.getState().activeTabKey).toBe('/task/1')
+  })
+
   /** 活动页守卫拒绝后，其余无守卫页继续关，并留在被拒绝的这一页。 */
   it('keeps the active tab when its guard declines and closes the other tabs', async () => {
     const router = createRouterCore({ routes, storageAdapter: false })
@@ -1742,7 +1793,10 @@ describe('createRouterCore', () => {
     releaseGuard(true)
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/project/42', { replace: true }))
     expect(router.getState().batchCloseAwaitingGuard).toBe(false)
-    expect(router.getState().tabs.some((tab) => tab.key === '/settings/profile')).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/project/:id',
+    ])
 
     router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
     await closing
@@ -2003,7 +2057,10 @@ describe('createRouterCore', () => {
 
     router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/task/1', { replace: true }))
-    expect(router.getState().tabs.some((tab) => tab.key === '/project/:id')).toBe(true)
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/task/1',
+    ])
 
     router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
     expect(await batch).toBe(true)

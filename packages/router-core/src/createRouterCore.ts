@@ -531,35 +531,6 @@ export function createRouterCore<Route extends RouterRoute>(
       : { ...state, batchCloseAwaitingGuard: waiting })
   }
 
-  /** 关掉当前页之后先去下一张带守卫的页；没有下一张就回到 anchor。 */
-  function batchCloseDestination(
-    tabKeys: readonly string[],
-    index: number,
-    anchorKey: string,
-  ) {
-    for (let cursor = index + 1; cursor < tabKeys.length; cursor += 1) {
-      const key = tabKeys[cursor]
-      if (key === anchorKey)
-        continue
-      if (!getState().tabs.some((tab) => tab.key === key))
-        continue
-      if (hasBeforeCloseHook(key))
-        return key
-    }
-    return anchorKey
-  }
-
-  function replaceToOpenTab(tabKey: string) {
-    if (!runtime.host || getState().activeTabKey === tabKey)
-      return
-    if (!getState().tabs.some((tab) => tab.key === tabKey))
-      return
-    const plan = anchorPlan(tabKey)
-    if (!plan)
-      return
-    executeNavigationPlan(plan, { replace: true })
-  }
-
   /** 生成交给宿主的最终 URL，但不提前创建或激活任何页签和页面。 */
   function buildNavigationTarget(plan: RouterNavigationPlan) {
     return buildUrl({
@@ -740,18 +711,13 @@ export function createRouterCore<Route extends RouterRoute>(
     const leftOpen = hasUnderwayClose
       ? await waitForClosesAlreadyUnderway(tabKeys, errors)
       : new Set<string>()
-    // 只看最后一次守卫：留下则停在那一页，关掉则回到右键页。
-    let lastGuard: { tabKey: string, kept: boolean } | null = null
+    // 活动页要等其余页处理完再离开。中途只为了打开下一张带守卫的页才导航。
+    let deferredActiveKey: string | null = null
     try {
       for (let index = 0; index < tabKeys.length; index += 1) {
         const tabKey = tabKeys[index]
-        if (leftOpen.has(tabKey)) {
-          // 守卫是更早那次关闭问的。拒绝或抛错后页还在，算作一次「留下」。
-          if (tabKey !== anchorKey && hasBeforeCloseHook(tabKey)) {
-            lastGuard = { tabKey, kept: true }
-          }
+        if (leftOpen.has(tabKey))
           continue
-        }
         if (tabKey === anchorKey)
           continue
         if (getState().tabs.length <= 1)
@@ -760,28 +726,45 @@ export function createRouterCore<Route extends RouterRoute>(
           continue
         if (!getState().tabs.some((tab) => tab.key === anchorKey))
           break
-        const hadGuard = hasBeforeCloseHook(tabKey)
+        const inFlight = getInFlightTabClose(tabKey)
+        if (inFlight) {
+          try {
+            await inFlight
+            await waitForActiveCloseToSettle(tabKey)
+          } catch (error) {
+            errors.push(error)
+          }
+          continue
+        }
         try {
-          await closeTabTowardAnchor(
-            tabKey,
-            batchCloseDestination(tabKeys, index, anchorKey),
-          )
+          if (hasBeforeCloseHook(tabKey)) {
+            if (deferredActiveKey && deferredActiveKey !== tabKey) {
+              await closeDeferredActive(deferredActiveKey, tabKey)
+              deferredActiveKey = null
+            }
+            if (await closeGuardedTabDeferringActive(tabKey))
+              deferredActiveKey = tabKey
+          } else if (getState().activeTabKey === tabKey) {
+            deferredActiveKey = tabKey
+          } else {
+            await closeBackgroundTab(tabKey)
+          }
         } catch (error) {
           errors.push(error)
         }
-        if (hadGuard) {
-          lastGuard = {
-            tabKey,
-            kept: getState().tabs.some((tab) => tab.key === tabKey),
-          }
-        }
       }
 
-      const landing = lastGuard?.kept
-        && getState().tabs.some((tab) => tab.key === lastGuard.tabKey)
-        ? lastGuard.tabKey
-        : anchorKey
-      replaceToOpenTab(landing)
+      if (
+        deferredActiveKey
+        && getState().tabs.some((tab) => tab.key === deferredActiveKey)
+        && getState().tabs.some((tab) => tab.key === anchorKey)
+      ) {
+        try {
+          await closeDeferredActive(deferredActiveKey, anchorKey)
+        } catch (error) {
+          errors.push(error)
+        }
+      }
     } finally {
       setBatchCloseAwaitingGuard(false)
     }
@@ -806,23 +789,41 @@ export function createRouterCore<Route extends RouterRoute>(
       await pending
   }
 
-  /**
-   * 有守卫的后台页会先被打开。确认后若仍是活动页，replace 到 destination 并等宿主离开。
-   * 没有守卫的后台页当场关闭。这页已经有一次关闭在进行时，等那一次自己结束。
-   */
-  async function closeTabTowardAnchor(tabKey: string, destinationKey: string) {
-    const inFlight = getInFlightTabClose(tabKey)
-    if (inFlight) {
-      await inFlight
-      await waitForActiveCloseToSettle(tabKey)
-      return
-    }
-
+  /** 没有守卫的后台页当场删掉，不导航。 */
+  async function closeBackgroundTab(tabKey: string) {
     const host = runtime.host
-    const accepted = await closeTab(tabKey, undefined, {
+    await closeTab(tabKey, undefined, {
       canCommit: () => runtime.host === host && host !== null,
       onlyWhenActive: true,
+    })
+  }
+
+  /**
+   * 先打开带守卫的页再询问。选择关闭且它仍是活动页时先不跳，交给调用方延后。
+   * 返回 true 表示活动页已确认关闭，但还停在这一页。
+   */
+  async function closeGuardedTabDeferringActive(tabKey: string) {
+    const host = runtime.host
+    let deferred = false
+    await closeTab(tabKey, undefined, {
+      canCommit: () => runtime.host === host && host !== null,
+      onlyWhenActive: true,
+      deferWhenActive: true,
       onAsyncGuard: setBatchCloseAwaitingGuard,
+      onDeferred: () => {
+        deferred = true
+      },
+    })
+    await waitForActiveCloseToSettle(tabKey)
+    return deferred
+  }
+
+  /** 离开先前确认关闭的活动页。目标是下一张要出示的守卫页，或最终的右键页。 */
+  async function closeDeferredActive(tabKey: string, destinationKey: string) {
+    const host = runtime.host
+    await closeTab(tabKey, { skipBeforeClose: true }, {
+      canCommit: () => runtime.host === host && host !== null,
+      onlyWhenActive: true,
       navigation: {
         getPathname: () => anchorPlan(destinationKey)?.pathname || '/',
         execute: () => {
@@ -833,11 +834,6 @@ export function createRouterCore<Route extends RouterRoute>(
         },
       },
     })
-    if (!accepted) {
-      // Promise 已经结束但活动页还在等宿主时，锁仍在。这里补上等确认。
-      await waitForActiveCloseToSettle(tabKey)
-      return
-    }
     await waitForActiveCloseToSettle(tabKey)
   }
 

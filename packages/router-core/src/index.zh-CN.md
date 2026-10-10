@@ -279,7 +279,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `toggleFixed(tabKey)` | `tabKey: string` | `boolean` | 固定/取消固定已打开页签；不存在或超过上限时返回 `false`。 |
 | `toggleFavoriteRoute(path)` | `path: string` | `boolean` | 收藏/取消收藏注册页面；会把动态真实地址规范成 route pattern。 |
 | `closeTab(tabKey, options?)` | `string, RouterCloseOptions?` | `Promise<boolean>` | 按注册顺序串行执行关闭守卫，遇到第一个不是 `true` 的立刻拒绝；只剩一个页签时返回 false。有守卫且当前不是活动页时，先 replace 到该页再执行守卫，拒绝则留在该页。没有守卫的非活动页签立即清理。活动页签在宿主确认已经离开被关页后清理。确认前同一页签的第二次关闭返回 false。关页跳转使用 replace，避免后退把已关页签救活。 |
-| `closeTabs(tabKeys, options)` | `readonly string[], RouterCloseTabsOptions` | `Promise<boolean>` | 按给定顺序逐个关闭。有守卫的页先打开再确认；没有守卫的后台页当场关闭。守卫拒绝或抛错时留下该页，后续页签继续关；抛错会在整批结束后抛出第一个错误。最后一次守卫留下该页时停在那一页；最后一次守卫通过，或没有守卫，则 replace 回 `anchorKey`。anchor 未打开时返回 false。至少保留一个页签。 |
+| `closeTabs(tabKeys, options)` | `readonly string[], RouterCloseTabsOptions` | `Promise<boolean>` | 按给定顺序逐个关闭。有守卫的页先打开再确认；没有守卫的后台页当场关闭且不导航。守卫拒绝或抛错时留下该页，后续页签继续关；抛错会在整批结束后抛出第一个错误。活动页还在且没有为了守卫离开它时，结束不再导航。活动页被这次批量关掉时，最后 replace 回 `anchorKey`。anchor 未打开时返回 false。至少保留一个页签。 |
 | `closeThisTabOpenNewOne(data, options?)` | `{ oldPath, newPath }, RouterCloseOptions?` | `Promise<boolean>` | 请求一次最终新地址导航。活动旧页在宿主离开后再关；非活动旧页先跳、成功后再关。适合保存成功后的详情页替换。这次导航同样使用 replace。 |
 | `addBeforeCloseHook(handler, pathname)` | `RouterBeforeCloseHook, string` | `void` | 给 pathname 所属页签追加一个关闭前守卫。 |
 | `clearBeforeCloseHook(pathname, handler?)` | `string, RouterBeforeCloseHook?` | `void` | 传 handler 删除一个；省略 handler 删除该页签全部守卫。 |
@@ -289,7 +289,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 
 `closeTab` 返回 `true` 表示关闭请求已被接受。只剩一个页签时返回 `false`，避免关完经根路径重定向后再被打开。非活动页签普通关闭会在返回前完成清理；若组合命令还要跳转，则先导航，成功后再删。导航过程中该页签若已成为活动页则不再删除。关闭活动页签时，当前页会保留到宿主确认已经离开被关页，这次跳转使用 replace。宿主确认前同一页签不能再关一次，避免连点或交错的 `closeThisTabOpenNewOne` 覆盖 pending。尾斜杠或编码差异仍视为同一页；已经离开被关页则提交删除，不要求回传字符串精确等于下一页。宿主不可用或导航同步失败时不会提前删除当前页。
 
-`closeTabs` 用于一次关掉多页，例如关闭左侧、右侧或其它页签。`tabKeys` 是待关页签，按数组顺序逐个处理；`options.anchorKey` 是保留页，也是结束后的当前页。某一页的守卫没有返回 `true` 时，这一页留下，下一页继续。守卫抛错同样留下该页并继续，整批结束后抛出第一个错误。活动页被关闭时直接 replace 到 anchor，不会先跳到另一个待关页签；宿主确认离开后才处理下一个。并发调用会排队。固定页签没有豁免。
+`closeTabs` 用于一次关掉多页，例如关闭右侧或其它页签。`tabKeys` 是待关页签，按数组顺序逐个处理；`options.anchorKey` 是保留页。某一页的守卫没有返回 `true` 时，这一页留下，下一页继续。守卫抛错同样留下该页并继续，整批结束后抛出第一个错误。没有守卫的后台页当场删除，不产生导航。带守卫的页先 replace 打开再确认；确认关闭后先处理其余页，若活动页因此被关掉，最后再 replace 到 anchor。活动页仍在且中途没有为了守卫离开它时，结束不再导航。打开下一张带守卫的页时才会在中途导航，并等宿主离开当前页后再继续。并发调用会排队。固定页签没有豁免。
 
 ### Core 方法依赖类型
 

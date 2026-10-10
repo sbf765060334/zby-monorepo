@@ -229,9 +229,9 @@ The global breadcrumb is rendered by ProLayout, not by the content container. Se
 
 ## Tab Context Menu
 
-Right-click a visible tab to close it, close tabs to its left, close tabs to its right, or close the other tabs. A batch closes from left to right. If a tab's close guard does not return `true`, or throws, that tab stays open and the following tabs still close. A thrown guard also shows the close-failure message. The right-clicked tab stays open and becomes the current tab when the batch finishes. Pinned tabs are closed too.
+Right-click a visible tab to close it, close tabs to its right, or close the other tabs. A batch closes from left to right. Unguarded background tabs close immediately, without navigation. A guarded tab is opened before its guard runs. Keeping it leaves that tab active. Accepting it finishes the remaining tabs first, then returns to the right-clicked tab if the active tab was closed. If the active tab is still open and the batch never left it to present a guard, nothing is navigated at the end. A thrown guard keeps that tab, continues, and shows the partial-failure message. While an async guard is pending, close icons and context-menu actions are disabled, and the icons stay visible. Pinned tabs are closed too.
 
-With only one tab, every action is disabled. On the leftmost tab, "Close tabs to the left" is disabled. On the rightmost tab, "Close tabs to the right" is disabled. Tabs that have collapsed into the tab bar overflow menu do not have a context menu yet.
+With only one tab, every action is disabled. On the rightmost tab, "Close tabs to the right" is disabled. Tabs that have collapsed into the tab bar overflow menu do not have a context menu yet.
 
 ## API
 

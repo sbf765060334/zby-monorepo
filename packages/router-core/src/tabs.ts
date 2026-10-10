@@ -43,6 +43,13 @@ export interface CloseTabTransaction {
   }
   /** 批量关闭等待异步守卫时通知 UI。同步返回的守卫不调用。 */
   onAsyncGuard?: (waiting: boolean) => void
+  /**
+   * 活动页已经可以关，但这次先不跳转。调用方等其余页处理完，再统一导航。
+   * 后台页不受影响，仍然当场删除。
+   */
+  deferWhenActive?: boolean
+  /** deferWhenActive 命中活动页时调用，发生在返回 false 之前。 */
+  onDeferred?: () => void
 }
 
 /** 关页确认把尾斜杠和百分号编码当成同一页，避免 /dashboard 和 /dashboard/ 对不上。 */
@@ -505,6 +512,11 @@ export function createRouterTabs<Route extends RouterRoute>(
       if (state.tabs.length === 1 && !opensAnotherPage)
         return false
       const isActive = state.activeTabKey === tabKey
+      // 批量关闭先记着活动页，等名单里其余页处理完再统一跳。这里不删也不导航。
+      if (isActive && transaction?.deferWhenActive) {
+        transaction.onDeferred?.()
+        return false
+      }
       // onlyWhenActive 要等守卫结束后再看。等待期间变成活动页就改走 anchor，
       // 仍然是后台页则忽略这次导航，当场删除。
       const useTransactionNavigation = Boolean(transaction?.navigation)
