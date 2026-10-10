@@ -234,7 +234,11 @@ function PageTabs(props: PageTabsProps) {
         hideAdd
         classNames={{
           popup: {
-            root: clsx(`${prefixCls}-tabs-dropdown`, hashId),
+            root: clsx(
+              `${prefixCls}-tabs-dropdown`,
+              hashId,
+              batchCloseAwaitingGuard && `${prefixCls}-tabs-close-disabled`,
+            ),
           },
         }}
         removeIcon={<CloseOutlined onPointerDown={stopEvent} />}

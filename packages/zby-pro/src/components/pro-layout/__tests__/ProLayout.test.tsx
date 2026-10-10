@@ -1518,14 +1518,81 @@ describe('ReactRouterProLayout', () => {
       expect(menuItemDisabled(label)).toBe(true)
 
     const tabKeys = router.getState().tabs.map((tab) => tab.key)
+    const activeKey = router.getState().activeTabKey
     fireEvent.click(container.querySelector('.ant-tabs-tab-remove') as HTMLElement)
     expect(router.getState().tabs.map((tab) => tab.key)).toEqual(tabKeys)
+    expect(router.getState().activeTabKey).toBe(activeKey)
+    const disabledRules = readCloseDisabledRules()
+    expect(disabledRules.length).toBeGreaterThan(0)
+    expect(disabledRules.every((rule) => (
+      rule.includes('cursor:not-allowed') && !rule.includes('pointer-events')
+    ))).toBe(true)
 
     releaseGuard(true)
     await waitFor(() => expect(router.getState().batchCloseAwaitingGuard).toBe(false))
     expect(container.querySelector('.ant-tabs')?.className).not.toContain('tabs-close-disabled')
   })
+
+  it('暗色紧凑主题下等待异步守卫时仍禁用关闭图标，尺寸跟随紧凑令牌', async () => {
+    let releaseGuard: (value: boolean) => void = () => undefined
+    const router = createTestRouter()
+    const { container } = render(
+      <ConfigProvider
+        theme={{
+          algorithm: [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm],
+          cssVar: { prefix: 'ant-pro-layout-tab-theme' },
+        }}
+      >
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ReactRouterProLayout router={router} title="数字化平台" />
+        </MemoryRouter>
+      </ConfigProvider>,
+    )
+
+    await screen.findByTestId('dashboard-page')
+    act(() => router.jumpTo('/orders/list'))
+    await screen.findByTestId('orders-page')
+    act(() => router.jumpTo('/analytics/overview'))
+    await screen.findByTestId('reports-page')
+    router.addBeforeCloseHook(
+      () => new Promise<boolean>((resolve) => {
+        releaseGuard = resolve
+      }),
+      '/orders/list',
+    )
+
+    fireEvent.contextMenu(screen.getByRole('tab', { name: /报表总览/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '关闭其他页签' }))
+    await waitFor(() => expect(router.getState().batchCloseAwaitingGuard).toBe(true))
+
+    const root = container.querySelector('.ant-pro-layout') as HTMLElement
+    expect(root.style.getPropertyValue('--ant-pro-layout-header-height')).toBe('33px')
+    expect(root.style.getPropertyValue('--ant-pro-layout-tab-width')).toBe('104px')
+    expect(container.querySelector('.ant-tabs')?.className).toContain('tabs-close-disabled')
+    expect(container.querySelectorAll('.ant-tabs-tab-remove').length).toBeGreaterThan(0)
+    expect(readCloseDisabledRules().some((rule) => (
+      rule.includes('var(--ant-pro-layout-tab-theme-color-text-disabled)')
+    ))).toBe(true)
+    fireEvent.contextMenu(screen.getByRole('tab', { name: /订单列表/ }))
+    for (const label of ['关闭', '关闭其他页签', '关闭右侧页签', '关闭左侧页签'])
+      expect(menuItemDisabled(label)).toBe(true)
+
+    releaseGuard(false)
+    await waitFor(() => {
+      expect(router.getState().batchCloseAwaitingGuard).toBe(false)
+      expect(router.getState().activeTabKey).toBe('/orders/list')
+    })
+  })
 })
+
+function readCloseDisabledRules() {
+  return [...document.querySelectorAll('style')]
+    .map((style) => style.textContent || '')
+    .join('\n')
+    .replace(/\s+/g, '')
+    .split('}')
+    .filter((rule) => rule.includes('tabs-close-disabled') && rule.includes('tab-remove'))
+}
 
 function menuItemDisabled(name: string) {
   return screen.getByRole('menuitem', { name }).getAttribute('aria-disabled') === 'true'

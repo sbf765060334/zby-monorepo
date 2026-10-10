@@ -745,8 +745,13 @@ export function createRouterCore<Route extends RouterRoute>(
     try {
       for (let index = 0; index < tabKeys.length; index += 1) {
         const tabKey = tabKeys[index]
-        if (leftOpen.has(tabKey))
+        if (leftOpen.has(tabKey)) {
+          // 守卫是更早那次关闭问的。拒绝或抛错后页还在，算作一次「留下」。
+          if (tabKey !== anchorKey && hasBeforeCloseHook(tabKey)) {
+            lastGuard = { tabKey, kept: true }
+          }
           continue
+        }
         if (tabKey === anchorKey)
           continue
         if (getState().tabs.length <= 1)

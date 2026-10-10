@@ -305,18 +305,6 @@ export default function useProLayoutStyles(prefixCls: string) {
         },
         [`${componentCls}-header-scrolled`]: { boxShadow: surfaceShadow },
 
-        [`${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove,
-          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove,
-          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove,
-          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:hover,
-          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:active,
-          ${componentCls}-tabs-close-disabled ${antCls}-tabs-tab-remove:focus-visible`]: {
-          color: styleToken.colorTextDisabled,
-          cursor: 'not-allowed',
-          pointerEvents: 'none',
-          background: 'transparent',
-        },
-
         [`${componentCls}-tabs`]: {
           display: 'flex',
           minWidth: 0,
@@ -452,6 +440,20 @@ export default function useProLayoutStyles(prefixCls: string) {
           [`${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove:hover, ${antCls}-tabs-tab-remove:active, ${antCls}-tabs-tab-remove:focus-visible`]: {
             background: 'transparent',
             color: styleToken.colorText,
+          },
+          // 写在普通关闭色后面，悬停才不会把禁用图标点亮。
+          // 不能用 pointer-events:none：点击会穿透到页签，变成切换页面。
+          [`${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-remove,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-remove:hover,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab:hover ${antCls}-tabs-tab-remove:hover,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-active ${antCls}-tabs-tab-remove:hover,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-remove:active,
+            ${componentCls}-tabs-close-disabled${antCls}-tabs ${antCls}-tabs-tab-remove:focus-visible`]: {
+            background: 'transparent',
+            color: styleToken.colorTextDisabled,
+            cursor: 'not-allowed',
           },
           [`${antCls}-tabs-content-holder`]: { display: 'none' },
         },
@@ -725,6 +727,14 @@ export default function useProLayoutStyles(prefixCls: string) {
           '&:hover, &:focus-visible': {
             color: styleToken.colorText,
           },
+        },
+        [`&.${prefixCls}-tabs-close-disabled ${antCls}-tabs-dropdown-menu-item-remove,
+          &.${prefixCls}-tabs-close-disabled ${antCls}-tabs-dropdown-menu-item-remove:hover,
+          &.${prefixCls}-tabs-close-disabled ${antCls}-tabs-dropdown-menu-item-remove:active,
+          &.${prefixCls}-tabs-close-disabled ${antCls}-tabs-dropdown-menu-item-remove:focus-visible`]: {
+          background: 'transparent',
+          color: styleToken.colorTextDisabled,
+          cursor: 'not-allowed',
         },
       },
 
