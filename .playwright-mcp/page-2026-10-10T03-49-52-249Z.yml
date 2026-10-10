@@ -1,0 +1,62 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e4]:
+    - complementary [ref=f2e5]:
+      - generic [ref=f2e7]:
+        - generic [ref=f2e8]: Zibuyu
+        - navigation [ref=f2e13]:
+          - button "home Home" [ref=f2e126] [cursor=pointer]:
+            - generic [ref=f2e15]:
+              - term [ref=f2e16]:
+                - img "home" [ref=f2e17]
+              - definition [ref=f2e20]:
+                - generic [ref=f2e21]: Home
+          - button "dashboard Work" [ref=f2e127] [cursor=pointer]:
+            - generic [ref=f2e23]:
+              - term [ref=f2e24]:
+                - img "dashboard" [ref=f2e25]
+              - definition [ref=f2e28]:
+                - generic [ref=f2e29]: Work
+          - button "clear Examples" [ref=f2e128] [cursor=pointer]:
+            - generic [ref=f2e31]:
+              - term [ref=f2e32]:
+                - img "clear" [ref=f2e33]
+              - definition [ref=f2e36]:
+                - generic [ref=f2e37]: Examples
+        - button "Switch system" [ref=f2e129] [cursor=pointer]:
+          - img "appstore" [ref=f2e39]
+    - generic [ref=f2e42]:
+      - banner [ref=f2e43]:
+        - generic [ref=f2e85]:
+          - tablist [ref=f2e86]:
+            - 'tab "Pin tab: Home Home" [selected] [ref=f2e130] [cursor=pointer]':
+              - generic [ref=f2e92]:
+                - 'button "Pin tab: Home" [ref=f2e131]':
+                  - img "pushpin" [ref=f2e94]
+                - generic "Home" [ref=f2e132]
+            - button "Favorite menus" [ref=f2e133] [cursor=pointer]:
+              - img "plus" [ref=f2e102]
+          - status [ref=f2e106]
+          - generic:
+            - generic:
+              - 'tabpanel "Pin tab: Home Home"'
+        - generic [ref=f2e45]:
+          - button "Search pages (Ctrl+K)" [ref=f2e134] [cursor=pointer]:
+            - generic [ref=f2e50]: CTRL + K
+          - button "Language" [ref=f2e135] [cursor=pointer]
+          - button "Theme settings" [ref=f2e136] [cursor=pointer]
+      - main [ref=f2e63]:
+        - generic [ref=f2e64]:
+          - generic [ref=f2e65]: "Current location:"
+          - navigation [ref=f2e67]:
+            - list [ref=f2e68]:
+              - listitem [ref=f2e69]:
+                - generic [ref=f2e71]:
+                  - img "home" [ref=f2e72]
+                  - text: Home
+        - generic [ref=f2e111]:
+          - heading "Component preview" [level=3] [ref=f2e137]
+          - generic [ref=f2e113]: Open Examples from the sidebar to preview component capabilities.
+          - generic [ref=f2e114]: Open Examples from the sidebar, then switch, pin, close, and drag pages in the top tab bar.
+  - menu [ref=f2e116]:
+    - menuitem "简体中文" [ref=f2e117] [cursor=pointer]
+    - menuitem "English" [active] [ref=f2e122] [cursor=pointer]

@@ -104,7 +104,7 @@ const routes: ProLayoutRoute[] = [
 
 ## 顶部扩展
 
-搜索、语言和主题都是独立功能，由业务按需导入后放入 `header.extra`。三者会使用相同尺寸和交互风格，但 ProLayout 不会自动注入它们。
+搜索、语言、主题和个性化都是独立功能，由业务按需导入后放入 `header.extra`。它们会使用相同尺寸和交互风格，但 ProLayout 不会自动注入它们。
 
 ```tsx
 import {
@@ -112,8 +112,10 @@ import {
   ProRouteSearch,
   ProThemeSwitch,
   ReactRouterProLayout,
+  toThemeSeedToken,
   useLocalePreference,
   useThemePreference,
+  useThemeSeedPreference,
 } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
@@ -123,6 +125,7 @@ function PlatformLayout() {
   const theme = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
   })
+  const themeSeed = useThemeSeedPreference()
 
   return (
     <ReactRouterProLayout
@@ -141,6 +144,8 @@ function PlatformLayout() {
               value={theme.value}
               appearance={theme.appearance}
               onChange={theme.setValue}
+              seed={themeSeed.value}
+              onSeedConfirm={themeSeed.setValue}
             />
           </>
         ),
@@ -150,7 +155,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。`useLocalePreference` 和 `useThemePreference` 只管理偏好与 localStorage，不创建 Provider。
+`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。个性化种子用 `toThemeSeedToken(themeSeed.value, theme.appearance)` 放进 `theme.token`，并与原有 `algorithm` 一起传入。`useLocalePreference`、`useThemePreference` 和 `useThemeSeedPreference` 只管理偏好与 localStorage，不创建 Provider。
 
 ## 路由约定
 
@@ -366,8 +371,12 @@ export function OrderPage() {
 | onChange | 偏好变化通知 | `(value: ProThemePreference) => void` | 必填 |
 | prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
 | className | 触发按钮类名 | `string` | - |
+| seed | 已确定的个性化种子。与 `onSeedConfirm` 同时传入后，菜单在紧凑布局下方显示个性化 | `ProThemeSeedPreference` | - |
+| onSeedConfirm | 个性化抽屉点击确定后的通知 | `(value: ProThemeSeedPreference) => void` | - |
 
 `ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。
+
+个性化入口在主题菜单内，用分割线放在紧凑布局下面。抽屉左侧编辑全局种子，右侧预览草稿。调整、单行重置和恢复默认都只改草稿；点击确定才调用 `onSeedConfirm` 并写入 `zby-pro:theme-seed`。关闭抽屉会丢弃草稿。`useThemeSeedPreference(options)` 返回 `value` 和 `setValue`。颜色字段为 `null` 时跟随 antd 默认关系，例如信息色跟随品牌色，基础文本色和背景色跟随明暗算法。`toThemeSeedToken` 负责在传给 `ConfigProvider` 前把这些空值解析成具体颜色。
 
 ### ProLayoutContentContainer
 

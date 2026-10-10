@@ -35,15 +35,23 @@ export type {
 export { ProRouteSearch } from './search'
 export type { ProRouteSearchProps } from './search'
 export { isSameProLayoutTitle, resolveProLayoutTitle } from './title'
-export { ProThemeSwitch, useThemePreference } from './theme'
+export {
+  ProThemeSwitch,
+  toThemeSeedToken,
+  useThemePreference,
+  useThemeSeedPreference,
+} from './theme'
 export type {
   ProThemeAppearance,
   ProThemeDensity,
   ProThemeMode,
   ProThemePreference,
+  ProThemeSeedPreference,
   ProThemeSwitchProps,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
+  UseThemeSeedPreferenceOptions,
+  UseThemeSeedPreferenceReturn,
 } from './theme'
 export type {
   ProLayoutClassNames,

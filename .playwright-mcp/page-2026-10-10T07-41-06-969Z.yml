@@ -1,0 +1,290 @@
+- generic [ref=f31e1]:
+  - generic [ref=f31e4]:
+    - complementary [ref=f31e5]:
+      - generic [ref=f31e7]:
+        - generic [ref=f31e8]: Zibuyu
+        - navigation [ref=f31e13]:
+          - button "home 首页" [ref=f31e14] [cursor=pointer]:
+            - generic [ref=f31e15]:
+              - term [ref=f31e16]:
+                - img "home" [ref=f31e17]
+              - definition [ref=f31e20]:
+                - generic [ref=f31e21]: 首页
+          - button "dashboard 工作台" [ref=f31e22] [cursor=pointer]:
+            - generic [ref=f31e23]:
+              - term [ref=f31e24]:
+                - img "dashboard" [ref=f31e25]
+              - definition [ref=f31e28]:
+                - generic [ref=f31e29]: 工作台
+          - button "clear 示例页面" [ref=f31e30] [cursor=pointer]:
+            - generic [ref=f31e31]:
+              - term [ref=f31e32]:
+                - img "clear" [ref=f31e33]
+              - definition [ref=f31e36]:
+                - generic [ref=f31e37]: 示例页面
+        - button "切换系统" [ref=f31e38] [cursor=pointer]:
+          - img "appstore" [ref=f31e39]
+    - generic [ref=f31e42]:
+      - banner [ref=f31e43]:
+        - generic [ref=f31e78]:
+          - tablist [ref=f31e79]:
+            - tab "固定页签：首页 首页" [selected] [ref=f31e84] [cursor=pointer]:
+              - generic [ref=f31e85]:
+                - button "固定页签：首页" [ref=f31e86]:
+                  - img "pushpin" [ref=f31e87]
+                - generic "首页" [ref=f31e90]
+            - button "收藏菜单" [ref=f31e93] [cursor=pointer]:
+              - img "plus" [ref=f31e95]
+          - status [ref=f31e99]
+          - generic:
+            - generic:
+              - tabpanel "固定页签：首页 首页"
+        - generic [ref=f31e45]:
+          - button "搜索页面（Ctrl+K）" [ref=f31e46] [cursor=pointer]:
+            - generic [ref=f31e50]: CTRL + K
+          - button "语言设置" [ref=f31e51] [cursor=pointer]
+          - button "主题设置" [ref=f31e56] [cursor=pointer]
+      - main [ref=f31e63]:
+        - generic [ref=f31e64]:
+          - generic [ref=f31e65]: 当前位置：
+          - navigation [ref=f31e67]:
+            - list [ref=f31e68]:
+              - listitem [ref=f31e69]:
+                - generic [ref=f31e71]:
+                  - img "home" [ref=f31e72]
+                  - text: 首页
+        - generic [ref=f31e104]:
+          - heading "组件预览" [level=3] [ref=f31e105]
+          - generic [ref=f31e106]: 从左侧打开示例页面，预览组件能力。
+          - generic [ref=f31e107]: 从左侧打开示例页面，再通过顶部页签切换、固定、关闭和拖拽页面。
+  - dialog "个性化共 0 处修改" [ref=f31e155]:
+    - generic [ref=f31e156]:
+      - generic [ref=f31e157]:
+        - button "关闭" [ref=f31e158] [cursor=pointer]:
+          - img "close" [ref=f31e159]
+        - generic [ref=f31e162]: 个性化共 0 处修改
+      - generic [ref=f31e165]:
+        - button "恢复默认" [ref=f31e166] [cursor=pointer]
+        - button "确 定" [disabled] [ref=f31e168]
+    - generic [ref=f31e170]:
+      - complementary [ref=f31e171]:
+        - generic [ref=f31e172]:
+          - generic [ref=f31e173]: 颜色
+          - generic [ref=f31e174]:
+            - generic [ref=f31e175]:
+              - generic [ref=f31e176]: 品牌色
+              - generic [ref=f31e177]:
+                - generic [ref=f31e178]: colorPrimary
+                - button "重置" [ref=f31e179] [cursor=pointer]
+            - generic [ref=f31e180]: "#1677FF"
+          - generic [ref=f31e185]:
+            - generic [ref=f31e186]:
+              - generic [ref=f31e187]: 成功色
+              - generic [ref=f31e188]:
+                - generic [ref=f31e189]: colorSuccess
+                - button "重置" [ref=f31e190] [cursor=pointer]
+            - generic [ref=f31e191]: "#52C41A"
+          - generic [ref=f31e196]:
+            - generic [ref=f31e197]:
+              - generic [ref=f31e198]: 警戒色
+              - generic [ref=f31e199]:
+                - generic [ref=f31e200]: colorWarning
+                - button "重置" [ref=f31e201] [cursor=pointer]
+            - generic [ref=f31e202]: "#FAAD14"
+          - generic [ref=f31e207]:
+            - generic [ref=f31e208]:
+              - generic [ref=f31e209]: 错误色
+              - generic [ref=f31e210]:
+                - generic [ref=f31e211]: colorError
+                - button "重置" [ref=f31e212] [cursor=pointer]
+            - generic [ref=f31e213]: "#FF4D4F"
+          - generic [ref=f31e218]:
+            - generic [ref=f31e219]:
+              - generic [ref=f31e220]: 信息色
+              - generic [ref=f31e221]:
+                - generic [ref=f31e222]: colorInfo
+                - button "重置" [ref=f31e223] [cursor=pointer]
+            - generic [ref=f31e225]:
+              - generic [ref=f31e226]: 使用主色
+              - switch [checked] [ref=f31e227] [cursor=pointer]
+          - generic [ref=f31e230]:
+            - generic [ref=f31e231]:
+              - generic [ref=f31e232]: 链接色
+              - generic [ref=f31e233]:
+                - generic [ref=f31e234]: colorLink
+                - button "重置" [ref=f31e235] [cursor=pointer]
+            - generic [ref=f31e236]: "#1677FF"
+          - generic [ref=f31e241]:
+            - generic [ref=f31e242]:
+              - generic [ref=f31e243]: 基础文本色
+              - generic [ref=f31e244]:
+                - generic [ref=f31e245]: colorTextBase
+                - button "重置" [ref=f31e246] [cursor=pointer]
+            - generic [ref=f31e247]: "#000000"
+          - generic [ref=f31e252]:
+            - generic [ref=f31e253]:
+              - generic [ref=f31e254]: 基础背景色
+              - generic [ref=f31e255]:
+                - generic [ref=f31e256]: colorBgBase
+                - button "重置" [ref=f31e257] [cursor=pointer]
+            - generic [ref=f31e258]: "#FFFFFF"
+        - generic [ref=f31e263]:
+          - generic [ref=f31e264]: 尺寸
+          - generic [ref=f31e265]:
+            - generic [ref=f31e266]: 文字
+            - generic [ref=f31e267]:
+              - generic [ref=f31e268]: fontSize
+              - button "重置" [ref=f31e269] [cursor=pointer]
+            - generic [ref=f31e270]:
+              - slider "文字" [ref=f31e274] [cursor=pointer]
+              - generic [ref=f31e275]:
+                - spinbutton "文字" [ref=f31e276]: "14"
+                - generic:
+                  - button "Increase Value" [ref=f31e277] [cursor=pointer]:
+                    - img "up" [ref=f31e278]
+                  - button "Decrease Value" [ref=f31e281] [cursor=pointer]:
+                    - img "down" [ref=f31e282]
+          - generic [ref=f31e285]:
+            - generic [ref=f31e286]: 尺寸步长
+            - generic [ref=f31e287]:
+              - generic [ref=f31e288]: sizeStep
+              - button "重置" [ref=f31e289] [cursor=pointer]
+            - generic [ref=f31e290]:
+              - slider "尺寸步长" [ref=f31e294] [cursor=pointer]
+              - generic [ref=f31e295]:
+                - spinbutton "尺寸步长" [ref=f31e296]: "4"
+                - generic:
+                  - button "Increase Value" [ref=f31e297] [cursor=pointer]:
+                    - img "up" [ref=f31e298]
+                  - button "Decrease Value" [ref=f31e301] [cursor=pointer]:
+                    - img "down" [ref=f31e302]
+          - generic [ref=f31e305]:
+            - generic [ref=f31e306]: 尺寸变化单位
+            - generic [ref=f31e307]:
+              - generic [ref=f31e308]: sizeUnit
+              - button "重置" [ref=f31e309] [cursor=pointer]
+            - generic [ref=f31e310]:
+              - slider "尺寸变化单位" [ref=f31e314] [cursor=pointer]
+              - generic [ref=f31e315]:
+                - spinbutton "尺寸变化单位" [ref=f31e316]: "4"
+                - generic:
+                  - button "Increase Value" [ref=f31e317] [cursor=pointer]:
+                    - img "up" [ref=f31e318]
+                  - button "Decrease Value" [ref=f31e321] [cursor=pointer]:
+                    - img "down" [ref=f31e322]
+        - generic [ref=f31e325]:
+          - generic [ref=f31e326]: 风格
+          - generic [ref=f31e327]:
+            - generic [ref=f31e328]: 圆角
+            - generic [ref=f31e329]:
+              - generic [ref=f31e330]: borderRadius
+              - button "重置" [ref=f31e331] [cursor=pointer]
+            - generic [ref=f31e332]:
+              - slider "圆角" [ref=f31e336] [cursor=pointer]
+              - generic [ref=f31e337]:
+                - spinbutton "圆角" [ref=f31e338]: "6"
+                - generic:
+                  - button "Increase Value" [ref=f31e339] [cursor=pointer]:
+                    - img "up" [ref=f31e340]
+                  - button "Decrease Value" [ref=f31e343] [cursor=pointer]:
+                    - img "down" [ref=f31e344]
+          - generic [ref=f31e347]:
+            - generic [ref=f31e348]:
+              - generic [ref=f31e349]: 线框化
+              - generic [ref=f31e350]:
+                - generic [ref=f31e351]: wireframe
+                - button "重置" [ref=f31e352] [cursor=pointer]
+            - switch [ref=f31e354] [cursor=pointer]
+      - generic [ref=f31e358]:
+        - radiogroup "segmented control" [ref=f31e359]:
+          - generic [ref=f31e360]:
+            - generic [ref=f31e361] [cursor=pointer]:
+              - radio "页面示例"
+              - generic "页面示例" [ref=f31e362]
+            - generic [ref=f31e363] [cursor=pointer]:
+              - radio "风格概览" [checked]
+              - generic "风格概览" [ref=f31e364]
+        - generic [ref=f31e480]:
+          - generic [ref=f31e481]:
+            - heading "颜色" [level=3] [ref=f31e482]
+            - generic [ref=f31e483]:
+              - generic [ref=f31e484]: 品牌色
+              - button "主按钮" [ref=f31e486] [cursor=pointer]
+            - generic [ref=f31e488]:
+              - generic [ref=f31e489]: 成功色
+              - alert [ref=f31e491]:
+                - img "check-circle" [ref=f31e493]
+                - generic [ref=f31e496]: 这是成功色提示
+            - generic [ref=f31e498]:
+              - generic [ref=f31e499]: 警戒色
+              - alert [ref=f31e501]:
+                - img "exclamation-circle" [ref=f31e503]
+                - generic [ref=f31e506]: 这是警戒色提示
+            - generic [ref=f31e508]:
+              - generic [ref=f31e509]: 错误色
+              - alert [ref=f31e511]:
+                - img "close-circle" [ref=f31e513]
+                - generic [ref=f31e516]: 这是错误色提示
+            - generic [ref=f31e518]:
+              - generic [ref=f31e519]: 信息色
+              - alert [ref=f31e521]:
+                - img "info-circle" [ref=f31e523]
+                - generic [ref=f31e526]: 这是信息色提示
+            - generic [ref=f31e528]:
+              - generic [ref=f31e529]: 链接色
+              - link "查看详情" [ref=f31e531] [cursor=pointer]:
+                - /url: "#"
+            - generic [ref=f31e532]:
+              - generic [ref=f31e533]: 基础文本色
+              - generic [ref=f31e534]: 正文示例
+            - generic [ref=f31e536]:
+              - generic [ref=f31e537]: 基础背景色
+              - generic [ref=f31e538]: 容器背景
+          - generic [ref=f31e541]:
+            - heading "尺寸" [level=3] [ref=f31e542]
+            - generic [ref=f31e543]:
+              - generic [ref=f31e544]: 文字
+              - generic [ref=f31e545]: 正文示例
+            - generic [ref=f31e547]:
+              - generic [ref=f31e548]: 尺寸步长
+              - generic [ref=f31e549]:
+                - button "主按钮" [ref=f31e550] [cursor=pointer]
+                - textbox "输入框" [ref=f31e552]
+            - generic [ref=f31e553]: 尺寸变化单位
+          - generic [ref=f31e559]:
+            - heading "风格" [level=3] [ref=f31e560]
+            - generic [ref=f31e561]:
+              - generic [ref=f31e562]: 圆角
+              - generic [ref=f31e563]:
+                - button "主按钮" [ref=f31e564] [cursor=pointer]
+                - textbox "输入框" [ref=f31e566]
+                - generic [ref=f31e567]: 卡片
+            - generic [ref=f31e569]:
+              - generic [ref=f31e570]: 线框化
+              - generic [ref=f31e571]:
+                - radiogroup [ref=f31e572]:
+                  - generic [ref=f31e573] [cursor=pointer]:
+                    - radio "选项" [checked] [ref=f31e575]
+                    - generic [ref=f31e576]: 选项
+                  - generic [ref=f31e577] [cursor=pointer]:
+                    - radio "另一项" [ref=f31e579]
+                    - generic [ref=f31e580]: 另一项
+                - list [ref=f31e581]:
+                  - listitem "上一页" [ref=f31e582]:
+                    - button [disabled] [ref=f31e583]:
+                      - img "left" [ref=f31e584]
+                  - listitem "1" [ref=f31e587] [cursor=pointer]
+                  - listitem "2" [ref=f31e589] [cursor=pointer]
+                  - listitem "3" [ref=f31e591] [cursor=pointer]
+                  - listitem "4" [ref=f31e593] [cursor=pointer]
+                  - listitem "5" [ref=f31e595] [cursor=pointer]
+                  - listitem "下一页" [ref=f31e597] [cursor=pointer]:
+                    - button [ref=f31e598]:
+                      - img "right" [ref=f31e599]
+        - generic [ref=f31e465]:
+          - button "缩小" [active] [ref=f31e466] [cursor=pointer]:
+            - img "minus" [ref=f31e468]
+          - button "恢复 100%" [ref=f31e471] [cursor=pointer]:
+            - generic [ref=f31e472]: 90%
+          - button "放大" [ref=f31e473] [cursor=pointer]:
+            - img "plus" [ref=f31e475]

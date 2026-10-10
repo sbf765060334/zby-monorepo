@@ -103,7 +103,7 @@ Do not use `element: <OrderListPage />`. The page chunk downloads on first visit
 
 ## Header Extensions
 
-Search, locale, and theme are independent features. Import the ones required by the application and place them in `header.extra`. They share the same sizing and interaction style, but ProLayout does not inject them automatically.
+Search, locale, theme, and seed customization are independent features. Import the ones required by the application and place them in `header.extra`. They share the same sizing and interaction style, but ProLayout does not inject them automatically.
 
 ```tsx
 import {
@@ -111,8 +111,10 @@ import {
   ProRouteSearch,
   ProThemeSwitch,
   ReactRouterProLayout,
+  toThemeSeedToken,
   useLocalePreference,
   useThemePreference,
+  useThemeSeedPreference,
 } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
@@ -122,6 +124,7 @@ function PlatformLayout() {
   const theme = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
   })
+  const themeSeed = useThemeSeedPreference()
 
   return (
     <ReactRouterProLayout
@@ -140,6 +143,8 @@ function PlatformLayout() {
               value={theme.value}
               appearance={theme.appearance}
               onChange={theme.setValue}
+              seed={themeSeed.value}
+              onSeedConfirm={themeSeed.setValue}
             />
           </>
         ),
@@ -149,7 +154,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. `useLocalePreference` and `useThemePreference` only manage preferences and localStorage; they do not create providers.
+`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. Pass `toThemeSeedToken(themeSeed.value, theme.appearance)` through `theme.token` together with the existing `algorithm`. `useLocalePreference`, `useThemePreference`, and `useThemeSeedPreference` only manage preferences and localStorage; they do not create providers.
 
 ## Route Conventions
 
@@ -365,8 +370,12 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | onChange | Called when the preference changes | `(value: ProThemePreference) => void` | Required |
 | prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
 | className | Class name on the trigger button | `string` | - |
+| seed | Confirmed seed. When set together with `onSeedConfirm`, the menu shows Customize below compact layout | `ProThemeSeedPreference` | - |
+| onSeedConfirm | Called when the user confirms the seed drawer | `(value: ProThemeSeedPreference) => void` | - |
 
 `ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`.
+
+Customize sits inside the theme menu, below compact layout and a divider. The drawer edits global seeds on the left and previews the draft on the right. Field edits, per-field reset, and Reset only change the draft. OK calls `onSeedConfirm` and stores the result under `zby-pro:theme-seed`. Closing the drawer discards the draft. `useThemeSeedPreference(options)` returns `value` and `setValue`. A `null` color keeps Ant Design's default relationship: info and link follow the primary color, while base text and background follow the active appearance algorithm. `toThemeSeedToken` resolves those empty values before they reach `ConfigProvider`.
 
 ### ProLayoutContentContainer
 

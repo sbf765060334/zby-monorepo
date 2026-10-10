@@ -2,6 +2,8 @@ import { useStyleRegister } from '@ant-design/cssinjs'
 import { ConfigProvider, theme as antdTheme } from 'antd'
 import * as React from 'react'
 
+import { deriveSiderPalette } from '../theme/siderPalette'
+
 const unit = (value: number | string) => typeof value === 'number' ? `${value}px` : value
 const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
 
@@ -61,6 +63,13 @@ export default function useProLayoutStyles(prefixCls: string) {
   const siderItemHeightVar = `--${prefixCls}-sider-item-height`
   const siderItemPaddingBlockVar = `--${prefixCls}-sider-item-padding-block`
   const siderIconSizeVar = `--${prefixCls}-sider-icon-size`
+  const siderBackgroundVar = `--${prefixCls}-sider-background`
+  const siderTextVar = `--${prefixCls}-sider-text`
+  const siderTextHoverVar = `--${prefixCls}-sider-text-hover`
+  const siderTextActiveVar = `--${prefixCls}-sider-text-active`
+  const siderDividerVar = `--${prefixCls}-sider-divider`
+  // cssVar 下的 token 字符串不随种子变化，注册样式会被缓存。侧栏颜色放到根节点变量上，确定后立刻生效。
+  const siderPalette = deriveSiderPalette(token.colorPrimary)
   const layoutCSSVariables = {
     [headerHeightVar]: unit(headerHeight),
     [headerTabHeightVar]: unit(headerTabHeight),
@@ -73,6 +82,11 @@ export default function useProLayoutStyles(prefixCls: string) {
     [siderItemHeightVar]: unit(siderItemHeight),
     [siderItemPaddingBlockVar]: unit(siderItemPaddingBlock),
     [siderIconSizeVar]: unit(siderIconSize),
+    [siderBackgroundVar]: `linear-gradient(180deg, ${siderPalette.gradientStart} 0%, ${siderPalette.gradientEnd} 100%)`,
+    [siderTextVar]: siderPalette.text,
+    [siderTextHoverVar]: siderPalette.textHover,
+    [siderTextActiveVar]: siderPalette.textActive,
+    [siderDividerVar]: siderPalette.divider,
   }
   const headerHeightStyle = `var(${headerHeightVar})`
   const headerTabHeightStyle = `var(${headerTabHeightVar})`
@@ -88,6 +102,11 @@ export default function useProLayoutStyles(prefixCls: string) {
   const tabCurveOffset = `calc(${tabCurveSizeStyle} * -1)`
   const drawerColumnWidth = `var(--${prefixCls}-menu-column-width)`
   const surfaceShadow = styleToken.boxShadowTertiary || styleToken.boxShadowSecondary
+  const siderBackground = `var(${siderBackgroundVar})`
+  const siderText = `var(${siderTextVar})`
+  const siderTextHover = `var(${siderTextHoverVar})`
+  const siderTextActive = `var(${siderTextActiveVar})`
+  const siderDivider = `var(${siderDividerVar})`
 
   // 派生尺寸由根节点 CSS 变量承载，主题切换时无需重新注册整份样式。
   useStyleRegister(
@@ -95,7 +114,7 @@ export default function useProLayoutStyles(prefixCls: string) {
       theme,
       token: styleToken,
       hashId,
-      path: ['zby-pro', 'pro-layout', prefixCls],
+      path: ['zby-pro', 'pro-layout', prefixCls, 'sider-palette'],
     },
     () => ({
       [componentCls]: {
@@ -124,7 +143,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           display: 'flex',
           height: '100%',
           boxSizing: 'border-box',
-          background: 'linear-gradient(180deg, #384386 0%, #11162f 100%)',
+          background: siderBackground,
 
           [`${antCls}-layout-sider-children`]: { height: '100%' },
         },
@@ -193,7 +212,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           paddingInline: 0,
           border: 0,
           background: 'transparent',
-          color: '#868a9c',
+          color: siderText,
           textAlign: 'center',
           textDecoration: 'none',
           cursor: 'pointer',
@@ -219,7 +238,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             insetInlineStart: 0,
             width: styleToken.lineWidthBold,
             height: '100%',
-            background: '#fff',
+            background: siderTextActive,
             borderStartEndRadius: styleToken.borderRadiusSM,
             borderEndEndRadius: styleToken.borderRadiusSM,
             content: '""',
@@ -246,9 +265,9 @@ export default function useProLayoutStyles(prefixCls: string) {
             lineHeight: styleToken.lineHeight,
           },
 
-          '&:hover': { color: '#c9cad4' },
+          '&:hover': { color: siderTextHover },
           '&:focus-visible': {
-            color: '#c9cad4',
+            color: siderTextHover,
             outline: `${unit(styleToken.lineWidthFocus)} ${styleToken.lineType} ${styleToken.controlOutline}`,
             outlineOffset: styleToken.marginXXS,
           },
@@ -264,10 +283,10 @@ export default function useProLayoutStyles(prefixCls: string) {
           whiteSpace: 'nowrap',
         },
 
-        [`${componentCls}-sider-item-hover`]: { color: '#c9cad4' },
+        [`${componentCls}-sider-item-hover`]: { color: siderTextHover },
         [`${componentCls}-sider-item-active`]: {
-          color: '#fff',
-          '&:hover, &:focus-visible': { color: '#fff' },
+          color: siderTextActive,
+          '&:hover, &:focus-visible': { color: siderTextActive },
           dl: { '&::before': { opacity: 1 } },
         },
 
@@ -279,14 +298,14 @@ export default function useProLayoutStyles(prefixCls: string) {
           alignItems: 'center',
           justifyContent: 'center',
           border: 0,
-          borderBlockStart: '1px solid #30354f',
+          borderBlockStart: `1px solid ${siderDivider}`,
           background: 'transparent',
-          color: '#868a9c',
+          color: siderText,
           fontSize: siderIconSizeStyle,
           cursor: 'pointer',
           transition: `color ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
 
-          '&:hover, &:focus-visible': { color: '#c9cad4' },
+          '&:hover, &:focus-visible': { color: siderTextHover },
         },
 
         [`${componentCls}-header`]: {

@@ -1,0 +1,58 @@
+- generic [ref=f7e4]:
+  - complementary [ref=f7e5]:
+    - generic [ref=f7e7]:
+      - generic [ref=f7e8]: Zibuyu
+      - navigation [ref=f7e13]:
+        - button "home 首页" [ref=f7e14] [cursor=pointer]:
+          - generic [ref=f7e15]:
+            - term [ref=f7e16]:
+              - img "home" [ref=f7e17]
+            - definition [ref=f7e20]:
+              - generic [ref=f7e21]: 首页
+        - button "dashboard 工作台" [ref=f7e22] [cursor=pointer]:
+          - generic [ref=f7e23]:
+            - term [ref=f7e24]:
+              - img "dashboard" [ref=f7e25]
+            - definition [ref=f7e28]:
+              - generic [ref=f7e29]: 工作台
+        - button "clear 示例页面" [ref=f7e30] [cursor=pointer]:
+          - generic [ref=f7e31]:
+            - term [ref=f7e32]:
+              - img "clear" [ref=f7e33]
+            - definition [ref=f7e36]:
+              - generic [ref=f7e37]: 示例页面
+      - button "切换系统" [ref=f7e38] [cursor=pointer]:
+        - img "appstore" [ref=f7e39]
+  - generic [ref=f7e42]:
+    - banner [ref=f7e43]:
+      - generic [ref=f7e78]:
+        - tablist [ref=f7e79]:
+          - tab "固定页签：首页 首页" [selected] [ref=f7e84] [cursor=pointer]:
+            - generic [ref=f7e85]:
+              - button "固定页签：首页" [ref=f7e86]:
+                - img "pushpin" [ref=f7e87]
+              - generic "首页" [ref=f7e90]
+          - button "收藏菜单" [ref=f7e93] [cursor=pointer]:
+            - img "plus" [ref=f7e95]
+        - status [ref=f7e99]
+        - generic:
+          - generic:
+            - tabpanel "固定页签：首页 首页"
+      - generic [ref=f7e45]:
+        - button "搜索页面（Ctrl+K）" [ref=f7e46] [cursor=pointer]:
+          - generic [ref=f7e50]: CTRL + K
+        - button "语言设置" [ref=f7e51] [cursor=pointer]
+        - button "主题设置" [ref=f7e56] [cursor=pointer]
+    - main [ref=f7e63]:
+      - generic [ref=f7e64]:
+        - generic [ref=f7e65]: 当前位置：
+        - navigation [ref=f7e67]:
+          - list [ref=f7e68]:
+            - listitem [ref=f7e69]:
+              - generic [ref=f7e71]:
+                - img "home" [ref=f7e72]
+                - text: 首页
+      - generic [ref=f7e104]:
+        - heading "组件预览" [level=3] [ref=f7e105]
+        - generic [ref=f7e106]: 从左侧打开示例页面，预览组件能力。
+        - generic [ref=f7e107]: 从左侧打开示例页面，再通过顶部页签切换、固定、关闭和拖拽页面。

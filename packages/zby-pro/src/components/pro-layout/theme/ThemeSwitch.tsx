@@ -1,4 +1,5 @@
 import {
+  BgColorsOutlined,
   CompressOutlined,
   ExpandOutlined,
   MoonOutlined,
@@ -10,12 +11,19 @@ import { useIntl } from '@zby/intl'
 import { ActionIcon } from '@zby/ui'
 import { ConfigProvider, Dropdown, theme as antdTheme } from 'antd'
 import { clsx } from 'clsx'
-import { useCallback, useContext, useRef } from 'react'
+import { useCallback, useContext, useRef, useState } from 'react'
 
 import type { MenuProps } from 'antd'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './constants'
 import useThemeSwitchStyles from './style'
-import type { ProThemeAppearance, ProThemeMode, ProThemePreference } from './types'
+import ProThemeSeed from './ThemeSeed'
+import type { ThemeSeedConfig } from './themeSeedConfig'
+import type {
+  ProThemeAppearance,
+  ProThemeMode,
+  ProThemePreference,
+  ProThemeSeedPreference,
+} from './types'
 import { resolveThemeAppearance } from './useThemePreference'
 
 const THEME_ICON_PATH = 'M7.02 3.635l12.518 12.518a1.863 1.863 0 010 2.635l-1.317 1.318a1.863 1.863 0 01-2.635 0L3.068 7.588A2.795 2.795 0 117.02 3.635zm2.09 14.428a.932.932 0 110 1.864.932.932 0 010-1.864zm-.043-9.747L7.75 9.635l9.154 9.153 1.318-1.317-9.154-9.155zM3.52 12.473c.514 0 .931.417.931.931v.932h.932a.932.932 0 110 1.864h-.932v.931a.932.932 0 01-1.863 0l-.001-.931h-.93a.932.932 0 010-1.864h.93v-.932c0-.514.418-.931.933-.931zm15.374-3.727a1.398 1.398 0 110 2.795 1.398 1.398 0 010-2.795zM4.385 4.953a.932.932 0 000 1.317l12.046 12.047L7.75 7 5.703 4.953a.932.932 0 00-1.318 0zM14.701.36a.932.932 0 01.931.932v.931h.932a.932.932 0 010 1.864h-.933l.001.932a.932.932 0 11-1.863 0l-.001-.932h-.93a.932.932 0 110-1.864h.93v-.931a.932.932 0 01.933-.932z'
@@ -56,6 +64,12 @@ export interface ProThemeSwitchProps {
   prefixCls?: string
   /** 附加到触发按钮上的业务类名。 */
   className?: string
+  /** 已确定的个性化种子。和 onSeedConfirm 同时传入时，菜单才出现个性化入口。 */
+  seed?: ProThemeSeedPreference
+  /** 已确定的主题配置正文。不传时按种子里偏离默认值的字段生成。 */
+  seedConfig?: ThemeSeedConfig
+  /** 个性化抽屉点确定后提交种子和配置正文。组件不直接写存储。 */
+  onSeedConfirm?: (value: ProThemeSeedPreference, config: ThemeSeedConfig) => void
 }
 
 /** 只负责主题偏好的选择 UI，最终 Ant Design 主题由业务 ConfigProvider 应用。 */
@@ -64,7 +78,10 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
     appearance,
     className,
     onChange,
+    onSeedConfirm,
     prefixCls: customizePrefixCls,
+    seed,
+    seedConfig,
     value,
   } = props
   const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
@@ -72,6 +89,8 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
   const intl = useIntl()
   const { token } = antdTheme.useToken()
   const hashId = useThemeSwitchStyles(prefixCls)
+  const [seedOpen, setSeedOpen] = useState(false)
+  const seedEnabled = seed !== undefined && onSeedConfirm !== undefined
 
   // 动画回调只接收实际 light/dark，ref 用来暂存同时包含 auto 和 density 的完整偏好。
   const pendingPreferenceRef = useRef<ProThemePreference | null>(null)
@@ -204,41 +223,69 @@ export default function ProThemeSwitch(props: ProThemeSwitchProps) {
       ),
     },
   ]
+  if (seedEnabled) {
+    items.push(
+      { type: 'divider' },
+      {
+        key: 'seed',
+        icon: <BgColorsOutlined />,
+        label: intl.getMessage('zby.pro.layout.seed.trigger', '个性化'),
+      },
+    )
+  }
   const title = intl.getMessage('zby.pro.layout.theme.trigger', '主题设置')
 
   return (
-    <Dropdown
-      trigger={['hover']}
-      placement="bottomRight"
-      destroyOnHidden
-      menu={{
-        items,
-        onClick: ({ key }) => {
-          if (key === 'mode:auto' || key === 'mode:light' || key === 'mode:dark') {
-            selectMode(key.slice('mode:'.length) as ProThemeMode)
-            return
-          }
+    <>
+      <Dropdown
+        trigger={['hover']}
+        placement="bottomRight"
+        destroyOnHidden
+        menu={{
+          items,
+          onClick: ({ key }) => {
+            if (key === 'mode:auto' || key === 'mode:light' || key === 'mode:dark') {
+              selectMode(key.slice('mode:'.length) as ProThemeMode)
+              return
+            }
 
-          if (key === 'density:default' || key === 'density:compact') {
+            if (key === 'density:default' || key === 'density:compact') {
             // 密度切换会改变大量几何尺寸，直接更新以避免圆形快照动画产生跳动。
-            onChange({
-              ...value,
-              density: key === 'density:compact' ? 'compact' : 'default',
-            })
-          }
-        },
-      }}
-    >
-      <ActionIcon
-        size="small"
-        className={clsx(`${prefixCls}-theme-trigger`, hashId, className)}
-        icon={<ThemeIcon />}
-        aria-label={title}
-        title={title}
-        ref={themeTriggerRef}
-        onFocus={recordThemeTriggerCenter}
-        onPointerEnter={recordThemeTriggerCenter}
-      />
-    </Dropdown>
+              onChange({
+                ...value,
+                density: key === 'density:compact' ? 'compact' : 'default',
+              })
+              return
+            }
+
+            if (key === 'seed')
+              setSeedOpen(true)
+          },
+        }}
+      >
+        <ActionIcon
+          size="small"
+          className={clsx(`${prefixCls}-theme-trigger`, hashId, className)}
+          icon={<ThemeIcon />}
+          aria-label={title}
+          title={title}
+          ref={themeTriggerRef}
+          onFocus={recordThemeTriggerCenter}
+          onPointerEnter={recordThemeTriggerCenter}
+        />
+      </Dropdown>
+      {seed && onSeedConfirm ? (
+        <ProThemeSeed
+          appearance={appearance}
+          density={value.density}
+          open={seedOpen}
+          prefixCls={prefixCls}
+          value={seed}
+          config={seedConfig}
+          onClose={() => setSeedOpen(false)}
+          onConfirm={onSeedConfirm}
+        />
+      ) : null}
+    </>
   )
 }

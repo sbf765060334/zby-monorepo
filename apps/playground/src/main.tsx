@@ -9,8 +9,10 @@ import {
   ProThemeSwitch,
   type ProLayoutRoute,
   ReactRouterProLayout,
+  toThemeSeedToken,
   useLocalePreference,
   useThemePreference,
+  useThemeSeedPreference,
 } from '@zby/pro'
 import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
 import uiEnUS from '@zby/ui/locale/en_US'
@@ -56,6 +58,7 @@ function PlaygroundApp() {
   const themePreference = useThemePreference({
     defaultValue: { mode: 'auto', density: 'default' },
   })
+  const themeSeed = useThemeSeedPreference()
 
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -85,7 +88,11 @@ function PlaygroundApp() {
   return (
     <ZbyConfigProvider
       locale={playgroundLocales[localePreference.value]}
-      theme={{ algorithm, cssVar: { prefix: 'zby' } }}
+      theme={{
+        algorithm,
+        cssVar: { prefix: 'zby' },
+        token: toThemeSeedToken(themeSeed.value, themePreference.appearance),
+      }}
       prefixCls="zby"
     >
       <ReactRouterProLayout
@@ -114,6 +121,9 @@ function PlaygroundApp() {
                 value={themePreference.value}
                 appearance={themePreference.appearance}
                 onChange={themePreference.setValue}
+                seed={themeSeed.value}
+                seedConfig={themeSeed.config}
+                onSeedConfirm={themeSeed.setValue}
               />
             </>
           ),

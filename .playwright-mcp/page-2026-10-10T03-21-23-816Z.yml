@@ -1,0 +1,261 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - heading [level=1] [ref=e7]:
+        - link "logo Ant Design" [ref=e8] [cursor=pointer]:
+          - /url: /index-cn
+          - img "logo" [ref=e9]
+          - generic [ref=e10]: Ant Design
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - img "Search" [ref=e14]
+          - textbox "输入关键字搜索..." [ref=e16]
+        - menu [ref=e17]:
+          - menuitem [ref=e18] [cursor=pointer]:
+            - link "设计" [ref=e20]:
+              - /url: /docs/spec/introduce-cn
+          - menuitem [ref=e21] [cursor=pointer]:
+            - link "研发" [ref=e23]:
+              - /url: /docs/react/introduce-cn
+          - menuitem [ref=e24] [cursor=pointer]:
+            - link "组件" [ref=e26]:
+              - /url: /components/overview-cn/
+          - menuitem [ref=e27] [cursor=pointer]:
+            - link "博客" [ref=e29]:
+              - /url: /docs/blog/ai-open-source-contribution-cn
+          - menuitem [ref=e30] [cursor=pointer]:
+            - link "资源" [ref=e32]:
+              - /url: /docs/resources-cn
+          - menuitem [ref=e33] [cursor=pointer]:
+            - link "国内镜像" [ref=e35]:
+              - /url: https://ant-design.antgroup.com
+          - menuitem [ref=e36] [cursor=pointer]:
+            - img "menu" [ref=e38]
+  - generic [ref=e42]:
+    - generic [ref=e43]:
+      - generic [ref=e44]: 主题编辑器
+      - generic [ref=e45]:
+        - radiogroup "segmented control" [ref=e47]:
+          - generic [ref=e48]:
+            - generic [ref=e49] [cursor=pointer]:
+              - radio "全局" [checked]
+              - generic "全局" [ref=e50]
+            - generic [ref=e51] [cursor=pointer]:
+              - radio "组件"
+              - generic "组件" [ref=e52]
+        - radiogroup "segmented control" [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56] [cursor=pointer]:
+              - radio [checked]
+            - generic [ref=e68] [cursor=pointer]:
+              - radio
+      - generic [ref=e78]:
+        - generic [ref=e79]: 共 0 处修改
+        - button "主题配置" [ref=e80] [cursor=pointer]
+        - button "保 存" [ref=e82] [cursor=pointer]
+    - generic [ref=e85]:
+      - generic [ref=e88]:
+        - generic [ref=e90]:
+          - link "颜色" [ref=e92] [cursor=pointer]:
+            - /url: "#Color"
+          - link "尺寸" [ref=e94] [cursor=pointer]:
+            - /url: "#Size"
+          - link "风格" [ref=e96] [cursor=pointer]:
+            - /url: "#Style"
+        - generic [ref=e97]:
+          - generic [ref=e99]:
+            - generic [ref=e100]: 颜色
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]: 品牌色
+                  - generic [ref=e107]:
+                    - generic [ref=e110]:
+                      - generic [ref=e111]: colorPrimary
+                      - generic [ref=e112]: 重置
+                    - generic [ref=e113]: "#1677ff"
+                - button "caret-right 梯度变量 Map Token" [ref=e119] [cursor=pointer]:
+                  - img "caret-right" [ref=e121]
+                  - generic [ref=e124]: 梯度变量 Map Token
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - generic [ref=e129]: 成功色
+                  - generic [ref=e131]:
+                    - generic [ref=e134]:
+                      - generic [ref=e135]: colorSuccess
+                      - generic [ref=e136]: 重置
+                    - generic [ref=e137]: "#52c41a"
+                - button "caret-right 梯度变量 Map Token" [ref=e143] [cursor=pointer]:
+                  - img "caret-right" [ref=e145]
+                  - generic [ref=e148]: 梯度变量 Map Token
+              - generic [ref=e151]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]: 警戒色
+                  - generic [ref=e155]:
+                    - generic [ref=e158]:
+                      - generic [ref=e159]: colorWarning
+                      - generic [ref=e160]: 重置
+                    - generic [ref=e161]: "#faad14"
+                - button "caret-right 梯度变量 Map Token" [ref=e167] [cursor=pointer]:
+                  - img "caret-right" [ref=e169]
+                  - generic [ref=e172]: 梯度变量 Map Token
+              - generic [ref=e175]:
+                - generic [ref=e176]:
+                  - generic [ref=e177]: 错误色
+                  - generic [ref=e179]:
+                    - generic [ref=e182]:
+                      - generic [ref=e183]: colorError
+                      - generic [ref=e184]: 重置
+                    - generic [ref=e185]: "#ff4d4f"
+                - button "caret-right 梯度变量 Map Token" [ref=e191] [cursor=pointer]:
+                  - img "caret-right" [ref=e193]
+                  - generic [ref=e196]: 梯度变量 Map Token
+              - generic [ref=e201]:
+                - generic [ref=e202]: 信息色
+                - generic [ref=e203]:
+                  - generic [ref=e204]: 使用主色
+                  - switch [checked] [ref=e205] [cursor=pointer]
+              - generic [ref=e208]:
+                - generic [ref=e209]:
+                  - generic [ref=e210]: 链接色
+                  - generic [ref=e212]:
+                    - generic [ref=e215]:
+                      - generic [ref=e216]: colorLink
+                      - generic [ref=e217]: 重置
+                    - generic [ref=e218]: "#1677ff"
+                - button "caret-right 梯度变量 Map Token" [ref=e224] [cursor=pointer]:
+                  - img "caret-right" [ref=e226]
+                  - generic [ref=e229]: 梯度变量 Map Token
+              - generic [ref=e232]:
+                - generic [ref=e233]:
+                  - generic [ref=e234]: 中性色
+                  - generic [ref=e236]:
+                    - generic [ref=e239]:
+                      - generic [ref=e240]: 基础文本色colorTextBase
+                      - generic [ref=e241]: 重置
+                    - generic [ref=e242]: "#000"
+                  - generic [ref=e246]:
+                    - generic [ref=e249]:
+                      - generic [ref=e250]: 基础背景色colorBgBase
+                      - generic [ref=e251]: 重置
+                    - generic [ref=e252]: "#fff"
+                - button "caret-right 梯度变量 Map Token 分组显示" [ref=e258] [cursor=pointer]:
+                  - img "caret-right" [ref=e260]
+                  - generic [ref=e264]:
+                    - generic [ref=e265]: 梯度变量 Map Token
+                    - generic:
+                      - generic: 分组显示
+                      - switch [checked]
+          - generic [ref=e267]:
+            - generic [ref=e268]:
+              - generic [ref=e269]: 尺寸
+              - radiogroup "segmented control" [ref=e270]:
+                - generic [ref=e271]:
+                  - generic [ref=e272] [cursor=pointer]:
+                    - radio "expand" [checked]
+                    - img "expand" [ref=e275]
+                  - generic [ref=e278] [cursor=pointer]:
+                    - radio
+            - generic [ref=e288]:
+              - generic [ref=e289]:
+                - generic [ref=e290]:
+                  - generic [ref=e291]: 文字
+                  - generic [ref=e293]:
+                    - generic [ref=e296]:
+                      - generic [ref=e297]: fontSize
+                      - generic [ref=e298]: 重置
+                    - generic [ref=e300]:
+                      - slider [ref=e304] [cursor=pointer]
+                      - generic [ref=e305]:
+                        - spinbutton [ref=e306]: "14"
+                        - generic:
+                          - button "Increase Value" [ref=e307] [cursor=pointer]:
+                            - img "up" [ref=e308]
+                          - button "Decrease Value" [ref=e311] [cursor=pointer]:
+                            - img "down" [ref=e312]
+                - button "caret-right 梯度变量 Map Token" [ref=e317] [cursor=pointer]:
+                  - img "caret-right" [ref=e319]
+                  - generic [ref=e322]: 梯度变量 Map Token
+              - generic [ref=e325]:
+                - generic [ref=e326]:
+                  - generic [ref=e327]: 间距
+                  - generic [ref=e329]:
+                    - generic [ref=e332]:
+                      - generic [ref=e333]: 尺寸步长sizeStep
+                      - generic [ref=e334]: 重置
+                    - generic [ref=e336]:
+                      - slider [ref=e340] [cursor=pointer]
+                      - generic [ref=e341]:
+                        - spinbutton [ref=e342]: "4"
+                        - generic:
+                          - button "Increase Value" [ref=e343] [cursor=pointer]:
+                            - img "up" [ref=e344]
+                          - button "Decrease Value" [ref=e347] [cursor=pointer]:
+                            - img "down" [ref=e348]
+                  - generic [ref=e351]:
+                    - generic [ref=e354]:
+                      - generic [ref=e355]: 尺寸变化单位sizeUnit
+                      - generic [ref=e356]: 重置
+                    - generic [ref=e358]:
+                      - slider [ref=e362] [cursor=pointer]
+                      - generic [ref=e363]:
+                        - spinbutton [ref=e364]: "4"
+                        - generic:
+                          - button "Increase Value" [ref=e365] [cursor=pointer]:
+                            - img "up" [ref=e366]
+                          - button "Decrease Value" [ref=e369] [cursor=pointer]:
+                            - img "down" [ref=e370]
+                - button "caret-right 梯度变量 Map Token" [ref=e375] [cursor=pointer]:
+                  - img "caret-right" [ref=e377]
+                  - generic [ref=e380]: 梯度变量 Map Token
+          - generic [ref=e384]:
+            - generic [ref=e385]: 风格
+            - generic [ref=e387]:
+              - generic [ref=e388]:
+                - generic [ref=e389]:
+                  - generic [ref=e390]: 圆角
+                  - generic [ref=e392]:
+                    - generic [ref=e395]:
+                      - generic [ref=e396]: borderRadius
+                      - generic [ref=e397]: 重置
+                    - generic [ref=e399]:
+                      - slider [ref=e403] [cursor=pointer]
+                      - generic [ref=e404]:
+                        - spinbutton [ref=e405]: "6"
+                        - generic:
+                          - button "Increase Value" [ref=e406] [cursor=pointer]:
+                            - img "up" [ref=e407]
+                          - button "Decrease Value" [ref=e410] [cursor=pointer]:
+                            - img "down" [ref=e411]
+                - button "caret-right 梯度变量 Map Token" [ref=e416] [cursor=pointer]:
+                  - img "caret-right" [ref=e418]
+                  - generic [ref=e421]: 梯度变量 Map Token
+              - generic [ref=e424]:
+                - generic [ref=e425]: 阴影
+                - button "caret-right 梯度变量 Map Token" [ref=e430] [cursor=pointer]:
+                  - img "caret-right" [ref=e432]
+                  - generic [ref=e435]: 梯度变量 Map Token
+              - generic [ref=e439]:
+                - generic [ref=e440]: 线框化
+                - generic [ref=e442]:
+                  - generic [ref=e445]:
+                    - generic [ref=e446]: wireframe
+                    - generic [ref=e447]: 重置
+                  - switch [ref=e449] [cursor=pointer]
+      - application [ref=e453]:
+        - radiogroup "segmented control" [ref=e457]:
+          - generic [ref=e458]:
+            - generic [ref=e459] [cursor=pointer]:
+              - radio "页面示例" [checked]
+              - generic "页面示例" [ref=e460]
+            - generic [ref=e461] [cursor=pointer]:
+              - radio "风格概览"
+              - generic "风格概览" [ref=e462]
+        - generic [ref=e463]:
+          - button [ref=e465] [cursor=pointer]:
+            - img "minus" [ref=e467]
+          - button "100%" [ref=e471] [cursor=pointer]
+          - button [ref=e474] [cursor=pointer]:
+            - img "plus" [ref=e476]
+          - button [ref=e481] [cursor=pointer]:
+            - img "expand" [ref=e483]

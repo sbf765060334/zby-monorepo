@@ -1,0 +1,339 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e4]:
+    - complementary [ref=f4e5]:
+      - generic [ref=f4e7]:
+        - generic [ref=f4e8]: Zibuyu
+        - navigation [ref=f4e13]:
+          - button "home 首页" [ref=f4e14] [cursor=pointer]:
+            - generic [ref=f4e15]:
+              - term [ref=f4e16]:
+                - img "home" [ref=f4e17]
+              - definition [ref=f4e20]:
+                - generic [ref=f4e21]: 首页
+          - button "dashboard 工作台" [ref=f4e22] [cursor=pointer]:
+            - generic [ref=f4e23]:
+              - term [ref=f4e24]:
+                - img "dashboard" [ref=f4e25]
+              - definition [ref=f4e28]:
+                - generic [ref=f4e29]: 工作台
+          - button "clear 示例页面" [ref=f4e30] [cursor=pointer]:
+            - generic [ref=f4e31]:
+              - term [ref=f4e32]:
+                - img "clear" [ref=f4e33]
+              - definition [ref=f4e36]:
+                - generic [ref=f4e37]: 示例页面
+        - button "切换系统" [ref=f4e38] [cursor=pointer]:
+          - img "appstore" [ref=f4e39]
+    - generic [ref=f4e42]:
+      - banner [ref=f4e43]:
+        - generic [ref=f4e45]:
+          - tablist [ref=f4e46]:
+            - tab "固定页签：数字范围 数字范围" [selected] [ref=f4e51] [cursor=pointer]:
+              - generic [ref=f4e52]:
+                - button "固定页签：数字范围" [ref=f4e53]:
+                  - img "pushpin" [ref=f4e54]
+                - generic "数字范围" [ref=f4e57]
+            - button "收藏菜单" [ref=f4e60] [cursor=pointer]:
+              - img "plus" [ref=f4e62]
+          - status [ref=f4e103]
+          - generic:
+            - generic:
+              - tabpanel "固定页签：数字范围 数字范围"
+        - generic [ref=f4e66]:
+          - button "搜索页面（Ctrl+K）" [ref=f4e67] [cursor=pointer]:
+            - generic [ref=f4e71]: CTRL + K
+          - button "语言设置" [ref=f4e72] [cursor=pointer]
+          - button "主题设置" [ref=f4e77] [cursor=pointer]
+      - main [ref=f4e84]:
+        - generic [ref=f4e85]:
+          - generic [ref=f4e86]: 当前位置：
+          - navigation [ref=f4e88]:
+            - list [ref=f4e89]:
+              - listitem [ref=f4e90]:
+                - generic [ref=f4e92]:
+                  - img "clear" [ref=f4e93]
+                  - text: 示例页面
+              - listitem [aria-hidden] [ref=f4e96]: /
+              - listitem [ref=f4e97]:
+                - generic [ref=f4e98]: 数字范围
+        - generic [ref=f4e109]:
+          - generic [ref=f4e111]:
+            - generic [ref=f4e112]:
+              - heading "InputNumberRange" [level=3] [ref=f4e114]
+              - generic [ref=f4e115]: "@zby/ui"
+            - generic [ref=f4e117]: 数字范围的草稿提交、Form 对接、排序、空边界、高精度、分侧属性和外观状态。
+          - generic [ref=f4e119]:
+            - heading "受控与表单" [level=5] [ref=f4e121]
+            - generic [ref=f4e122]:
+              - article [ref=f4e123]:
+                - generic [ref=f4e124]:
+                  - strong [ref=f4e126]: 受控范围
+                  - generic [ref=f4e127]: 全部实验状态封装在当前实例。
+                - status [ref=f4e128]:
+                  - strong [ref=f4e130]: 最近事件：
+                  - code [ref=f4e132]: "[10,30]"
+                - generic [ref=f4e133]:
+                  - generic [ref=f4e134]: Form.Item status
+                  - radiogroup "segmented control" [ref=f4e135]:
+                    - generic [ref=f4e136]:
+                      - generic [ref=f4e137] [cursor=pointer]:
+                        - radio "default" [checked]
+                        - generic "default" [ref=f4e138]
+                      - generic [ref=f4e139] [cursor=pointer]:
+                        - radio "warning"
+                        - generic "warning" [ref=f4e140]
+                      - generic [ref=f4e141] [cursor=pointer]:
+                        - radio "error"
+                        - generic "error" [ref=f4e142]
+                - generic [ref=f4e143]:
+                  - switch "清除" [checked] [ref=f4e145] [cursor=pointer]
+                  - switch "空值" [checked] [ref=f4e149] [cursor=pointer]
+                  - switch "排序" [checked] [ref=f4e153] [cursor=pointer]
+                - generic [ref=f4e158]:
+                  - generic "价格范围" [ref=f4e160]
+                  - generic [ref=f4e164]:
+                    - img "dollar" [ref=f4e166]
+                    - generic [ref=f4e169]:
+                      - spinbutton "最小值" [ref=f4e171]: "10"
+                      - img "swap-right" [ref=f4e173]
+                      - spinbutton "最大值" [ref=f4e177]: "30"
+                    - generic [ref=f4e178]:
+                      - button "清空" [ref=f4e179] [cursor=pointer]:
+                        - img "close-circle" [ref=f4e180]
+                      - generic [ref=f4e183]: RMB
+                - generic [ref=f4e184]:
+                  - button "10 / 30" [ref=f4e186] [cursor=pointer]
+                  - button "60 / 20" [ref=f4e189] [cursor=pointer]
+                  - button "置 空" [ref=f4e192] [cursor=pointer]
+                - generic [ref=f4e194]: 输入离开整体范围或按 Enter 后提交。
+              - article [ref=f4e195]:
+                - generic [ref=f4e196]:
+                  - strong [ref=f4e198]: Form 提交
+                  - generic [ref=f4e199]: 作为 Form.Item 子组件挂载。离开输入框或点提交都会提交草稿；label 点中起始输入框。
+                - generic [ref=f4e200]:
+                  - generic [ref=f4e202]:
+                    - generic "订单号" [ref=f4e204]: "* 订单号"
+                    - textbox "* 订单号" [ref=f4e208]:
+                      - /placeholder: 订单号
+                      - text: ZBY-000001
+                  - generic [ref=f4e210]:
+                    - generic "金额范围" [ref=f4e212]
+                    - generic [ref=f4e216]:
+                      - generic [ref=f4e217]:
+                        - spinbutton "金额范围" [ref=f4e219]: "100.00"
+                        - img "swap-right" [ref=f4e221]
+                        - spinbutton "最大值" [ref=f4e225]: "500.00"
+                      - button "清空" [ref=f4e227] [cursor=pointer]:
+                        - img "close-circle" [ref=f4e228]
+                  - generic [ref=f4e231]:
+                    - button "提 交" [ref=f4e233] [cursor=pointer]
+                    - button "重 置" [ref=f4e236] [cursor=pointer]
+                - status [ref=f4e238]:
+                  - strong [ref=f4e240]: 最近事件：
+                  - code [ref=f4e242]: 尚未提交
+              - article [ref=f4e243]:
+                - strong [ref=f4e246]: 非受控 + 自动排序
+                - generic [ref=f4e247]:
+                  - generic [ref=f4e248]:
+                    - spinbutton "最小值" [ref=f4e250]: "90"
+                    - img "swap-right" [ref=f4e252]
+                    - spinbutton "最大值" [ref=f4e256]: "10"
+                  - button "清空" [ref=f4e258] [cursor=pointer]:
+                    - img "close-circle" [ref=f4e259]
+          - generic [ref=f4e263]:
+            - heading "值模式与提交规则" [level=5] [ref=f4e265]
+            - generic [ref=f4e266]:
+              - article [ref=f4e267]:
+                - strong [ref=f4e270]: order=false
+                - generic [ref=f4e271]:
+                  - generic [ref=f4e272]:
+                    - spinbutton "最小值" [ref=f4e274]: "90"
+                    - img "swap-right" [ref=f4e276]
+                    - spinbutton "最大值" [ref=f4e280]: "10"
+                  - button "清空" [ref=f4e282] [cursor=pointer]:
+                    - img "close-circle" [ref=f4e283]
+              - article [ref=f4e286]:
+                - strong [ref=f4e289]: allowEmpty=[false, true]
+                - generic [ref=f4e291]:
+                  - spinbutton "最小值" [ref=f4e293]: "10"
+                  - img "swap-right" [ref=f4e295]
+                  - spinbutton "最大值" [ref=f4e299]
+              - article [ref=f4e300]:
+                - strong [ref=f4e303]: value=undefined
+                - generic [ref=f4e304]:
+                  - generic [ref=f4e305]:
+                    - spinbutton "最小值" [ref=f4e307]: "5"
+                    - img "swap-right" [ref=f4e309]
+                    - spinbutton "最大值" [ref=f4e313]: "15"
+                  - button "清空" [ref=f4e315] [cursor=pointer]:
+                    - img "close-circle" [ref=f4e316]
+              - article [ref=f4e319]:
+                - strong [ref=f4e322]: 自定义 clearIcon
+                - generic [ref=f4e323]:
+                  - generic [ref=f4e324]:
+                    - spinbutton "最小值" [ref=f4e326]: "20"
+                    - img "swap-right" [ref=f4e328]
+                    - spinbutton "最大值" [ref=f4e332]: "40"
+                  - button "清空" [ref=f4e334] [cursor=pointer]:
+                    - img "close-square" [ref=f4e335]
+              - article [ref=f4e338]:
+                - strong [ref=f4e341]: autoFocus
+                - switch "已挂载 点击挂载" [ref=f4e342] [cursor=pointer]:
+                  - generic [ref=f4e344]:
+                    - generic: 已挂载
+                    - generic: 点击挂载
+                - generic [ref=f4e345]: 开启后挂载并自动聚焦 start。
+              - article [ref=f4e346]:
+                - strong [ref=f4e349]: startProps / endProps
+                - status [ref=f4e350]:
+                  - strong [ref=f4e352]: 最近事件：
+                  - code [ref=f4e354]: 等待交互
+                - generic [ref=f4e356]:
+                  - spinbutton "业务最小值" [ref=f4e358]
+                  - img "swap-right" [ref=f4e360]
+                  - spinbutton "业务最大值" [ref=f4e364]
+          - generic [ref=f4e366]:
+            - heading "尺寸、变体与状态" [level=5] [ref=f4e368]
+            - generic [ref=f4e369]:
+              - article [ref=f4e370]:
+                - strong [ref=f4e373]: small / middle / large
+                - generic [ref=f4e374]:
+                  - generic [ref=f4e377]:
+                    - spinbutton "最小值" [ref=f4e379]: "1"
+                    - img "swap-right" [ref=f4e381]
+                    - spinbutton "最大值" [ref=f4e385]: "9"
+                  - generic [ref=f4e388]:
+                    - spinbutton "最小值" [ref=f4e390]: "1"
+                    - img "swap-right" [ref=f4e392]
+                    - spinbutton "最大值" [ref=f4e396]: "9"
+                  - generic [ref=f4e399]:
+                    - spinbutton "最小值" [ref=f4e401]: "1"
+                    - img "swap-right" [ref=f4e403]
+                    - spinbutton "最大值" [ref=f4e407]: "9"
+              - article [ref=f4e408]:
+                - strong [ref=f4e411]: 全部 variant
+                - generic [ref=f4e412]:
+                  - generic [ref=f4e414]:
+                    - generic [ref=f4e415]: outlined
+                    - generic [ref=f4e416]:
+                      - spinbutton "最小值" [ref=f4e418]: "2"
+                      - img "swap-right" [ref=f4e420]
+                      - spinbutton "最大值" [ref=f4e424]: "8"
+                  - generic [ref=f4e426]:
+                    - generic [ref=f4e427]: filled
+                    - generic [ref=f4e428]:
+                      - spinbutton "最小值" [ref=f4e430]: "2"
+                      - img "swap-right" [ref=f4e432]
+                      - spinbutton "最大值" [ref=f4e436]: "8"
+                  - generic [ref=f4e438]:
+                    - generic [ref=f4e439]: borderless
+                    - generic [ref=f4e440]:
+                      - spinbutton "最小值" [ref=f4e442]: "2"
+                      - img "swap-right" [ref=f4e444]
+                      - spinbutton "最大值" [ref=f4e448]: "8"
+                  - generic [ref=f4e450]:
+                    - generic [ref=f4e451]: underlined
+                    - generic [ref=f4e452]:
+                      - spinbutton "最小值" [ref=f4e454]: "2"
+                      - img "swap-right" [ref=f4e456]
+                      - spinbutton "最大值" [ref=f4e460]: "8"
+              - article [ref=f4e461]:
+                - strong [ref=f4e464]: disabled / readOnly
+                - generic [ref=f4e465]:
+                  - generic [ref=f4e467]:
+                    - generic [ref=f4e468]:
+                      - spinbutton "最小值" [disabled] [ref=f4e470]: "100"
+                      - img "swap-right" [ref=f4e472]
+                      - spinbutton "最大值" [disabled] [ref=f4e476]: "200"
+                    - generic [ref=f4e477]: pcs
+                  - generic [ref=f4e480]:
+                    - generic [ref=f4e481]:
+                      - spinbutton "最小值" [ref=f4e483]: "100"
+                      - img "swap-right" [ref=f4e485]
+                      - spinbutton "最大值" [ref=f4e489]: "200"
+                    - generic [ref=f4e490]: 只读
+              - article [ref=f4e492]:
+                - strong [ref=f4e495]: error / warning
+                - generic [ref=f4e496]:
+                  - generic [ref=f4e499]:
+                    - spinbutton "最小值" [ref=f4e501]: "3"
+                    - img "swap-right" [ref=f4e503]
+                    - spinbutton "最大值" [ref=f4e507]: "7"
+                  - generic [ref=f4e510]:
+                    - spinbutton "最小值" [ref=f4e512]: "3"
+                    - img "swap-right" [ref=f4e514]
+                    - spinbutton "最大值" [ref=f4e518]: "7"
+              - article [ref=f4e519]:
+                - strong [ref=f4e522]: ConfigProvider 继承
+                - generic [ref=f4e524]:
+                  - spinbutton "最小值" [disabled] [ref=f4e526]: "8"
+                  - img "swap-right" [ref=f4e528]
+                  - spinbutton "最大值" [disabled] [ref=f4e532]: "18"
+                - generic [ref=f4e533]: 继承 large 与 disabled。
+              - article [ref=f4e534]:
+                - strong [ref=f4e537]: 整体与分侧装饰
+                - generic [ref=f4e538]:
+                  - img "dollar" [ref=f4e540]
+                  - generic [ref=f4e543]:
+                    - generic [ref=f4e544]:
+                      - generic: 起
+                      - spinbutton "最低价格" [ref=f4e545]
+                      - generic: 元
+                    - generic [ref=f4e546]: 至
+                    - generic [ref=f4e547]:
+                      - generic: 止
+                      - spinbutton "最高价格" [ref=f4e548]
+                      - generic: 元
+                  - generic [ref=f4e549]: CNY
+                - code [ref=f4e552]: price-range / price-range-end
+          - generic [ref=f4e554]:
+            - heading "数值能力与样式" [level=5] [ref=f4e556]
+            - generic [ref=f4e557]:
+              - article [ref=f4e558]:
+                - strong [ref=f4e561]: 金额格式化
+                - generic [ref=f4e563]:
+                  - spinbutton "最小值" [ref=f4e565]: ¥ 1,000
+                  - img "swap-right" [ref=f4e567]
+                  - spinbutton "最大值" [ref=f4e571]: ¥ 5,000
+              - article [ref=f4e572]:
+                - strong [ref=f4e575]: stringMode 高精度
+                - generic [ref=f4e577]:
+                  - spinbutton "最小值" [ref=f4e579]: "9007199254740993.01"
+                  - img "swap-right" [ref=f4e581]
+                  - spinbutton "最大值" [ref=f4e585]: "9007199254740999.99"
+              - article [ref=f4e586]:
+                - strong [ref=f4e589]: step / precision / keyboard / wheel
+                - generic [ref=f4e590]:
+                  - generic [ref=f4e591]:
+                    - spinbutton "最小值" [ref=f4e593]: "0.25"
+                    - img "swap-right" [ref=f4e595]
+                    - spinbutton "最大值" [ref=f4e599]: "0.75"
+                  - img "percentage" [ref=f4e602]
+              - article [ref=f4e605]:
+                - strong [ref=f4e608]: className / rootClassName / prefixCls
+                - generic [ref=f4e610]:
+                  - spinbutton "最小值" [ref=f4e612]: "6"
+                  - img "swap-right" [ref=f4e614]
+                  - spinbutton "最大值" [ref=f4e618]: "12"
+                - code [ref=f4e620]: preview-input-number-range
+  - menu [ref=f4e622]:
+    - menuitem "sync 跟随系统" [ref=f4e623] [cursor=pointer]:
+      - img "sync" [ref=f4e624]
+      - generic [ref=f4e627]: 跟随系统
+    - menuitem "sun 亮色主题" [ref=f4e631] [cursor=pointer]:
+      - img "sun" [ref=f4e632]
+      - generic [ref=f4e635]: 亮色主题
+    - menuitem "moon 暗黑主题" [ref=f4e638] [cursor=pointer]:
+      - img "moon" [ref=f4e639]
+      - generic [ref=f4e642]: 暗黑主题
+    - separator [ref=f4e645]
+    - menuitem "expand 默认布局" [ref=f4e646] [cursor=pointer]:
+      - img "expand" [ref=f4e647]
+      - generic [ref=f4e650]: 默认布局
+    - menuitem "compress 紧凑布局" [ref=f4e654] [cursor=pointer]:
+      - img "compress" [ref=f4e655]
+      - generic [ref=f4e658]: 紧凑布局
+    - separator [ref=f4e661]
+    - menuitem "bg-colors 个性化" [ref=f4e662] [cursor=pointer]:
+      - img "bg-colors" [ref=f4e663]
+      - generic [ref=f4e666]: 个性化

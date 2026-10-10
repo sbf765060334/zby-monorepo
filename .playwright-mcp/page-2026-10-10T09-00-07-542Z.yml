@@ -1,0 +1,558 @@
+- generic [ref=f43e1]:
+  - generic [ref=f43e3]:
+    - banner [ref=f43e4]:
+      - generic [ref=f43e5]:
+        - heading [level=1] [ref=f43e7]:
+          - link "logo Ant Design" [ref=f43e8] [cursor=pointer]:
+            - /url: /index-cn
+            - img "logo" [ref=f43e9]
+            - generic [ref=f43e10]: Ant Design
+        - generic [ref=f43e12]:
+          - generic [ref=f43e13]:
+            - img "Search" [ref=f43e14]
+            - textbox "输入关键字搜索..." [ref=f43e16]
+          - menu [ref=f43e17]:
+            - menuitem [ref=f43e18] [cursor=pointer]:
+              - link "设计" [ref=f43e20]:
+                - /url: /docs/spec/introduce-cn
+            - menuitem [ref=f43e21] [cursor=pointer]:
+              - link "研发" [ref=f43e23]:
+                - /url: /docs/react/introduce-cn
+            - menuitem [ref=f43e24] [cursor=pointer]:
+              - link "组件" [ref=f43e26]:
+                - /url: /components/overview-cn/
+            - menuitem [ref=f43e27] [cursor=pointer]:
+              - link "博客" [ref=f43e29]:
+                - /url: /docs/blog/ai-open-source-contribution-cn
+            - menuitem [ref=f43e30] [cursor=pointer]:
+              - link "资源" [ref=f43e32]:
+                - /url: /docs/resources-cn
+            - menuitem [ref=f43e33] [cursor=pointer]:
+              - link "国内镜像" [ref=f43e35]:
+                - /url: https://ant-design.antgroup.com
+          - generic "Sponsors" [ref=f43e36]:
+            - link [ref=f43e37] [cursor=pointer]:
+              - /url: https://youmind.com/zh-CN?utm_source=ant-design
+              - img "YouMind" [ref=f43e38]
+            - link [ref=f43e39] [cursor=pointer]:
+              - /url: https://tractian.com?utm_source=ant-design
+              - img "TRACTIAN" [ref=f43e40]
+            - link [ref=f43e41] [cursor=pointer]:
+              - /url: https://lobehub.com?utm_source=ant-design
+              - img "LobeHub" [ref=f43e42]
+            - link [ref=f43e43] [cursor=pointer]:
+              - /url: https://coderabbit.ai?utm_source=ant-design
+              - img "CodeRabbit" [ref=f43e44]
+          - generic [ref=f43e45] [cursor=pointer]:
+            - generic "6.6.5" [ref=f43e46]:
+              - text: 6.6.5
+              - combobox [ref=f43e47]
+            - img "down" [ref=f43e49]
+          - button "中 En" [ref=f43e52] [cursor=pointer]:
+            - generic [ref=f43e54]:
+              - generic [ref=f43e55]: 中
+              - generic [ref=f43e56]: En
+          - button "RTL Switch Button" [ref=f43e57] [cursor=pointer]:
+            - img [ref=f43e59]:
+              - img "Direction Icon" [ref=f43e521]
+          - button [ref=f43e62] [cursor=pointer]
+          - link [ref=f43e69] [cursor=pointer]:
+            - /url: https://github.com/ant-design/ant-design
+            - button [ref=f43e70]:
+              - img "github" [ref=f43e72]
+    - generic [ref=f43e76]:
+      - generic [ref=f43e77]:
+        - generic [ref=f43e78]: 主题编辑器
+        - generic [ref=f43e79]:
+          - radiogroup "segmented control" [ref=f43e81]:
+            - generic [ref=f43e82]:
+              - generic [ref=f43e83] [cursor=pointer]:
+                - radio "全局" [checked]
+                - generic "全局" [ref=f43e84]
+              - generic [ref=f43e85] [cursor=pointer]:
+                - radio "组件"
+                - generic "组件" [ref=f43e86]
+          - radiogroup "segmented control" [ref=f43e88]:
+            - generic [ref=f43e89]:
+              - generic [ref=f43e90] [cursor=pointer]:
+                - radio [checked]
+              - generic [ref=f43e102] [cursor=pointer]:
+                - radio
+        - generic [ref=f43e112]:
+          - generic [ref=f43e113]: 共 0 处修改
+          - button "主题配置" [ref=f43e114] [cursor=pointer]
+          - button "保 存" [ref=f43e116] [cursor=pointer]
+      - generic [ref=f43e119]:
+        - generic [ref=f43e122]:
+          - generic [ref=f43e124]:
+            - link "颜色" [ref=f43e126] [cursor=pointer]:
+              - /url: "#Color"
+            - link "尺寸" [ref=f43e128] [cursor=pointer]:
+              - /url: "#Size"
+            - link "风格" [ref=f43e130] [cursor=pointer]:
+              - /url: "#Style"
+          - generic [ref=f43e131]:
+            - generic [ref=f43e133]:
+              - generic [ref=f43e134]: 颜色
+              - generic [ref=f43e136]:
+                - generic [ref=f43e137]:
+                  - generic [ref=f43e138]:
+                    - generic [ref=f43e139]: 品牌色
+                    - generic [ref=f43e141]:
+                      - generic [ref=f43e144]:
+                        - generic [ref=f43e145]: colorPrimary
+                        - generic [ref=f43e146]: 重置
+                      - generic [ref=f43e147]: "#1677ff"
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e153] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e155]
+                    - generic [ref=f43e158]: 梯度变量 Map Token
+                - generic [ref=f43e161]:
+                  - generic [ref=f43e162]:
+                    - generic [ref=f43e163]: 成功色
+                    - generic [ref=f43e165]:
+                      - generic [ref=f43e168]:
+                        - generic [ref=f43e169]: colorSuccess
+                        - generic [ref=f43e170]: 重置
+                      - generic [ref=f43e171]: "#52c41a"
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e177] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e179]
+                    - generic [ref=f43e182]: 梯度变量 Map Token
+                - generic [ref=f43e185]:
+                  - generic [ref=f43e186]:
+                    - generic [ref=f43e187]: 警戒色
+                    - generic [ref=f43e189]:
+                      - generic [ref=f43e192]:
+                        - generic [ref=f43e193]: colorWarning
+                        - generic [ref=f43e194]: 重置
+                      - generic [ref=f43e195]: "#faad14"
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e201] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e203]
+                    - generic [ref=f43e206]: 梯度变量 Map Token
+                - generic [ref=f43e209]:
+                  - generic [ref=f43e210]:
+                    - generic [ref=f43e211]: 错误色
+                    - generic [ref=f43e213]:
+                      - generic [ref=f43e216]:
+                        - generic [ref=f43e217]: colorError
+                        - generic [ref=f43e218]: 重置
+                      - generic [ref=f43e219]: "#ff4d4f"
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e225] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e227]
+                    - generic [ref=f43e230]: 梯度变量 Map Token
+                - generic [ref=f43e235]:
+                  - generic [ref=f43e236]: 信息色
+                  - generic [ref=f43e237]:
+                    - generic [ref=f43e238]: 使用主色
+                    - switch [checked] [ref=f43e239] [cursor=pointer]
+                - generic [ref=f43e242]:
+                  - generic [ref=f43e243]:
+                    - generic [ref=f43e244]: 链接色
+                    - generic [ref=f43e246]:
+                      - generic [ref=f43e249]:
+                        - generic [ref=f43e250]: colorLink
+                        - generic [ref=f43e251]: 重置
+                      - generic [ref=f43e252]: "#1677ff"
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e258] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e260]
+                    - generic [ref=f43e263]: 梯度变量 Map Token
+                - generic [ref=f43e266]:
+                  - generic [ref=f43e267]:
+                    - generic [ref=f43e268]: 中性色
+                    - generic [ref=f43e270]:
+                      - generic [ref=f43e273]:
+                        - generic [ref=f43e274]: 基础文本色colorTextBase
+                        - generic [ref=f43e275]: 重置
+                      - generic [ref=f43e276]: "#000"
+                    - generic [ref=f43e280]:
+                      - generic [ref=f43e283]:
+                        - generic [ref=f43e284]: 基础背景色colorBgBase
+                        - generic [ref=f43e285]: 重置
+                      - generic [ref=f43e286]: "#fff"
+                  - button "caret-right 梯度变量 Map Token 分组显示" [ref=f43e292] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e294]
+                    - generic [ref=f43e298]:
+                      - generic [ref=f43e299]: 梯度变量 Map Token
+                      - generic:
+                        - generic: 分组显示
+                        - switch [checked]
+            - generic [ref=f43e301]:
+              - generic [ref=f43e302]:
+                - generic [ref=f43e303]: 尺寸
+                - radiogroup "segmented control" [ref=f43e304]:
+                  - generic [ref=f43e305]:
+                    - generic [ref=f43e306] [cursor=pointer]:
+                      - radio "expand" [checked]
+                      - img "expand" [ref=f43e309]
+                    - generic [ref=f43e312] [cursor=pointer]:
+                      - radio
+              - generic [ref=f43e322]:
+                - generic [ref=f43e323]:
+                  - generic [ref=f43e324]:
+                    - generic [ref=f43e325]: 文字
+                    - generic [ref=f43e327]:
+                      - generic [ref=f43e330]:
+                        - generic [ref=f43e331]: fontSize
+                        - generic [ref=f43e332]: 重置
+                      - generic [ref=f43e334]:
+                        - slider [ref=f43e338] [cursor=pointer]
+                        - generic [ref=f43e339]:
+                          - spinbutton [ref=f43e340]: "14"
+                          - generic:
+                            - button "Increase Value" [ref=f43e341] [cursor=pointer]:
+                              - img "up" [ref=f43e342]
+                            - button "Decrease Value" [ref=f43e345] [cursor=pointer]:
+                              - img "down" [ref=f43e346]
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e351] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e353]
+                    - generic [ref=f43e356]: 梯度变量 Map Token
+                - generic [ref=f43e359]:
+                  - generic [ref=f43e360]:
+                    - generic [ref=f43e361]: 间距
+                    - generic [ref=f43e363]:
+                      - generic [ref=f43e366]:
+                        - generic [ref=f43e367]: 尺寸步长sizeStep
+                        - generic [ref=f43e368]: 重置
+                      - generic [ref=f43e370]:
+                        - slider [ref=f43e374] [cursor=pointer]
+                        - generic [ref=f43e375]:
+                          - spinbutton [ref=f43e376]: "4"
+                          - generic:
+                            - button "Increase Value" [ref=f43e377] [cursor=pointer]:
+                              - img "up" [ref=f43e378]
+                            - button "Decrease Value" [ref=f43e381] [cursor=pointer]:
+                              - img "down" [ref=f43e382]
+                    - generic [ref=f43e385]:
+                      - generic [ref=f43e388]:
+                        - generic [ref=f43e389]: 尺寸变化单位sizeUnit
+                        - generic [ref=f43e390]: 重置
+                      - generic [ref=f43e392]:
+                        - slider [ref=f43e396] [cursor=pointer]
+                        - generic [ref=f43e397]:
+                          - spinbutton [ref=f43e398]: "4"
+                          - generic:
+                            - button "Increase Value" [ref=f43e399] [cursor=pointer]:
+                              - img "up" [ref=f43e400]
+                            - button "Decrease Value" [ref=f43e403] [cursor=pointer]:
+                              - img "down" [ref=f43e404]
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e409] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e411]
+                    - generic [ref=f43e414]: 梯度变量 Map Token
+            - generic [ref=f43e418]:
+              - generic [ref=f43e419]: 风格
+              - generic [ref=f43e421]:
+                - generic [ref=f43e422]:
+                  - generic [ref=f43e423]:
+                    - generic [ref=f43e424]: 圆角
+                    - generic [ref=f43e426]:
+                      - generic [ref=f43e429]:
+                        - generic [ref=f43e430]: borderRadius
+                        - generic [ref=f43e431]: 重置
+                      - generic [ref=f43e433]:
+                        - slider [ref=f43e437] [cursor=pointer]
+                        - generic [ref=f43e438]:
+                          - spinbutton [ref=f43e439]: "6"
+                          - generic:
+                            - button "Increase Value" [ref=f43e440] [cursor=pointer]:
+                              - img "up" [ref=f43e441]
+                            - button "Decrease Value" [ref=f43e444] [cursor=pointer]:
+                              - img "down" [ref=f43e445]
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e450] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e452]
+                    - generic [ref=f43e455]: 梯度变量 Map Token
+                - generic [ref=f43e458]:
+                  - generic [ref=f43e459]: 阴影
+                  - button "caret-right 梯度变量 Map Token" [ref=f43e464] [cursor=pointer]:
+                    - img "caret-right" [ref=f43e466]
+                    - generic [ref=f43e469]: 梯度变量 Map Token
+                - generic [ref=f43e473]:
+                  - generic [ref=f43e474]: 线框化
+                  - generic [ref=f43e476]:
+                    - generic [ref=f43e479]:
+                      - generic [ref=f43e480]: wireframe
+                      - generic [ref=f43e481]: 重置
+                    - switch [ref=f43e483] [cursor=pointer]
+        - application [ref=f43e487]:
+          - group [ref=f43e524] [cursor=pointer]:
+            - generic [ref=f43e527]:
+              - banner [ref=f43e528]:
+                - generic [ref=f43e529]:
+                  - img "Ant Design Pro" [ref=f43e530]
+                  - text: Ant Design Pro
+                - generic [ref=f43e531]:
+                  - button [ref=f43e532]:
+                    - img "search" [ref=f43e534]
+                  - button [ref=f43e537]:
+                    - img "bell" [ref=f43e539]
+                  - button [ref=f43e542]:
+                    - img "question-circle" [ref=f43e544]
+              - generic [ref=f43e550]:
+                - menu [ref=f43e552]:
+                  - menuitem "home 主页" [ref=f43e553]:
+                    - img "home" [ref=f43e554]
+                    - generic [ref=f43e557]: 主页
+                  - menuitem "form 表单页" [ref=f43e558]:
+                    - img "form" [ref=f43e559]
+                    - generic [ref=f43e563]: 表单页
+                  - menuitem "project 项目" [expanded] [ref=f43e564]:
+                    - img "project" [ref=f43e565]
+                    - generic [ref=f43e568]: 项目
+                  - menu [ref=f43e569]:
+                    - menuitem "database 列表页" [ref=f43e570]:
+                      - img "database" [ref=f43e571]
+                      - generic [ref=f43e574]: 列表页
+                    - menuitem "container 详情页" [ref=f43e575]:
+                      - img "container" [ref=f43e576]
+                      - generic [ref=f43e579]: 详情页
+                    - menuitem "safety-certificate 结果页" [ref=f43e580]:
+                      - img "safety-certificate" [ref=f43e581]
+                      - generic [ref=f43e584]: 结果页
+                - main [ref=f43e586]:
+                  - generic [ref=f43e588]:
+                    - generic [ref=f43e591]:
+                      - generic [ref=f43e592]:
+                        - generic [ref=f43e593]: Hi，欢迎使用应用 Paas 平台！
+                        - img "down-circle" [ref=f43e594]
+                      - generic [ref=f43e597]:
+                        - text: 轻松创建、部署和管理你的应用，提升研发效率，降低业务成本
+                        - generic [ref=f43e598]:
+                          - img "book" [ref=f43e599]
+                          - text: 开启引导
+                    - generic [ref=f43e603]:
+                      - generic [ref=f43e605]:
+                        - generic [ref=f43e607]:
+                          - generic [ref=f43e611]:
+                            - generic [ref=f43e612]: 代办事项
+                            - generic [ref=f43e613]: "12"
+                          - generic [ref=f43e615]:
+                            - list [ref=f43e618]:
+                              - generic [ref=f43e620]:
+                                - generic [ref=f43e621]:
+                                  - generic [ref=f43e622]: AntV 数据可视化申请发布
+                                  - generic [ref=f43e623]: 青士·2020-07-01 14:00
+                                - generic [ref=f43e624]:
+                                  - img "folder" [ref=f43e625]
+                                  - text: Ant Design
+                                - button "待审核 down" [ref=f43e628]:
+                                  - generic [ref=f43e629]: 待审核
+                                  - img "down" [ref=f43e630]
+                              - generic [ref=f43e634]:
+                                - generic [ref=f43e635]:
+                                  - generic [ref=f43e636]: AntV 数据可视化申请发布
+                                  - generic [ref=f43e637]: 青士·2020-07-01 14:00
+                                - generic [ref=f43e638]:
+                                  - img "folder" [ref=f43e639]
+                                  - text: Ant Design
+                                - button "待审核 down" [ref=f43e642]:
+                                  - generic [ref=f43e643]: 待审核
+                                  - img "down" [ref=f43e644]
+                              - generic [ref=f43e648]:
+                                - generic [ref=f43e649]:
+                                  - generic [ref=f43e650]: AntV 数据可视化申请发布
+                                  - generic [ref=f43e651]: 青士·2020-07-01 14:00
+                                - generic [ref=f43e652]:
+                                  - img "folder" [ref=f43e653]
+                                  - text: Ant Design
+                                - button "待审核 down" [ref=f43e656]:
+                                  - generic [ref=f43e657]: 待审核
+                                  - img "down" [ref=f43e658]
+                              - generic [ref=f43e662]:
+                                - generic [ref=f43e663]:
+                                  - generic [ref=f43e664]: AntV 数据可视化申请发布
+                                  - generic [ref=f43e665]: 青士·2020-07-01 14:00
+                                - generic [ref=f43e666]:
+                                  - img "folder" [ref=f43e667]
+                                  - text: Ant Design
+                                - button "待审核 down" [ref=f43e670]:
+                                  - generic [ref=f43e671]: 待审核
+                                  - img "down" [ref=f43e672]
+                            - generic [ref=f43e675]: 查看全部
+                        - generic [ref=f43e677]:
+                          - generic [ref=f43e679]:
+                            - tablist [ref=f43e680]:
+                              - generic [ref=f43e682]:
+                                - tab "最常使用" [selected] [ref=f43e684]
+                                - tab "最近使用" [ref=f43e686]
+                              - button "新 建" [ref=f43e688]
+                            - generic:
+                              - generic:
+                                - tabpanel "最常使用"
+                          - generic [ref=f43e691]:
+                            - list [ref=f43e694]:
+                              - generic [ref=f43e696]:
+                                - img "experiment" [ref=f43e697]
+                                - generic [ref=f43e700]: Ant Design Pro
+                                - generic [ref=f43e701]: 笙笙
+                                - generic [ref=f43e704]:
+                                  - img "folder" [ref=f43e705]
+                                  - text: Ant Design
+                                - generic [ref=f43e708]:
+                                  - progressbar [ref=f43e709]
+                                  - text: 测试阶段
+                              - generic [ref=f43e717]:
+                                - img "experiment" [ref=f43e718]
+                                - generic [ref=f43e721]: Ant Design Pro
+                                - generic [ref=f43e722]: 笙笙
+                                - generic [ref=f43e725]:
+                                  - img "folder" [ref=f43e726]
+                                  - text: Ant Design
+                                - generic [ref=f43e729]:
+                                  - progressbar [ref=f43e730]
+                                  - text: 测试阶段
+                              - generic [ref=f43e738]:
+                                - img "experiment" [ref=f43e739]
+                                - generic [ref=f43e742]: Ant Design Pro
+                                - generic [ref=f43e743]: 笙笙
+                                - generic [ref=f43e746]:
+                                  - img "folder" [ref=f43e747]
+                                  - text: Ant Design
+                                - generic [ref=f43e750]:
+                                  - progressbar [ref=f43e751]
+                                  - text: 测试阶段
+                              - generic [ref=f43e759]:
+                                - img "experiment" [ref=f43e760]
+                                - generic [ref=f43e763]: Ant Design Pro
+                                - generic [ref=f43e764]: 笙笙
+                                - generic [ref=f43e767]:
+                                  - img "folder" [ref=f43e768]
+                                  - text: Ant Design
+                                - generic [ref=f43e771]:
+                                  - progressbar [ref=f43e772]
+                                  - text: 测试阶段
+                              - generic [ref=f43e780]:
+                                - img "experiment" [ref=f43e781]
+                                - generic [ref=f43e784]: Ant Design Pro
+                                - generic [ref=f43e785]: 笙笙
+                                - generic [ref=f43e788]:
+                                  - img "folder" [ref=f43e789]
+                                  - text: Ant Design
+                                - generic [ref=f43e792]:
+                                  - progressbar [ref=f43e793]
+                                  - text: 测试阶段
+                            - generic [ref=f43e800]: 查看全部
+                        - generic [ref=f43e802]:
+                          - generic [ref=f43e803]: 动态
+                          - generic [ref=f43e807]:
+                            - list [ref=f43e810]:
+                              - listitem [ref=f43e811]:
+                                - generic [ref=f43e814]:
+                                  - generic [ref=f43e815]: 12 分钟前
+                                  - generic [ref=f43e816]: 汤尧申请迭代语雀升级版本 3.4发布
+                                  - generic [ref=f43e818]:
+                                    - generic [ref=f43e819]: "[WIP] ANT02240964"
+                                    - generic [ref=f43e820]: "Status: opened"
+                                    - generic [ref=f43e821]: "Repository: xbricks"
+                              - listitem [ref=f43e822]:
+                                - generic [ref=f43e825]:
+                                  - generic [ref=f43e826]: 24 分钟前
+                                  - generic [ref=f43e827]: 汤尧申请迭代蚂蚁企业级产品发布
+                              - listitem [ref=f43e828]:
+                                - generic [ref=f43e831]:
+                                  - generic [ref=f43e832]: 48 分钟前
+                                  - generic [ref=f43e833]: 汤尧申请迭代语雀升级版本 3.3发布
+                                  - generic [ref=f43e835]:
+                                    - generic [ref=f43e836]: "[WIP] ANT02240964"
+                                    - generic [ref=f43e837]: "Status: opened"
+                                    - generic [ref=f43e838]: "Repository: xbricks"
+                            - generic [ref=f43e839]: 查看全部
+                      - generic [ref=f43e841]:
+                        - generic [ref=f43e843]:
+                          - generic [ref=f43e844]: 我的收藏
+                          - generic [ref=f43e851]:
+                            - generic [ref=f43e852]: Ant Design
+                            - generic [ref=f43e858]: Pro Components
+                            - generic [ref=f43e864]: Egg
+                            - generic [ref=f43e870]: AntV
+                            - generic [ref=f43e876]: 语雀
+                            - generic [ref=f43e882]: Kitchen
+                            - generic [ref=f43e889]:
+                              - generic [ref=f43e890]: 蚂
+                              - generic [ref=f43e893]: 蚂蚁体验科技
+                            - generic [ref=f43e895]:
+                              - img "ellipsis" [ref=f43e899]
+                              - generic [ref=f43e902]: 查看全部
+                        - generic [ref=f43e904]:
+                          - generic [ref=f43e906]:
+                            - generic [ref=f43e907]: 使用帮助
+                            - generic [ref=f43e908]: 更多
+                          - list [ref=f43e913]:
+                            - generic [ref=f43e914]: 语雀是什么
+                            - generic [ref=f43e915]: Ant Design 设计原则
+                            - generic [ref=f43e916]: 语雀数据安全
+                            - generic [ref=f43e917]: 如何使用 Ant Design Pro 模版
+                            - generic [ref=f43e918]: 数据可视化常见疑问点
+                            - generic [ref=f43e919]: 深入浅出解释 Ant Design Landing
+                            - generic [ref=f43e920]: Dumi 使用帮助
+                            - generic [ref=f43e921]: 如何参与体验一起造
+                          - list [ref=f43e922]:
+                            - listitem [ref=f43e923]:
+                              - button "bulb 新手引导" [ref=f43e925]:
+                                - img "bulb" [ref=f43e927]
+                                - generic [ref=f43e930]: 新手引导
+                            - listitem [ref=f43e931]:
+                              - button "play-circle 视频演示" [ref=f43e933]:
+                                - img "play-circle" [ref=f43e935]
+                                - generic [ref=f43e939]: 视频演示
+                            - listitem [ref=f43e940]:
+                              - button "book 产品文档" [ref=f43e942]:
+                                - img "book" [ref=f43e944]
+                                - generic [ref=f43e947]: 产品文档
+                        - generic [ref=f43e949]:
+                          - generic [ref=f43e951]:
+                            - generic [ref=f43e952]: 公告
+                            - generic [ref=f43e953]: 更多
+                          - list [ref=f43e958]:
+                            - generic [ref=f43e959]:
+                              - generic [ref=f43e960]: 最新
+                              - generic [ref=f43e961]: 产品力评估模型发布会
+                              - generic [ref=f43e962]: 1天前
+                            - generic [ref=f43e963]:
+                              - generic [ref=f43e964]: 更新
+                              - generic [ref=f43e965]: 蚂蚁金服设计平台用最小的作量，工作台常被作为应用的主页，是一个为用户提供便利的交通枢纽。工作台提供常用信息入口，以中心辐射的方式导航至应用的各功能模块；呈现用户当前需要关注的信息，缩短获取关键信息的路径；同时允许用户在工作台直接操作一些高频任务。
+                              - generic [ref=f43e966]: 1周前
+                            - generic [ref=f43e967]:
+                              - generic [ref=f43e968]: 平台
+                              - generic [ref=f43e969]: Ant Design 5.0 正式发布
+                              - generic [ref=f43e970]: 2周前
+          - radiogroup "segmented control" [ref=f43e491]:
+            - generic [ref=f43e492]:
+              - generic [ref=f43e493] [cursor=pointer]:
+                - radio "页面示例" [checked]
+                - generic "页面示例" [ref=f43e494]
+              - generic [ref=f43e495] [cursor=pointer]:
+                - radio "风格概览"
+                - generic "风格概览" [ref=f43e496]
+          - generic [ref=f43e497]:
+            - button [ref=f43e499] [cursor=pointer]:
+              - img "minus" [ref=f43e501]
+            - button "57%" [ref=f43e971] [cursor=pointer]
+            - button [ref=f43e508] [cursor=pointer]:
+              - img "plus" [ref=f43e510]
+            - button [ref=f43e515] [cursor=pointer]:
+              - img "expand" [ref=f43e517]
+  - generic [ref=f43e972]:
+    - dialog "主题配置":
+      - generic [ref=f43e973]:
+        - button "关闭" [active] [ref=f43e974] [cursor=pointer]:
+          - generic "关闭" [ref=f43e975]:
+            - img "close" [ref=f43e976]
+        - generic [ref=f43e979]: 主题配置
+        - generic [ref=f43e981]:
+          - generic [ref=f43e982]: 注意：算法配置中的字符串 dark 和 compact 分别表示暗色与紧凑算法，这仅适用于在主题编辑器配置中使用。如果需要复制到代码中使用，请手动替换为从 antd 中引入的 theme.darkAlgorithm 和 theme.compactAlgorithm。
+          - generic [ref=f43e985]:
+            - generic [ref=f43e988]:
+              - generic [ref=f43e992]: "1"
+              - textbox [ref=f43e996]:
+                - generic [ref=f43e997]: "{}"
+            - generic [ref=f43e998]:
+              - generic [ref=f43e999]: "Line: 1"
+              - generic [ref=f43e1000]: "Column: 1"
+          - generic [ref=f43e1001]:
+            - button "import 导入" [ref=f43e1005] [cursor=pointer]:
+              - img "import" [ref=f43e1007]
+              - generic [ref=f43e1010]: 导入
+            - button "export 导出" [ref=f43e1011] [cursor=pointer]:
+              - img "export" [ref=f43e1013]
+              - generic [ref=f43e1016]: 导出
+        - generic [ref=f43e1017]:
+          - button "取 消" [ref=f43e1018] [cursor=pointer]
+          - button "确 定" [ref=f43e1020] [cursor=pointer]

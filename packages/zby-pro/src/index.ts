@@ -131,6 +131,7 @@ export {
   ProLayoutContentContainer,
   ProRouteSearch,
   ProThemeSwitch,
+  toThemeSeedToken,
   ReactRouterProLayout,
   resolveProLayoutTitle,
   useLocalePreference,
@@ -140,6 +141,7 @@ export {
   useProLayoutMetrics,
   useProLayoutSiderWidth,
   useThemePreference,
+  useThemeSeedPreference,
 } from './components/pro-layout'
 export type {
   ProLocale,
@@ -149,6 +151,7 @@ export type {
   ProThemeDensity,
   ProThemeMode,
   ProThemePreference,
+  ProThemeSeedPreference,
   ProThemeSwitchProps,
   ProLayoutClassNames,
   ProLayoutContentContainerItemBodyPadding,
@@ -175,4 +178,6 @@ export type {
   UseLocalePreferenceReturn,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
+  UseThemeSeedPreferenceOptions,
+  UseThemeSeedPreferenceReturn,
 } from './components/pro-layout'
