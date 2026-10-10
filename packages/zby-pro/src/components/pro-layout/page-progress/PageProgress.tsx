@@ -11,29 +11,29 @@ import {
 } from 'react'
 
 import type { PropsWithChildren, ReactNode } from 'react'
-import usePageLoadingProgressStyle from './style'
+import usePageProgressStyle from './style'
 
 const START_DELAY = 150
 
 type PageLoadingToken = symbol
 
-interface PageLoadingProgressController {
+interface PageProgressController {
   begin: () => PageLoadingToken
   end: (token: PageLoadingToken) => void
 }
 
-const PageLoadingProgressContext = createContext<PageLoadingProgressController | null>(null)
+const PageProgressContext = createContext<PageProgressController | null>(null)
 
 /** 统一协调活动页面的 Suspense 等待状态与顶部 NProgress。 */
-export default function PageLoadingProgressProvider(props: PropsWithChildren) {
-  usePageLoadingProgressStyle()
+export default function PageProgressProvider(props: PropsWithChildren) {
+  usePageProgressStyle()
   const tokensRef = useRef(new Set<PageLoadingToken>())
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const finishVersionRef = useRef(0)
   const startedRef = useRef(false)
 
   const begin = useCallback(() => {
-    const token = Symbol('page-loading')
+    const token = Symbol('page-progress')
     const tokens = tokensRef.current
     tokens.add(token)
     finishVersionRef.current += 1
@@ -103,19 +103,19 @@ export default function PageLoadingProgressProvider(props: PropsWithChildren) {
   }, [])
 
   return (
-    <PageLoadingProgressContext.Provider value={controller}>
+    <PageProgressContext.Provider value={controller}>
       {props.children}
-    </PageLoadingProgressContext.Provider>
+    </PageProgressContext.Provider>
   )
 }
 
 /** 只在当前 Suspense fallback 可见于活动页面时持有加载 token。 */
-export function PageLoadingProgressFallback(props: {
+export function PageProgressFallback(props: {
   active: boolean
   children?: ReactNode
 }) {
   const { active, children } = props
-  const controller = useContext(PageLoadingProgressContext)
+  const controller = useContext(PageProgressContext)
 
   useEffect(() => {
     if (!active || !controller)

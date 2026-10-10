@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { lazyPage } from '../lazyPage'
 import PageContent from '../page/PageContent'
-import PageLoadingProgressProvider from '../page-loading-progress'
+import PageProgressProvider from '../page-progress'
 import { zbyProIntlResources } from '../../../locale/intl-resources'
 import type { ProLayoutLazyPageModule } from '../lazyPage'
 import type { ProLayoutRoute } from '../types'
@@ -121,13 +121,13 @@ describe('lazyPage', () => {
         fallbackLocale="zh-CN"
         resources={zbyProIntlResources}
       >
-        <PageLoadingProgressProvider>
+        <PageProgressProvider>
           <MemoryRouter initialEntries={['/retry-render/1']}>
             <RouterCoreProvider router={router}>
               <PageContent prefixCls="test-layout" />
             </RouterCoreProvider>
           </MemoryRouter>
-        </PageLoadingProgressProvider>
+        </PageProgressProvider>
       </ZbyIntlProvider>,
     )
     await flushMicrotasks()
@@ -190,13 +190,13 @@ describe('lazyPage', () => {
         fallbackLocale="zh-CN"
         resources={zbyProIntlResources}
       >
-        <PageLoadingProgressProvider>
+        <PageProgressProvider>
           <MemoryRouter initialEntries={['/retry-click']}>
             <RouterCoreProvider router={router}>
               <PageContent prefixCls="test-layout" />
             </RouterCoreProvider>
           </MemoryRouter>
-        </PageLoadingProgressProvider>
+        </PageProgressProvider>
       </ZbyIntlProvider>,
     )
     await flushMicrotasks()
@@ -292,13 +292,13 @@ describe('lazyPage', () => {
     const router = createPageRouter('/lazy', LazyPage)
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
     const { container } = render(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <MemoryRouter initialEntries={['/lazy']}>
           <RouterCoreProvider router={router}>
             <PageContent prefixCls="test-layout" pageLoading={false} />
           </RouterCoreProvider>
         </MemoryRouter>
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
 
     expect(container.querySelector('.test-layout-page-loading')).toBeNull()
@@ -325,13 +325,13 @@ describe('lazyPage', () => {
     })
     router.syncLocation({ pathname: '/lazy', search: '', hash: '' })
     render(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <MemoryRouter initialEntries={['/lazy']}>
           <RouterCoreProvider router={router}>
             <PageContent prefixCls="test-layout" />
           </RouterCoreProvider>
         </MemoryRouter>
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
     await flushMicrotasks()
 
@@ -375,7 +375,7 @@ describe('lazyPage', () => {
         fallbackLocale="zh-CN"
         resources={zbyProIntlResources}
       >
-        <PageLoadingProgressProvider>
+        <PageProgressProvider>
           <MemoryRouter initialEntries={['/lazy']}>
             <RouterCoreProvider router={router}>
               <PageContent
@@ -384,7 +384,7 @@ describe('lazyPage', () => {
               />
             </RouterCoreProvider>
           </MemoryRouter>
-        </PageLoadingProgressProvider>
+        </PageProgressProvider>
       </ZbyIntlProvider>,
     )
     await flushMicrotasks()

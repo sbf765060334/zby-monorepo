@@ -9,7 +9,7 @@ import Header from './header'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
 import { Breadcrumb, PageContent } from './page'
-import PageLoadingProgressProvider from './page-loading-progress'
+import PageProgressProvider from './page-progress'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
 import { resolveProLayoutTitle } from './title'
@@ -158,7 +158,7 @@ function ProLayout(props: ProLayoutProps) {
                 style={styles?.breadcrumb}
               />
             ) : null}
-            <PageLoadingProgressProvider>
+            <PageProgressProvider>
               <PageContent
                 prefixCls={prefixCls}
                 onPageError={onPageError}
@@ -167,7 +167,7 @@ function ProLayout(props: ProLayoutProps) {
                 pageClassName={classNames?.page}
                 pageStyle={styles?.page}
               />
-            </PageLoadingProgressProvider>
+            </PageProgressProvider>
           </Layout.Content>
         </Layout>
       </Layout>

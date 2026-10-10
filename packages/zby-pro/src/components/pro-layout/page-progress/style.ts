@@ -2,7 +2,7 @@ import { useStyleRegister } from '@ant-design/cssinjs'
 import { theme as antdTheme } from 'antd'
 
 /** 只让 NProgress 跟随主题主色，其余视觉和定位继续使用库的默认 CSS。 */
-export default function usePageLoadingProgressStyle() {
+export default function usePageProgressStyle() {
   const { cssVar, theme, token } = antdTheme.useToken()
   const styleToken = cssVar ?? token
 
@@ -10,7 +10,7 @@ export default function usePageLoadingProgressStyle() {
     {
       theme,
       token: styleToken,
-      path: ['zby-pro', 'page-loading-progress'],
+      path: ['zby-pro', 'page-progress'],
     },
     () => ({
       '#nprogress .bar': {

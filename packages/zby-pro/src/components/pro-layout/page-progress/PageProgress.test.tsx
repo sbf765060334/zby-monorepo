@@ -7,9 +7,9 @@ import { act, cleanup, render } from '@testing-library/react'
 import NProgress from 'nprogress'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import PageLoadingProgressProvider, {
-  PageLoadingProgressFallback,
-} from './PageLoadingProgress'
+import PageProgressProvider, {
+  PageProgressFallback,
+} from './PageProgress'
 
 vi.mock('nprogress', () => ({
   default: {
@@ -20,7 +20,7 @@ vi.mock('nprogress', () => ({
   },
 }))
 
-describe('PageLoadingProgress', () => {
+describe('PageProgress', () => {
   beforeEach(() => {
     vi.useFakeTimers()
   })
@@ -34,9 +34,9 @@ describe('PageLoadingProgress', () => {
   it('uses NProgress defaults and follows the current theme color', () => {
     render(
       <ConfigProvider theme={{ token: { colorPrimary: '#123456' } }}>
-        <PageLoadingProgressProvider>
+        <PageProgressProvider>
           <div />
-        </PageLoadingProgressProvider>
+        </PageProgressProvider>
       </ConfigProvider>,
     )
 
@@ -54,7 +54,7 @@ describe('PageLoadingProgress', () => {
     const view = renderProgress(<TrackedFallback active />)
 
     act(() => vi.advanceTimersByTime(149))
-    view.rerender(<PageLoadingProgressProvider />)
+    view.rerender(<PageProgressProvider />)
     await flushMicrotasks()
     act(() => vi.advanceTimersByTime(1))
 
@@ -68,7 +68,7 @@ describe('PageLoadingProgress', () => {
     act(() => vi.advanceTimersByTime(150))
     expect(NProgress.start).toHaveBeenCalledOnce()
 
-    view.rerender(<PageLoadingProgressProvider />)
+    view.rerender(<PageProgressProvider />)
     await flushMicrotasks()
     expect(NProgress.done).toHaveBeenCalledOnce()
   })
@@ -79,17 +79,17 @@ describe('PageLoadingProgress', () => {
     expect(NProgress.start).toHaveBeenCalledOnce()
 
     view.rerender(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <TrackedFallback active={false} />
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
     await flushMicrotasks()
     expect(NProgress.done).toHaveBeenCalledOnce()
 
     view.rerender(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <TrackedFallback active />
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
     act(() => vi.advanceTimersByTime(149))
     expect(NProgress.start).toHaveBeenCalledOnce()
@@ -108,14 +108,14 @@ describe('PageLoadingProgress', () => {
     expect(NProgress.start).toHaveBeenCalledOnce()
 
     view.rerender(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <TrackedFallback active label="second" />
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
     await flushMicrotasks()
     expect(NProgress.done).not.toHaveBeenCalled()
 
-    view.rerender(<PageLoadingProgressProvider />)
+    view.rerender(<PageProgressProvider />)
     await flushMicrotasks()
     expect(NProgress.done).toHaveBeenCalledOnce()
   })
@@ -127,9 +127,9 @@ describe('PageLoadingProgress', () => {
     act(() => vi.advanceTimersByTime(150))
 
     view.rerender(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <TrackedFallback key="second" active label="second" />
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
     await flushMicrotasks()
 
@@ -149,9 +149,9 @@ describe('PageLoadingProgress', () => {
     router.syncLocation({ pathname: '/first', search: '', hash: '' })
 
     render(
-      <PageLoadingProgressProvider>
+      <PageProgressProvider>
         <div />
-      </PageLoadingProgressProvider>,
+      </PageProgressProvider>,
     )
 
     act(() => {
@@ -166,9 +166,9 @@ describe('PageLoadingProgress', () => {
   it('keeps token accounting balanced under StrictMode effect replay', async () => {
     const view = render(
       <StrictMode>
-        <PageLoadingProgressProvider>
+        <PageProgressProvider>
           <TrackedFallback active />
-        </PageLoadingProgressProvider>
+        </PageProgressProvider>
       </StrictMode>,
     )
 
@@ -183,17 +183,17 @@ describe('PageLoadingProgress', () => {
 
 function TrackedFallback(props: { active: boolean, label?: string }) {
   return (
-    <PageLoadingProgressFallback active={props.active}>
+    <PageProgressFallback active={props.active}>
       <div>{props.label}</div>
-    </PageLoadingProgressFallback>
+    </PageProgressFallback>
   )
 }
 
 function renderProgress(children: React.ReactNode) {
   return render(
-    <PageLoadingProgressProvider>
+    <PageProgressProvider>
       {children}
-    </PageLoadingProgressProvider>,
+    </PageProgressProvider>,
   )
 }
 
