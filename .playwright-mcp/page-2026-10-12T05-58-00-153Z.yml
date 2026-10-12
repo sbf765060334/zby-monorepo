@@ -1,0 +1,44 @@
+- generic [ref=f75e4]:
+  - complementary [ref=f75e5]:
+    - generic [ref=f75e7]:
+      - generic [ref=f75e8]: Zibuyu
+      - navigation [ref=f75e13]:
+        - button "home 首页" [ref=f75e14] [cursor=pointer]:
+          - generic [ref=f75e15]:
+            - term [ref=f75e16]:
+              - img "home" [ref=f75e17]
+            - definition [ref=f75e20]:
+              - generic [ref=f75e21]: 首页
+        - button "dashboard 工作台" [ref=f75e22] [cursor=pointer]:
+          - generic [ref=f75e23]:
+            - term [ref=f75e24]:
+              - img "dashboard" [ref=f75e25]
+            - definition [ref=f75e28]:
+              - generic [ref=f75e29]: 工作台
+        - button "clear 示例页面" [ref=f75e30] [cursor=pointer]:
+          - generic [ref=f75e31]:
+            - term [ref=f75e32]:
+              - img "clear" [ref=f75e33]
+            - definition [ref=f75e36]:
+              - generic [ref=f75e37]: 示例页面
+      - button "切换系统" [ref=f75e38] [cursor=pointer]:
+        - img "appstore" [ref=f75e39]
+  - generic [ref=f75e42]:
+    - banner [ref=f75e43]:
+      - generic [ref=f75e45]:
+        - button "搜索页面（Ctrl+K）" [ref=f75e46] [cursor=pointer]:
+          - generic [ref=f75e50]: CTRL + K
+        - button "语言设置" [ref=f75e51] [cursor=pointer]
+        - button "主题设置" [ref=f75e56] [cursor=pointer]
+        - button "沈彬峰 用户菜单" [ref=f75e63] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f75e64]: 沈
+          - generic [ref=f75e65]: 沈彬峰
+    - main [ref=f75e66]:
+      - generic [ref=f75e67]:
+        - generic [ref=f75e68]: 当前位置：
+        - navigation [ref=f75e70]:
+          - list [ref=f75e71]:
+            - listitem [ref=f75e72]:
+              - generic [ref=f75e74]:
+                - img "home" [ref=f75e75]
+                - text: 首页

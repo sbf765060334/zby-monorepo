@@ -1,4 +1,5 @@
 import 'antd/dist/reset.css'
+import { useIntl } from '@zby/intl'
 import { theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdZhCN from 'antd/locale/zh_CN'
@@ -13,6 +14,7 @@ import {
   useLocalePreference,
   useThemePreference,
   useThemeSeedPreference,
+  UserMenu,
 } from '@zby/pro'
 import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
 import uiEnUS from '@zby/ui/locale/en_US'
@@ -48,6 +50,21 @@ const playgroundLocales = {
     antd: antdEnUS,
     packs: [uiEnUS, proEnUS, playgroundEnUS],
   }),
+}
+
+function PlaygroundUserMenu() {
+  const intl = useIntl()
+
+  return (
+    <UserMenu
+      name="沈彬峰"
+      menus={[{
+        key: 'logout',
+        label: intl.getMessage('zby.pro.layout.logout', '退出登录'),
+        onClick: () => {},
+      }]}
+    />
+  )
 }
 
 function PlaygroundApp() {
@@ -125,6 +142,7 @@ function PlaygroundApp() {
                 seedConfig={themeSeed.config}
                 onSeedConfirm={themeSeed.setValue}
               />
+              <PlaygroundUserMenu />
             </>
           ),
         }}

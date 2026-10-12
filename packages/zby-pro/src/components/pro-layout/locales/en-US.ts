@@ -1,6 +1,9 @@
 const enUS = {
   title: 'Console',
   logout: 'Sign out',
+  userMenu: {
+    trigger: 'User menu',
+  },
   menuCollapse: 'Collapse menu',
   menuExpand: 'Expand menu',
   breadcrumb: {

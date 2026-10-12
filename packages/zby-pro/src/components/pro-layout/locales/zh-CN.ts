@@ -1,6 +1,9 @@
 const zhCN = {
   title: '控制台',
   logout: '退出登录',
+  userMenu: {
+    trigger: '用户菜单',
+  },
   menuCollapse: '收起菜单',
   menuExpand: '展开菜单',
   breadcrumb: {
