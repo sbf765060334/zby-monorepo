@@ -22,6 +22,16 @@
       "import": "./dist/locale/en_US.mjs",
       "require": "./dist/locale/en_US.cjs"
     },
+    "./locale/vi_VN": {
+      "types": "./dist/locale/vi_VN.d.mts",
+      "import": "./dist/locale/vi_VN.mjs",
+      "require": "./dist/locale/vi_VN.cjs"
+    },
+    "./locale/my_MM": {
+      "types": "./dist/locale/my_MM.d.mts",
+      "import": "./dist/locale/my_MM.mjs",
+      "require": "./dist/locale/my_MM.cjs"
+    },
     "./pro-layout": {
       "types": "./dist/pro-layout/index.d.mts",
       "import": "./dist/pro-layout/index.mjs",

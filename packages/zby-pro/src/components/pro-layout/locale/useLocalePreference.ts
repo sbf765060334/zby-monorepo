@@ -57,5 +57,5 @@ function persistPreference(storageKey: string, value: ProLocale) {
 }
 
 function isProLocale(value: unknown): value is ProLocale {
-  return value === 'zh-CN' || value === 'en-US'
+  return value === 'zh-CN' || value === 'en-US' || value === 'vi-VN' || value === 'my-MM'
 }

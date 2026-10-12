@@ -2,6 +2,8 @@ import 'antd/dist/reset.css'
 import { useIntl } from '@zby/intl'
 import { theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
+import antdMyMM from 'antd/locale/my_MM'
+import antdViVN from 'antd/locale/vi_VN'
 import antdZhCN from 'antd/locale/zh_CN'
 import {
   isSameProLayoutTitle,
@@ -18,13 +20,17 @@ import {
 } from '@zby/pro'
 import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
 import uiEnUS from '@zby/ui/locale/en_US'
+import uiMyMM from '@zby/ui/locale/my_MM'
+import uiViVN from '@zby/ui/locale/vi_VN'
 import uiZhCN from '@zby/ui/locale/zh_CN'
 import proEnUS from '@zby/pro/locale/en_US'
+import proMyMM from '@zby/pro/locale/my_MM'
+import proViVN from '@zby/pro/locale/vi_VN'
 import proZhCN from '@zby/pro/locale/zh_CN'
 import React, { useLayoutEffect, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { playgroundEnUS, playgroundZhCN } from './playgroundIntl'
+import { playgroundEnUS, playgroundMyMM, playgroundViVN, playgroundZhCN } from './playgroundIntl'
 import { createRouterCore } from '@zby/router-core'
 import { appRouters } from './routes'
 
@@ -50,6 +56,14 @@ const playgroundLocales = {
     antd: antdEnUS,
     packs: [uiEnUS, proEnUS, playgroundEnUS],
   }),
+  'vi-VN': mergeLocales({
+    antd: antdViVN,
+    packs: [uiViVN, proViVN, playgroundViVN],
+  }),
+  'my-MM': mergeLocales({
+    antd: antdMyMM,
+    packs: [uiMyMM, proMyMM, playgroundMyMM],
+  }),
 }
 
 function PlaygroundUserMenu() {
@@ -63,6 +77,66 @@ function PlaygroundUserMenu() {
         label: intl.getMessage('zby.pro.layout.logout', '退出登录'),
         onClick: () => {},
       }]}
+    />
+  )
+}
+
+function PlaygroundLayout(props: {
+  localePreference: ReturnType<typeof useLocalePreference>
+  themePreference: ReturnType<typeof useThemePreference>
+  themeSeed: ReturnType<typeof useThemeSeedPreference>
+}) {
+  const intl = useIntl()
+  const { localePreference, themePreference, themeSeed } = props
+
+  return (
+    <ReactRouterProLayout
+      router={routers}
+      title={intl.getMessage('playground.appTitle', '数字化平台')}
+      showBreadcrumb={true}
+      header={{
+        logo: (
+          <>
+            <img
+              aria-hidden
+              alt=""
+              src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
+            />
+            <div style={{ color: '#fff' }}>Zibuyu</div>
+          </>
+        ),
+        extra: (
+          <>
+            <ProRouteSearch />
+            <ProLocaleSwitch
+              value={localePreference.value}
+              onChange={localePreference.setValue}
+            />
+            <ProThemeSwitch
+              value={themePreference.value}
+              appearance={themePreference.appearance}
+              onChange={themePreference.setValue}
+              seed={themeSeed.value}
+              seedConfig={themeSeed.config}
+              onSeedConfirm={themeSeed.setValue}
+            />
+            <PlaygroundUserMenu />
+          </>
+        ),
+      }}
+      minimumContentWidth={900}
+      onStorageError={(error, info) => {
+        console.error(`[Playground] Router storage ${info.phase} failed.`, error)
+      }}
+      systemList={
+        [{
+          systemName: '百度',
+          name: '百度',
+          url: 'https://www.baidu.com',
+          description: '百度',
+          logo: 'https://www.baidu.com/favicon.ico',
+        }]
+      }
     />
   )
 }
@@ -112,53 +186,10 @@ function PlaygroundApp() {
       }}
       prefixCls="zby"
     >
-      <ReactRouterProLayout
-        router={routers}
-        title="数字化平台"
-        showBreadcrumb={true}
-        header={{
-          logo: (
-            <>
-              <img
-                aria-hidden
-                alt=""
-                src="https://shuzhi-cdn.shuzhi-inc.com/shuzhi-design/svg/sz_logo.svg"
-              />
-              <div style={{ color: '#fff' }}>Zibuyu</div>
-            </>
-          ),
-          extra: (
-            <>
-              <ProRouteSearch />
-              <ProLocaleSwitch
-                value={localePreference.value}
-                onChange={localePreference.setValue}
-              />
-              <ProThemeSwitch
-                value={themePreference.value}
-                appearance={themePreference.appearance}
-                onChange={themePreference.setValue}
-                seed={themeSeed.value}
-                seedConfig={themeSeed.config}
-                onSeedConfirm={themeSeed.setValue}
-              />
-              <PlaygroundUserMenu />
-            </>
-          ),
-        }}
-        minimumContentWidth={900}
-        onStorageError={(error, info) => {
-          console.error(`[Playground] Router storage ${info.phase} failed.`, error)
-        }}
-        systemList={
-          [{
-            systemName: '百度',
-            name: '百度',
-            url: 'https://www.baidu.com',
-            description: '百度',
-            logo: 'https://www.baidu.com/favicon.ico',
-          }]
-        }
+      <PlaygroundLayout
+        localePreference={localePreference}
+        themePreference={themePreference}
+        themeSeed={themeSeed}
       />
     </ZbyConfigProvider>
   )

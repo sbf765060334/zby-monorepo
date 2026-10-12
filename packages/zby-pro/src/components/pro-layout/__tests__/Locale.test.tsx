@@ -58,6 +58,8 @@ describe('ProLocaleSwitch', () => {
     await openLocaleMenu(trigger)
     expect(screen.getByText('简体中文')).toBeTruthy()
     expect(screen.getByText('English')).toBeTruthy()
+    expect(screen.getByText('Tiếng Việt')).toBeTruthy()
+    expect(screen.getByText('မြန်မာ')).toBeTruthy()
     expect(document.querySelectorAll('.ant-pro-layout-locale-selected-dot')).toHaveLength(1)
     expect(document.querySelectorAll('.ant-dropdown-menu-item-selected')).toHaveLength(0)
 
@@ -79,6 +81,23 @@ describe('ProLocaleSwitch', () => {
       expect(screen.getByTestId('locale').textContent).toBe('zh-CN')
       expect(screen.getByRole('button', { name: '语言设置' })).toBeTruthy()
       expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('zh-CN')
+    })
+  })
+
+  it('切换到越南语和缅甸语后使用对应文案', async () => {
+    render(<LocaleFixture />)
+    await openLocaleMenu(screen.getByRole('button', { name: '语言设置' }))
+    fireEvent.click(screen.getByText('Tiếng Việt'))
+    await waitFor(() => {
+      expect(screen.getByTestId('locale').textContent).toBe('vi-VN')
+      expect(screen.getByRole('button', { name: 'Cài đặt ngôn ngữ' })).toBeTruthy()
+    })
+
+    await openLocaleMenu(screen.getByRole('button', { name: 'Cài đặt ngôn ngữ' }))
+    fireEvent.click(screen.getByText('မြန်မာ'))
+    await waitFor(() => {
+      expect(screen.getByTestId('locale').textContent).toBe('my-MM')
+      expect(screen.getByRole('button', { name: 'ဘာသာစကားဆက်တင်' })).toBeTruthy()
     })
   })
 })

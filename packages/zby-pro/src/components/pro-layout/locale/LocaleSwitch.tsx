@@ -8,7 +8,7 @@ import { useContext } from 'react'
 import type { MenuProps } from 'antd'
 import useLocaleSwitchStyles from './style'
 
-export type ProLocale = 'zh-CN' | 'en-US'
+export type ProLocale = 'zh-CN' | 'en-US' | 'vi-VN' | 'my-MM'
 
 /** 语言选择按钮由业务侧控制，确保 ZbyConfigProvider 使用同一语言状态。 */
 export interface ProLocaleSwitchProps {
@@ -25,6 +25,8 @@ export interface ProLocaleSwitchProps {
 const localeOptions: ReadonlyArray<{ key: ProLocale, label: string }> = [
   { key: 'zh-CN', label: '简体中文' },
   { key: 'en-US', label: 'English' },
+  { key: 'vi-VN', label: 'Tiếng Việt' },
+  { key: 'my-MM', label: 'မြန်မာ' },
 ]
 
 /** 只负责语言选择 UI；Provider 切换和持久化由业务侧的 onChange 处理。 */

@@ -7,6 +7,8 @@ import advancedFormat from 'dayjs/plugin/advancedFormat'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import 'dayjs/locale/en'
+import 'dayjs/locale/my'
+import 'dayjs/locale/vi'
 import 'dayjs/locale/zh-cn'
 
 import type {
@@ -174,10 +176,14 @@ function renderEnumDisplay(
 }
 
 function toDayjsLocale(locale?: string) {
-  if (!locale) {
+  const code = locale?.toLowerCase() ?? ''
+  if (!code || code.startsWith('zh'))
     return 'zh-cn'
-  }
-  return locale.toLowerCase().startsWith('zh') ? 'zh-cn' : 'en'
+  if (code.startsWith('vi'))
+    return 'vi'
+  if (code.startsWith('my'))
+    return 'my'
+  return 'en'
 }
 
 function formatDateValue(value: unknown, template: string, locale?: string) {

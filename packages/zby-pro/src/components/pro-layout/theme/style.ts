@@ -286,7 +286,8 @@ export function useThemeSeedStyles(prefixCls: string) {
         [`${root}-config-presets`]: {
           display: 'flex',
           alignItems: 'center',
-          flexWrap: 'nowrap',
+          flexWrap: 'wrap',
+          maxWidth: '100%',
           gap: styleToken.marginXS,
         },
         [`${root}-config-preset-mark`]: {

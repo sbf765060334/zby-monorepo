@@ -17,6 +17,8 @@ export default defineConfig({
       'dayjs/plugin/advancedFormat',
       'dayjs/plugin/isoWeek',
       'dayjs/plugin/weekOfYear',
+      'dayjs/locale/my',
+      'dayjs/locale/vi',
       'dayjs/locale/zh-cn',
     ],
   },

@@ -5,6 +5,8 @@ const sharedConfig = {
     index: './src/index.ts',
     'locale/zh_CN': './src/locale/zh_CN.ts',
     'locale/en_US': './src/locale/en_US.ts',
+    'locale/vi_VN': './src/locale/vi_VN.ts',
+    'locale/my_MM': './src/locale/my_MM.ts',
   },
   dts: true,
   sourcemap: true,

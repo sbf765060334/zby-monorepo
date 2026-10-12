@@ -1,3 +1,4 @@
+import { useIntl, type IntlShape } from '@zby/intl'
 import {
   createBooleanTagTextResolver,
   createCascaderTagTextResolver,
@@ -227,373 +228,387 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
   }
 }
 
-const columns: ProTableColumnType<PlaygroundRow>[] = [
-  {
-    key: 'serial',
-    title: '序号',
-    width: 64,
-    valueType: 'index',
-    fixed: 'left',
-  },
-  {
-    key: 'orderNo',
-    title: '订单号',
-    dataIndex: 'orderNo',
-    width: 136,
-    sorter: true,
-  },
-  {
-    key: 'customer',
-    title: '客户',
-    dataIndex: 'customer',
-    width: 136,
-    ellipsis: true,
-    sorter: {
-      multiple: 10,
-      compare: (left, right) => left.customer.localeCompare(right.customer, 'zh-CN'),
-    },
-  },
-  {
-    key: 'status',
-    title: '状态',
-    dataIndex: 'status',
-    width: 88,
-    valueType: 'tag',
-    ellipsis: true,
-    valueEnum: {
-      pending: { text: '待处理', color: 'warning' },
-      shipping: { text: '运输中', color: 'processing' },
-      done: { text: '已完成', color: 'success' },
-    },
-  },
-  {
-    key: 'priority',
-    title: '优先级',
-    dataIndex: 'priority',
-    ellipsis: true,
-    width: 88,
-    valueEnum: {
-      low: { text: '低', status: 'default' },
-      normal: { text: '中', status: 'processing' },
-      high: { text: '高', status: 'error' },
-    },
-  },
-  {
-    key: 'amount',
-    title: '金额',
-    dataIndex: 'amount',
-    width: 120,
-    align: 'right',
-    sorter: { multiple: 2 },
-    valueType: { type: 'money', currency: 'CNY' },
-  },
-  {
-    key: 'rate',
-    title: '完成率',
-    dataIndex: 'rate',
-    width: 88,
-    align: 'right',
-    valueType: { type: 'percent', precision: 1 },
-  },
-  {
-    key: 'quantity',
-    title: '件数',
-    dataIndex: 'quantity',
-    width: 88,
-    align: 'right',
-    valueType: 'digit',
-    fieldProps: { precision: 0 },
-  },
-  {
-    key: 'progress',
-    title: '进度',
-    dataIndex: 'progress',
-    width: 200,
-    valueType: 'progress',
-  },
-  {
-    key: 'urgent',
-    title: '加急',
-    dataIndex: 'urgent',
-    width: 64,
-    valueType: 'boolean',
-  },
-  {
-    key: 'owner',
-    title: '负责人',
-    dataIndex: 'owner',
-    width: 120,
-    valueEnum: {
-      张敏: '张敏 / 运营',
-      李想: '李想 / 调度',
-      周宁: '周宁 / 仓储',
-      王雪: '王雪 / 客服',
-      陈舟: '陈舟 / 关务',
-    },
-  },
-  {
-    key: 'warehouse',
-    title: '仓库',
-    dataIndex: 'warehouse',
-    width: 120,
-  },
-  {
-    key: 'route',
-    title: '线路',
-    dataIndex: 'route',
-    width: 120,
-  },
-  {
-    key: 'destination',
-    title: '目的地',
-    dataIndex: 'destination',
-    width: 160,
-  },
-  {
-    key: 'createdAt',
-    title: '创建时间',
-    dataIndex: 'createdAt',
-    width: 160,
-    sorter: true,
-    valueType: 'dateTime',
-  },
-  {
-    key: 'dateValue',
-    title: '日期',
-    dataIndex: 'dateValue',
-    width: 160,
-    valueType: 'date',
-  },
-  {
-    key: 'weekValue',
-    title: '周',
-    dataIndex: 'weekValue',
-    width: 112,
-    valueType: 'week',
-  },
-  {
-    key: 'monthValue',
-    title: '月',
-    dataIndex: 'monthValue',
-    width: 112,
-    valueType: 'month',
-  },
-  {
-    key: 'yearValue',
-    title: '年',
-    dataIndex: 'yearValue',
-    width: 88,
-    valueType: 'year',
-  },
-  {
-    key: 'sku',
-    title: 'SKU Code',
-    dataIndex: 'sku',
-    width: 160,
-    valueType: 'code',
-  },
-  {
-    key: 'remark',
-    title: <span>备注</span>,
-    dataIndex: 'remark',
-    width: 200,
-  },
-]
+function columnTitle(intl: IntlShape, key: string, fallback: string) {
+  return intl.getMessage(`playground.proTable.columns.${key}`, fallback)
+}
 
-const filters: ProTableFilter<PlaygroundQuery>[] = [
-  {
-    key: 'customer',
-    label: '客户',
-    tagTextFormatter: createPrimitiveTagTextResolver(),
-    render: ({ value, setValue }) => (
-      <Input
-        allowClear
-        placeholder="客户名称"
-        value={value ?? ''}
-        onChange={(event) => setValue(event.target.value)}
-      />
-    ),
-  },
-  {
-    key: 'status',
-    label: '状态',
-    tagTextFormatter: createSelectTagTextResolver({ options: STATUS_OPTIONS }),
-    render: ({ value, setValue }) => (
-      <Select
-        allowClear
-        showSearch
-        options={STATUS_OPTIONS}
-        placeholder="状态"
-        popupMatchSelectWidth={false}
-        value={value}
-        onChange={(next) => setValue(next)}
-      />
-    ),
-  },
-  {
-    key: 'label',
-    label: '标签',
-    tagTextFormatter: createSelectTagTextResolver({ options: LABEL_OPTIONS }),
-    render: ({ value, setValue }) => (
-      <Select
-        allowClear
-        maxTagCount="responsive"
-        mode="multiple"
-        options={LABEL_OPTIONS}
-        placeholder="标签"
-        popupMatchSelectWidth={false}
-        value={value}
-        onChange={(next) => setValue(next)}
-      />
-    ),
-  },
-  {
-    key: 'regionPath',
-    label: '区域',
-    tagTextFormatter: createCascaderTagTextResolver({ options: REGION_OPTIONS }),
-    render: ({ value, setValue }) => (
-      <Cascader
-        allowClear
-        maxTagCount="responsive"
-        multiple
-        options={REGION_OPTIONS}
-        placeholder="区域"
-        popupMatchSelectWidth={false}
-        showCheckedStrategy={Cascader.SHOW_CHILD}
-        value={value}
-        onChange={(next) => setValue(next)}
-      />
-    ),
-  },
-  {
-    key: 'createdAt',
-    label: '创建时间',
-    tagTextFormatter: createDateRangeTagTextResolver(),
-    render: ({ value, setValue }) => {
-      const start = value?.[0]
-      const end = value?.[1]
+function filterLabel(intl: IntlShape, key: string, fallback: string) {
+  return intl.getMessage(`playground.proTable.filters.${key}`, fallback)
+}
 
-      return (
-        <DatePicker.RangePicker
+function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
+  return [
+    {
+      key: 'serial',
+      title: columnTitle(intl, 'serial', '序号'),
+      width: 64,
+      valueType: 'index',
+      fixed: 'left',
+    },
+    {
+      key: 'orderNo',
+      title: columnTitle(intl, 'orderNo', '订单号'),
+      dataIndex: 'orderNo',
+      width: 136,
+      sorter: true,
+    },
+    {
+      key: 'customer',
+      title: columnTitle(intl, 'customer', '客户'),
+      dataIndex: 'customer',
+      width: 136,
+      ellipsis: true,
+      sorter: {
+        multiple: 10,
+        compare: (left, right) => left.customer.localeCompare(right.customer, 'zh-CN'),
+      },
+    },
+    {
+      key: 'status',
+      title: columnTitle(intl, 'status', '状态'),
+      dataIndex: 'status',
+      width: 88,
+      valueType: 'tag',
+      ellipsis: true,
+      valueEnum: {
+        pending: { text: '待处理', color: 'warning' },
+        shipping: { text: '运输中', color: 'processing' },
+        done: { text: '已完成', color: 'success' },
+      },
+    },
+    {
+      key: 'priority',
+      title: columnTitle(intl, 'priority', '优先级'),
+      dataIndex: 'priority',
+      ellipsis: true,
+      width: 88,
+      valueEnum: {
+        low: { text: '低', status: 'default' },
+        normal: { text: '中', status: 'processing' },
+        high: { text: '高', status: 'error' },
+      },
+    },
+    {
+      key: 'amount',
+      title: columnTitle(intl, 'amount', '金额'),
+      dataIndex: 'amount',
+      width: 120,
+      align: 'right',
+      sorter: { multiple: 2 },
+      valueType: { type: 'money', currency: 'CNY' },
+    },
+    {
+      key: 'rate',
+      title: columnTitle(intl, 'rate', '完成率'),
+      dataIndex: 'rate',
+      width: 88,
+      align: 'right',
+      valueType: { type: 'percent', precision: 1 },
+    },
+    {
+      key: 'quantity',
+      title: columnTitle(intl, 'quantity', '件数'),
+      dataIndex: 'quantity',
+      width: 88,
+      align: 'right',
+      valueType: 'digit',
+      fieldProps: { precision: 0 },
+    },
+    {
+      key: 'progress',
+      title: columnTitle(intl, 'progress', '进度'),
+      dataIndex: 'progress',
+      width: 200,
+      valueType: 'progress',
+    },
+    {
+      key: 'urgent',
+      title: columnTitle(intl, 'urgent', '加急'),
+      dataIndex: 'urgent',
+      width: 64,
+      valueType: 'boolean',
+    },
+    {
+      key: 'owner',
+      title: columnTitle(intl, 'owner', '负责人'),
+      dataIndex: 'owner',
+      width: 120,
+      valueEnum: {
+        张敏: '张敏 / 运营',
+        李想: '李想 / 调度',
+        周宁: '周宁 / 仓储',
+        王雪: '王雪 / 客服',
+        陈舟: '陈舟 / 关务',
+      },
+    },
+    {
+      key: 'warehouse',
+      title: columnTitle(intl, 'warehouse', '仓库'),
+      dataIndex: 'warehouse',
+      width: 120,
+    },
+    {
+      key: 'route',
+      title: columnTitle(intl, 'route', '线路'),
+      dataIndex: 'route',
+      width: 120,
+    },
+    {
+      key: 'destination',
+      title: columnTitle(intl, 'destination', '目的地'),
+      dataIndex: 'destination',
+      width: 160,
+    },
+    {
+      key: 'createdAt',
+      title: columnTitle(intl, 'createdAt', '创建时间'),
+      dataIndex: 'createdAt',
+      width: 160,
+      sorter: true,
+      valueType: 'dateTime',
+    },
+    {
+      key: 'dateValue',
+      title: columnTitle(intl, 'date', '日期'),
+      dataIndex: 'dateValue',
+      width: 160,
+      valueType: 'date',
+    },
+    {
+      key: 'weekValue',
+      title: columnTitle(intl, 'week', '周'),
+      dataIndex: 'weekValue',
+      width: 112,
+      valueType: 'week',
+    },
+    {
+      key: 'monthValue',
+      title: columnTitle(intl, 'month', '月'),
+      dataIndex: 'monthValue',
+      width: 112,
+      valueType: 'month',
+    },
+    {
+      key: 'yearValue',
+      title: columnTitle(intl, 'year', '年'),
+      dataIndex: 'yearValue',
+      width: 88,
+      valueType: 'year',
+    },
+    {
+      key: 'sku',
+      title: columnTitle(intl, 'sku', 'SKU Code'),
+      dataIndex: 'sku',
+      width: 160,
+      valueType: 'code',
+    },
+    {
+      key: 'remark',
+      title: <span>{columnTitle(intl, 'remark', '备注')}</span>,
+      dataIndex: 'remark',
+      width: 200,
+    },
+  ]
+}
+
+function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
+  return [
+    {
+      key: 'customer',
+      label: filterLabel(intl, 'customer', '客户'),
+      tagTextFormatter: createPrimitiveTagTextResolver(),
+      render: ({ value, setValue }) => (
+        <Input
           allowClear
-          placeholder={['开始日期', '结束日期']}
-          value={start && end ? [dayjs(start), dayjs(end)] : null}
-          onChange={(_dates, dateStrings) => {
-            const [nextStart, nextEnd] = dateStrings ?? []
-            setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
+          placeholder="客户名称"
+          value={value ?? ''}
+          onChange={(event) => setValue(event.target.value)}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: filterLabel(intl, 'status', '状态'),
+      tagTextFormatter: createSelectTagTextResolver({ options: STATUS_OPTIONS }),
+      render: ({ value, setValue }) => (
+        <Select
+          allowClear
+          showSearch
+          options={STATUS_OPTIONS}
+          placeholder="状态"
+          popupMatchSelectWidth={false}
+          value={value}
+          onChange={(next) => setValue(next)}
+        />
+      ),
+    },
+    {
+      key: 'label',
+      label: filterLabel(intl, 'label', '标签'),
+      tagTextFormatter: createSelectTagTextResolver({ options: LABEL_OPTIONS }),
+      render: ({ value, setValue }) => (
+        <Select
+          allowClear
+          maxTagCount="responsive"
+          mode="multiple"
+          options={LABEL_OPTIONS}
+          placeholder="标签"
+          popupMatchSelectWidth={false}
+          value={value}
+          onChange={(next) => setValue(next)}
+        />
+      ),
+    },
+    {
+      key: 'regionPath',
+      label: filterLabel(intl, 'region', '区域'),
+      tagTextFormatter: createCascaderTagTextResolver({ options: REGION_OPTIONS }),
+      render: ({ value, setValue }) => (
+        <Cascader
+          allowClear
+          maxTagCount="responsive"
+          multiple
+          options={REGION_OPTIONS}
+          placeholder="区域"
+          popupMatchSelectWidth={false}
+          showCheckedStrategy={Cascader.SHOW_CHILD}
+          value={value}
+          onChange={(next) => setValue(next)}
+        />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: filterLabel(intl, 'createdAt', '创建时间'),
+      tagTextFormatter: createDateRangeTagTextResolver(),
+      render: ({ value, setValue }) => {
+        const start = value?.[0]
+        const end = value?.[1]
+
+        return (
+          <DatePicker.RangePicker
+            allowClear
+            placeholder={['开始日期', '结束日期']}
+            value={start && end ? [dayjs(start), dayjs(end)] : null}
+            onChange={(_dates, dateStrings) => {
+              const [nextStart, nextEnd] = dateStrings ?? []
+              setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
+            }}
+          />
+        )
+      },
+    },
+    {
+      key: 'urgent',
+      label: filterLabel(intl, 'urgent', '加急'),
+      tagTextFormatter: createBooleanTagTextResolver(),
+      tagVisible: (value) => value === true,
+      render: ({ value, setValue }) => (
+        <Switch
+          checked={value === true}
+          onChange={(checked) => setValue(checked ? true : undefined)}
+        />
+      ),
+    },
+    {
+      key: 'owner',
+      label: filterLabel(intl, 'owner', '负责人'),
+      hidden: true,
+      tagTextFormatter: createPrimitiveTagTextResolver(),
+      render: ({ value, setValue }) => (
+        <Input
+          allowClear
+          placeholder="负责人"
+          value={value ?? ''}
+          onChange={(event) => setValue(event.target.value)}
+        />
+      ),
+    },
+    {
+      key: 'warehouse',
+      label: filterLabel(intl, 'warehouse', '仓库'),
+      hidden: true,
+      tagTextFormatter: createTreeSelectTagTextResolver({ options: WAREHOUSE_TREE }),
+      render: ({ value, setValue }) => (
+        <TreeSelect
+          allowClear
+          maxTagCount="responsive"
+          multiple
+          placeholder="仓库"
+          popupMatchSelectWidth={false}
+          showSearch
+          treeData={WAREHOUSE_TREE}
+          treeDefaultExpandAll
+          value={value}
+          onChange={(next) => setValue(next)}
+        />
+      ),
+    },
+    {
+      key: 'dateValue',
+      label: filterLabel(intl, 'date', '日期'),
+      hidden: true,
+      tagTextFormatter: createDateTagTextResolver(),
+      render: ({ value, setValue }) => (
+        <DatePicker
+          allowClear
+          placeholder="日期"
+          value={value ? dayjs(value) : null}
+          onChange={(_date, dateString) => {
+            setValue(typeof dateString === 'string' && dateString ? dateString : undefined)
           }}
         />
-      )
+      ),
     },
-  },
-  {
-    key: 'urgent',
-    label: '加急',
-    tagTextFormatter: createBooleanTagTextResolver(),
-    tagVisible: (value) => value === true,
-    render: ({ value, setValue }) => (
-      <Switch
-        checked={value === true}
-        onChange={(checked) => setValue(checked ? true : undefined)}
-      />
-    ),
-  },
-  {
-    key: 'owner',
-    label: '负责人',
-    hidden: true,
-    tagTextFormatter: createPrimitiveTagTextResolver(),
-    render: ({ value, setValue }) => (
-      <Input
-        allowClear
-        placeholder="负责人"
-        value={value ?? ''}
-        onChange={(event) => setValue(event.target.value)}
-      />
-    ),
-  },
-  {
-    key: 'warehouse',
-    label: '仓库',
-    hidden: true,
-    tagTextFormatter: createTreeSelectTagTextResolver({ options: WAREHOUSE_TREE }),
-    render: ({ value, setValue }) => (
-      <TreeSelect
-        allowClear
-        maxTagCount="responsive"
-        multiple
-        placeholder="仓库"
-        popupMatchSelectWidth={false}
-        showSearch
-        treeData={WAREHOUSE_TREE}
-        treeDefaultExpandAll
-        value={value}
-        onChange={(next) => setValue(next)}
-      />
-    ),
-  },
-  {
-    key: 'dateValue',
-    label: '日期',
-    hidden: true,
-    tagTextFormatter: createDateTagTextResolver(),
-    render: ({ value, setValue }) => (
-      <DatePicker
-        allowClear
-        placeholder="日期"
-        value={value ? dayjs(value) : null}
-        onChange={(_date, dateString) => {
-          setValue(typeof dateString === 'string' && dateString ? dateString : undefined)
-        }}
-      />
-    ),
-  },
-  {
-    key: 'departTime',
-    label: '发车时间',
-    hidden: true,
-    tagTextFormatter: createTimeTagTextResolver(),
-    render: ({ value, setValue }) => (
-      <TimePicker
-        allowClear
-        placeholder="发车时间"
-        value={value ? dayjs(value, 'HH:mm:ss') : null}
-        onChange={(_time, timeString) => {
-          setValue(typeof timeString === 'string' && timeString ? timeString : undefined)
-        }}
-      />
-    ),
-  },
-  {
-    key: 'workTime',
-    label: '作业时段',
-    hidden: true,
-    tagTextFormatter: createTimeRangeTagTextResolver(),
-    render: ({ value, setValue }) => {
-      const start = value?.[0]
-      const end = value?.[1]
-
-      return (
-        <TimePicker.RangePicker
+    {
+      key: 'departTime',
+      label: filterLabel(intl, 'departTime', '发车时间'),
+      hidden: true,
+      tagTextFormatter: createTimeTagTextResolver(),
+      render: ({ value, setValue }) => (
+        <TimePicker
           allowClear
-          placeholder={['开始时间', '结束时间']}
-          value={start && end ? [dayjs(start, 'HH:mm:ss'), dayjs(end, 'HH:mm:ss')] : null}
-          onChange={(_times, timeStrings) => {
-            const [nextStart, nextEnd] = timeStrings ?? []
-            setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
+          placeholder="发车时间"
+          value={value ? dayjs(value, 'HH:mm:ss') : null}
+          onChange={(_time, timeString) => {
+            setValue(typeof timeString === 'string' && timeString ? timeString : undefined)
           }}
         />
-      )
+      ),
     },
-  },
-]
+    {
+      key: 'workTime',
+      label: filterLabel(intl, 'workTime', '作业时段'),
+      hidden: true,
+      tagTextFormatter: createTimeRangeTagTextResolver(),
+      render: ({ value, setValue }) => {
+        const start = value?.[0]
+        const end = value?.[1]
+
+        return (
+          <TimePicker.RangePicker
+            allowClear
+            placeholder={['开始时间', '结束时间']}
+            value={start && end ? [dayjs(start, 'HH:mm:ss'), dayjs(end, 'HH:mm:ss')] : null}
+            onChange={(_times, timeStrings) => {
+              const [nextStart, nextEnd] = timeStrings ?? []
+              setValue(nextStart && nextEnd ? [nextStart, nextEnd] : undefined)
+            }}
+          />
+        )
+      },
+    },
+  ]
+}
 
 export default function ProTablePlayground() {
+  const intl = useIntl()
+  const locale = intl.locale
   const { message } = App.useApp()
   const tableColumns = useMemo(() => {
     const actionColumn: ProTableColumnType<PlaygroundRow> = {
       key: 'actions',
-      title: '操作',
+      title: columnTitle(intl, 'actions', '操作'),
       align: 'center',
       width: 64,
       fixed: 'right',
@@ -634,8 +649,9 @@ export default function ProTablePlayground() {
         />
       ),
     }
-    return [...columns, actionColumn]
-  }, [message])
+    return [...createColumns(intl), actionColumn]
+  }, [intl, locale, message])
+  const tableFilters = useMemo(() => createFilters(intl), [intl, locale])
 
   return (
     <ProLayoutContentContainer mode="fill">
@@ -648,7 +664,7 @@ export default function ProTablePlayground() {
         heightMode="fill"
         persistenceKey="playground-pro-table"
         columns={tableColumns}
-        filters={filters}
+        filters={tableFilters}
         views
         columnResize
         rowHighlight
