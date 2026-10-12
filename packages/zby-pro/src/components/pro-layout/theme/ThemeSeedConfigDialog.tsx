@@ -223,23 +223,27 @@ interface ConfigEditorHost extends HTMLDivElement {
 }
 
 function copyPrompt(text: string) {
-  if (navigator.clipboard?.writeText) {
-    void navigator.clipboard.writeText(text).catch(() => copyPromptFallback(text))
+  if (copyPromptByEvent(text))
     return
-  }
-  copyPromptFallback(text)
+  if (navigator.clipboard?.writeText)
+    void navigator.clipboard.writeText(text)
 }
 
-function copyPromptFallback(text: string) {
-  const area = document.createElement('textarea')
-  area.value = text
-  area.setAttribute('readonly', '')
-  area.style.position = 'fixed'
-  area.style.left = '-9999px'
-  document.body.appendChild(area)
-  area.select()
-  document.execCommand('copy')
-  area.remove()
+// 编辑器有选区时，兜底的 execCommand 会复制当前行。捕获阶段先写入提示词，避免被编辑器抢走。
+function copyPromptByEvent(text: string) {
+  const onCopy = (event: ClipboardEvent) => {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    event.clipboardData?.setData('text/plain', text)
+  }
+  document.addEventListener('copy', onCopy, true)
+  let copied = false
+  try {
+    copied = document.execCommand('copy')
+  } finally {
+    document.removeEventListener('copy', onCopy, true)
+  }
+  return copied
 }
 
 function readEditorText(content: Content) {
