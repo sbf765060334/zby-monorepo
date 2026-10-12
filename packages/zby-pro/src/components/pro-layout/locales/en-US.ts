@@ -3,6 +3,11 @@ const enUS = {
   logout: 'Sign out',
   userMenu: {
     trigger: 'User menu',
+    morning: 'Good morning~',
+    noon: 'Good noon~',
+    afternoon: 'Good afternoon~',
+    evening: 'Good evening~',
+    lateNight: 'It\'s late, rest early~',
   },
   menuCollapse: 'Collapse menu',
   menuExpand: 'Expand menu',

@@ -3,6 +3,11 @@ const zhCN = {
   logout: '退出登录',
   userMenu: {
     trigger: '用户菜单',
+    morning: '上午好~',
+    noon: '中午好~',
+    afternoon: '下午好~',
+    evening: '晚上好~',
+    lateNight: '夜深了，早点休息~',
   },
   menuCollapse: '收起菜单',
   menuExpand: '展开菜单',

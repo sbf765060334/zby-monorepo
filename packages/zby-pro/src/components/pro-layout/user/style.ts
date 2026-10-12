@@ -17,9 +17,12 @@ export default function useUserMenuStyles(prefixCls: string) {
       [`.${prefixCls}-user-menu`]: {
         '&&': {
           display: 'inline-flex',
+          flex: 'none',
           alignItems: 'center',
           gap: styleToken.marginXS,
+          width: 'max-content',
           height: styleToken.controlHeight,
+          whiteSpace: 'nowrap',
           paddingInline: styleToken.paddingXS,
           border: 0,
           borderRadius: styleToken.borderRadius,
@@ -48,12 +51,7 @@ export default function useUserMenuStyles(prefixCls: string) {
           fontSize: styleToken.fontSizeSM,
           lineHeight: 1,
         },
-        [`.${prefixCls}-user-menu-name`]: {
-          maxWidth: 120,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        },
+
       },
     }),
   )
