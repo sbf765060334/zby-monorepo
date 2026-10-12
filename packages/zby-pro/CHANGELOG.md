@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.2.1
+
+### Patch Changes
+
+- 修复个性化预设锁定明暗主题的问题。
+
 ## 0.2.0
 
 ### Minor Changes
