@@ -49,3 +49,4 @@ yarn-error.log*
 # Scratch / screenshots / local merge workspaces
 .tmp-*
 /tmp-*
+.playwright-mcp/

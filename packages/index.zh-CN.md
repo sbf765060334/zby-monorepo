@@ -111,6 +111,8 @@ export function FilterForm() {
 
 ## 开发命令
 
+打包并发布到公司云效 NPM 制品库的步骤和注意事项见 [publish.zh-CN.md](./publish.zh-CN.md)。
+
 在仓库根目录执行：
 
 ```bash
