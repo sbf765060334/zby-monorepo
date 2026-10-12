@@ -1,11 +1,12 @@
-import { ExportOutlined, ImportOutlined } from '@ant-design/icons'
+import { CopyOutlined, ExportOutlined, ImportOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
-import { Button, Modal } from 'antd'
+import { Button, message } from 'antd'
 import { clsx } from 'clsx'
 import { useCallback, useRef, useState } from 'react'
 import { createJSONEditor, Mode } from 'vanilla-jsoneditor'
 
 import type { Content } from 'vanilla-jsoneditor'
+import ProModal from '../../pro-modal'
 
 /** 主题配置编辑器。确定前只改文本，不碰个性化草稿。 */
 export default function ThemeSeedConfigDialog(props: {
@@ -26,6 +27,7 @@ export default function ThemeSeedConfigDialog(props: {
   const mountToken = useRef(0)
   const mountChain = useRef(Promise.resolve())
   const [invalid, setInvalid] = useState(false)
+  const [messageApi, messageContextHolder] = message.useMessage()
   const title = intl.getMessage('zby.pro.layout.seed.config', '主题配置')
   if (seenText.current !== props.text) {
     seenText.current = props.text
@@ -56,7 +58,7 @@ export default function ThemeSeedConfigDialog(props: {
           navigationBar: false,
           statusBar: true,
           ariaLabel: title,
-          onChange: (content) => {
+          onChange: (content: Content) => {
             textRef.current = readEditorText(content)
             setInvalid(false)
           },
@@ -75,49 +77,87 @@ export default function ThemeSeedConfigDialog(props: {
   }, [title])
 
   return (
-    <Modal
-      open={props.open}
-      title={title}
-      width={800}
-      zIndex={2000}
-      destroyOnHidden
-      getContainer={() => document.body}
-      rootClassName={clsx(root, props.hashId)}
-      onCancel={props.onCancel}
-      footer={(
-        <>
-          <Button onClick={props.onCancel}>
-            {intl.getMessage('zby.pro.layout.seed.configCancel', '取消')}
-          </Button>
+    <>
+      {messageContextHolder}
+      <ProModal
+        open={props.open}
+        title={title}
+        width={800}
+        zIndex={2000}
+        bodyHeightMode="max-height"
+        destroyOnHidden
+        getContainer={() => document.body}
+        rootClassName={clsx(root, props.hashId)}
+        onCancel={props.onCancel}
+        footer={(
+          <div className={`${root}-config-footer`}>
+            <div className={`${root}-config-footer-actions`}>
+              <Button
+                icon={<ImportOutlined />}
+                onClick={() => fileRef.current?.click()}
+              >
+                {intl.getMessage('zby.pro.layout.seed.configImport', '导入')}
+              </Button>
+              <Button
+                icon={<ExportOutlined />}
+                onClick={() => exportConfig(editorRef.current?.get() ? readEditorText(editorRef.current.get()) : textRef.current)}
+              >
+                {intl.getMessage('zby.pro.layout.seed.configExport', '导出')}
+              </Button>
+            </div>
+            <div className={`${root}-config-footer-actions`}>
+              <Button onClick={props.onCancel}>
+                {intl.getMessage('zby.pro.layout.seed.configCancel', '取消')}
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  const content = editorRef.current?.get()
+                  const text = content ? readEditorText(content) : textRef.current
+                  if (!props.onConfirm(text))
+                    setInvalid(true)
+                }}
+              >
+                {intl.getMessage('zby.pro.layout.seed.confirm', '确定')}
+              </Button>
+            </div>
+          </div>
+        )}
+      >
+        <div className={`${root}-config-note`}>
+          <p>
+            {intl.getMessage(
+              'zby.pro.layout.seed.configNote',
+              '左侧面板用于调节常用种子。主题配置是一份完整的 Seed Token 预设，可以一次写入更多种子，而不必逐项在面板中调整。请使用扁平 JSON，不要包裹 token，也不要写入暗色或紧凑算法；明暗与密度仍由主题开关控制。',
+            )}
+          </p>
+          <p>
+            {intl.getMessage(
+              'zby.pro.layout.seed.configPromptLead',
+              '如需借助主流 AI 生成方案，请使用「一键复制提示词」。复制后请自行修改提示词末尾的风格描述，再交给模型，即可生成符合目标风格的 Seed Token。',
+            )}
+          </p>
           <Button
-            type="primary"
+            icon={<CopyOutlined />}
             onClick={() => {
-              const content = editorRef.current?.get()
-              const text = content ? readEditorText(content) : textRef.current
-              if (!props.onConfirm(text))
-                setInvalid(true)
+              copyPrompt(intl.getMessage(
+                'zby.pro.layout.seed.configPrompt',
+                '你是 Ant Design CSS-in-JS 主题助手。请根据风格描述，生成一份全局 Seed Token 预设。',
+              ))
+              void messageApi.success(intl.getMessage('zby.pro.layout.seed.configCopied', '提示词已复制'))
             }}
           >
-            {intl.getMessage('zby.pro.layout.seed.confirm', '确定')}
+            {intl.getMessage('zby.pro.layout.seed.configCopyPrompt', '一键复制提示词')}
           </Button>
-        </>
-      )}
-    >
-      <p className={`${root}-config-note`}>
-        {intl.getMessage(
-          'zby.pro.layout.seed.configNote',
-          '注意：算法配置中的字符串 dark 和 compact 分别表示暗色与紧凑算法，这仅适用于在主题编辑器配置中使用。如果需要复制到代码中使用，请手动替换为从 antd 中引入的 theme.darkAlgorithm 和 theme.compactAlgorithm。',
-        )}
-      </p>
-      <div ref={bindHost} className={`${root}-config-editor`} />
-      {invalid
-        ? (
-            <div className={`${root}-config-error`}>
-              {intl.getMessage('zby.pro.layout.seed.configInvalid', '配置需要是 JSON 对象')}
-            </div>
-          )
-        : null}
-      <div className={`${root}-config-actions`}>
+        </div>
+        <div ref={bindHost} className={`${root}-config-editor`} />
+        {invalid
+          ? (
+              <div className={`${root}-config-error`}>
+                {intl.getMessage('zby.pro.layout.seed.configInvalid', '配置需要是 JSON 对象')}
+              </div>
+            )
+          : null}
         <input
           ref={fileRef}
           type="file"
@@ -136,26 +176,33 @@ export default function ThemeSeedConfigDialog(props: {
             })
           }}
         />
-        <Button
-          icon={<ImportOutlined />}
-          style={{ marginInlineEnd: 8 }}
-          onClick={() => fileRef.current?.click()}
-        >
-          {intl.getMessage('zby.pro.layout.seed.configImport', '导入')}
-        </Button>
-        <Button
-          icon={<ExportOutlined />}
-          onClick={() => exportConfig(editorRef.current?.get() ? readEditorText(editorRef.current.get()) : textRef.current)}
-        >
-          {intl.getMessage('zby.pro.layout.seed.configExport', '导出')}
-        </Button>
-      </div>
-    </Modal>
+      </ProModal>
+    </>
   )
 }
 
 interface ConfigEditorHost extends HTMLDivElement {
   jsonEditor?: ReturnType<typeof createJSONEditor>
+}
+
+function copyPrompt(text: string) {
+  if (navigator.clipboard?.writeText) {
+    void navigator.clipboard.writeText(text).catch(() => copyPromptFallback(text))
+    return
+  }
+  copyPromptFallback(text)
+}
+
+function copyPromptFallback(text: string) {
+  const area = document.createElement('textarea')
+  area.value = text
+  area.setAttribute('readonly', '')
+  area.style.position = 'fixed'
+  area.style.left = '-9999px'
+  document.body.appendChild(area)
+  area.select()
+  document.execCommand('copy')
+  area.remove()
 }
 
 function readEditorText(content: Content) {

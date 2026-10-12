@@ -46,7 +46,7 @@ export function syncThemeSeedConfigPatch(
     }
     result = upsertThemeSeedConfig(result, key, next[key] as ProThemeSeedPreference[typeof key])
   })
-  if (Object.hasOwn(next, 'colorPrimary') && !Object.hasOwn(next, 'colorInfo') && draft.colorInfo == null)
+  if (hasOwn(next, 'colorPrimary') && !hasOwn(next, 'colorInfo') && draft.colorInfo == null)
     result = upsertThemeSeedConfig(result, 'colorInfo', after.colorPrimary)
   return result
 }
@@ -91,7 +91,7 @@ export function upsertThemeSeedConfig(
   key: keyof ProThemeSeedPreference,
   value: ProThemeSeedPreference[keyof ProThemeSeedPreference],
 ) {
-  if (Object.hasOwn(config, key) && Object.is(config[key], value))
+  if (hasOwn(config, key) && Object.is(config[key], value))
     return config
   return { ...config, [key]: value }
 }
@@ -101,7 +101,7 @@ export function removeThemeSeedConfigField(
   config: ThemeSeedConfig,
   key: keyof ProThemeSeedPreference,
 ) {
-  if (!Object.hasOwn(config, key))
+  if (!hasOwn(config, key))
     return config
   const next = { ...config }
   delete next[key]
@@ -138,7 +138,7 @@ export function readStoredThemeSeedConfig(
   input: unknown,
   seed: ProThemeSeedPreference,
 ): ThemeSeedConfig {
-  if (!isRecord(input) || !Object.hasOwn(input, THEME_SEED_CONFIG_FIELD))
+  if (!isRecord(input) || !hasOwn(input, THEME_SEED_CONFIG_FIELD))
     return deriveThemeSeedConfig(seed)
   const config = input[THEME_SEED_CONFIG_FIELD]
   if (!isRecord(config))
@@ -215,8 +215,9 @@ function expandHex(value: string) {
   return /^#[0-9a-f]{8}$/.test(value) ? value.slice(0, 7) : value
 }
 
-function hasOwn(config: ThemeSeedConfig, key: string) {
-  return Object.hasOwn(config, key)
+function hasOwn(target: object, key: PropertyKey) {
+  // eslint-disable-next-line e18e/prefer-object-has-own -- current TS lib target does not expose Object.hasOwn
+  return Object.prototype.hasOwnProperty.call(target, key)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

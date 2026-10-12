@@ -1,0 +1,284 @@
+- generic [ref=f39e1]:
+  - generic [ref=f39e4]:
+    - complementary [ref=f39e5]:
+      - generic [ref=f39e7]:
+        - generic [ref=f39e8]: Zibuyu
+        - navigation [ref=f39e13]:
+          - button "home 首页" [ref=f39e14] [cursor=pointer]:
+            - generic [ref=f39e15]:
+              - term [ref=f39e16]:
+                - img "home" [ref=f39e17]
+              - definition [ref=f39e20]:
+                - generic [ref=f39e21]: 首页
+          - button "dashboard 工作台" [ref=f39e22] [cursor=pointer]:
+            - generic [ref=f39e23]:
+              - term [ref=f39e24]:
+                - img "dashboard" [ref=f39e25]
+              - definition [ref=f39e28]:
+                - generic [ref=f39e29]: 工作台
+          - button "clear 示例页面" [ref=f39e30] [cursor=pointer]:
+            - generic [ref=f39e31]:
+              - term [ref=f39e32]:
+                - img "clear" [ref=f39e33]
+              - definition [ref=f39e36]:
+                - generic [ref=f39e37]: 示例页面
+        - button "切换系统" [ref=f39e38] [cursor=pointer]:
+          - img "appstore" [ref=f39e39]
+    - generic [ref=f39e42]:
+      - banner [ref=f39e43]:
+        - generic [ref=f39e78]:
+          - tablist [ref=f39e79]:
+            - tab "固定页签：首页 首页" [selected] [ref=f39e84] [cursor=pointer]:
+              - generic [ref=f39e85]:
+                - button "固定页签：首页" [ref=f39e86]:
+                  - img "pushpin" [ref=f39e87]
+                - generic "首页" [ref=f39e90]
+            - button "收藏菜单" [ref=f39e93] [cursor=pointer]:
+              - img "plus" [ref=f39e95]
+          - status [ref=f39e99]
+          - generic:
+            - generic:
+              - tabpanel "固定页签：首页 首页"
+        - generic [ref=f39e45]:
+          - button "搜索页面（Ctrl+K）" [ref=f39e46] [cursor=pointer]:
+            - generic [ref=f39e50]: CTRL + K
+          - button "语言设置" [ref=f39e51] [cursor=pointer]
+          - button "主题设置" [ref=f39e56] [cursor=pointer]
+      - main [ref=f39e63]:
+        - generic [ref=f39e64]:
+          - generic [ref=f39e65]: 当前位置：
+          - navigation [ref=f39e67]:
+            - list [ref=f39e68]:
+              - listitem [ref=f39e69]:
+                - generic [ref=f39e71]:
+                  - img "home" [ref=f39e72]
+                  - text: 首页
+        - generic [ref=f39e104]:
+          - heading "组件预览" [level=3] [ref=f39e105]
+          - generic [ref=f39e106]: 从左侧打开示例页面，预览组件能力。
+          - generic [ref=f39e107]: 从左侧打开示例页面，再通过顶部页签切换、固定、关闭和拖拽页面。
+  - dialog "个性化共 2 处修改" [ref=f39e155]:
+    - generic [ref=f39e156]:
+      - generic [ref=f39e157]:
+        - button "关闭" [ref=f39e158] [cursor=pointer]:
+          - img "close" [ref=f39e159]
+        - generic [ref=f39e162]: 个性化共 2 处修改
+      - generic [ref=f39e165]:
+        - button "主题配置" [ref=f39e166] [cursor=pointer]
+        - button "恢复默认" [ref=f39e168] [cursor=pointer]
+        - button "确 定" [disabled] [ref=f39e170]
+    - generic [ref=f39e172]:
+      - complementary [ref=f39e173]:
+        - generic [ref=f39e174]:
+          - generic [ref=f39e175]: 颜色
+          - generic [ref=f39e176]:
+            - generic [ref=f39e177]:
+              - generic [ref=f39e178]: 品牌色
+              - generic [ref=f39e179]:
+                - generic [ref=f39e180]: colorPrimary
+                - button "重置" [ref=f39e181] [cursor=pointer]
+            - generic [ref=f39e182]: "#EB2F96"
+          - generic [ref=f39e187]:
+            - generic [ref=f39e188]:
+              - generic [ref=f39e189]: 成功色
+              - generic [ref=f39e190]: colorSuccess
+            - generic [ref=f39e192]: "#52C41A"
+          - generic [ref=f39e197]:
+            - generic [ref=f39e198]:
+              - generic [ref=f39e199]: 警戒色
+              - generic [ref=f39e200]: colorWarning
+            - generic [ref=f39e202]: "#FAAD14"
+          - generic [ref=f39e207]:
+            - generic [ref=f39e208]:
+              - generic [ref=f39e209]: 错误色
+              - generic [ref=f39e210]: colorError
+            - generic [ref=f39e212]: "#FF4D4F"
+          - generic [ref=f39e217]:
+            - generic [ref=f39e218]:
+              - generic [ref=f39e219]: 信息色
+              - generic [ref=f39e220]: colorInfo
+            - generic [ref=f39e223]:
+              - generic [ref=f39e224]: 使用主色
+              - switch [checked] [ref=f39e225] [cursor=pointer]
+          - generic [ref=f39e228]:
+            - generic [ref=f39e229]:
+              - generic [ref=f39e230]: 链接色
+              - generic [ref=f39e231]: colorLink
+            - generic [ref=f39e233]: "#EB2F96"
+          - generic [ref=f39e238]:
+            - generic [ref=f39e239]:
+              - generic [ref=f39e240]: 基础文本色
+              - generic [ref=f39e241]: colorTextBase
+            - generic [ref=f39e243]: "#000000"
+          - generic [ref=f39e248]:
+            - generic [ref=f39e249]:
+              - generic [ref=f39e250]: 基础背景色
+              - generic [ref=f39e251]: colorBgBase
+            - generic [ref=f39e253]: "#FFFFFF"
+        - generic [ref=f39e258]:
+          - generic [ref=f39e259]: 尺寸
+          - generic [ref=f39e260]:
+            - generic [ref=f39e261]: 文字
+            - generic [ref=f39e262]: fontSize
+            - generic [ref=f39e264]:
+              - slider "文字" [ref=f39e268] [cursor=pointer]
+              - generic [ref=f39e269]:
+                - spinbutton "文字" [ref=f39e270]: "14"
+                - generic:
+                  - button "Increase Value" [ref=f39e271] [cursor=pointer]:
+                    - img "up" [ref=f39e272]
+                  - button "Decrease Value" [ref=f39e275] [cursor=pointer]:
+                    - img "down" [ref=f39e276]
+          - generic [ref=f39e279]:
+            - generic [ref=f39e280]: 尺寸步长
+            - generic [ref=f39e281]: sizeStep
+            - generic [ref=f39e283]:
+              - slider "尺寸步长" [ref=f39e287] [cursor=pointer]
+              - generic [ref=f39e288]:
+                - spinbutton "尺寸步长" [ref=f39e289]: "4"
+                - generic:
+                  - button "Increase Value" [ref=f39e290] [cursor=pointer]:
+                    - img "up" [ref=f39e291]
+                  - button "Decrease Value" [ref=f39e294] [cursor=pointer]:
+                    - img "down" [ref=f39e295]
+          - generic [ref=f39e298]:
+            - generic [ref=f39e299]: 尺寸变化单位
+            - generic [ref=f39e300]: sizeUnit
+            - generic [ref=f39e302]:
+              - slider "尺寸变化单位" [ref=f39e306] [cursor=pointer]
+              - generic [ref=f39e307]:
+                - spinbutton "尺寸变化单位" [ref=f39e308]: "4"
+                - generic:
+                  - button "Increase Value" [ref=f39e309] [cursor=pointer]:
+                    - img "up" [ref=f39e310]
+                  - button "Decrease Value" [ref=f39e313] [cursor=pointer]:
+                    - img "down" [ref=f39e314]
+        - generic [ref=f39e317]:
+          - generic [ref=f39e318]: 风格
+          - generic [ref=f39e319]:
+            - generic [ref=f39e320]: 圆角
+            - generic [ref=f39e321]: borderRadius
+            - generic [ref=f39e323]:
+              - slider "圆角" [ref=f39e327] [cursor=pointer]
+              - generic [ref=f39e328]:
+                - spinbutton "圆角" [ref=f39e329]: "6"
+                - generic:
+                  - button "Increase Value" [ref=f39e330] [cursor=pointer]:
+                    - img "up" [ref=f39e331]
+                  - button "Decrease Value" [ref=f39e334] [cursor=pointer]:
+                    - img "down" [ref=f39e335]
+          - generic [ref=f39e338]:
+            - generic [ref=f39e339]:
+              - generic [ref=f39e340]: 线框化
+              - generic [ref=f39e341]: wireframe
+            - switch [ref=f39e344] [cursor=pointer]
+      - generic [ref=f39e348]:
+        - radiogroup "segmented control" [ref=f39e349]:
+          - generic [ref=f39e350]:
+            - generic [ref=f39e351] [cursor=pointer]:
+              - radio "页面示例" [checked]
+              - generic "页面示例" [ref=f39e352]
+            - generic [ref=f39e353] [cursor=pointer]:
+              - radio "风格概览"
+              - generic "风格概览" [ref=f39e354]
+        - generic [ref=f39e356]:
+          - generic [ref=f39e357]:
+            - generic [ref=f39e358]: 概览
+            - generic [ref=f39e359]: 订单
+            - generic [ref=f39e360]: 用户
+          - generic [ref=f39e369]:
+            - generic [ref=f39e370]:
+              - generic [ref=f39e372]:
+                - generic [ref=f39e373]: 名称：
+                - textbox "名称：" [ref=f39e376]:
+                  - /placeholder: 名称
+              - generic [ref=f39e378]:
+                - button "查 询" [ref=f39e379] [cursor=pointer]
+                - button "重 置" [ref=f39e381] [cursor=pointer]
+            - generic [ref=f39e389]:
+              - generic [ref=f39e391]:
+                - table [ref=f39e393]:
+                  - rowgroup [ref=f39e399]:
+                    - row [ref=f39e400]:
+                      - columnheader "名称" [ref=f39e401]
+                      - columnheader "负责人" [ref=f39e402]
+                      - columnheader "状态" [ref=f39e403]
+                      - columnheader [ref=f39e404]
+                - table [ref=f39e406]:
+                  - rowgroup [ref=f39e407]:
+                    - row [ref=f39e408]:
+                      - cell "华北" [ref=f39e409]
+                      - cell "Lin" [ref=f39e410]
+                      - cell "已完成" [ref=f39e411]
+                    - row [ref=f39e412]:
+                      - cell "华东" [ref=f39e413]
+                      - cell "Wang" [ref=f39e414]
+                      - cell "进行中" [ref=f39e415]
+                    - row [ref=f39e416]:
+                      - cell "华南" [ref=f39e417]
+                      - cell "Chen" [ref=f39e418]
+                      - cell "已完成" [ref=f39e419]
+                    - row [ref=f39e420]:
+                      - cell "西南" [ref=f39e421]
+                      - cell "Zhao" [ref=f39e422]
+                      - cell "进行中" [ref=f39e423]
+              - list [ref=f39e424]:
+                - listitem [ref=f39e425]: 第 1-4 条/总共 4 条
+                - listitem "上一页" [ref=f39e426]:
+                  - button [disabled] [ref=f39e427]:
+                    - img "left" [ref=f39e428]
+                - listitem "1" [ref=f39e431] [cursor=pointer]
+                - listitem "下一页" [ref=f39e433]:
+                  - button [disabled] [ref=f39e434]:
+                    - img "right" [ref=f39e435]
+        - generic [ref=f39e438]:
+          - button "缩小" [ref=f39e439] [cursor=pointer]:
+            - img "minus" [ref=f39e441]
+          - button "恢复 100%" [ref=f39e444] [cursor=pointer]:
+            - generic [ref=f39e445]: 100%
+          - button "放大" [ref=f39e446] [cursor=pointer]:
+            - img "plus" [ref=f39e448]
+  - generic [ref=f39e452]:
+    - dialog "主题配置":
+      - generic [ref=f39e453]:
+        - button "关闭" [ref=f39e454] [cursor=pointer]:
+          - generic "关闭" [ref=f39e455]:
+            - img "close" [ref=f39e456]
+        - generic [ref=f39e459]: 主题配置
+        - generic [ref=f39e461]:
+          - generic [ref=f39e462]:
+            - paragraph [ref=f39e463]: 左侧面板用于调节常用种子。主题配置是一份完整的 Seed Token 预设，可以一次写入更多种子，而不必逐项在面板中调整。请使用扁平 JSON，不要包裹 token，也不要写入暗色或紧凑算法；明暗与密度仍由主题开关控制。
+            - paragraph [ref=f39e464]: 如需借助主流 AI 生成方案，请使用「一键复制提示词」。复制后请自行修改提示词末尾的风格描述，再交给模型，即可生成符合目标风格的 Seed Token。生成结果可直接粘贴到编辑器，或通过导入载入。
+            - button "copy 一键复制提示词" [active] [ref=f39e465] [cursor=pointer]:
+              - img "copy" [ref=f39e467]
+              - generic [ref=f39e470]: 一键复制提示词
+          - generic [ref=f39e472]:
+            - generic [ref=f39e475]:
+              - generic [aria-hidden] [ref=f39e476]:
+                - generic [ref=f39e479]:
+                  - generic [ref=f39e480]: "1"
+                  - generic [ref=f39e481]: "2"
+                  - generic [ref=f39e482]: "3"
+                - generic [ref=f39e483]: ⌄
+              - textbox "主题配置" [ref=f39e485]:
+                - generic [ref=f39e486]: "{"
+                - generic [ref=f39e487]: "\"colorPrimary\": \"#eb2f96\""
+                - generic [ref=f39e488]: "}"
+            - generic [ref=f39e489]:
+              - generic [ref=f39e510]: "Line: 1"
+              - generic [ref=f39e511]: "Column: 1"
+        - generic [ref=f39e491]:
+          - generic [ref=f39e492]:
+            - button "import 导入" [ref=f39e493] [cursor=pointer]:
+              - img "import" [ref=f39e495]
+              - generic [ref=f39e498]: 导入
+            - button "export 导出" [ref=f39e499] [cursor=pointer]:
+              - img "export" [ref=f39e501]
+              - generic [ref=f39e504]: 导出
+          - generic [ref=f39e505]:
+            - button "取 消" [ref=f39e506] [cursor=pointer]
+            - button "确 定" [ref=f39e508] [cursor=pointer]
+  - alert [ref=f39e512]:
+    - generic [ref=f39e513]:
+      - img "check-circle" [ref=f39e515]
+      - generic [ref=f39e518]: 提示词已复制

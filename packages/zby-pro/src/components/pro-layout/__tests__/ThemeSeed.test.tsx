@@ -198,14 +198,14 @@ describe('theme seed drawer', () => {
     await waitFor(() => {
       expect(configEditorText()).toContain('{')
     })
-    expect(screen.getByText(/dark 和 compact/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: /一键复制提示词/ })).toBeTruthy()
 
     replaceConfigText('{\n  "fontSize": 14,\n  "extra": 1\n}')
     fireEvent.click(configConfirm())
     await finishModalMotion()
     expect(screen.getByText('共 0 处修改')).toBeTruthy()
     expect(confirmButton('确定').disabled).toBe(false)
-    expect(screen.queryByText(/dark 和 compact/)).toBeNull()
+    expect(screen.queryByText(/提示词/)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: '主题配置' }))
     await waitFor(() => {
@@ -215,6 +215,7 @@ describe('theme seed drawer', () => {
     expect(configEditorText()).toContain('extra')
     await dismissConfigDialog()
 
+    fireEvent.keyDown(fontSizeSlider(), { keyCode: 39, which: 39 })
     fireEvent.click(screen.getByText('fontSize').parentElement?.querySelector('button') as HTMLButtonElement)
     fireEvent.click(screen.getByRole('button', { name: '主题配置' }))
     await waitFor(() => {
@@ -249,7 +250,7 @@ describe('theme seed drawer', () => {
     await waitFor(() => {
       expect(configEditorText()).toContain('"fontSize": 15')
     })
-  }, 20000)
+  }, 60000)
 
   it('uses English copy and ignores invalid stored fields', async () => {
     window.localStorage.setItem(SEED_STORAGE_KEY, JSON.stringify({

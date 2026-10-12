@@ -273,17 +273,29 @@ export function useThemeSeedStyles(prefixCls: string) {
           gap: styleToken.marginXS,
         },
         [`${root}-config-note`]: {
-          margin: 0,
+          flex: 'none',
           marginBlockEnd: 12,
           color: styleToken.colorTextDescription,
           fontSize: styleToken.fontSize,
           lineHeight: styleToken.lineHeight,
+          [`p`]: {
+            margin: 0,
+            marginBlockEnd: styleToken.marginXS,
+          },
         },
         [`${root}-config-editor`]: {
           minHeight: 150,
         },
-        [`${root}-config-actions`]: {
-          margin: '24px 0 -44px',
+        [`${root}-config-footer`]: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: styleToken.marginXS,
+        },
+        [`${root}-config-footer-actions`]: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: styleToken.marginXS,
         },
         [`${root}-config-error`]: {
           marginBlockStart: styleToken.marginXS,
