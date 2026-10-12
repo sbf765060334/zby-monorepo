@@ -32,6 +32,7 @@ import type {
 import {
   countThemeSeedChanges,
   resolveThemeAlgorithm,
+  themeSeedDraftChanged,
   toThemeSeedToken,
 } from './useThemeSeedPreference'
 
@@ -101,7 +102,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
   // 标题上的处数跟 antd 默认种子比。确定按钮只看这次打开后的草稿和配置有没有变。
   const changes = countThemeSeedChanges(draft, ANTD_THEME_SEED)
   const configChanged = !themeSeedConfigEquals(config, committedConfig)
-  const sessionDirty = countThemeSeedChanges(draft, value) > 0 || configChanged
+  const sessionDirty = themeSeedDraftChanged(draft, value) || configChanged
   const resetLabel = intl.getMessage('zby.pro.layout.seed.resetField', '重置')
 
   const patch = (next: Partial<ProThemeSeedPreference>) => {
@@ -175,6 +176,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
                 label={intl.getMessage(`zby.pro.layout.seed.${key}`, label)}
                 token={token}
                 resetLabel={resetLabel}
+                changed={draft[key] !== ANTD_THEME_SEED[key]}
                 color={draft[key]}
                 onChange={(color) => patch({ [key]: color })}
                 onReset={() => resetField(key)}
@@ -187,6 +189,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
                   label={intl.getMessage('zby.pro.layout.seed.colorInfo', '信息色')}
                   token="colorInfo"
                   resetLabel={resetLabel}
+                  changed={draft.colorInfo !== ANTD_THEME_SEED.colorInfo}
                   onReset={() => resetField('colorInfo')}
                 />
               </div>
@@ -217,6 +220,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
               label={intl.getMessage('zby.pro.layout.seed.colorLink', '链接色')}
               token="colorLink"
               resetLabel={resetLabel}
+              changed={draft.colorLink !== ANTD_THEME_SEED.colorLink}
               color={draft.colorLink ?? draft.colorPrimary}
               onChange={(colorLink) => patch({ colorLink })}
               onReset={() => resetField('colorLink')}
@@ -226,6 +230,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
               label={intl.getMessage('zby.pro.layout.seed.colorTextBase', '基础文本色')}
               token="colorTextBase"
               resetLabel={resetLabel}
+              changed={draft.colorTextBase !== ANTD_THEME_SEED.colorTextBase}
               color={draft.colorTextBase ?? (appearance === 'dark' ? '#ffffff' : '#000000')}
               onChange={(colorTextBase) => patch({ colorTextBase })}
               onReset={() => resetField('colorTextBase')}
@@ -235,6 +240,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
               label={intl.getMessage('zby.pro.layout.seed.colorBgBase', '基础背景色')}
               token="colorBgBase"
               resetLabel={resetLabel}
+              changed={draft.colorBgBase !== ANTD_THEME_SEED.colorBgBase}
               color={draft.colorBgBase ?? (appearance === 'dark' ? '#000000' : '#ffffff')}
               onChange={(colorBgBase) => patch({ colorBgBase })}
               onReset={() => resetField('colorBgBase')}
@@ -249,6 +255,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
                 field={field}
                 value={draft[field[0]]}
                 resetLabel={resetLabel}
+                changed={draft[field[0]] !== ANTD_THEME_SEED[field[0]]}
                 onChange={(next) => patch({ [field[0]]: next })}
                 onReset={() => resetField(field[0])}
               />
@@ -263,6 +270,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
                 field={field}
                 value={draft[field[0]]}
                 resetLabel={resetLabel}
+                changed={draft[field[0]] !== ANTD_THEME_SEED[field[0]]}
                 onChange={(next) => patch({ [field[0]]: next })}
                 onReset={() => resetField(field[0])}
               />
@@ -274,6 +282,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
                   label={intl.getMessage('zby.pro.layout.seed.wireframe', '线框化')}
                   token="wireframe"
                   resetLabel={resetLabel}
+                  changed={draft.wireframe !== ANTD_THEME_SEED.wireframe}
                   onReset={() => resetField('wireframe')}
                 />
               </div>
@@ -334,6 +343,7 @@ function FieldMeta(props: {
   label: string
   token: string
   resetLabel: string
+  changed: boolean
   onReset: () => void
 }) {
   const root = `${props.prefixCls}-theme-seed`
@@ -342,9 +352,11 @@ function FieldMeta(props: {
       <div className={`${root}-field-name`}>{props.label}</div>
       <div className={`${root}-field-meta`}>
         <span>{props.token}</span>
-        <button type="button" className={`${root}-reset`} onClick={props.onReset}>
-          {props.resetLabel}
-        </button>
+        {props.changed ? (
+          <button type="button" className={`${root}-reset`} onClick={props.onReset}>
+            {props.resetLabel}
+          </button>
+        ) : null}
       </div>
     </>
   )
@@ -355,6 +367,7 @@ function ColorField(props: {
   label: string
   token: string
   resetLabel: string
+  changed: boolean
   color: string
   hideMeta?: boolean
   onChange: (color: string) => void
@@ -370,6 +383,7 @@ function ColorField(props: {
             label={props.label}
             token={props.token}
             resetLabel={props.resetLabel}
+            changed={props.changed}
             onReset={props.onReset}
           />
         </div>
@@ -392,6 +406,7 @@ function NumberField(props: {
   field: typeof NUMBER_FIELDS[number]
   value: number
   resetLabel: string
+  changed: boolean
   onChange: (value: number) => void
   onReset: () => void
 }) {
@@ -407,6 +422,7 @@ function NumberField(props: {
         label={text}
         token={token}
         resetLabel={props.resetLabel}
+        changed={props.changed}
         onReset={props.onReset}
       />
       <div className={`${root}-number`}>

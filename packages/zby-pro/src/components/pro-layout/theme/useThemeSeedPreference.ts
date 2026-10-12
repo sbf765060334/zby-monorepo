@@ -98,6 +98,14 @@ export function countThemeSeedChanges(
   )
 }
 
+/** 这次打开后种子有没有改动。跟随开关用 null 和具体色值区分，不按解析后的色值抵消。 */
+export function themeSeedDraftChanged(
+  draft: ProThemeSeedPreference,
+  committed: ProThemeSeedPreference,
+) {
+  return SEED_KEYS.some((key) => draft[key] !== committed[key])
+}
+
 function themeSeedFieldValue(
   seed: ProThemeSeedPreference,
   key: keyof ProThemeSeedPreference,

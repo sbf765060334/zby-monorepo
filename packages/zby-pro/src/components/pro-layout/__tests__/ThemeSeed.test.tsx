@@ -79,6 +79,7 @@ describe('theme seed drawer', () => {
     await openSeedDrawer('个性化')
     expect(confirmButton('确定').disabled).toBe(true)
     expect(screen.getByText('共 0 处修改')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '重置' })).toBeNull()
     expect(screen.getByText('页面示例')).toBeTruthy()
     await waitFor(() => {
       expect(screen.getByText('华北')).toBeTruthy()
@@ -94,11 +95,13 @@ describe('theme seed drawer', () => {
     fireEvent.keyDown(fontSizeSlider(), { keyCode: 39, which: 39 })
     expect(confirmButton('确定').disabled).toBe(false)
     expect(screen.getByText('共 1 处修改')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '重置' })).toBeTruthy()
     expect(window.localStorage.getItem(SEED_STORAGE_KEY)).toBeNull()
     expect(readRenderedSeed().fontSize).toBe(14)
 
     fireEvent.click(screen.getByRole('button', { name: '恢复默认' }))
     expect(confirmButton('确定').disabled).toBe(true)
+    expect(screen.queryByRole('button', { name: '重置' })).toBeNull()
     expect(readRenderedSeed().fontSize).toBe(14)
 
     fireEvent.keyDown(fontSizeSlider(), { keyCode: 39, which: 39 })
@@ -124,6 +127,56 @@ describe('theme seed drawer', () => {
     expect(readRenderedSeed().fontSize).toBe(14)
     expect(JSON.parse(window.localStorage.getItem(SEED_STORAGE_KEY) || '').fontSize).toBe(14)
     expect(JSON.parse(window.localStorage.getItem(SEED_STORAGE_KEY) || '').colorInfo).toBeNull()
+  }, 60000)
+
+  it('saves the info follow switch when the color matches primary', async () => {
+    window.localStorage.setItem(SEED_STORAGE_KEY, JSON.stringify({
+      colorPrimary: '#722ed1',
+      colorSuccess: '#52c41a',
+      colorWarning: '#faad14',
+      colorError: '#ff4d4f',
+      colorInfo: null,
+      colorLink: null,
+      colorTextBase: null,
+      colorBgBase: null,
+      fontSize: 14,
+      sizeStep: 4,
+      sizeUnit: 4,
+      borderRadius: 6,
+      wireframe: false,
+      config: { colorPrimary: '#722ed1', colorInfo: '#722ed1' },
+    }))
+    renderSeedFixture()
+    await openSeedDrawer('个性化')
+    expect(screen.getByText('共 2 处修改')).toBeTruthy()
+    expect(confirmButton('确定').disabled).toBe(true)
+
+    fireEvent.click(followSwitch())
+    expect(followSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByText('共 2 处修改')).toBeTruthy()
+    expect(confirmButton('确定').disabled).toBe(false)
+    fireEvent.click(confirmButton('确定'))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    expect(JSON.parse(window.localStorage.getItem(SEED_STORAGE_KEY) || '').colorInfo).toBe('#722ed1')
+
+    await openSeedDrawer('个性化')
+    expect(followSwitch().getAttribute('aria-checked')).toBe('false')
+    expect(confirmButton('确定').disabled).toBe(true)
+    fireEvent.click(followSwitch())
+    expect(followSwitch().getAttribute('aria-checked')).toBe('true')
+    expect(confirmButton('确定').disabled).toBe(false)
+    fireEvent.click(confirmButton('确定'))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    const stored = JSON.parse(window.localStorage.getItem(SEED_STORAGE_KEY) || '') as {
+      colorInfo: string | null
+      config: { colorInfo: string }
+    }
+    expect(stored.colorInfo).toBeNull()
+    expect(stored.config.colorInfo).toBe('#722ed1')
   }, 40000)
 
   it('discards a draft when the drawer closes', async () => {
@@ -248,6 +301,13 @@ async function openSeedDrawer(name: string) {
     expect(menu.parentElement?.style.pointerEvents).not.toBe('none')
   })
   fireEvent.click(screen.getByRole('menuitem', { name: new RegExp(name) }))
+}
+
+function followSwitch() {
+  const button = screen.getByText('使用主色').parentElement?.querySelector('button')
+  if (!button)
+    throw new Error('follow switch was not found')
+  return button
 }
 
 function confirmButton(name: string) {

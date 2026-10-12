@@ -1,0 +1,41 @@
+- generic [ref=f23e4]:
+  - complementary [ref=f23e5]:
+    - generic [ref=f23e7]:
+      - generic [ref=f23e8]: Zibuyu
+      - navigation [ref=f23e13]:
+        - button "home 首页" [ref=f23e14] [cursor=pointer]:
+          - generic [ref=f23e15]:
+            - term [ref=f23e16]:
+              - img "home" [ref=f23e17]
+            - definition [ref=f23e20]:
+              - generic [ref=f23e21]: 首页
+        - button "dashboard 工作台" [ref=f23e22] [cursor=pointer]:
+          - generic [ref=f23e23]:
+            - term [ref=f23e24]:
+              - img "dashboard" [ref=f23e25]
+            - definition [ref=f23e28]:
+              - generic [ref=f23e29]: 工作台
+        - button "clear 示例页面" [ref=f23e30] [cursor=pointer]:
+          - generic [ref=f23e31]:
+            - term [ref=f23e32]:
+              - img "clear" [ref=f23e33]
+            - definition [ref=f23e36]:
+              - generic [ref=f23e37]: 示例页面
+      - button "切换系统" [ref=f23e38] [cursor=pointer]:
+        - img "appstore" [ref=f23e39]
+  - generic [ref=f23e42]:
+    - banner [ref=f23e43]:
+      - generic [ref=f23e45]:
+        - button "搜索页面（Ctrl+K）" [ref=f23e46] [cursor=pointer]:
+          - generic [ref=f23e50]: CTRL + K
+        - button "语言设置" [ref=f23e51] [cursor=pointer]
+        - button "主题设置" [ref=f23e56] [cursor=pointer]
+    - main [ref=f23e63]:
+      - generic [ref=f23e64]:
+        - generic [ref=f23e65]: 当前位置：
+        - navigation [ref=f23e67]:
+          - list [ref=f23e68]:
+            - listitem [ref=f23e69]:
+              - generic [ref=f23e71]:
+                - img "home" [ref=f23e72]
+                - text: 首页
