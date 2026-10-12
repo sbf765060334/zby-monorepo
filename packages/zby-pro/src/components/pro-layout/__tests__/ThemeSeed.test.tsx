@@ -201,6 +201,11 @@ describe('theme seed drawer', () => {
     expect(screen.getByRole('button', { name: /一键复制提示词/ })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '清新薄荷风' }))
     expect(configEditorText()).toContain('#36B37E')
+    await dismissConfigDialog()
+    fireEvent.click(screen.getByRole('button', { name: '主题配置' }))
+    await waitFor(() => {
+      expect(configEditorText()).not.toContain('#36B37E')
+    })
     fireEvent.click(screen.getByRole('button', { name: '新中式国风' }))
     expect(configEditorText()).toContain('#9c2b25')
     expect(configEditorText()).toContain('colorPrimaryBg')

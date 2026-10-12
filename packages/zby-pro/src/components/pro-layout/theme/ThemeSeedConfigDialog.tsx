@@ -2,7 +2,7 @@ import { CopyOutlined, ExportOutlined, ImportOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { Button, message } from 'antd'
 import { clsx } from 'clsx'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createJSONEditor, Mode } from 'vanilla-jsoneditor'
 
 import type { Content } from 'vanilla-jsoneditor'
@@ -25,15 +25,32 @@ export default function ThemeSeedConfigDialog(props: {
   const hostNode = useRef<ConfigEditorHost | null>(null)
   const textRef = useRef(props.text)
   const seenText = useRef(props.text)
+  const openRef = useRef(props.open)
+  const sourceTextRef = useRef(props.text)
   const mountToken = useRef(0)
   const mountChain = useRef(Promise.resolve())
   const [invalid, setInvalid] = useState(false)
   const [messageApi, messageContextHolder] = message.useMessage()
   const title = intl.getMessage('zby.pro.layout.seed.config', '主题配置')
+  sourceTextRef.current = props.text
   if (seenText.current !== props.text) {
     seenText.current = props.text
     textRef.current = props.text
   }
+  // 弹窗本身不随关闭卸载。未点确定的编辑器文本在关闭时丢掉，下次打开回到已确认配置。
+  if (openRef.current !== props.open) {
+    textRef.current = props.text
+    seenText.current = props.text
+    openRef.current = props.open
+  }
+
+  useEffect(() => {
+    if (!props.open)
+      return
+    const text = sourceTextRef.current
+    textRef.current = text
+    editorRef.current?.set({ text })
+  }, [props.open])
 
   // Modal 的 destroyOnHidden 要等弹窗自己的 effect 才挂上内容。
   // 父组件 effect 那时已经结束，所以改在节点真正挂上时创建编辑器。
