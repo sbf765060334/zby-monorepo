@@ -142,7 +142,7 @@ export default function ThemeSeedConfigDialog(props: {
             onClick={() => {
               copyPrompt(intl.getMessage(
                 'zby.pro.layout.seed.configPrompt',
-                '你是 Ant Design CSS-in-JS 主题助手。请根据风格描述，生成一份全局 Seed Token 预设。',
+                '你是 Ant Design 主题生成器。请根据文末的风格描述，改写下面这份主题 Token。',
               ))
               void messageApi.success(intl.getMessage('zby.pro.layout.seed.configCopied', '提示词已复制'))
             }}

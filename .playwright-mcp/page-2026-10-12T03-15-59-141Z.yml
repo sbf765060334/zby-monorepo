@@ -1,0 +1,115 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link [ref=e5] [cursor=pointer]:
+        - /url: https://vercel.com/?utm_medium=third_party&utm_source=grep&utm_campaign=PGR
+        - img "Vercel Logo" [ref=e6]
+      - link [ref=e10] [cursor=pointer]:
+        - /url: /
+    - generic [ref=e16]:
+      - textbox "Search" [active] [ref=e17]: agent_tbox_antd
+      - generic [ref=e18]:
+        - button "Match case" [ref=e19] [cursor=pointer]
+        - button "Match whole words" [ref=e20] [cursor=pointer]
+        - button "Use regular expression" [ref=e21] [cursor=pointer]
+    - button "Feedback" [ref=e23] [cursor=pointer]
+  - generic [ref=e25]:
+    - generic [ref=e27]:
+      - generic [ref=e29]:
+        - heading [level=3] [ref=e30]:
+          - button [expanded] [ref=e31] [cursor=pointer]:
+            - heading "Repository" [level=2] [ref=e35]
+        - region "Repository" [ref=e36]:
+          - generic [ref=e37]:
+            - textbox "Filter repositories..." [ref=e40]
+            - list [ref=e43]:
+              - listitem [ref=e44]:
+                - button "12101536 avatar ant-design/ant-design 2" [ref=e45] [cursor=pointer]:
+                  - generic [ref=e46]:
+                    - img "12101536 avatar" [ref=e47]
+                    - generic [ref=e48]: ant-design/ant-design
+                  - generic [ref=e49]: "2"
+      - generic [ref=e51]:
+        - heading [level=3] [ref=e52]:
+          - button [expanded] [ref=e53] [cursor=pointer]:
+            - heading "Path" [level=2] [ref=e57]
+        - region "Path" [ref=e58]:
+          - generic [ref=e59]:
+            - textbox "Filter paths..." [ref=e62]
+            - list [ref=e65]:
+              - listitem [ref=e66]:
+                - button ".dumi/theme/common/ThemeSwitch/ 2" [ref=e67] [cursor=pointer]:
+                  - generic [ref=e68]: .dumi/theme/common/ThemeSwitch/
+                  - generic [ref=e69]: "2"
+      - generic [ref=e71]:
+        - heading [level=3] [ref=e72]:
+          - button [expanded] [ref=e73] [cursor=pointer]:
+            - heading "Language" [level=2] [ref=e77]
+        - region "Language" [ref=e78]:
+          - generic [ref=e79]:
+            - textbox "Filter languages..." [ref=e82]
+            - list [ref=e85]:
+              - listitem [ref=e86]:
+                - generic [ref=e87] [cursor=pointer]:
+                  - generic [ref=e88]:
+                    - checkbox "TypeScript 2" [ref=e89]
+                    - generic [ref=e90]: TypeScript
+                  - generic [ref=e91]: "2"
+    - generic [ref=e92]:
+      - generic [ref=e93]:
+        - generic [ref=e94]: 2 results found
+        - combobox [ref=e97] [cursor=pointer]:
+          - generic: Compact
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - generic [ref=e103]:
+              - generic [ref=e104]:
+                - img "12101536 avatar" [ref=e105]
+                - link "ant-design/ant-design" [ref=e106] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design
+              - link ".dumi/theme/common/ThemeSwitch/usePromptTheme.ts" [ref=e107] [cursor=pointer]:
+                - /url: https://github.com/ant-design/ant-design/blob/master/.dumi/theme/common/ThemeSwitch/usePromptTheme.ts
+            - generic [ref=e108]: 1 matches
+          - table [ref=e110] [cursor=pointer]:
+            - rowgroup [ref=e111]:
+              - row [ref=e112]:
+                - cell "29" [ref=e113]
+                - 'cell "try {" [ref=e115]'
+              - row [ref=e118]:
+                - cell "30" [ref=e119]
+                - cell [ref=e121]:
+                  - generic [ref=e123]:
+                    - text: const response = await fetch(
+                    - generic [ref=e124]:
+                      - text: "'https://api.x.ant.design/api/"
+                      - mark [ref=e125]: agent_tbox_antd
+                      - text: "'"
+                    - text: ", options);"
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]:
+              - generic [ref=e129]:
+                - img "12101536 avatar" [ref=e130]
+                - link "ant-design/ant-design" [ref=e131] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design
+              - link ".dumi/theme/common/ThemeSwitch/usePromptRecommend.ts" [ref=e132] [cursor=pointer]:
+                - /url: https://github.com/ant-design/ant-design/blob/master/.dumi/theme/common/ThemeSwitch/usePromptRecommend.ts
+            - generic [ref=e133]: 1 matches
+          - table [ref=e135] [cursor=pointer]:
+            - rowgroup [ref=e136]:
+              - row [ref=e137]:
+                - cell "58" [ref=e138]
+                - 'cell "try {" [ref=e140]'
+              - row [ref=e143]:
+                - cell "59" [ref=e144]
+                - cell [ref=e146]:
+                  - generic [ref=e148]:
+                    - text: const response = await fetch(
+                    - generic [ref=e149]:
+                      - text: "'https://api.x.ant.design/api/"
+                      - mark [ref=e150]: agent_tbox_antd
+                      - text: "'"
+                    - text: ", options);"
+  - region "Notifications alt+T"
+  - alert [ref=e151]

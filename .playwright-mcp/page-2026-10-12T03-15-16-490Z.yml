@@ -1,0 +1,1930 @@
+- generic [ref=f49e2]:
+  - generic [ref=f49e3]:
+    - link "Skip to content" [ref=f49e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f49e9]:
+      - heading "Navigation Menu" [level=2] [ref=f49e10]
+      - generic [ref=f49e11]:
+        - link "Homepage" [ref=f49e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f49e16]:
+          - navigation "Global" [ref=f49e17]:
+            - list [ref=f49e18]:
+              - listitem [ref=f49e19]:
+                - button "Platform" [ref=f49e21] [cursor=pointer]
+              - listitem [ref=f49e24]:
+                - button "Solutions" [ref=f49e26] [cursor=pointer]
+              - listitem [ref=f49e29]:
+                - button "Resources" [ref=f49e31] [cursor=pointer]
+              - listitem [ref=f49e34]:
+                - button "Open Source" [ref=f49e36] [cursor=pointer]
+              - listitem [ref=f49e39]:
+                - button "Enterprise" [ref=f49e41] [cursor=pointer]
+              - listitem [ref=f49e44]:
+                - link "Pricing" [ref=f49e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f49e46]:
+            - button "Search or jump to, type / to search" [ref=f49e48] [cursor=pointer]:
+              - generic [ref=f49e51]:
+                - generic [ref=f49e52]: Search
+                - generic [aria-hidden] [ref=f49e53]: /
+            - link "Sign in" [ref=f49e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fant-design%2Fant-design%2Fpull%2F56952%2Ffiles
+            - link "Sign up" [ref=f49e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Fpull_requests%2Fshow%2Ffiles&source=header-repo&source_repo=ant-design%2Fant-design
+            - button "Appearance settings" [ref=f49e61] [cursor=pointer]
+  - main [ref=f49e68]:
+    - generic "Global navigation menu" [ref=f49e71]:
+      - navigation "Breadcrumbs" [ref=f49e74]:
+        - list [ref=f49e75]:
+          - listitem [ref=f49e76]:
+            - link "ant-design" [ref=f49e77] [cursor=pointer]:
+              - /url: /ant-design
+          - listitem [ref=f49e79]:
+            - link "ant-design" [ref=f49e80] [cursor=pointer]:
+              - /url: /ant-design/ant-design
+      - heading "Repository navigation" [level=2] [ref=f49e83]
+      - navigation "Repository" [ref=f49e84]:
+        - list [ref=f49e85]:
+          - listitem [ref=f49e86]:
+            - link "Code" [ref=f49e87] [cursor=pointer]:
+              - /url: /ant-design/ant-design
+          - listitem [ref=f49e92]:
+            - link "Issues (967)" [ref=f49e93] [cursor=pointer]:
+              - /url: /ant-design/ant-design/issues
+              - generic [ref=f49e98]: Issues
+              - generic [ref=f49e99]:
+                - generic [aria-hidden] [ref=f49e100]: "967"
+                - generic [ref=f49e101]: (967)
+          - listitem [ref=f49e102]:
+            - link "Pull requests (141)" [ref=f49e103] [cursor=pointer]:
+              - /url: /ant-design/ant-design/pulls
+              - generic [ref=f49e107]: Pull requests
+              - generic [ref=f49e108]:
+                - generic [aria-hidden] [ref=f49e109]: "141"
+                - generic [ref=f49e110]: (141)
+          - listitem [ref=f49e111]:
+            - link "Discussions" [ref=f49e112] [cursor=pointer]:
+              - /url: /ant-design/ant-design/discussions
+          - listitem [ref=f49e117]:
+            - link "Actions" [ref=f49e118] [cursor=pointer]:
+              - /url: /ant-design/ant-design/actions
+          - listitem [ref=f49e123]:
+            - link "Projects" [ref=f49e124] [cursor=pointer]:
+              - /url: /ant-design/ant-design/projects
+          - listitem [ref=f49e129]:
+            - link "Wiki" [ref=f49e130] [cursor=pointer]:
+              - /url: /ant-design/ant-design/wiki
+          - listitem [ref=f49e135]:
+            - link "Security and quality" [ref=f49e136] [cursor=pointer]:
+              - /url: /ant-design/ant-design/security
+          - listitem [ref=f49e141]:
+            - link "Insights" [ref=f49e142] [cursor=pointer]:
+              - /url: /ant-design/ant-design/pulse
+    - generic [ref=f49e152]:
+      - generic [ref=f49e154]:
+        - generic [ref=f49e156]:
+          - 'heading "docs: improve theme ai chat #56952" [level=1] [ref=f49e157]'
+          - group [ref=f49e159]:
+            - button "New issue" [ref=f49e160] [cursor=pointer]
+        - generic [ref=f49e161]:
+          - 'generic "Status: Merged" [ref=f49e163]': Merged
+          - generic [ref=f49e166]:
+            - link "afc163" [ref=f49e167] [cursor=pointer]:
+              - /url: /afc163
+            - text: merged 12 commits into
+            - generic "ant-design/ant-design:master" [ref=f49e168]:
+              - link "master" [ref=f49e169] [cursor=pointer]:
+                - /url: /ant-design/ant-design/tree/master
+            - text: from
+            - generic "ant-design/ant-design:docs/themer" [ref=f49e171]:
+              - link "docs/themer" [ref=f49e172] [cursor=pointer]:
+                - /url: /ant-design/ant-design/tree/docs/themer
+            - button "Copy" [ref=f49e176]
+            - text: Feb 24, 2026on Feb 24
+      - generic [ref=f49e181]:
+        - generic [ref=f49e182]: +639 −142
+        - navigation "Pull request tabs" [ref=f49e190]:
+          - link "Conversation 32" [ref=f49e191] [cursor=pointer]:
+            - /url: /ant-design/ant-design/pull/56952
+            - text: Conversation
+            - generic "32" [ref=f49e194]
+          - link "Commits 12" [ref=f49e195] [cursor=pointer]:
+            - /url: /ant-design/ant-design/pull/56952/commits
+            - text: Commits
+            - generic "12" [ref=f49e198]
+          - link "Checks 46" [ref=f49e199] [cursor=pointer]:
+            - /url: /ant-design/ant-design/pull/56952/checks
+            - text: Checks
+            - generic "46" [ref=f49e202]
+          - link "Files changed 7" [ref=f49e203] [cursor=pointer]:
+            - /url: /ant-design/ant-design/pull/56952/files
+            - text: Files changed
+            - generic "7" [ref=f49e206]
+      - generic [ref=f49e207]:
+        - generic [ref=f49e211]:
+          - button "Hide file tree" [ref=f49e214] [cursor=pointer]
+          - group [ref=f49e218]:
+            - button [ref=f49e219] [cursor=pointer]:
+              - text: Changes from
+              - strong [ref=f49e220]: all commits
+          - group [ref=f49e222]:
+            - button [ref=f49e223] [cursor=pointer]:
+              - strong [ref=f49e224]: File filter
+          - group [ref=f49e226]:
+            - button [ref=f49e227] [cursor=pointer]:
+              - strong [ref=f49e228]: Conversations
+          - group [ref=f49e230]:
+            - button [ref=f49e231] [cursor=pointer]:
+              - img "Diff settings" [ref=f49e232]
+        - generic [ref=f49e235]:
+          - generic [ref=f49e237]:
+            - textbox "Filter changed files" [ref=f49e239]
+            - navigation "File Tree Navigation" [ref=f49e242]:
+              - tree "File Tree" [ref=f49e243]:
+                - treeitem [level=1] [ref=f49e244]:
+                  - button ".dumi" [expanded] [ref=f49e245] [cursor=pointer]
+                  - group [ref=f49e247]:
+                    - treeitem [level=2] [ref=f49e248]:
+                      - button "pages/index" [expanded] [ref=f49e249] [cursor=pointer]
+                      - group [ref=f49e251]:
+                        - treeitem [level=3] [ref=f49e252]:
+                          - button "components" [expanded] [ref=f49e253] [cursor=pointer]
+                          - group [ref=f49e255]:
+                            - treeitem [level=4] [ref=f49e256]:
+                              - link "Group.tsx" [ref=f49e257] [cursor=pointer]:
+                                - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                            - treeitem [level=4] [ref=f49e258]:
+                              - button "ThemePreview" [expanded] [ref=f49e259] [cursor=pointer]
+                              - group [ref=f49e261]:
+                                - treeitem [level=5] [ref=f49e262]:
+                                  - link "ComponentsBlock.tsx" [ref=f49e263] [cursor=pointer]:
+                                    - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                                - treeitem [level=5] [ref=f49e264]:
+                                  - link "index.tsx" [ref=f49e265] [cursor=pointer]:
+                                    - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                                - treeitem [level=5] [ref=f49e266]:
+                                  - button "previewThemes" [expanded] [ref=f49e267] [cursor=pointer]
+                                  - group [ref=f49e269]:
+                                    - treeitem [level=6] [ref=f49e270]:
+                                      - link "glassTheme.ts" [ref=f49e271] [cursor=pointer]:
+                                        - /url: "#diff-758c092db169238895f36fdbaac3d01e5a5c94c35a234d132038838d4e96322b"
+                        - treeitem [level=3] [ref=f49e272]:
+                          - link "index.tsx" [ref=f49e273] [cursor=pointer]:
+                            - /url: "#diff-30afbf329ccd8dcb6bf69a0c2b4464e6ef851c61ed0d4c133113aa6afd4b8f28"
+                    - treeitem [level=2] [ref=f49e274]:
+                      - button "theme/common/ThemeSwitch" [expanded] [ref=f49e275] [cursor=pointer]
+                      - group [ref=f49e277]:
+                        - treeitem [level=3] [ref=f49e278]:
+                          - link "PromptDrawer.tsx" [ref=f49e279] [cursor=pointer]:
+                            - /url: "#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a"
+                        - treeitem [level=3] [ref=f49e280]:
+                          - link "usePromptRecommend.ts" [ref=f49e281] [cursor=pointer]:
+                            - /url: "#diff-58f6a1600e4305bf29617962460f7efec80200675d2862347f7998254372e8af"
+          - generic [ref=f49e283]:
+            - generic [ref=f49e284]:
+              - generic [ref=f49e286]:
+                - generic [ref=f49e287]:
+                  - generic [ref=f49e288]:
+                    - button "Toggle diff contents" [expanded] [ref=f49e289] [cursor=pointer]
+                    - button "Expand all" [ref=f49e293] [cursor=pointer]:
+                      - img "Expand all" [ref=f49e294]
+                    - generic [ref=f49e296]: "32 changes: 23 additions & 9 deletions"
+                    - generic [aria-hidden] [ref=f49e297]: "32"
+                    - generic [ref=f49e303]:
+                      - link ".dumi/pages/index/components/Group.tsx" [ref=f49e304] [cursor=pointer]:
+                        - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                      - button "Copy" [ref=f49e306]
+                  - group [ref=f49e313]:
+                    - button [ref=f49e314] [cursor=pointer]:
+                      - img "Show options" [ref=f49e316]
+                - table [ref=f49e321]:
+                  - rowgroup [ref=f49e322]:
+                    - row [ref=f49e323]:
+                      - columnheader "Original file line number" [ref=f49e324]
+                      - columnheader "Diff line number" [ref=f49e325]
+                      - columnheader "Diff line change" [ref=f49e326]
+                  - rowgroup [ref=f49e327]:
+                    - row [ref=f49e328]:
+                      - cell "Expand Up" [ref=f49e329] [cursor=pointer]:
+                        - link "Expand Up" [ref=f49e330]:
+                          - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                      - 'cell "@@ -46,6 +46,8 @@ export interface GroupProps {" [ref=f49e333]'
+                    - row [ref=f49e334]:
+                      - cell "46" [ref=f49e335] [cursor=pointer]
+                      - cell "46" [ref=f49e336] [cursor=pointer]
+                      - 'cell "decoration?: React.ReactNode;" [ref=f49e337]'
+                    - row [ref=f49e339]:
+                      - cell "47" [ref=f49e340] [cursor=pointer]
+                      - cell "47" [ref=f49e341] [cursor=pointer]
+                      - cell "/** 预加载的背景图片列表 */" [ref=f49e342]
+                    - row [ref=f49e344]:
+                      - cell "48" [ref=f49e345] [cursor=pointer]
+                      - cell "48" [ref=f49e346] [cursor=pointer]
+                      - 'cell "backgroundPrefetchList?: string[];" [ref=f49e347]'
+                    - row [ref=f49e349]:
+                      - cell [ref=f49e350] [cursor=pointer]
+                      - cell "49" [ref=f49e351] [cursor=pointer]
+                      - cell "+ /** 标题右侧的操作按钮 */" [ref=f49e352]
+                    - row [ref=f49e354]:
+                      - cell [ref=f49e355] [cursor=pointer]
+                      - cell "50" [ref=f49e356] [cursor=pointer]
+                      - 'cell "+ extra?: React.ReactNode;" [ref=f49e357]'
+                    - row [ref=f49e359]:
+                      - cell "49" [ref=f49e360] [cursor=pointer]
+                      - cell "51" [ref=f49e361] [cursor=pointer]
+                      - 'cell "}" [ref=f49e362]'
+                    - row [ref=f49e364]:
+                      - cell "50" [ref=f49e365] [cursor=pointer]
+                      - cell "52" [ref=f49e366] [cursor=pointer]
+                      - cell [ref=f49e367]
+                    - row [ref=f49e368]:
+                      - cell "51" [ref=f49e369] [cursor=pointer]
+                      - cell "53" [ref=f49e370] [cursor=pointer]
+                      - 'cell "const Group: React.FC<React.PropsWithChildren<GroupProps>> = (props) => {" [ref=f49e371]'
+                    - row [ref=f49e373]:
+                      - cell "Expand All" [ref=f49e374] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e375]:
+                          - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                      - 'cell "@@ -59,6 +61,7 @@ const Group: React.FC<React.PropsWithChildren<GroupProps>> = (props) => {" [ref=f49e378]'
+                    - row [ref=f49e379]:
+                      - cell "59" [ref=f49e380] [cursor=pointer]
+                      - cell "61" [ref=f49e381] [cursor=pointer]
+                      - cell "background," [ref=f49e382]
+                    - row [ref=f49e384]:
+                      - cell "60" [ref=f49e385] [cursor=pointer]
+                      - cell "62" [ref=f49e386] [cursor=pointer]
+                      - cell "collapse," [ref=f49e387]
+                    - row [ref=f49e389]:
+                      - cell "61" [ref=f49e390] [cursor=pointer]
+                      - cell "63" [ref=f49e391] [cursor=pointer]
+                      - cell "backgroundPrefetchList," [ref=f49e392]
+                    - row [ref=f49e394]:
+                      - cell [ref=f49e395] [cursor=pointer]
+                      - cell "64" [ref=f49e396] [cursor=pointer]
+                      - cell "+ extra," [ref=f49e397]
+                    - row [ref=f49e399]:
+                      - cell "62" [ref=f49e400] [cursor=pointer]
+                      - cell "65" [ref=f49e401] [cursor=pointer]
+                      - 'cell "} = props;" [ref=f49e402]'
+                    - row [ref=f49e404]:
+                      - cell "63" [ref=f49e405] [cursor=pointer]
+                      - cell "66" [ref=f49e406] [cursor=pointer]
+                      - cell [ref=f49e407]
+                    - row [ref=f49e408]:
+                      - cell "64" [ref=f49e409] [cursor=pointer]
+                      - cell "67" [ref=f49e410] [cursor=pointer]
+                      - cell "// 预加载背景图片" [ref=f49e411]
+                    - row [ref=f49e413]:
+                      - cell "Expand Down Expand Up" [ref=f49e414] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e415]:
+                          - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                        - link "Expand Up" [ref=f49e418]:
+                          - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                      - 'cell "@@ -87,18 +90,29 @@ const Group: React.FC<React.PropsWithChildren<GroupProps>> = (props) => {" [ref=f49e421]'
+                    - row [ref=f49e422]:
+                      - cell "87" [ref=f49e423] [cursor=pointer]
+                      - cell "90" [ref=f49e424] [cursor=pointer]
+                      - 'cell "<div className={styles.container}>{decoration}</div>" [ref=f49e425]'
+                    - row [ref=f49e427]:
+                      - cell "88" [ref=f49e428] [cursor=pointer]
+                      - cell "91" [ref=f49e429] [cursor=pointer]
+                      - 'cell "<GroupMaskLayer style={{ paddingBlock: token.marginFarSM }}>" [ref=f49e430]'
+                    - row [ref=f49e432]:
+                      - cell "89" [ref=f49e433] [cursor=pointer]
+                      - cell "92" [ref=f49e434] [cursor=pointer]
+                      - 'cell "<div className={styles.typographyWrapper}>" [ref=f49e435]'
+                    - row [ref=f49e437]:
+                      - cell "90" [ref=f49e438] [cursor=pointer]
+                      - cell [ref=f49e439] [cursor=pointer]
+                      - cell "- <Typography.Title" [ref=f49e440]
+                    - row [ref=f49e442]:
+                      - cell "91" [ref=f49e443] [cursor=pointer]
+                      - cell [ref=f49e444] [cursor=pointer]
+                      - 'cell "- id={id}" [ref=f49e445]'
+                    - row [ref=f49e447]:
+                      - cell "92" [ref=f49e448] [cursor=pointer]
+                      - cell [ref=f49e449] [cursor=pointer]
+                      - 'cell "- level={1}" [ref=f49e450]'
+                    - row [ref=f49e452]:
+                      - cell [ref=f49e453] [cursor=pointer]
+                      - cell "93" [ref=f49e454] [cursor=pointer]
+                      - cell "+ <div" [ref=f49e455]
+                    - row [ref=f49e457]:
+                      - cell "93" [ref=f49e458] [cursor=pointer]
+                      - cell "94" [ref=f49e459] [cursor=pointer]
+                      - 'cell "style={{" [ref=f49e460]'
+                    - row [ref=f49e462]:
+                      - cell "94" [ref=f49e463] [cursor=pointer]
+                      - cell [ref=f49e464] [cursor=pointer]
+                      - 'cell "- fontWeight: 900," [ref=f49e465]'
+                    - row [ref=f49e467]:
+                      - cell "95" [ref=f49e468] [cursor=pointer]
+                      - cell [ref=f49e469] [cursor=pointer]
+                      - 'cell "- color: titleColor," [ref=f49e470]'
+                    - row [ref=f49e472]:
+                      - cell "96" [ref=f49e473] [cursor=pointer]
+                      - cell [ref=f49e474] [cursor=pointer]
+                      - cell "- // Special for the title" [ref=f49e475]
+                    - row [ref=f49e477]:
+                      - cell "97" [ref=f49e478] [cursor=pointer]
+                      - cell [ref=f49e479] [cursor=pointer]
+                      - 'cell "- fontSize: isMobile ? token.fontSizeHeading2 : token.fontSizeHeading1," [ref=f49e480]'
+                    - row [ref=f49e482]:
+                      - cell [ref=f49e483] [cursor=pointer]
+                      - cell "95" [ref=f49e484] [cursor=pointer]
+                      - 'cell "+ display: ''flex''," [ref=f49e485]'
+                    - row [ref=f49e487]:
+                      - cell [ref=f49e488] [cursor=pointer]
+                      - cell "96" [ref=f49e489] [cursor=pointer]
+                      - 'cell "+ alignItems: ''center''," [ref=f49e490]'
+                    - row [ref=f49e492]:
+                      - cell [ref=f49e493] [cursor=pointer]
+                      - cell "97" [ref=f49e494] [cursor=pointer]
+                      - 'cell "+ justifyContent: ''center''," [ref=f49e495]'
+                    - row [ref=f49e497]:
+                      - cell [ref=f49e498] [cursor=pointer]
+                      - cell "98" [ref=f49e499] [cursor=pointer]
+                      - 'cell "+ gap: token.paddingXS," [ref=f49e500]'
+                    - row [ref=f49e502]:
+                      - cell "98" [ref=f49e503] [cursor=pointer]
+                      - cell "99" [ref=f49e504] [cursor=pointer]
+                      - 'cell "}}" [ref=f49e505]'
+                    - row [ref=f49e507]:
+                      - cell "99" [ref=f49e508] [cursor=pointer]
+                      - cell "100" [ref=f49e509] [cursor=pointer]
+                      - cell ">" [ref=f49e510]
+                    - row [ref=f49e512]:
+                      - cell "100" [ref=f49e513] [cursor=pointer]
+                      - cell [ref=f49e514] [cursor=pointer]
+                      - 'cell "- {title}" [ref=f49e515]'
+                    - row [ref=f49e517]:
+                      - cell "101" [ref=f49e518] [cursor=pointer]
+                      - cell [ref=f49e519] [cursor=pointer]
+                      - cell "- </Typography.Title>" [ref=f49e520]
+                    - row [ref=f49e522]:
+                      - cell [ref=f49e523] [cursor=pointer]
+                      - cell "101" [ref=f49e524] [cursor=pointer]
+                      - cell "+ <Typography.Title" [ref=f49e525]
+                    - row [ref=f49e527]:
+                      - cell [ref=f49e528] [cursor=pointer]
+                      - cell "102" [ref=f49e529] [cursor=pointer]
+                      - 'cell "+ id={id}" [ref=f49e530]'
+                    - row [ref=f49e532]:
+                      - cell [ref=f49e533] [cursor=pointer]
+                      - cell "103" [ref=f49e534] [cursor=pointer]
+                      - 'cell "+ level={1}" [ref=f49e535]'
+                    - row [ref=f49e537]:
+                      - cell [ref=f49e538] [cursor=pointer]
+                      - cell "104" [ref=f49e539] [cursor=pointer]
+                      - 'cell "+ style={{" [ref=f49e540]'
+                    - row [ref=f49e542]:
+                      - cell [ref=f49e543] [cursor=pointer]
+                      - cell "105" [ref=f49e544] [cursor=pointer]
+                      - 'cell "+ fontWeight: 900," [ref=f49e545]'
+                    - row [ref=f49e547]:
+                      - cell [ref=f49e548] [cursor=pointer]
+                      - cell "106" [ref=f49e549] [cursor=pointer]
+                      - 'cell "+ color: titleColor," [ref=f49e550]'
+                    - row [ref=f49e552]:
+                      - cell [ref=f49e553] [cursor=pointer]
+                      - cell "107" [ref=f49e554] [cursor=pointer]
+                      - 'cell "+ margin: 0," [ref=f49e555]'
+                    - row [ref=f49e557]:
+                      - cell [ref=f49e558] [cursor=pointer]
+                      - cell "108" [ref=f49e559] [cursor=pointer]
+                      - cell "+ // Special for the title" [ref=f49e560]
+                    - row [ref=f49e562]:
+                      - cell [ref=f49e563] [cursor=pointer]
+                      - cell "109" [ref=f49e564] [cursor=pointer]
+                      - 'cell "+ fontSize: isMobile ? token.fontSizeHeading2 : token.fontSizeHeading1," [ref=f49e565]'
+                    - row [ref=f49e567]:
+                      - cell [ref=f49e568] [cursor=pointer]
+                      - cell "110" [ref=f49e569] [cursor=pointer]
+                      - 'cell "+ }}" [ref=f49e570]'
+                    - row [ref=f49e572]:
+                      - cell [ref=f49e573] [cursor=pointer]
+                      - cell "111" [ref=f49e574] [cursor=pointer]
+                      - cell "+ >" [ref=f49e575]
+                    - row [ref=f49e577]:
+                      - cell [ref=f49e578] [cursor=pointer]
+                      - cell "112" [ref=f49e579] [cursor=pointer]
+                      - 'cell "+ {title}" [ref=f49e580]'
+                    - row [ref=f49e582]:
+                      - cell [ref=f49e583] [cursor=pointer]
+                      - cell "113" [ref=f49e584] [cursor=pointer]
+                      - cell "+ </Typography.Title>" [ref=f49e585]
+                    - row [ref=f49e587]:
+                      - cell [ref=f49e588] [cursor=pointer]
+                      - cell "114" [ref=f49e589] [cursor=pointer]
+                      - 'cell "+ {extra}" [ref=f49e590]'
+                    - row [ref=f49e592]:
+                      - cell [ref=f49e593] [cursor=pointer]
+                      - cell "115" [ref=f49e594] [cursor=pointer]
+                      - cell "+ </div>" [ref=f49e595]
+                    - row [ref=f49e597]:
+                      - cell "102" [ref=f49e598] [cursor=pointer]
+                      - cell "116" [ref=f49e599] [cursor=pointer]
+                      - cell "<Typography.Paragraph" [ref=f49e600]
+                    - row [ref=f49e602]:
+                      - cell "103" [ref=f49e603] [cursor=pointer]
+                      - cell "117" [ref=f49e604] [cursor=pointer]
+                      - 'cell "style={{" [ref=f49e605]'
+                    - row [ref=f49e607]:
+                      - cell "104" [ref=f49e608] [cursor=pointer]
+                      - cell "118" [ref=f49e609] [cursor=pointer]
+                      - 'cell "color: titleColor," [ref=f49e610]'
+                    - row [ref=f49e612]:
+                      - cell "Expand Down" [ref=f49e613] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e614]:
+                          - /url: "#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e"
+                      - cell [ref=f49e617]
+              - generic [ref=f49e619]:
+                - generic [ref=f49e620]:
+                  - generic [ref=f49e621]:
+                    - button "Toggle diff contents" [expanded] [ref=f49e622] [cursor=pointer]
+                    - button "Expand all" [ref=f49e626] [cursor=pointer]:
+                      - img "Expand all" [ref=f49e627]
+                    - generic [ref=f49e629]: "63 changes: 44 additions & 19 deletions"
+                    - generic [aria-hidden] [ref=f49e630]: "63"
+                    - generic [ref=f49e636]:
+                      - link ".dumi/pages/index/components/ThemePreview/ComponentsBlock.tsx" [ref=f49e637] [cursor=pointer]:
+                        - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - button "Copy" [ref=f49e639]
+                  - group [ref=f49e646]:
+                    - button [ref=f49e647] [cursor=pointer]:
+                      - img "Show options" [ref=f49e649]
+                - table [ref=f49e654]:
+                  - rowgroup [ref=f49e655]:
+                    - row [ref=f49e656]:
+                      - columnheader "Original file line number" [ref=f49e657]
+                      - columnheader "Diff line number" [ref=f49e658]
+                      - columnheader "Diff line change" [ref=f49e659]
+                  - rowgroup [ref=f49e660]:
+                    - row [ref=f49e661]:
+                      - cell "Expand Up" [ref=f49e662] [cursor=pointer]:
+                        - link "Expand Up" [ref=f49e663]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -4,15 +4,16 @@ import {" [ref=f49e666]'
+                    - row [ref=f49e667]:
+                      - cell "4" [ref=f49e668] [cursor=pointer]
+                      - cell "4" [ref=f49e669] [cursor=pointer]
+                      - cell "Alert," [ref=f49e670]
+                    - row [ref=f49e672]:
+                      - cell "5" [ref=f49e673] [cursor=pointer]
+                      - cell "5" [ref=f49e674] [cursor=pointer]
+                      - cell "App," [ref=f49e675]
+                    - row [ref=f49e677]:
+                      - cell "6" [ref=f49e678] [cursor=pointer]
+                      - cell "6" [ref=f49e679] [cursor=pointer]
+                      - cell "Button," [ref=f49e680]
+                    - row [ref=f49e682]:
+                      - cell "7" [ref=f49e683] [cursor=pointer]
+                      - cell [ref=f49e684] [cursor=pointer]
+                      - cell "- Card," [ref=f49e685]
+                    - row [ref=f49e687]:
+                      - cell "8" [ref=f49e688] [cursor=pointer]
+                      - cell "7" [ref=f49e689] [cursor=pointer]
+                      - cell "Checkbox," [ref=f49e690]
+                    - row [ref=f49e692]:
+                      - cell "9" [ref=f49e693] [cursor=pointer]
+                      - cell "8" [ref=f49e694] [cursor=pointer]
+                      - cell "ColorPicker," [ref=f49e695]
+                    - row [ref=f49e697]:
+                      - cell "10" [ref=f49e698] [cursor=pointer]
+                      - cell "9" [ref=f49e699] [cursor=pointer]
+                      - cell "ConfigProvider," [ref=f49e700]
+                    - row [ref=f49e702]:
+                      - cell [ref=f49e703] [cursor=pointer]
+                      - cell "10" [ref=f49e704] [cursor=pointer]
+                      - cell "+ DatePicker," [ref=f49e705]
+                    - row [ref=f49e707]:
+                      - cell "11" [ref=f49e708] [cursor=pointer]
+                      - cell "11" [ref=f49e709] [cursor=pointer]
+                      - cell "Dropdown," [ref=f49e710]
+                    - row [ref=f49e712]:
+                      - cell "12" [ref=f49e713] [cursor=pointer]
+                      - cell "12" [ref=f49e714] [cursor=pointer]
+                      - cell "Flex," [ref=f49e715]
+                    - row [ref=f49e717]:
+                      - cell "13" [ref=f49e718] [cursor=pointer]
+                      - cell "13" [ref=f49e719] [cursor=pointer]
+                      - cell "Modal," [ref=f49e720]
+                    - row [ref=f49e722]:
+                      - cell "14" [ref=f49e723] [cursor=pointer]
+                      - cell "14" [ref=f49e724] [cursor=pointer]
+                      - cell "Progress," [ref=f49e725]
+                    - row [ref=f49e727]:
+                      - cell "15" [ref=f49e728] [cursor=pointer]
+                      - cell "15" [ref=f49e729] [cursor=pointer]
+                      - cell "Radio," [ref=f49e730]
+                    - row [ref=f49e732]:
+                      - cell [ref=f49e733] [cursor=pointer]
+                      - cell "16" [ref=f49e734] [cursor=pointer]
+                      - cell "+ Segmented," [ref=f49e735]
+                    - row [ref=f49e737]:
+                      - cell "16" [ref=f49e738] [cursor=pointer]
+                      - cell "17" [ref=f49e739] [cursor=pointer]
+                      - cell "Select," [ref=f49e740]
+                    - row [ref=f49e742]:
+                      - cell "17" [ref=f49e743] [cursor=pointer]
+                      - cell "18" [ref=f49e744] [cursor=pointer]
+                      - cell "Slider," [ref=f49e745]
+                    - row [ref=f49e747]:
+                      - cell "18" [ref=f49e748] [cursor=pointer]
+                      - cell "19" [ref=f49e749] [cursor=pointer]
+                      - cell "Space," [ref=f49e750]
+                    - row [ref=f49e752]:
+                      - cell "Expand All" [ref=f49e753] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e754]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - cell "@@ -26,6 +27,7 @@ import clsx from 'clsx';" [ref=f49e757]
+                    - row [ref=f49e758]:
+                      - cell "26" [ref=f49e759] [cursor=pointer]
+                      - cell "27" [ref=f49e760] [cursor=pointer]
+                      - cell "import useLocale from '../../../../hooks/useLocale';" [ref=f49e761]
+                    - row [ref=f49e763]:
+                      - cell "27" [ref=f49e764] [cursor=pointer]
+                      - cell "28" [ref=f49e765] [cursor=pointer]
+                      - cell [ref=f49e766]
+                    - row [ref=f49e767]:
+                      - cell "28" [ref=f49e768] [cursor=pointer]
+                      - cell "29" [ref=f49e769] [cursor=pointer]
+                      - 'cell "const { _InternalPanelDoNotUseOrYouWillBeFired: ModalPanel } = Modal;" [ref=f49e770]'
+                    - row [ref=f49e772]:
+                      - cell [ref=f49e773] [cursor=pointer]
+                      - cell "30" [ref=f49e774] [cursor=pointer]
+                      - 'cell "+ const { Group: RadioButtonGroup, Button: RadioButton } = Radio;" [ref=f49e775]'
+                    - row [ref=f49e777]:
+                      - cell "29" [ref=f49e778] [cursor=pointer]
+                      - cell "31" [ref=f49e779] [cursor=pointer]
+                      - cell [ref=f49e780]
+                    - row [ref=f49e781]:
+                      - cell "30" [ref=f49e782] [cursor=pointer]
+                      - cell "32" [ref=f49e783] [cursor=pointer]
+                      - 'cell "const locales = {" [ref=f49e784]'
+                    - row [ref=f49e786]:
+                      - cell "31" [ref=f49e787] [cursor=pointer]
+                      - cell "33" [ref=f49e788] [cursor=pointer]
+                      - 'cell "cn: {" [ref=f49e789]'
+                    - row [ref=f49e791]:
+                      - cell "Expand All" [ref=f49e792] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e793]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -48,6 +50,9 @@ const locales = {" [ref=f49e796]'
+                    - row [ref=f49e797]:
+                      - cell "48" [ref=f49e798] [cursor=pointer]
+                      - cell "50" [ref=f49e799] [cursor=pointer]
+                      - 'cell "icon: ''图标按钮''," [ref=f49e800]'
+                    - row [ref=f49e802]:
+                      - cell "49" [ref=f49e803] [cursor=pointer]
+                      - cell "51" [ref=f49e804] [cursor=pointer]
+                      - 'cell "hello: ''你好，Ant Design!''," [ref=f49e805]'
+                    - row [ref=f49e807]:
+                      - cell "50" [ref=f49e808] [cursor=pointer]
+                      - cell "52" [ref=f49e809] [cursor=pointer]
+                      - 'cell "release: ''Ant Design 6.0 正式发布！''," [ref=f49e810]'
+                    - row [ref=f49e812]:
+                      - cell [ref=f49e813] [cursor=pointer]
+                      - cell "53" [ref=f49e814] [cursor=pointer]
+                      - 'cell "+ segmentedDaily: ''每日''," [ref=f49e815]'
+                    - row [ref=f49e817]:
+                      - cell [ref=f49e818] [cursor=pointer]
+                      - cell "54" [ref=f49e819] [cursor=pointer]
+                      - 'cell "+ segmentedWeekly: ''每周''," [ref=f49e820]'
+                    - row [ref=f49e822]:
+                      - cell [ref=f49e823] [cursor=pointer]
+                      - cell "55" [ref=f49e824] [cursor=pointer]
+                      - 'cell "+ segmentedMonthly: ''每月''," [ref=f49e825]'
+                    - row [ref=f49e827]:
+                      - cell "51" [ref=f49e828] [cursor=pointer]
+                      - cell "56" [ref=f49e829] [cursor=pointer]
+                      - 'cell "}," [ref=f49e830]'
+                    - row [ref=f49e832]:
+                      - cell "52" [ref=f49e833] [cursor=pointer]
+                      - cell "57" [ref=f49e834] [cursor=pointer]
+                      - 'cell "en: {" [ref=f49e835]'
+                    - row [ref=f49e837]:
+                      - cell "53" [ref=f49e838] [cursor=pointer]
+                      - cell "58" [ref=f49e839] [cursor=pointer]
+                      - 'cell "range: ''Set Range''," [ref=f49e840]'
+                    - row [ref=f49e842]:
+                      - cell "Expand All" [ref=f49e843] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e844]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -69,6 +74,9 @@ const locales = {" [ref=f49e847]'
+                    - row [ref=f49e848]:
+                      - cell "69" [ref=f49e849] [cursor=pointer]
+                      - cell "74" [ref=f49e850] [cursor=pointer]
+                      - 'cell "icon: ''Icon''," [ref=f49e851]'
+                    - row [ref=f49e853]:
+                      - cell "70" [ref=f49e854] [cursor=pointer]
+                      - cell "75" [ref=f49e855] [cursor=pointer]
+                      - 'cell "hello: ''Hello, Ant Design!''," [ref=f49e856]'
+                    - row [ref=f49e858]:
+                      - cell "71" [ref=f49e859] [cursor=pointer]
+                      - cell "76" [ref=f49e860] [cursor=pointer]
+                      - 'cell "release: ''Ant Design 6.0 is released!''," [ref=f49e861]'
+                    - row [ref=f49e863]:
+                      - cell [ref=f49e864] [cursor=pointer]
+                      - cell "77" [ref=f49e865] [cursor=pointer]
+                      - 'cell "+ segmentedDaily: ''Daily''," [ref=f49e866]'
+                    - row [ref=f49e868]:
+                      - cell [ref=f49e869] [cursor=pointer]
+                      - cell "78" [ref=f49e870] [cursor=pointer]
+                      - 'cell "+ segmentedWeekly: ''Weekly''," [ref=f49e871]'
+                    - row [ref=f49e873]:
+                      - cell [ref=f49e874] [cursor=pointer]
+                      - cell "79" [ref=f49e875] [cursor=pointer]
+                      - 'cell "+ segmentedMonthly: ''Monthly''," [ref=f49e876]'
+                    - row [ref=f49e878]:
+                      - cell "72" [ref=f49e879] [cursor=pointer]
+                      - cell "80" [ref=f49e880] [cursor=pointer]
+                      - 'cell "}," [ref=f49e881]'
+                    - row [ref=f49e883]:
+                      - cell "73" [ref=f49e884] [cursor=pointer]
+                      - cell "81" [ref=f49e885] [cursor=pointer]
+                      - 'cell "};" [ref=f49e886]'
+                    - row [ref=f49e888]:
+                      - cell "74" [ref=f49e889] [cursor=pointer]
+                      - cell "82" [ref=f49e890] [cursor=pointer]
+                      - cell [ref=f49e891]
+                    - row [ref=f49e892]:
+                      - cell "Expand All" [ref=f49e893] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e894]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -95,7 +103,7 @@ const ComponentsBlock: React.FC<ComponentsBlockProps> = (props) => {" [ref=f49e897]'
+                    - row [ref=f49e898]:
+                      - cell "95" [ref=f49e899] [cursor=pointer]
+                      - cell "103" [ref=f49e900] [cursor=pointer]
+                      - cell [ref=f49e901]
+                    - row [ref=f49e902]:
+                      - cell "96" [ref=f49e903] [cursor=pointer]
+                      - cell "104" [ref=f49e904] [cursor=pointer]
+                      - cell "return (" [ref=f49e905]
+                    - row [ref=f49e907]:
+                      - cell "97" [ref=f49e908] [cursor=pointer]
+                      - cell "105" [ref=f49e909] [cursor=pointer]
+                      - 'cell "<ConfigProvider {...config}>" [ref=f49e910]'
+                    - row [ref=f49e912]:
+                      - cell "98" [ref=f49e913] [cursor=pointer]
+                      - cell [ref=f49e914] [cursor=pointer]
+                      - 'cell "- <Card className={clsx(containerClassName, styles.container)}>" [ref=f49e915]'
+                    - row [ref=f49e917]:
+                      - cell [ref=f49e918] [cursor=pointer]
+                      - cell "106" [ref=f49e919] [cursor=pointer]
+                      - 'cell "+ <div className={clsx(containerClassName, styles.container)}>" [ref=f49e920]'
+                    - row [ref=f49e922]:
+                      - cell "99" [ref=f49e923] [cursor=pointer]
+                      - cell "107" [ref=f49e924] [cursor=pointer]
+                      - cell "<App>" [ref=f49e925]
+                    - row [ref=f49e927]:
+                      - cell "100" [ref=f49e928] [cursor=pointer]
+                      - cell "108" [ref=f49e929] [cursor=pointer]
+                      - 'cell "<Flex vertical gap=\"middle\" style={style} className={className}>" [ref=f49e930]'
+                    - row [ref=f49e932]:
+                      - cell "101" [ref=f49e933] [cursor=pointer]
+                      - cell "109" [ref=f49e934] [cursor=pointer]
+                      - cell "<ModalPanel title=\"Ant Design\" width=\"100%\">" [ref=f49e935]
+                    - row [ref=f49e937]:
+                      - cell "Expand All" [ref=f49e938] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e939]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -120,13 +128,32 @@ const ComponentsBlock: React.FC<ComponentsBlockProps> = (props) => {" [ref=f49e942]'
+                    - row [ref=f49e943]:
+                      - cell "120" [ref=f49e944] [cursor=pointer]
+                      - cell "128" [ref=f49e945] [cursor=pointer]
+                      - cell "</Space.Compact>" [ref=f49e946]
+                    - row [ref=f49e948]:
+                      - cell "121" [ref=f49e949] [cursor=pointer]
+                      - cell "129" [ref=f49e950] [cursor=pointer]
+                      - cell "</div>" [ref=f49e951]
+                    - row [ref=f49e953]:
+                      - cell "122" [ref=f49e954] [cursor=pointer]
+                      - cell "130" [ref=f49e955] [cursor=pointer]
+                      - cell [ref=f49e956]
+                    - row [ref=f49e957]:
+                      - cell "123" [ref=f49e958] [cursor=pointer]
+                      - cell [ref=f49e959] [cursor=pointer]
+                      - 'cell "- <ColorPicker style={{ flex: ''none'' }} />" [ref=f49e960]'
+                    - row [ref=f49e962]:
+                      - cell [ref=f49e963] [cursor=pointer]
+                      - cell "131" [ref=f49e964] [cursor=pointer]
+                      - 'cell "+ <ColorPicker showText defaultValue=\"#1677ff\" style={{ flex: ''none'' }} />" [ref=f49e965]'
+                    - row [ref=f49e967]:
+                      - cell "124" [ref=f49e968] [cursor=pointer]
+                      - cell "132" [ref=f49e969] [cursor=pointer]
+                      - cell [ref=f49e970]
+                    - row [ref=f49e971]:
+                      - cell "125" [ref=f49e972] [cursor=pointer]
+                      - cell "133" [ref=f49e973] [cursor=pointer]
+                      - cell "<Select" [ref=f49e974]
+                    - row [ref=f49e976]:
+                      - cell "126" [ref=f49e977] [cursor=pointer]
+                      - cell "134" [ref=f49e978] [cursor=pointer]
+                      - 'cell "style={{ flex: ''auto'' }}" [ref=f49e979]'
+                    - row [ref=f49e981]:
+                      - cell "127" [ref=f49e982] [cursor=pointer]
+                      - cell "135" [ref=f49e983] [cursor=pointer]
+                      - cell "mode=\"multiple\"" [ref=f49e984]
+                    - row [ref=f49e986]:
+                      - cell "128" [ref=f49e987] [cursor=pointer]
+                      - cell "136" [ref=f49e988] [cursor=pointer]
+                      - cell "maxTagCount=\"responsive\"" [ref=f49e989]
+                    - row [ref=f49e991]:
+                      - cell "129" [ref=f49e992] [cursor=pointer]
+                      - cell [ref=f49e993] [cursor=pointer]
+                      - 'cell "- defaultValue={[{ value: ''apple'' }, { value: ''banana'' }]}" [ref=f49e994]'
+                    - row [ref=f49e996]:
+                      - cell [ref=f49e997] [cursor=pointer]
+                      - cell "137" [ref=f49e998] [cursor=pointer]
+                      - 'cell "+ defaultValue={[''apple'', ''banana'']}" [ref=f49e999]'
+                    - row [ref=f49e1001]:
+                      - cell [ref=f49e1002] [cursor=pointer]
+                      - cell "138" [ref=f49e1003] [cursor=pointer]
+                      - 'cell "+ options={[" [ref=f49e1004]'
+                    - row [ref=f49e1006]:
+                      - cell [ref=f49e1007] [cursor=pointer]
+                      - cell "139" [ref=f49e1008] [cursor=pointer]
+                      - 'cell "+ { value: ''apple'', label: locale.apple }," [ref=f49e1009]'
+                    - row [ref=f49e1011]:
+                      - cell [ref=f49e1012] [cursor=pointer]
+                      - cell "140" [ref=f49e1013] [cursor=pointer]
+                      - 'cell "+ { value: ''banana'', label: locale.banana }," [ref=f49e1014]'
+                    - row [ref=f49e1016]:
+                      - cell [ref=f49e1017] [cursor=pointer]
+                      - cell "141" [ref=f49e1018] [cursor=pointer]
+                      - 'cell "+ { value: ''orange'', label: locale.orange }," [ref=f49e1019]'
+                    - row [ref=f49e1021]:
+                      - cell [ref=f49e1022] [cursor=pointer]
+                      - cell "142" [ref=f49e1023] [cursor=pointer]
+                      - 'cell "+ { value: ''watermelon'', label: locale.watermelon }," [ref=f49e1024]'
+                    - row [ref=f49e1026]:
+                      - cell [ref=f49e1027] [cursor=pointer]
+                      - cell "143" [ref=f49e1028] [cursor=pointer]
+                      - 'cell "+ ]}" [ref=f49e1029]'
+                    - row [ref=f49e1031]:
+                      - cell [ref=f49e1032] [cursor=pointer]
+                      - cell "144" [ref=f49e1033] [cursor=pointer]
+                      - cell "+ />" [ref=f49e1034]
+                    - row [ref=f49e1036]:
+                      - cell [ref=f49e1037] [cursor=pointer]
+                      - cell "145" [ref=f49e1038] [cursor=pointer]
+                      - cell "+ </Flex>" [ref=f49e1039]
+                    - row [ref=f49e1041]:
+                      - cell [ref=f49e1042] [cursor=pointer]
+                      - cell "146" [ref=f49e1043] [cursor=pointer]
+                      - cell "+" [ref=f49e1044]
+                    - row [ref=f49e1045]:
+                      - cell [ref=f49e1046] [cursor=pointer]
+                      - cell "147" [ref=f49e1047] [cursor=pointer]
+                      - 'cell "+ {/* Filled variants */}" [ref=f49e1048]'
+                    - row [ref=f49e1050]:
+                      - cell [ref=f49e1051] [cursor=pointer]
+                      - cell "148" [ref=f49e1052] [cursor=pointer]
+                      - cell "+ <Flex gap=\"middle\">" [ref=f49e1053]
+                    - row [ref=f49e1055]:
+                      - cell [ref=f49e1056] [cursor=pointer]
+                      - cell "149" [ref=f49e1057] [cursor=pointer]
+                      - cell "+ <DatePicker variant=\"filled\" />" [ref=f49e1058]
+                    - row [ref=f49e1060]:
+                      - cell [ref=f49e1061] [cursor=pointer]
+                      - cell "150" [ref=f49e1062] [cursor=pointer]
+                      - cell "+" [ref=f49e1063]
+                    - row [ref=f49e1064]:
+                      - cell [ref=f49e1065] [cursor=pointer]
+                      - cell "151" [ref=f49e1066] [cursor=pointer]
+                      - cell "+ <Select" [ref=f49e1067]
+                    - row [ref=f49e1069]:
+                      - cell [ref=f49e1070] [cursor=pointer]
+                      - cell "152" [ref=f49e1071] [cursor=pointer]
+                      - cell "+ variant=\"filled\"" [ref=f49e1072]
+                    - row [ref=f49e1074]:
+                      - cell [ref=f49e1075] [cursor=pointer]
+                      - cell "153" [ref=f49e1076] [cursor=pointer]
+                      - 'cell "+ style={{ flex: ''auto'' }}" [ref=f49e1077]'
+                    - row [ref=f49e1079]:
+                      - cell [ref=f49e1080] [cursor=pointer]
+                      - cell "154" [ref=f49e1081] [cursor=pointer]
+                      - cell "+ mode=\"multiple\"" [ref=f49e1082]
+                    - row [ref=f49e1084]:
+                      - cell [ref=f49e1085] [cursor=pointer]
+                      - cell "155" [ref=f49e1086] [cursor=pointer]
+                      - cell "+ maxTagCount=\"responsive\"" [ref=f49e1087]
+                    - row [ref=f49e1089]:
+                      - cell [ref=f49e1090] [cursor=pointer]
+                      - cell "156" [ref=f49e1091] [cursor=pointer]
+                      - 'cell "+ defaultValue={[''apple'', ''banana'']}" [ref=f49e1092]'
+                    - row [ref=f49e1094]:
+                      - cell "130" [ref=f49e1095] [cursor=pointer]
+                      - cell "157" [ref=f49e1096] [cursor=pointer]
+                      - 'cell "options={[" [ref=f49e1097]'
+                    - row [ref=f49e1099]:
+                      - cell "131" [ref=f49e1100] [cursor=pointer]
+                      - cell "158" [ref=f49e1101] [cursor=pointer]
+                      - 'cell "{ value: ''apple'', label: locale.apple }," [ref=f49e1102]'
+                    - row [ref=f49e1104]:
+                      - cell "132" [ref=f49e1105] [cursor=pointer]
+                      - cell "159" [ref=f49e1106] [cursor=pointer]
+                      - 'cell "{ value: ''banana'', label: locale.banana }," [ref=f49e1107]'
+                    - row [ref=f49e1109]:
+                      - cell "Expand All" [ref=f49e1110] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e1111]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -147,20 +174,7 @@ const ComponentsBlock: React.FC<ComponentsBlockProps> = (props) => {" [ref=f49e1114]'
+                    - row [ref=f49e1115]:
+                      - cell "147" [ref=f49e1116] [cursor=pointer]
+                      - cell "174" [ref=f49e1117] [cursor=pointer]
+                      - 'cell "]}" [ref=f49e1118]'
+                    - row [ref=f49e1120]:
+                      - cell "148" [ref=f49e1121] [cursor=pointer]
+                      - cell "175" [ref=f49e1122] [cursor=pointer]
+                      - cell "/>" [ref=f49e1123]
+                    - row [ref=f49e1125]:
+                      - cell "149" [ref=f49e1126] [cursor=pointer]
+                      - cell "176" [ref=f49e1127] [cursor=pointer]
+                      - 'cell "{/* Line */}" [ref=f49e1128]'
+                    - row [ref=f49e1130]:
+                      - cell "150" [ref=f49e1131] [cursor=pointer]
+                      - cell [ref=f49e1132] [cursor=pointer]
+                      - cell "- <Slider" [ref=f49e1133]
+                    - row [ref=f49e1135]:
+                      - cell "151" [ref=f49e1136] [cursor=pointer]
+                      - cell [ref=f49e1137] [cursor=pointer]
+                      - 'cell "- style={{ marginInline: 20 }}" [ref=f49e1138]'
+                    - row [ref=f49e1140]:
+                      - cell "152" [ref=f49e1141] [cursor=pointer]
+                      - cell [ref=f49e1142] [cursor=pointer]
+                      - cell "- range" [ref=f49e1143]
+                    - row [ref=f49e1145]:
+                      - cell "153" [ref=f49e1146] [cursor=pointer]
+                      - cell [ref=f49e1147] [cursor=pointer]
+                      - 'cell "- marks={{" [ref=f49e1148]'
+                    - row [ref=f49e1150]:
+                      - cell "154" [ref=f49e1151] [cursor=pointer]
+                      - cell [ref=f49e1152] [cursor=pointer]
+                      - 'cell "- 0: ''0°C''," [ref=f49e1153]'
+                    - row [ref=f49e1155]:
+                      - cell "155" [ref=f49e1156] [cursor=pointer]
+                      - cell [ref=f49e1157] [cursor=pointer]
+                      - 'cell "- 26: ''26°C''," [ref=f49e1158]'
+                    - row [ref=f49e1160]:
+                      - cell "156" [ref=f49e1161] [cursor=pointer]
+                      - cell [ref=f49e1162] [cursor=pointer]
+                      - 'cell "- 37: ''37°C''," [ref=f49e1163]'
+                    - row [ref=f49e1165]:
+                      - cell "157" [ref=f49e1166] [cursor=pointer]
+                      - cell [ref=f49e1167] [cursor=pointer]
+                      - 'cell "- 100: {" [ref=f49e1168]'
+                    - row [ref=f49e1170]:
+                      - cell "158" [ref=f49e1171] [cursor=pointer]
+                      - cell [ref=f49e1172] [cursor=pointer]
+                      - 'cell "- style: { color: ''#f50'' }," [ref=f49e1173]'
+                    - row [ref=f49e1175]:
+                      - cell "159" [ref=f49e1176] [cursor=pointer]
+                      - cell [ref=f49e1177] [cursor=pointer]
+                      - 'cell "- label: <strong>100°C</strong>," [ref=f49e1178]'
+                    - row [ref=f49e1180]:
+                      - cell "160" [ref=f49e1181] [cursor=pointer]
+                      - cell [ref=f49e1182] [cursor=pointer]
+                      - 'cell "- }," [ref=f49e1183]'
+                    - row [ref=f49e1185]:
+                      - cell "161" [ref=f49e1186] [cursor=pointer]
+                      - cell [ref=f49e1187] [cursor=pointer]
+                      - 'cell "- }}" [ref=f49e1188]'
+                    - row [ref=f49e1190]:
+                      - cell "162" [ref=f49e1191] [cursor=pointer]
+                      - cell [ref=f49e1192] [cursor=pointer]
+                      - 'cell "- defaultValue={[26, 37]}" [ref=f49e1193]'
+                    - row [ref=f49e1195]:
+                      - cell "163" [ref=f49e1196] [cursor=pointer]
+                      - cell [ref=f49e1197] [cursor=pointer]
+                      - cell "- />" [ref=f49e1198]
+                    - row [ref=f49e1200]:
+                      - cell [ref=f49e1201] [cursor=pointer]
+                      - cell "177" [ref=f49e1202] [cursor=pointer]
+                      - 'cell "+ <Slider defaultValue={50} />" [ref=f49e1203]'
+                    - row [ref=f49e1205]:
+                      - cell "164" [ref=f49e1206] [cursor=pointer]
+                      - cell "178" [ref=f49e1207] [cursor=pointer]
+                      - 'cell "{/* Line */}" [ref=f49e1208]'
+                    - row [ref=f49e1210]:
+                      - cell "165" [ref=f49e1211] [cursor=pointer]
+                      - cell "179" [ref=f49e1212] [cursor=pointer]
+                      - cell "<Flex gap=\"middle\">" [ref=f49e1213]
+                    - row [ref=f49e1215]:
+                      - cell "166" [ref=f49e1216] [cursor=pointer]
+                      - cell "180" [ref=f49e1217] [cursor=pointer]
+                      - 'cell "<Button type=\"primary\" className={styles.flexAuto}>" [ref=f49e1218]'
+                    - row [ref=f49e1220]:
+                      - cell "Expand Down Expand Up" [ref=f49e1221] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e1222]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                        - link "Expand Up" [ref=f49e1225]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - 'cell "@@ -188,9 +202,20 @@ const ComponentsBlock: React.FC<ComponentsBlockProps> = (props) => {" [ref=f49e1228]'
+                    - row [ref=f49e1229]:
+                      - cell "188" [ref=f49e1230] [cursor=pointer]
+                      - cell "202" [ref=f49e1231] [cursor=pointer]
+                      - cell "/>" [ref=f49e1232]
+                    - row [ref=f49e1234]:
+                      - cell "189" [ref=f49e1235] [cursor=pointer]
+                      - cell "203" [ref=f49e1236] [cursor=pointer]
+                      - 'cell "<Radio.Group defaultValue={locale.apple} options={[locale.apple, locale.banana]} />" [ref=f49e1237]'
+                    - row [ref=f49e1239]:
+                      - cell "190" [ref=f49e1240] [cursor=pointer]
+                      - cell "204" [ref=f49e1241] [cursor=pointer]
+                      - cell "</Flex>" [ref=f49e1242]
+                    - row [ref=f49e1244]:
+                      - cell [ref=f49e1245] [cursor=pointer]
+                      - cell "205" [ref=f49e1246] [cursor=pointer]
+                      - cell "+ <Flex gap=\"middle\" align=\"center\">" [ref=f49e1247]
+                    - row [ref=f49e1249]:
+                      - cell [ref=f49e1250] [cursor=pointer]
+                      - cell "206" [ref=f49e1251] [cursor=pointer]
+                      - cell "+ <RadioButtonGroup defaultValue=\"a\">" [ref=f49e1252]
+                    - row [ref=f49e1254]:
+                      - cell [ref=f49e1255] [cursor=pointer]
+                      - cell "207" [ref=f49e1256] [cursor=pointer]
+                      - cell "+ <RadioButton value=\"a\">A</RadioButton>" [ref=f49e1257]
+                    - row [ref=f49e1259]:
+                      - cell [ref=f49e1260] [cursor=pointer]
+                      - cell "208" [ref=f49e1261] [cursor=pointer]
+                      - cell "+ <RadioButton value=\"b\">B</RadioButton>" [ref=f49e1262]
+                    - row [ref=f49e1264]:
+                      - cell [ref=f49e1265] [cursor=pointer]
+                      - cell "209" [ref=f49e1266] [cursor=pointer]
+                      - cell "+ <RadioButton value=\"c\">C</RadioButton>" [ref=f49e1267]
+                    - row [ref=f49e1269]:
+                      - cell [ref=f49e1270] [cursor=pointer]
+                      - cell "210" [ref=f49e1271] [cursor=pointer]
+                      - cell "+ </RadioButtonGroup>" [ref=f49e1272]
+                    - row [ref=f49e1274]:
+                      - cell [ref=f49e1275] [cursor=pointer]
+                      - cell "211" [ref=f49e1276] [cursor=pointer]
+                      - cell "+ <Segmented" [ref=f49e1277]
+                    - row [ref=f49e1279]:
+                      - cell [ref=f49e1280] [cursor=pointer]
+                      - cell "212" [ref=f49e1281] [cursor=pointer]
+                      - 'cell "+ defaultValue={locale.segmentedDaily}" [ref=f49e1282]'
+                    - row [ref=f49e1284]:
+                      - cell [ref=f49e1285] [cursor=pointer]
+                      - cell "213" [ref=f49e1286] [cursor=pointer]
+                      - 'cell "+ options={[locale.segmentedDaily, locale.segmentedWeekly, locale.segmentedMonthly]}" [ref=f49e1287]'
+                    - row [ref=f49e1289]:
+                      - cell [ref=f49e1290] [cursor=pointer]
+                      - cell "214" [ref=f49e1291] [cursor=pointer]
+                      - cell "+ />" [ref=f49e1292]
+                    - row [ref=f49e1294]:
+                      - cell [ref=f49e1295] [cursor=pointer]
+                      - cell "215" [ref=f49e1296] [cursor=pointer]
+                      - cell "+ </Flex>" [ref=f49e1297]
+                    - row [ref=f49e1299]:
+                      - cell [ref=f49e1300]:
+                        - generic [ref=f49e1304]:
+                          - button "Comment thread" [ref=f49e1305] [cursor=pointer]
+                          - generic [ref=f49e1307]:
+                            - strong [ref=f49e1308]: coderabbitai[bot]
+                            - text: marked this conversation as resolved.
+                          - button "Show resolved" [ref=f49e1309] [cursor=pointer]
+                    - row [ref=f49e1312]:
+                      - cell "191" [ref=f49e1313] [cursor=pointer]
+                      - cell "216" [ref=f49e1314] [cursor=pointer]
+                      - cell "</Flex>" [ref=f49e1315]
+                    - row [ref=f49e1317]:
+                      - cell "192" [ref=f49e1318] [cursor=pointer]
+                      - cell "217" [ref=f49e1319] [cursor=pointer]
+                      - cell "</App>" [ref=f49e1320]
+                    - row [ref=f49e1322]:
+                      - cell "193" [ref=f49e1323] [cursor=pointer]
+                      - cell [ref=f49e1324] [cursor=pointer]
+                      - cell "- </Card>" [ref=f49e1325]
+                    - row [ref=f49e1327]:
+                      - cell [ref=f49e1328] [cursor=pointer]
+                      - cell "218" [ref=f49e1329] [cursor=pointer]
+                      - cell "+ </div>" [ref=f49e1330]
+                    - row [ref=f49e1332]:
+                      - cell "194" [ref=f49e1333] [cursor=pointer]
+                      - cell "219" [ref=f49e1334] [cursor=pointer]
+                      - cell "</ConfigProvider>" [ref=f49e1335]
+                    - row [ref=f49e1337]:
+                      - cell "195" [ref=f49e1338] [cursor=pointer]
+                      - cell "220" [ref=f49e1339] [cursor=pointer]
+                      - cell ");" [ref=f49e1340]
+                    - row [ref=f49e1342]:
+                      - cell "196" [ref=f49e1343] [cursor=pointer]
+                      - cell "221" [ref=f49e1344] [cursor=pointer]
+                      - 'cell "};" [ref=f49e1345]'
+                    - row [ref=f49e1347]:
+                      - cell "Expand Down" [ref=f49e1348] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e1349]:
+                          - /url: "#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f"
+                      - cell [ref=f49e1352]
+              - generic [ref=f49e1354]:
+                - generic [ref=f49e1355]:
+                  - generic [ref=f49e1356]:
+                    - button "Toggle diff contents" [expanded] [ref=f49e1357] [cursor=pointer]
+                    - button "Expand all" [ref=f49e1361] [cursor=pointer]:
+                      - img "Expand all" [ref=f49e1362]
+                    - generic [ref=f49e1364]: "107 changes: 86 additions & 21 deletions"
+                    - generic [aria-hidden] [ref=f49e1365]: "107"
+                    - generic [ref=f49e1371]:
+                      - link ".dumi/pages/index/components/ThemePreview/index.tsx" [ref=f49e1372] [cursor=pointer]:
+                        - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - button "Copy" [ref=f49e1374]
+                  - group [ref=f49e1381]:
+                    - button [ref=f49e1382] [cursor=pointer]:
+                      - img "Show options" [ref=f49e1384]
+                - table [ref=f49e1389]:
+                  - rowgroup [ref=f49e1390]:
+                    - row [ref=f49e1391]:
+                      - columnheader "Original file line number" [ref=f49e1392]
+                      - columnheader "Diff line number" [ref=f49e1393]
+                      - columnheader "Diff line change" [ref=f49e1394]
+                  - rowgroup [ref=f49e1395]:
+                    - row [ref=f49e1396]:
+                      - cell "Expand Up" [ref=f49e1397] [cursor=pointer]:
+                        - link "Expand Up" [ref=f49e1398]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -13,11 +13,15 @@ const locales = {" [ref=f49e1401]'
+                    - row [ref=f49e1402]:
+                      - cell "13" [ref=f49e1403] [cursor=pointer]
+                      - cell "13" [ref=f49e1404] [cursor=pointer]
+                      - 'cell "cn: {" [ref=f49e1405]'
+                    - row [ref=f49e1407]:
+                      - cell "14" [ref=f49e1408] [cursor=pointer]
+                      - cell "14" [ref=f49e1409] [cursor=pointer]
+                      - 'cell "themeTitle: ''定制主题，随心所欲''," [ref=f49e1410]'
+                    - row [ref=f49e1412]:
+                      - cell "15" [ref=f49e1413] [cursor=pointer]
+                      - cell "15" [ref=f49e1414] [cursor=pointer]
+                      - 'cell "themeDesc: ''开放样式算法与语义化结构，让你与 AI 一起轻松定制主题''," [ref=f49e1415]'
+                    - row [ref=f49e1417]:
+                      - cell [ref=f49e1418] [cursor=pointer]
+                      - cell "16" [ref=f49e1419] [cursor=pointer]
+                      - 'cell "+ aiGenerate: ''AI 生成主题''," [ref=f49e1420]'
+                    - row [ref=f49e1422]:
+                      - cell [ref=f49e1423] [cursor=pointer]
+                      - cell "17" [ref=f49e1424] [cursor=pointer]
+                      - 'cell "+ aiGenerateDesc: ''用一句话描述你想要的风格''," [ref=f49e1425]'
+                    - row [ref=f49e1427]:
+                      - cell [ref=f49e1428]:
+                        - generic [ref=f49e1432]:
+                          - button "Comment thread" [ref=f49e1433] [cursor=pointer]
+                          - generic [ref=f49e1435]:
+                            - strong [ref=f49e1436]: coderabbitai[bot]
+                            - text: marked this conversation as resolved.
+                          - button "Show resolved" [ref=f49e1437] [cursor=pointer]
+                    - row [ref=f49e1440]:
+                      - cell "16" [ref=f49e1441] [cursor=pointer]
+                      - cell "18" [ref=f49e1442] [cursor=pointer]
+                      - 'cell "}," [ref=f49e1443]'
+                    - row [ref=f49e1445]:
+                      - cell "17" [ref=f49e1446] [cursor=pointer]
+                      - cell "19" [ref=f49e1447] [cursor=pointer]
+                      - 'cell "en: {" [ref=f49e1448]'
+                    - row [ref=f49e1450]:
+                      - cell "18" [ref=f49e1451] [cursor=pointer]
+                      - cell "20" [ref=f49e1452] [cursor=pointer]
+                      - 'cell "themeTitle: ''Flexible theme customization''," [ref=f49e1453]'
+                    - row [ref=f49e1455]:
+                      - cell "19" [ref=f49e1456] [cursor=pointer]
+                      - cell "21" [ref=f49e1457] [cursor=pointer]
+                      - cell "themeDesc:" [ref=f49e1458]
+                    - row [ref=f49e1460]:
+                      - cell "20" [ref=f49e1461] [cursor=pointer]
+                      - cell "22" [ref=f49e1462] [cursor=pointer]
+                      - cell "'Open style algorithms and semantic structures make it easy for you and AI to customize themes'," [ref=f49e1463]
+                    - row [ref=f49e1465]:
+                      - cell [ref=f49e1466] [cursor=pointer]
+                      - cell "23" [ref=f49e1467] [cursor=pointer]
+                      - 'cell "+ aiGenerate: ''AI Generate Theme''," [ref=f49e1468]'
+                    - row [ref=f49e1470]:
+                      - cell [ref=f49e1471] [cursor=pointer]
+                      - cell "24" [ref=f49e1472] [cursor=pointer]
+                      - 'cell "+ aiGenerateDesc: ''Describe your desired style''," [ref=f49e1473]'
+                    - row [ref=f49e1475]:
+                      - cell "21" [ref=f49e1476] [cursor=pointer]
+                      - cell "25" [ref=f49e1477] [cursor=pointer]
+                      - 'cell "}," [ref=f49e1478]'
+                    - row [ref=f49e1480]:
+                      - cell "22" [ref=f49e1481] [cursor=pointer]
+                      - cell "26" [ref=f49e1482] [cursor=pointer]
+                      - 'cell "};" [ref=f49e1483]'
+                    - row [ref=f49e1485]:
+                      - cell "23" [ref=f49e1486] [cursor=pointer]
+                      - cell "27" [ref=f49e1487] [cursor=pointer]
+                      - cell [ref=f49e1488]
+                    - row [ref=f49e1489]:
+                      - cell "Expand All" [ref=f49e1490] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e1491]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -40,7 +44,7 @@ const useStyles = createStyles(({ css, cssVar }) => ({" [ref=f49e1494]'
+                    - row [ref=f49e1495]:
+                      - cell "40" [ref=f49e1496] [cursor=pointer]
+                      - cell "44" [ref=f49e1497] [cursor=pointer]
+                      - 'cell "listStyleType: ''none''," [ref=f49e1498]'
+                    - row [ref=f49e1500]:
+                      - cell "41" [ref=f49e1501] [cursor=pointer]
+                      - cell "45" [ref=f49e1502] [cursor=pointer]
+                      - 'cell "display: ''flex''," [ref=f49e1503]'
+                    - row [ref=f49e1505]:
+                      - cell "42" [ref=f49e1506] [cursor=pointer]
+                      - cell "46" [ref=f49e1507] [cursor=pointer]
+                      - 'cell "flexDirection: ''column''," [ref=f49e1508]'
+                    - row [ref=f49e1510]:
+                      - cell "43" [ref=f49e1511] [cursor=pointer]
+                      - cell [ref=f49e1512] [cursor=pointer]
+                      - 'cell "- gap: cssVar.paddingMD," [ref=f49e1513]'
+                    - row [ref=f49e1515]:
+                      - cell [ref=f49e1516] [cursor=pointer]
+                      - cell "47" [ref=f49e1517] [cursor=pointer]
+                      - 'cell "+ gap: cssVar.paddingSM," [ref=f49e1518]'
+                    - row [ref=f49e1520]:
+                      - cell "44" [ref=f49e1521] [cursor=pointer]
+                      - cell "48" [ref=f49e1522] [cursor=pointer]
+                      - 'cell "})," [ref=f49e1523]'
+                    - row [ref=f49e1525]:
+                      - cell "45" [ref=f49e1526] [cursor=pointer]
+                      - cell "49" [ref=f49e1527] [cursor=pointer]
+                      - 'cell "listItem: css({" [ref=f49e1528]'
+                    - row [ref=f49e1530]:
+                      - cell "46" [ref=f49e1531] [cursor=pointer]
+                      - cell "50" [ref=f49e1532] [cursor=pointer]
+                      - 'cell "margin: 0," [ref=f49e1533]'
+                    - row [ref=f49e1535]:
+                      - cell "Expand All" [ref=f49e1536] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e1537]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -53,7 +57,7 @@ const useStyles = createStyles(({ css, cssVar }) => ({" [ref=f49e1540]'
+                    - row [ref=f49e1541]:
+                      - cell "53" [ref=f49e1542] [cursor=pointer]
+                      - cell "57" [ref=f49e1543] [cursor=pointer]
+                      - 'cell "borderColor: ''transparent''," [ref=f49e1544]'
+                    - row [ref=f49e1546]:
+                      - cell "54" [ref=f49e1547] [cursor=pointer]
+                      - cell "58" [ref=f49e1548] [cursor=pointer]
+                      - 'cell "transition: `all ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut}`," [ref=f49e1549]'
+                    - row [ref=f49e1551]:
+                      - cell "55" [ref=f49e1552] [cursor=pointer]
+                      - cell "59" [ref=f49e1553] [cursor=pointer]
+                      - cell [ref=f49e1554]
+                    - row [ref=f49e1555]:
+                      - cell "56" [ref=f49e1556] [cursor=pointer]
+                      - cell [ref=f49e1557] [cursor=pointer]
+                      - 'cell "- ''&:hover:not(.active)'': {" [ref=f49e1558]'
+                    - row [ref=f49e1560]:
+                      - cell [ref=f49e1561] [cursor=pointer]
+                      - cell "60" [ref=f49e1562] [cursor=pointer]
+                      - 'cell "+ ''&:hover:not(.active):not(.ai-generate-item)'': {" [ref=f49e1563]'
+                    - row [ref=f49e1565]:
+                      - cell "57" [ref=f49e1566] [cursor=pointer]
+                      - cell "61" [ref=f49e1567] [cursor=pointer]
+                      - 'cell "borderColor: cssVar.colorPrimaryBorder," [ref=f49e1568]'
+                    - row [ref=f49e1570]:
+                      - cell "58" [ref=f49e1571] [cursor=pointer]
+                      - cell "62" [ref=f49e1572] [cursor=pointer]
+                      - 'cell "backgroundColor: cssVar.colorPrimaryBg," [ref=f49e1573]'
+                    - row [ref=f49e1575]:
+                      - cell "59" [ref=f49e1576] [cursor=pointer]
+                      - cell "63" [ref=f49e1577] [cursor=pointer]
+                      - 'cell "cursor: ''pointer''," [ref=f49e1578]'
+                    - row [ref=f49e1580]:
+                      - cell "Expand Down Expand Up" [ref=f49e1581] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e1582]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                        - link "Expand Up" [ref=f49e1585]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -82,6 +86,39 @@ const useStyles = createStyles(({ css, cssVar }) => ({" [ref=f49e1588]'
+                    - row [ref=f49e1589]:
+                      - cell "82" [ref=f49e1590] [cursor=pointer]
+                      - cell "86" [ref=f49e1591] [cursor=pointer]
+                      - 'cell "}," [ref=f49e1592]'
+                    - row [ref=f49e1594]:
+                      - cell "83" [ref=f49e1595] [cursor=pointer]
+                      - cell "87" [ref=f49e1596] [cursor=pointer]
+                      - 'cell "})," [ref=f49e1597]'
+                    - row [ref=f49e1599]:
+                      - cell "84" [ref=f49e1600] [cursor=pointer]
+                      - cell "88" [ref=f49e1601] [cursor=pointer]
+                      - cell [ref=f49e1602]
+                    - row [ref=f49e1603]:
+                      - cell [ref=f49e1604] [cursor=pointer]
+                      - cell "89" [ref=f49e1605] [cursor=pointer]
+                      - cell "+ // AI Generate Item" [ref=f49e1606]
+                    - row [ref=f49e1608]:
+                      - cell [ref=f49e1609] [cursor=pointer]
+                      - cell "90" [ref=f49e1610] [cursor=pointer]
+                      - 'cell "+ aiGenerateItem: css({" [ref=f49e1611]'
+                    - row [ref=f49e1613]:
+                      - cell [ref=f49e1614] [cursor=pointer]
+                      - cell "91" [ref=f49e1615] [cursor=pointer]
+                      - 'cell "+ borderStyle: ''dashed''," [ref=f49e1616]'
+                    - row [ref=f49e1618]:
+                      - cell [ref=f49e1619] [cursor=pointer]
+                      - cell "92" [ref=f49e1620] [cursor=pointer]
+                      - 'cell "+ opacity: 0.7," [ref=f49e1621]'
+                    - row [ref=f49e1623]:
+                      - cell [ref=f49e1624] [cursor=pointer]
+                      - cell "93" [ref=f49e1625] [cursor=pointer]
+                      - 'cell "+ cursor: ''pointer''," [ref=f49e1626]'
+                    - row [ref=f49e1628]:
+                      - cell [ref=f49e1629] [cursor=pointer]
+                      - cell "94" [ref=f49e1630] [cursor=pointer]
+                      - 'cell "+ color: cssVar.colorTextSecondary," [ref=f49e1631]'
+                    - row [ref=f49e1633]:
+                      - cell [ref=f49e1634] [cursor=pointer]
+                      - cell "95" [ref=f49e1635] [cursor=pointer]
+                      - 'cell "+ paddingInline: cssVar.padding," [ref=f49e1636]'
+                    - row [ref=f49e1638]:
+                      - cell [ref=f49e1639] [cursor=pointer]
+                      - cell "96" [ref=f49e1640] [cursor=pointer]
+                      - cell "+" [ref=f49e1641]
+                    - row [ref=f49e1642]:
+                      - cell [ref=f49e1643] [cursor=pointer]
+                      - cell "97" [ref=f49e1644] [cursor=pointer]
+                      - 'cell "+ ''&:hover'': {" [ref=f49e1645]'
+                    - row [ref=f49e1647]:
+                      - cell [ref=f49e1648] [cursor=pointer]
+                      - cell "98" [ref=f49e1649] [cursor=pointer]
+                      - 'cell "+ borderColor: cssVar.colorPrimary," [ref=f49e1650]'
+                    - row [ref=f49e1652]:
+                      - cell [ref=f49e1653] [cursor=pointer]
+                      - cell "99" [ref=f49e1654] [cursor=pointer]
+                      - 'cell "+ color: cssVar.colorPrimary," [ref=f49e1655]'
+                    - row [ref=f49e1657]:
+                      - cell [ref=f49e1658] [cursor=pointer]
+                      - cell "100" [ref=f49e1659] [cursor=pointer]
+                      - 'cell "+ opacity: 1," [ref=f49e1660]'
+                    - row [ref=f49e1662]:
+                      - cell [ref=f49e1663] [cursor=pointer]
+                      - cell "101" [ref=f49e1664] [cursor=pointer]
+                      - 'cell "+ }," [ref=f49e1665]'
+                    - row [ref=f49e1667]:
+                      - cell [ref=f49e1668] [cursor=pointer]
+                      - cell "102" [ref=f49e1669] [cursor=pointer]
+                      - 'cell "+ })," [ref=f49e1670]'
+                    - row [ref=f49e1672]:
+                      - cell [ref=f49e1673] [cursor=pointer]
+                      - cell "103" [ref=f49e1674] [cursor=pointer]
+                      - cell "+" [ref=f49e1675]
+                    - row [ref=f49e1676]:
+                      - cell [ref=f49e1677] [cursor=pointer]
+                      - cell "104" [ref=f49e1678] [cursor=pointer]
+                      - 'cell "+ aiGenerateContent: css({" [ref=f49e1679]'
+                    - row [ref=f49e1681]:
+                      - cell [ref=f49e1682] [cursor=pointer]
+                      - cell "105" [ref=f49e1683] [cursor=pointer]
+                      - 'cell "+ position: ''relative''," [ref=f49e1684]'
+                    - row [ref=f49e1686]:
+                      - cell [ref=f49e1687] [cursor=pointer]
+                      - cell "106" [ref=f49e1688] [cursor=pointer]
+                      - 'cell "+ zIndex: 1," [ref=f49e1689]'
+                    - row [ref=f49e1691]:
+                      - cell [ref=f49e1692] [cursor=pointer]
+                      - cell "107" [ref=f49e1693] [cursor=pointer]
+                      - 'cell "+ })," [ref=f49e1694]'
+                    - row [ref=f49e1696]:
+                      - cell [ref=f49e1697] [cursor=pointer]
+                      - cell "108" [ref=f49e1698] [cursor=pointer]
+                      - cell "+" [ref=f49e1699]
+                    - row [ref=f49e1700]:
+                      - cell [ref=f49e1701] [cursor=pointer]
+                      - cell "109" [ref=f49e1702] [cursor=pointer]
+                      - 'cell "+ aiGenerateIcon: css({" [ref=f49e1703]'
+                    - row [ref=f49e1705]:
+                      - cell [ref=f49e1706] [cursor=pointer]
+                      - cell "110" [ref=f49e1707] [cursor=pointer]
+                      - 'cell "+ fontSize: 14," [ref=f49e1708]'
+                    - row [ref=f49e1710]:
+                      - cell [ref=f49e1711] [cursor=pointer]
+                      - cell "111" [ref=f49e1712] [cursor=pointer]
+                      - 'cell "+ marginRight: 6," [ref=f49e1713]'
+                    - row [ref=f49e1715]:
+                      - cell [ref=f49e1716] [cursor=pointer]
+                      - cell "112" [ref=f49e1717] [cursor=pointer]
+                      - 'cell "+ opacity: 0.6," [ref=f49e1718]'
+                    - row [ref=f49e1720]:
+                      - cell [ref=f49e1721] [cursor=pointer]
+                      - cell "113" [ref=f49e1722] [cursor=pointer]
+                      - 'cell "+ })," [ref=f49e1723]'
+                    - row [ref=f49e1725]:
+                      - cell [ref=f49e1726] [cursor=pointer]
+                      - cell "114" [ref=f49e1727] [cursor=pointer]
+                      - cell "+" [ref=f49e1728]
+                    - row [ref=f49e1729]:
+                      - cell [ref=f49e1730] [cursor=pointer]
+                      - cell "115" [ref=f49e1731] [cursor=pointer]
+                      - 'cell "+ aiGenerateDesc: css({" [ref=f49e1732]'
+                    - row [ref=f49e1734]:
+                      - cell [ref=f49e1735] [cursor=pointer]
+                      - cell "116" [ref=f49e1736] [cursor=pointer]
+                      - 'cell "+ fontSize: cssVar.fontSizeSM," [ref=f49e1737]'
+                    - row [ref=f49e1739]:
+                      - cell [ref=f49e1740] [cursor=pointer]
+                      - cell "117" [ref=f49e1741] [cursor=pointer]
+                      - 'cell "+ opacity: 0.5," [ref=f49e1742]'
+                    - row [ref=f49e1744]:
+                      - cell [ref=f49e1745] [cursor=pointer]
+                      - cell "118" [ref=f49e1746] [cursor=pointer]
+                      - 'cell "+ marginTop: 2," [ref=f49e1747]'
+                    - row [ref=f49e1749]:
+                      - cell [ref=f49e1750] [cursor=pointer]
+                      - cell "119" [ref=f49e1751] [cursor=pointer]
+                      - 'cell "+ fontWeight: 400," [ref=f49e1752]'
+                    - row [ref=f49e1754]:
+                      - cell [ref=f49e1755] [cursor=pointer]
+                      - cell "120" [ref=f49e1756] [cursor=pointer]
+                      - 'cell "+ })," [ref=f49e1757]'
+                    - row [ref=f49e1759]:
+                      - cell [ref=f49e1760]:
+                        - generic [ref=f49e1764]:
+                          - button "Comment thread" [ref=f49e1765] [cursor=pointer]
+                          - generic [ref=f49e1767]:
+                            - strong [ref=f49e1768]: coderabbitai[bot]
+                            - text: marked this conversation as resolved.
+                          - button "Show resolved" [ref=f49e1769] [cursor=pointer]
+                    - row [ref=f49e1772]:
+                      - cell [ref=f49e1773] [cursor=pointer]
+                      - cell "121" [ref=f49e1774] [cursor=pointer]
+                      - cell "+" [ref=f49e1775]
+                    - row [ref=f49e1776]:
+                      - cell "85" [ref=f49e1777] [cursor=pointer]
+                      - cell "122" [ref=f49e1778] [cursor=pointer]
+                      - cell "// Components" [ref=f49e1779]
+                    - row [ref=f49e1781]:
+                      - cell "86" [ref=f49e1782] [cursor=pointer]
+                      - cell "123" [ref=f49e1783] [cursor=pointer]
+                      - 'cell "componentsBlockContainer: css({" [ref=f49e1784]'
+                    - row [ref=f49e1786]:
+                      - cell "87" [ref=f49e1787] [cursor=pointer]
+                      - cell "124" [ref=f49e1788] [cursor=pointer]
+                      - 'cell "flex: ''auto''," [ref=f49e1789]'
+                    - row [ref=f49e1791]:
+                      - cell "Expand All" [ref=f49e1792] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e1793]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -98,7 +135,12 @@ const useStyles = createStyles(({ css, cssVar }) => ({" [ref=f49e1796]'
+                    - row [ref=f49e1797]:
+                      - cell "98" [ref=f49e1798] [cursor=pointer]
+                      - cell "135" [ref=f49e1799] [cursor=pointer]
+                      - 'cell "})," [ref=f49e1800]'
+                    - row [ref=f49e1802]:
+                      - cell "99" [ref=f49e1803] [cursor=pointer]
+                      - cell "136" [ref=f49e1804] [cursor=pointer]
+                      - 'cell "}));" [ref=f49e1805]'
+                    - row [ref=f49e1807]:
+                      - cell "100" [ref=f49e1808] [cursor=pointer]
+                      - cell "137" [ref=f49e1809] [cursor=pointer]
+                      - cell [ref=f49e1810]
+                    - row [ref=f49e1811]:
+                      - cell "101" [ref=f49e1812] [cursor=pointer]
+                      - cell [ref=f49e1813] [cursor=pointer]
+                      - 'cell "- export default function ThemePreview() {" [ref=f49e1814]'
+                    - row [ref=f49e1816]:
+                      - cell [ref=f49e1817] [cursor=pointer]
+                      - cell "138" [ref=f49e1818] [cursor=pointer]
+                      - 'cell "+ export interface ThemePreviewProps {" [ref=f49e1819]'
+                    - row [ref=f49e1821]:
+                      - cell [ref=f49e1822] [cursor=pointer]
+                      - cell "139" [ref=f49e1823] [cursor=pointer]
+                      - 'cell "+ onOpenPromptDrawer?: () => void;" [ref=f49e1824]'
+                    - row [ref=f49e1826]:
+                      - cell [ref=f49e1827] [cursor=pointer]
+                      - cell "140" [ref=f49e1828] [cursor=pointer]
+                      - 'cell "+ }" [ref=f49e1829]'
+                    - row [ref=f49e1831]:
+                      - cell [ref=f49e1832] [cursor=pointer]
+                      - cell "141" [ref=f49e1833] [cursor=pointer]
+                      - cell "+" [ref=f49e1834]
+                    - row [ref=f49e1835]:
+                      - cell [ref=f49e1836] [cursor=pointer]
+                      - cell "142" [ref=f49e1837] [cursor=pointer]
+                      - 'cell "+ export default function ThemePreview(props: ThemePreviewProps = {}) {" [ref=f49e1838]'
+                    - row [ref=f49e1840]:
+                      - cell [ref=f49e1841] [cursor=pointer]
+                      - cell "143" [ref=f49e1842] [cursor=pointer]
+                      - 'cell "+ const { onOpenPromptDrawer } = props;" [ref=f49e1843]'
+                    - row [ref=f49e1845]:
+                      - cell "102" [ref=f49e1846] [cursor=pointer]
+                      - cell "144" [ref=f49e1847] [cursor=pointer]
+                      - cell "const [locale] = useLocale(locales);" [ref=f49e1848]
+                    - row [ref=f49e1850]:
+                      - cell "103" [ref=f49e1851] [cursor=pointer]
+                      - cell "145" [ref=f49e1852] [cursor=pointer]
+                      - 'cell "const { styles } = useStyles();" [ref=f49e1853]'
+                    - row [ref=f49e1855]:
+                      - cell "104" [ref=f49e1856] [cursor=pointer]
+                      - cell "146" [ref=f49e1857] [cursor=pointer]
+                      - cell "const isDark = React.use(DarkContext);" [ref=f49e1858]
+                    - row [ref=f49e1860]:
+                      - cell "Expand All" [ref=f49e1861] [cursor=pointer]:
+                        - link "Expand All" [ref=f49e1862]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -111,10 +153,7 @@ export default function ThemePreview() {" [ref=f49e1865]'
+                    - row [ref=f49e1866]:
+                      - cell "111" [ref=f49e1867] [cursor=pointer]
+                      - cell "153" [ref=f49e1868] [cursor=pointer]
+                      - 'cell "const defaultThemeName = isDark ? ''dark'' : ''light'';" [ref=f49e1869]'
+                    - row [ref=f49e1871]:
+                      - cell "112" [ref=f49e1872] [cursor=pointer]
+                      - cell "154" [ref=f49e1873] [cursor=pointer]
+                      - cell [ref=f49e1874]
+                    - row [ref=f49e1875]:
+                      - cell "113" [ref=f49e1876] [cursor=pointer]
+                      - cell "155" [ref=f49e1877] [cursor=pointer]
+                      - cell "const targetTheme =" [ref=f49e1878]
+                    - row [ref=f49e1880]:
+                      - cell "114" [ref=f49e1881] [cursor=pointer]
+                      - cell [ref=f49e1882] [cursor=pointer]
+                      - cell "- process.env.NODE_ENV !== 'production'" [ref=f49e1883]
+                    - row [ref=f49e1885]:
+                      - cell "115" [ref=f49e1886] [cursor=pointer]
+                      - cell [ref=f49e1887] [cursor=pointer]
+                      - cell "- ? previewThemes[previewThemes.length - 1].name" [ref=f49e1888]
+                    - row [ref=f49e1890]:
+                      - cell "116" [ref=f49e1891] [cursor=pointer]
+                      - cell [ref=f49e1892] [cursor=pointer]
+                      - 'cell "- : previewThemes.find((theme) => theme.key === defaultThemeName)?.name ||" [ref=f49e1893]'
+                    - row [ref=f49e1895]:
+                      - cell "117" [ref=f49e1896] [cursor=pointer]
+                      - cell [ref=f49e1897] [cursor=pointer]
+                      - cell "- previewThemes[0].name;" [ref=f49e1898]
+                    - row [ref=f49e1900]:
+                      - cell [ref=f49e1901] [cursor=pointer]
+                      - cell "156" [ref=f49e1902] [cursor=pointer]
+                      - cell "+ previewThemes.find((theme) => theme.key === defaultThemeName)?.name || previewThemes[0].name;" [ref=f49e1903]
+                    - row [ref=f49e1905]:
+                      - cell "118" [ref=f49e1906] [cursor=pointer]
+                      - cell "157" [ref=f49e1907] [cursor=pointer]
+                      - cell [ref=f49e1908]
+                    - row [ref=f49e1909]:
+                      - cell "119" [ref=f49e1910] [cursor=pointer]
+                      - cell "158" [ref=f49e1911] [cursor=pointer]
+                      - cell "setActiveName(targetTheme);" [ref=f49e1912]
+                    - row [ref=f49e1914]:
+                      - cell "120" [ref=f49e1915] [cursor=pointer]
+                      - cell "159" [ref=f49e1916] [cursor=pointer]
+                      - 'cell "}, [isDark]);" [ref=f49e1917]'
+                    - row [ref=f49e1919]:
+                      - cell "Expand Down Expand Up" [ref=f49e1920] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e1921]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                        - link "Expand Up" [ref=f49e1924]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - 'cell "@@ -148,24 +187,50 @@ export default function ThemePreview() {" [ref=f49e1927]'
+                    - row [ref=f49e1928]:
+                      - cell "148" [ref=f49e1929] [cursor=pointer]
+                      - cell "187" [ref=f49e1930] [cursor=pointer]
+                      - 'cell "backgroundPrefetchList={backgroundPrefetchList}" [ref=f49e1931]'
+                    - row [ref=f49e1933]:
+                      - cell "149" [ref=f49e1934] [cursor=pointer]
+                      - cell "188" [ref=f49e1935] [cursor=pointer]
+                      - cell ">" [ref=f49e1936]
+                    - row [ref=f49e1938]:
+                      - cell "150" [ref=f49e1939] [cursor=pointer]
+                      - cell "189" [ref=f49e1940] [cursor=pointer]
+                      - 'cell "<Flex className={styles.container} gap=\"large\">" [ref=f49e1941]'
+                    - row [ref=f49e1943]:
+                      - cell "151" [ref=f49e1944] [cursor=pointer]
+                      - cell [ref=f49e1945] [cursor=pointer]
+                      - 'cell "- <div className={styles.list} role=\"tablist\" aria-label=\"Theme selection\">" [ref=f49e1946]'
+                    - row [ref=f49e1948]:
+                      - cell "152" [ref=f49e1949] [cursor=pointer]
+                      - cell [ref=f49e1950] [cursor=pointer]
+                      - 'cell "- {previewThemes.map((theme) => (" [ref=f49e1951]'
+                    - row [ref=f49e1953]:
+                      - cell [ref=f49e1954] [cursor=pointer]
+                      - cell "190" [ref=f49e1955] [cursor=pointer]
+                      - cell "+ <div" [ref=f49e1956]
+                    - row [ref=f49e1958]:
+                      - cell [ref=f49e1959] [cursor=pointer]
+                      - cell "191" [ref=f49e1960] [cursor=pointer]
+                      - 'cell "+ style={{" [ref=f49e1961]'
+                    - row [ref=f49e1963]:
+                      - cell [ref=f49e1964] [cursor=pointer]
+                      - cell "192" [ref=f49e1965] [cursor=pointer]
+                      - 'cell "+ display: ''flex''," [ref=f49e1966]'
+                    - row [ref=f49e1968]:
+                      - cell [ref=f49e1969] [cursor=pointer]
+                      - cell "193" [ref=f49e1970] [cursor=pointer]
+                      - 'cell "+ }}" [ref=f49e1971]'
+                    - row [ref=f49e1973]:
+                      - cell [ref=f49e1974] [cursor=pointer]
+                      - cell "194" [ref=f49e1975] [cursor=pointer]
+                      - cell "+ >" [ref=f49e1976]
+                    - row [ref=f49e1978]:
+                      - cell [ref=f49e1979] [cursor=pointer]
+                      - cell "195" [ref=f49e1980] [cursor=pointer]
+                      - 'cell "+ <div className={styles.list} role=\"tablist\" aria-label=\"Theme selection\">" [ref=f49e1981]'
+                    - row [ref=f49e1983]:
+                      - cell [ref=f49e1984] [cursor=pointer]
+                      - cell "196" [ref=f49e1985] [cursor=pointer]
+                      - 'cell "+ {previewThemes.map((theme) => (" [ref=f49e1986]'
+                    - row [ref=f49e1988]:
+                      - cell [ref=f49e1989] [cursor=pointer]
+                      - cell "197" [ref=f49e1990] [cursor=pointer]
+                      - cell "+ <div" [ref=f49e1991]
+                    - row [ref=f49e1993]:
+                      - cell [ref=f49e1994] [cursor=pointer]
+                      - cell "198" [ref=f49e1995] [cursor=pointer]
+                      - 'cell "+ className={clsx(" [ref=f49e1996]'
+                    - row [ref=f49e1998]:
+                      - cell [ref=f49e1999] [cursor=pointer]
+                      - cell "199" [ref=f49e2000] [cursor=pointer]
+                      - cell "+ styles.listItem," [ref=f49e2001]
+                    - row [ref=f49e2003]:
+                      - cell [ref=f49e2004] [cursor=pointer]
+                      - cell "200" [ref=f49e2005] [cursor=pointer]
+                      - cell "+ activeName === theme.name && 'active'," [ref=f49e2006]
+                    - row [ref=f49e2008]:
+                      - cell [ref=f49e2009] [cursor=pointer]
+                      - cell "201" [ref=f49e2010] [cursor=pointer]
+                      - cell "+ activeTheme?.bgImgDark && 'dark'," [ref=f49e2011]
+                    - row [ref=f49e2013]:
+                      - cell [ref=f49e2014] [cursor=pointer]
+                      - cell "202" [ref=f49e2015] [cursor=pointer]
+                      - 'cell "+ )}" [ref=f49e2016]'
+                    - row [ref=f49e2018]:
+                      - cell [ref=f49e2019] [cursor=pointer]
+                      - cell "203" [ref=f49e2020] [cursor=pointer]
+                      - 'cell "+ key={theme.name}" [ref=f49e2021]'
+                    - row [ref=f49e2023]:
+                      - cell [ref=f49e2024] [cursor=pointer]
+                      - cell "204" [ref=f49e2025] [cursor=pointer]
+                      - cell "+ role=\"tab\"" [ref=f49e2026]
+                    - row [ref=f49e2028]:
+                      - cell [ref=f49e2029] [cursor=pointer]
+                      - cell "205" [ref=f49e2030] [cursor=pointer]
+                      - 'cell "+ tabIndex={activeName === theme.name ? 0 : -1}" [ref=f49e2031]'
+                    - row [ref=f49e2033]:
+                      - cell [ref=f49e2034] [cursor=pointer]
+                      - cell "206" [ref=f49e2035] [cursor=pointer]
+                      - 'cell "+ aria-selected={activeName === theme.name}" [ref=f49e2036]'
+                    - row [ref=f49e2038]:
+                      - cell [ref=f49e2039] [cursor=pointer]
+                      - cell "207" [ref=f49e2040] [cursor=pointer]
+                      - 'cell "+ onClick={() => handleThemeClick(theme.name)}" [ref=f49e2041]'
+                    - row [ref=f49e2043]:
+                      - cell [ref=f49e2044] [cursor=pointer]
+                      - cell "208" [ref=f49e2045] [cursor=pointer]
+                      - 'cell "+ onKeyDown={(event) => handleKeyDown(event, theme.name)}" [ref=f49e2046]'
+                    - row [ref=f49e2048]:
+                      - cell [ref=f49e2049] [cursor=pointer]
+                      - cell "209" [ref=f49e2050] [cursor=pointer]
+                      - 'cell "+ style={{ marginBottom: 8 }}" [ref=f49e2051]'
+                    - row [ref=f49e2053]:
+                      - cell [ref=f49e2054] [cursor=pointer]
+                      - cell "210" [ref=f49e2055] [cursor=pointer]
+                      - cell "+ >" [ref=f49e2056]
+                    - row [ref=f49e2058]:
+                      - cell [ref=f49e2059] [cursor=pointer]
+                      - cell "211" [ref=f49e2060] [cursor=pointer]
+                      - 'cell "+ {theme.name}" [ref=f49e2061]'
+                    - row [ref=f49e2063]:
+                      - cell [ref=f49e2064] [cursor=pointer]
+                      - cell "212" [ref=f49e2065] [cursor=pointer]
+                      - cell "+ </div>" [ref=f49e2066]
+                    - row [ref=f49e2068]:
+                      - cell [ref=f49e2069] [cursor=pointer]
+                      - cell "213" [ref=f49e2070] [cursor=pointer]
+                      - 'cell "+ ))}" [ref=f49e2071]'
+                    - row [ref=f49e2073]:
+                      - cell [ref=f49e2074] [cursor=pointer]
+                      - cell "214" [ref=f49e2075] [cursor=pointer]
+                      - 'cell "+ {/* AI 生成主题 - 最后一个选项 */}" [ref=f49e2076]'
+                    - row [ref=f49e2078]:
+                      - cell "153" [ref=f49e2079] [cursor=pointer]
+                      - cell "215" [ref=f49e2080] [cursor=pointer]
+                      - cell "<div" [ref=f49e2081]
+                    - row [ref=f49e2083]:
+                      - cell "154" [ref=f49e2084] [cursor=pointer]
+                      - cell [ref=f49e2085] [cursor=pointer]
+                      - 'cell "- className={clsx(" [ref=f49e2086]'
+                    - row [ref=f49e2088]:
+                      - cell "155" [ref=f49e2089] [cursor=pointer]
+                      - cell [ref=f49e2090] [cursor=pointer]
+                      - cell "- styles.listItem," [ref=f49e2091]
+                    - row [ref=f49e2093]:
+                      - cell "156" [ref=f49e2094] [cursor=pointer]
+                      - cell [ref=f49e2095] [cursor=pointer]
+                      - cell "- activeName === theme.name && 'active'," [ref=f49e2096]
+                    - row [ref=f49e2098]:
+                      - cell "157" [ref=f49e2099] [cursor=pointer]
+                      - cell [ref=f49e2100] [cursor=pointer]
+                      - cell "- activeTheme?.bgImgDark && 'dark'," [ref=f49e2101]
+                    - row [ref=f49e2103]:
+                      - cell "158" [ref=f49e2104] [cursor=pointer]
+                      - cell [ref=f49e2105] [cursor=pointer]
+                      - 'cell "- )}" [ref=f49e2106]'
+                    - row [ref=f49e2108]:
+                      - cell "159" [ref=f49e2109] [cursor=pointer]
+                      - cell [ref=f49e2110] [cursor=pointer]
+                      - 'cell "- key={theme.name}" [ref=f49e2111]'
+                    - row [ref=f49e2113]:
+                      - cell [ref=f49e2114] [cursor=pointer]
+                      - cell "216" [ref=f49e2115] [cursor=pointer]
+                      - 'cell "+ className={clsx(styles.listItem, styles.aiGenerateItem, ''ai-generate-item'')}" [ref=f49e2116]'
+                    - row [ref=f49e2118]:
+                      - cell [ref=f49e2119]:
+                        - generic [ref=f49e2127]:
+                          - generic [ref=f49e2128]:
+                            - heading "@cursor cursor Bot Feb 24, 2026on Feb 24" [level=3] [ref=f49e2129]:
+                              - generic [ref=f49e2130]:
+                                - img "@cursor" [ref=f49e2132]
+                                - strong [ref=f49e2133]:
+                                  - link "cursor" [ref=f49e2134] [cursor=pointer]:
+                                    - /url: /apps/cursor
+                                  - generic [ref=f49e2135]: Bot
+                                - link "Feb 24, 2026on Feb 24" [ref=f49e2136] [cursor=pointer]:
+                                  - /url: "#r2845022388"
+                            - group [ref=f49e2139]:
+                              - button [ref=f49e2140] [cursor=pointer]:
+                                - img "Show options" [ref=f49e2143]
+                          - generic [ref=f49e2148]:
+                            - heading "AI generate item invisible on dark theme backgrounds" [level=3] [ref=f49e2149]
+                            - paragraph [ref=f49e2150]:
+                              - strong [ref=f49e2151]: Medium Severity
+                            - paragraph [ref=f49e2152]:
+                              - text: The AI generate item's
+                              - code [ref=f49e2153]: className
+                              - text: is missing the
+                              - code [ref=f49e2154]: dark
+                              - text: class that all other list items conditionally receive via
+                              - code [ref=f49e2155]: activeTheme?.bgImgDark && 'dark'
+                              - text: . When a dark-background theme is active (Dark, Glass, or Geek), regular list items switch to light text colors through the
+                              - code [ref=f49e2156]: .dark
+                              - text: CSS class, but the AI generate item keeps its default
+                              - code [ref=f49e2157]: colorTextSecondary
+                              - text: — making its text unreadable against the dark background image.
+                            - paragraph [ref=f49e2158]:
+                              - link [ref=f49e2159] [cursor=pointer]:
+                                - /url: https://cursor.com/open?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9DVVJTT1IiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmZkYzVjOGMzLTI4YmYtNDU3Ni1iMjVhLTk5MzZhZjYyNWRiZCIsImVuY3J5cHRpb25LZXkiOiI1dC1fRjZhN0tESTYxMTl5OXNLX3hlWjcyVlc1d3d0UDU1MGtzOHgyY1RZIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIn0sImlhdCI6MTc3MTkxNzc2MiwiZXhwIjoxNzc0NTA5NzYyfQ.CX-PnAU2bOkuMtcOYdBp_gp7t6dy3QQDX_1n0REF5knB7WOtg6_QewONnDgHnZjoqFoMyBYra1Iinfn1W65N3eJigjldIUeFDIFSqHTYsieV9Sud_0ijgEYW-lee-vah4s4Z-smr2CWsLdHFTZdrDBwiPOHKj5HuJZ2x0dnyOnDIJoSfhsZxT42ndLEf1RQw0QPCy2bNW3uwMOq7O6GWigjTz-pdeAfW51nCWmybZSm1DtoEUdMg2Y2fgPaVpEWm1Z-AZph6h6jV3i2poMIiVfSbRrxWdN66-4VOpalrCYRFjXXNR1NIRyxTO8iUkAOmiC47pfgqWSaX9RGTlud6JA
+                                - img "Fix in Cursor" [ref=f49e2162]
+                              - link [ref=f49e2163] [cursor=pointer]:
+                                - /url: https://cursor.com/agents?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9XRUIiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmZkYzVjOGMzLTI4YmYtNDU3Ni1iMjVhLTk5MzZhZjYyNWRiZCIsImVuY3J5cHRpb25LZXkiOiI1dC1fRjZhN0tESTYxMTl5OXNLX3hlWjcyVlc1d3d0UDU1MGtzOHgyY1RZIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIiwicHJOdW1iZXIiOjU2OTUyLCJjb21taXRTaGEiOiI4OGE3NGNkOWU1YjYzNmVlMTAzNjlhOWY5M2E4OTI4YzlkOTdlMjdhIiwicHJvdmlkZXIiOiJnaXRodWIifSwiaWF0IjoxNzcxOTE3NzYyLCJleHAiOjE3NzQ1MDk3NjJ9.SpaiVyaq9hE9P0aMaBX0L9Ra5w_BWjfNxmQJg27i18L5XA2CCOyhWZZ025lmeR5EmJ5vuve4c7qTlo9aqb1dpffqvGkeR8_TbUFNNP6xL8idSZscDOSkPcqVmbcXZNlHWDs72BCqIiIXhIa4tVkcvgIm1RbecMn3jcx1flRnOfhZOHRhx8FghPEx35GpsgBr9W9ZcaSPAPVvlJDypTMXVUWpZOmXb0mQXp2muY7HBu7BK_wMo15yNgMZUHFgGpJ4UTpi2mFPa7DEhoEtmumaQti8UiMOE97krwAgLyYJOReENBdGTTjt4CY-sCkEMEYvWUFfY3tCyw5aYnQEdeZ7VA
+                                - img "Fix in Web" [ref=f49e2166]
+                    - row [ref=f49e2167]:
+                      - cell "160" [ref=f49e2168] [cursor=pointer]
+                      - cell "217" [ref=f49e2169] [cursor=pointer]
+                      - cell "role=\"tab\"" [ref=f49e2170]
+                    - row [ref=f49e2172]:
+                      - cell "161" [ref=f49e2173] [cursor=pointer]
+                      - cell [ref=f49e2174] [cursor=pointer]
+                      - 'cell "- tabIndex={activeName === theme.name ? 0 : -1}" [ref=f49e2175]'
+                    - row [ref=f49e2177]:
+                      - cell "162" [ref=f49e2178] [cursor=pointer]
+                      - cell [ref=f49e2179] [cursor=pointer]
+                      - 'cell "- aria-selected={activeName === theme.name}" [ref=f49e2180]'
+                    - row [ref=f49e2182]:
+                      - cell "163" [ref=f49e2183] [cursor=pointer]
+                      - cell [ref=f49e2184] [cursor=pointer]
+                      - 'cell "- onClick={() => handleThemeClick(theme.name)}" [ref=f49e2185]'
+                    - row [ref=f49e2187]:
+                      - cell "164" [ref=f49e2188] [cursor=pointer]
+                      - cell [ref=f49e2189] [cursor=pointer]
+                      - 'cell "- onKeyDown={(event) => handleKeyDown(event, theme.name)}" [ref=f49e2190]'
+                    - row [ref=f49e2192]:
+                      - cell [ref=f49e2193] [cursor=pointer]
+                      - cell "218" [ref=f49e2194] [cursor=pointer]
+                      - 'cell "+ tabIndex={0}" [ref=f49e2195]'
+                    - row [ref=f49e2197]:
+                      - cell [ref=f49e2198] [cursor=pointer]
+                      - cell "219" [ref=f49e2199] [cursor=pointer]
+                      - 'cell "+ onClick={onOpenPromptDrawer}" [ref=f49e2200]'
+                    - row [ref=f49e2202]:
+                      - cell [ref=f49e2203] [cursor=pointer]
+                      - cell "220" [ref=f49e2204] [cursor=pointer]
+                      - 'cell "+ onKeyDown={(event) => {" [ref=f49e2205]'
+                    - row [ref=f49e2207]:
+                      - cell [ref=f49e2208] [cursor=pointer]
+                      - cell "221" [ref=f49e2209] [cursor=pointer]
+                      - 'cell "+ if (event.key === ''Enter'' || event.key === '' '') {" [ref=f49e2210]'
+                    - row [ref=f49e2212]:
+                      - cell [ref=f49e2213] [cursor=pointer]
+                      - cell "222" [ref=f49e2214] [cursor=pointer]
+                      - cell "+ event.preventDefault();" [ref=f49e2215]
+                    - row [ref=f49e2217]:
+                      - cell [ref=f49e2218] [cursor=pointer]
+                      - cell "223" [ref=f49e2219] [cursor=pointer]
+                      - cell "+ onOpenPromptDrawer?.();" [ref=f49e2220]
+                    - row [ref=f49e2222]:
+                      - cell [ref=f49e2223] [cursor=pointer]
+                      - cell "224" [ref=f49e2224] [cursor=pointer]
+                      - 'cell "+ }" [ref=f49e2225]'
+                    - row [ref=f49e2227]:
+                      - cell [ref=f49e2228] [cursor=pointer]
+                      - cell "225" [ref=f49e2229] [cursor=pointer]
+                      - 'cell "+ }}" [ref=f49e2230]'
+                    - row [ref=f49e2232]:
+                      - cell "165" [ref=f49e2233] [cursor=pointer]
+                      - cell "226" [ref=f49e2234] [cursor=pointer]
+                      - cell ">" [ref=f49e2235]
+                    - row [ref=f49e2237]:
+                      - cell "166" [ref=f49e2238] [cursor=pointer]
+                      - cell [ref=f49e2239] [cursor=pointer]
+                      - 'cell "- {theme.name}" [ref=f49e2240]'
+                    - row [ref=f49e2242]:
+                      - cell [ref=f49e2243] [cursor=pointer]
+                      - cell "227" [ref=f49e2244] [cursor=pointer]
+                      - 'cell "+ <div className={styles.aiGenerateContent}>" [ref=f49e2245]'
+                    - row [ref=f49e2247]:
+                      - cell [ref=f49e2248] [cursor=pointer]
+                      - cell "228" [ref=f49e2249] [cursor=pointer]
+                      - 'cell "+ <span className={styles.aiGenerateIcon}>🎨</span>" [ref=f49e2250]'
+                    - row [ref=f49e2252]:
+                      - cell [ref=f49e2253] [cursor=pointer]
+                      - cell "229" [ref=f49e2254] [cursor=pointer]
+                      - 'cell "+ <span>{locale.aiGenerate}</span>" [ref=f49e2255]'
+                    - row [ref=f49e2257]:
+                      - cell [ref=f49e2258] [cursor=pointer]
+                      - cell "230" [ref=f49e2259] [cursor=pointer]
+                      - cell "+ </div>" [ref=f49e2260]
+                    - row [ref=f49e2262]:
+                      - cell [ref=f49e2263] [cursor=pointer]
+                      - cell "231" [ref=f49e2264] [cursor=pointer]
+                      - 'cell "+ <div className={styles.aiGenerateDesc}>{locale.aiGenerateDesc}</div>" [ref=f49e2265]'
+                    - row [ref=f49e2267]:
+                      - cell "167" [ref=f49e2268] [cursor=pointer]
+                      - cell "232" [ref=f49e2269] [cursor=pointer]
+                      - cell "</div>" [ref=f49e2270]
+                    - row [ref=f49e2272]:
+                      - 'cell "Comment on lines 215 to 232 @coderabbitai coderabbitai Bot Feb 11, 2026on Feb 11 This user has previously committed to the ant-design repository. 🛠️ Refactor suggestion | 🟠 Major AI 生成主题项的 onClick 缺少可选链调用，与 onKeyDown 不一致。 Line 220 的 onClick={onOpenPromptDrawer} 直接赋值，而 Line 224 的 onKeyDown 中使用了 onOpenPromptDrawer?.()。如果 onOpenPromptDrawer 为 undefined，点击事件不会报错（React 会忽略 undefined handler），但为了一致性和防御性编码，建议统一使用可选链： 此修复同时将遗漏的 aiGenerateItem 样式和 ai-generate-item 类名应用到元素上，解决前面提到的样式未使用问题。" [ref=f49e2273]':
+                        - generic [ref=f49e2277]:
+                          - generic [ref=f49e2278]: Comment on lines 215 to 232
+                          - generic [ref=f49e2283]:
+                            - generic [ref=f49e2284]:
+                              - heading "@coderabbitai coderabbitai Bot Feb 11, 2026on Feb 11" [level=3] [ref=f49e2285]:
+                                - generic [ref=f49e2286]:
+                                  - img "@coderabbitai" [ref=f49e2288]
+                                  - strong [ref=f49e2289]:
+                                    - link "coderabbitai" [ref=f49e2290] [cursor=pointer]:
+                                      - /url: /apps/coderabbitai
+                                    - generic [ref=f49e2291]: Bot
+                                  - link "Feb 11, 2026on Feb 11" [ref=f49e2292] [cursor=pointer]:
+                                    - /url: "#r2794025274"
+                              - generic [ref=f49e2293]:
+                                - group [ref=f49e2295]:
+                                  - button [ref=f49e2296] [cursor=pointer]:
+                                    - img "Show options" [ref=f49e2299]
+                                - generic "This user has previously committed to the ant-design repository." [ref=f49e2302]: Contributor
+                            - generic [ref=f49e2307]:
+                              - paragraph [ref=f49e2308]:
+                                - emphasis [ref=f49e2309]: 🛠️ Refactor suggestion
+                                - text: "|"
+                                - emphasis [ref=f49e2310]: 🟠 Major
+                              - paragraph [ref=f49e2311]:
+                                - strong [ref=f49e2312]:
+                                  - text: AI 生成主题项的
+                                  - code [ref=f49e2313]: onClick
+                                  - text: 缺少可选链调用，与
+                                  - code [ref=f49e2314]: onKeyDown
+                                  - text: 不一致。
+                              - paragraph [ref=f49e2315]:
+                                - text: Line 220 的
+                                - code [ref=f49e2316]: "onClick={onOpenPromptDrawer}"
+                                - text: 直接赋值，而 Line 224 的
+                                - code [ref=f49e2317]: onKeyDown
+                                - text: 中使用了
+                                - code [ref=f49e2318]: onOpenPromptDrawer?.()
+                                - text: 。如果
+                                - code [ref=f49e2319]: onOpenPromptDrawer
+                                - text: 为
+                                - code [ref=f49e2320]: undefined
+                                - text: ，点击事件不会报错（React 会忽略
+                                - code [ref=f49e2321]: undefined
+                                - text: handler），但为了一致性和防御性编码，建议统一使用可选链：
+                              - group [ref=f49e2322]:
+                                - generic "♻️ 建议修复" [ref=f49e2323] [cursor=pointer]
+                              - paragraph [ref=f49e2324]:
+                                - text: 此修复同时将遗漏的
+                                - code [ref=f49e2325]: aiGenerateItem
+                                - text: 样式和
+                                - code [ref=f49e2326]: ai-generate-item
+                                - text: 类名应用到元素上，解决前面提到的样式未使用问题。
+                              - group [ref=f49e2327]:
+                                - generic "📝 Committable suggestion" [ref=f49e2328] [cursor=pointer]
+                                - text: 216 - 217 - 218 - 219 - 220 - 221 - 222 - 223 - 224 - 225 - 226 - 227 - 228 - 229 - 230 - 231 - 232 - 233 - 234 - 235 - 236 - 237 - 238 - 239 - 240 - 216 + 217 + 218 + 219 + 220 + 221 + 222 + 223 + 224 + 225 + 226 + 227 + 228 + 229 +
+                              - group [ref=f49e2329]:
+                                - generic "🤖 Prompt for AI Agents" [ref=f49e2330] [cursor=pointer]
+                    - row [ref=f49e2331]:
+                      - cell "168" [ref=f49e2332] [cursor=pointer]
+                      - cell [ref=f49e2333] [cursor=pointer]
+                      - 'cell "- ))}" [ref=f49e2334]'
+                    - row [ref=f49e2336]:
+                      - cell [ref=f49e2337] [cursor=pointer]
+                      - cell "233" [ref=f49e2338] [cursor=pointer]
+                      - cell "+ </div>" [ref=f49e2339]
+                    - row [ref=f49e2341]:
+                      - cell "169" [ref=f49e2342] [cursor=pointer]
+                      - cell "234" [ref=f49e2343] [cursor=pointer]
+                      - cell "</div>" [ref=f49e2344]
+                    - row [ref=f49e2346]:
+                      - cell "170" [ref=f49e2347] [cursor=pointer]
+                      - cell "235" [ref=f49e2348] [cursor=pointer]
+                      - cell "<ComponentsBlock" [ref=f49e2349]
+                    - row [ref=f49e2351]:
+                      - cell "171" [ref=f49e2352] [cursor=pointer]
+                      - cell "236" [ref=f49e2353] [cursor=pointer]
+                      - 'cell "key={activeName}" [ref=f49e2354]'
+                    - row [ref=f49e2356]:
+                      - cell "Expand Down" [ref=f49e2357] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e2358]:
+                          - /url: "#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480"
+                      - cell [ref=f49e2361]
+              - generic [ref=f49e2363]:
+                - generic [ref=f49e2364]:
+                  - generic [ref=f49e2365]:
+                    - button "Toggle diff contents" [expanded] [ref=f49e2366] [cursor=pointer]
+                    - button "Expand all" [ref=f49e2370] [cursor=pointer]:
+                      - img "Expand all" [ref=f49e2371]
+                    - generic [ref=f49e2373]: "1 change: 0 additions & 1 deletion"
+                    - generic [aria-hidden] [ref=f49e2374]: "1"
+                    - generic [ref=f49e2380]:
+                      - link ".dumi/pages/index/components/ThemePreview/previewThemes/glassTheme.ts" [ref=f49e2381] [cursor=pointer]:
+                        - /url: "#diff-758c092db169238895f36fdbaac3d01e5a5c94c35a234d132038838d4e96322b"
+                      - button "Copy" [ref=f49e2383]
+                  - group [ref=f49e2390]:
+                    - button [ref=f49e2391] [cursor=pointer]:
+                      - img "Show options" [ref=f49e2393]
+                - table [ref=f49e2398]:
+                  - rowgroup [ref=f49e2399]:
+                    - row [ref=f49e2400]:
+                      - columnheader "Original file line number" [ref=f49e2401]
+                      - columnheader "Diff line number" [ref=f49e2402]
+                      - columnheader "Diff line change" [ref=f49e2403]
+                  - rowgroup [ref=f49e2404]:
+                    - row [ref=f49e2405]:
+                      - cell "Expand Up" [ref=f49e2406] [cursor=pointer]:
+                        - link "Expand Up" [ref=f49e2407]:
+                          - /url: "#diff-758c092db169238895f36fdbaac3d01e5a5c94c35a234d132038838d4e96322b"
+                      - 'cell "@@ -8,7 +8,6 @@ import type { UseTheme } from ''.'';" [ref=f49e2410]'
+                    - row [ref=f49e2411]:
+                      - cell "8" [ref=f49e2412] [cursor=pointer]
+                      - cell "8" [ref=f49e2413] [cursor=pointer]
+                      - cell [ref=f49e2414]
+                    - row [ref=f49e2415]:
+                      - cell "9" [ref=f49e2416] [cursor=pointer]
+                      - cell "9" [ref=f49e2417] [cursor=pointer]
+                      - 'cell "const useStyles = createStyles(({ css, cssVar }) => {" [ref=f49e2418]'
+                    - row [ref=f49e2420]:
+                      - cell "10" [ref=f49e2421] [cursor=pointer]
+                      - cell "10" [ref=f49e2422] [cursor=pointer]
+                      - 'cell "const glassBorder = {" [ref=f49e2423]'
+                    - row [ref=f49e2425]:
+                      - cell "11" [ref=f49e2426] [cursor=pointer]
+                      - cell [ref=f49e2427] [cursor=pointer]
+                      - 'cell "- border: `${cssVar.lineWidth} solid rgba(255,255,255,0.3)`," [ref=f49e2428]'
+                    - row [ref=f49e2430]:
+                      - cell "12" [ref=f49e2431] [cursor=pointer]
+                      - cell "11" [ref=f49e2432] [cursor=pointer]
+                      - 'cell "boxShadow: [" [ref=f49e2433]'
+                    - row [ref=f49e2435]:
+                      - cell "13" [ref=f49e2436] [cursor=pointer]
+                      - cell "12" [ref=f49e2437] [cursor=pointer]
+                      - 'cell "`${cssVar.boxShadowSecondary}`," [ref=f49e2438]'
+                    - row [ref=f49e2440]:
+                      - cell "14" [ref=f49e2441] [cursor=pointer]
+                      - cell "13" [ref=f49e2442] [cursor=pointer]
+                      - 'cell "`inset 0 0 5px 2px rgba(255, 255, 255, 0.3)`," [ref=f49e2443]'
+                    - row [ref=f49e2445]:
+                      - cell "Expand Down" [ref=f49e2446] [cursor=pointer]:
+                        - link "Expand Down" [ref=f49e2447]:
+                          - /url: "#diff-758c092db169238895f36fdbaac3d01e5a5c94c35a234d132038838d4e96322b"
+                      - cell [ref=f49e2450]
+            - generic [ref=f49e2451]: Loading
+  - contentinfo [ref=f49e2459]:
+    - heading "Footer" [level=2] [ref=f49e2460]
+    - generic [ref=f49e2461]:
+      - generic [ref=f49e2462]:
+        - link "GitHub Homepage" [ref=f49e2463] [cursor=pointer]:
+          - /url: https://github.com
+        - generic [ref=f49e2466]: © 2026 GitHub, Inc.
+      - navigation "Footer" [ref=f49e2467]:
+        - heading "Footer navigation" [level=3] [ref=f49e2468]
+        - list "Footer navigation" [ref=f49e2469]:
+          - listitem [ref=f49e2470]:
+            - link "Terms" [ref=f49e2471] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+          - listitem [ref=f49e2472]:
+            - link "Privacy" [ref=f49e2473] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+          - listitem [ref=f49e2474]:
+            - link "Security" [ref=f49e2475] [cursor=pointer]:
+              - /url: https://github.com/security
+          - listitem [ref=f49e2476]:
+            - link "Status" [ref=f49e2477] [cursor=pointer]:
+              - /url: https://www.githubstatus.com/
+          - listitem [ref=f49e2478]:
+            - link "Community" [ref=f49e2479] [cursor=pointer]:
+              - /url: https://github.community/
+          - listitem [ref=f49e2480]:
+            - link "Docs" [ref=f49e2481] [cursor=pointer]:
+              - /url: https://docs.github.com/
+          - listitem [ref=f49e2482]:
+            - link "Contact" [ref=f49e2483] [cursor=pointer]:
+              - /url: https://support.github.com?tags=dotcom-footer
+          - listitem [ref=f49e2484]:
+            - button "Manage cookies" [ref=f49e2486] [cursor=pointer]
+          - listitem [ref=f49e2487]:
+            - button "Do not share my personal information" [ref=f49e2489] [cursor=pointer]

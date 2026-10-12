@@ -1,0 +1,1869 @@
+- generic [ref=f54e2]:
+  - generic [ref=f54e3]:
+    - link "Skip to content" [ref=f54e4] [cursor=pointer]:
+      - /url: "#start-of-content"
+    - banner [ref=f54e9]:
+      - heading "Navigation Menu" [level=2] [ref=f54e10]
+      - generic [ref=f54e11]:
+        - link "Homepage" [ref=f54e13] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f54e16]:
+          - navigation "Global" [ref=f54e17]:
+            - list [ref=f54e18]:
+              - listitem [ref=f54e19]:
+                - button "Platform" [ref=f54e21] [cursor=pointer]
+              - listitem [ref=f54e24]:
+                - button "Solutions" [ref=f54e26] [cursor=pointer]
+              - listitem [ref=f54e29]:
+                - button "Resources" [ref=f54e31] [cursor=pointer]
+              - listitem [ref=f54e34]:
+                - button "Open Source" [ref=f54e36] [cursor=pointer]
+              - listitem [ref=f54e39]:
+                - button "Enterprise" [ref=f54e41] [cursor=pointer]
+              - listitem [ref=f54e44]:
+                - link "Pricing" [ref=f54e45] [cursor=pointer]:
+                  - /url: https://github.com/pricing
+          - generic [ref=f54e46]:
+            - button "Search or jump to, type / to search" [ref=f54e48] [cursor=pointer]:
+              - generic [ref=f54e51]:
+                - generic [ref=f54e52]: Search
+                - generic [aria-hidden] [ref=f54e53]: /
+            - link "Sign in" [ref=f54e55] [cursor=pointer]:
+              - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fant-design%2Fant-design%2Fpull%2F56952
+            - link "Sign up" [ref=f54e58] [cursor=pointer]:
+              - /url: /signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E%2Fvoltron%2Fpull_requests_fragments%2Fpull_request_layout&source=header-repo&source_repo=ant-design%2Fant-design
+            - button "Appearance settings" [ref=f54e61] [cursor=pointer]
+  - main [ref=f54e68]:
+    - generic "Global navigation menu" [ref=f54e71]:
+      - navigation "Breadcrumbs" [ref=f54e74]:
+        - list [ref=f54e75]:
+          - listitem [ref=f54e76]:
+            - link "ant-design" [ref=f54e77] [cursor=pointer]:
+              - /url: /ant-design
+          - listitem [ref=f54e79]:
+            - link "ant-design" [ref=f54e80] [cursor=pointer]:
+              - /url: /ant-design/ant-design
+      - heading "Repository navigation" [level=2] [ref=f54e83]
+      - navigation "Repository" [ref=f54e84]:
+        - list [ref=f54e85]:
+          - listitem [ref=f54e86]:
+            - link "Code" [ref=f54e87] [cursor=pointer]:
+              - /url: /ant-design/ant-design
+          - listitem [ref=f54e92]:
+            - link "Issues (967)" [ref=f54e93] [cursor=pointer]:
+              - /url: /ant-design/ant-design/issues
+              - generic [ref=f54e98]: Issues
+              - generic [ref=f54e99]:
+                - generic [aria-hidden] [ref=f54e100]: "967"
+                - generic [ref=f54e101]: (967)
+          - listitem [ref=f54e102]:
+            - link "Pull requests (141)" [ref=f54e103] [cursor=pointer]:
+              - /url: /ant-design/ant-design/pulls
+              - generic [ref=f54e107]: Pull requests
+              - generic [ref=f54e108]:
+                - generic [aria-hidden] [ref=f54e109]: "141"
+                - generic [ref=f54e110]: (141)
+          - listitem [ref=f54e111]:
+            - link "Discussions" [ref=f54e112] [cursor=pointer]:
+              - /url: /ant-design/ant-design/discussions
+          - listitem [ref=f54e117]:
+            - link "Actions" [ref=f54e118] [cursor=pointer]:
+              - /url: /ant-design/ant-design/actions
+          - listitem [ref=f54e123]:
+            - link "Projects" [ref=f54e124] [cursor=pointer]:
+              - /url: /ant-design/ant-design/projects
+          - listitem [ref=f54e129]:
+            - link "Wiki" [ref=f54e130] [cursor=pointer]:
+              - /url: /ant-design/ant-design/wiki
+          - listitem [ref=f54e135]:
+            - link "Security and quality" [ref=f54e136] [cursor=pointer]:
+              - /url: /ant-design/ant-design/security
+          - listitem [ref=f54e141]:
+            - link "Insights" [ref=f54e142] [cursor=pointer]:
+              - /url: /ant-design/ant-design/pulse
+    - generic [ref=f54e153]:
+      - generic [ref=f54e157]:
+        - generic [ref=f54e159]:
+          - 'heading "docs: improve theme ai chat - #56952" [level=1] [ref=f54e160]':
+            - text: "docs: improve theme ai chat"
+            - generic [ref=f54e161]: "- #56952"
+          - generic [aria-hidden] [ref=f54e163]: "#56952"
+        - generic [ref=f54e165]:
+          - generic [ref=f54e167]:
+            - img "Pull request" [ref=f54e168]
+            - text: Merged
+          - generic [ref=f54e171]:
+            - link "afc163" [ref=f54e172] [cursor=pointer]:
+              - /url: /afc163
+            - text: merged 12 commits into
+            - generic [ref=f54e173]:
+              - link "master" [ref=f54e174] [cursor=pointer]:
+                - /url: /ant-design/ant-design/tree/master
+              - generic [ref=f54e175]: from
+              - generic [ref=f54e176]:
+                - link "docs/themer" [ref=f54e177] [cursor=pointer]:
+                  - /url: /ant-design/ant-design/tree/docs/themer
+                - button "Copy head branch name to clipboard" [ref=f54e178] [cursor=pointer]
+            - generic "Feb 24, 2026, 15:25 GMT+8" [ref=f54e182]: Feb 24, 2026on Feb 24
+        - generic [ref=f54e183]:
+          - generic [ref=f54e185]:
+            - generic [aria-hidden] [ref=f54e186]: "+639"
+            - generic [aria-hidden] [ref=f54e187]: "-142"
+            - generic [ref=f54e188]: "Lines changed: 639 additions & 142 deletions"
+          - navigation "Pull request navigation" [ref=f54e196]:
+            - generic [ref=f54e197]:
+              - link "Conversation (32)" [ref=f54e198] [cursor=pointer]:
+                - /url: /ant-design/ant-design/pull/56952
+                - text: Conversation
+                - generic [aria-hidden] [ref=f54e201]: "32"
+                - generic [ref=f54e202]: (32)
+              - link "Commits (12)" [ref=f54e203] [cursor=pointer]:
+                - /url: /ant-design/ant-design/pull/56952/commits
+                - text: Commits
+                - generic [aria-hidden] [ref=f54e206]: "12"
+                - generic [ref=f54e207]: (12)
+              - link "Checks (46)" [ref=f54e208] [cursor=pointer]:
+                - /url: /ant-design/ant-design/pull/56952/checks
+                - text: Checks
+                - generic [aria-hidden] [ref=f54e211]: "46"
+                - generic [ref=f54e212]: (46)
+              - link "Files changed (7)" [ref=f54e213] [cursor=pointer]:
+                - /url: /ant-design/ant-design/pull/56952/files
+                - text: Files changed
+                - generic [aria-hidden] [ref=f54e216]: "7"
+                - generic [ref=f54e217]: (7)
+      - generic [ref=f54e222]:
+        - generic [ref=f54e224]:
+          - heading "Conversation" [level=2] [ref=f54e225]
+          - generic [ref=f54e226]:
+            - generic [ref=f54e227]:
+              - generic [ref=f54e229]:
+                - link [ref=f54e230] [cursor=pointer]:
+                  - /url: /afc163
+                  - img "@afc163" [ref=f54e231]
+                - generic [ref=f54e233]:
+                  - generic [ref=f54e234]:
+                    - heading "afc163 commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e235]:
+                      - generic [ref=f54e236]:
+                        - strong [ref=f54e237]:
+                          - link "afc163" [ref=f54e238] [cursor=pointer]:
+                            - /url: /afc163
+                        - text: commented
+                        - link "Feb 11, 2026on Feb 11" [ref=f54e239] [cursor=pointer]:
+                          - /url: "#issue-3927232211"
+                        - generic [ref=f54e240]:
+                          - generic [ref=f54e241]: •
+                          - group [ref=f54e242]:
+                            - button "edited by cursor Bot" [ref=f54e243] [cursor=pointer]:
+                              - generic [ref=f54e245]:
+                                - text: edited by cursor
+                                - generic [ref=f54e246]: Bot
+                    - generic [ref=f54e249]:
+                      - group [ref=f54e251]:
+                        - button [ref=f54e252] [cursor=pointer]:
+                          - img "Show options" [ref=f54e255]
+                      - generic "This user is a member of the ant-design organization." [ref=f54e258]: Member
+                  - generic [ref=f54e263]:
+                    - paragraph [ref=f54e264]:
+                      - link "中文版模板 / Chinese template" [ref=f54e265] [cursor=pointer]:
+                        - /url: https://github.com/ant-design/ant-design/blob/master/.github/PULL_REQUEST_TEMPLATE_CN.md?plain=1
+                    - heading "🤔 This is a ..." [level=3] [ref=f54e266]
+                    - list [ref=f54e267]:
+                      - listitem [ref=f54e268]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e272]
+                        - text: 🆕 New feature
+                      - listitem [ref=f54e273]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e277]
+                        - text: 🐞 Bug fix
+                      - listitem [ref=f54e278]:
+                        - checkbox "Completed task" [checked] [disabled] [ref=f54e282]
+                        - text: 📝 Site / documentation improvement
+                      - listitem [ref=f54e283]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e287]
+                        - text: 📽️ Demo improvement
+                      - listitem [ref=f54e288]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e292]
+                        - text: 💄 Component style improvement
+                      - listitem [ref=f54e293]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e297]
+                        - text: 🤖 TypeScript definition improvement
+                      - listitem [ref=f54e298]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e302]
+                        - text: 📦 Bundle size optimization
+                      - listitem [ref=f54e303]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e307]
+                        - text: ⚡️ Performance optimization
+                      - listitem [ref=f54e308]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e312]
+                        - text: ⭐️ Feature enhancement
+                      - listitem [ref=f54e313]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e317]
+                        - text: 🌐 Internationalization
+                      - listitem [ref=f54e318]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e322]
+                        - text: 🛠 Refactoring
+                      - listitem [ref=f54e323]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e327]
+                        - text: 🎨 Code style optimization
+                      - listitem [ref=f54e328]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e332]
+                        - text: ✅ Test Case
+                      - listitem [ref=f54e333]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e337]
+                        - text: 🔀 Branch merge
+                      - listitem [ref=f54e338]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e342]
+                        - text: ⏩ Workflow
+                      - listitem [ref=f54e343]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e347]
+                        - text: ⌨️ Accessibility improvement
+                      - listitem [ref=f54e348]:
+                        - checkbox "Incomplete task" [disabled] [ref=f54e352]
+                        - text: ❓ Other (about what?)
+                    - heading "🔗 Related Issues" [level=3] [ref=f54e353]
+                    - blockquote [ref=f54e354]:
+                      - list [ref=f54e355]:
+                        - listitem [ref=f54e356]: Describe the source of related requirements, such as links to relevant issue discussions.
+                        - listitem [ref=f54e357]: "For example: close #xxxx, fix #xxxx"
+                    - heading "💡 Background and Solution" [level=3] [ref=f54e358]
+                    - blockquote [ref=f54e359]:
+                      - list [ref=f54e360]:
+                        - listitem [ref=f54e361]: The specific problem to be addressed.
+                        - listitem [ref=f54e362]: List the final API implementation and usage if needed.
+                        - listitem [ref=f54e363]: If there are UI/interaction changes, consider providing screenshots or GIFs.
+                    - paragraph [ref=f54e364]: 功能概述
+                    - paragraph [ref=f54e365]: 为 Ant Design 主题定制体验引入 AI 驱动的主题推荐功能，用户可以通过自然语言描述自己想要的风格，AI 会自动生成对应的主题配置。
+                    - paragraph [ref=f54e366]: 主要功能
+                    - list [ref=f54e367]:
+                      - listitem [ref=f54e368]: AI 主题推荐系统 - 通过 AI API 自动生成多样化的主题风格描述 - 参考官方内建风格（暗黑、MUI、shadcn、卡通、插画、Bootstrap、玻璃、极客）生成新风格 - 支持中英文双语言 - 提供"换一换"刷新功能
+                      - listitem [ref=f54e369]: 优化后的交互体验 - 首页主题列表新增「🎨 AI 生成主题」入口 - 初始界面展示 Welcome 欢迎 + Prompts 推荐卡片 - 生成完成后显示推荐主题和换一换按钮 - 支持加载状态（skeleton 动画）
+                      - listitem [ref=f54e370]: 便捷的主题管理 - 抽屉右上角「恢复默认主题」按钮 - 80vw 宽度抽屉，左右分屏预览
+                    - group [ref=f54e371]:
+                      - generic "_2026-02-11.234622.mp4" [ref=f54e372] [cursor=pointer]
+                    - heading "📝 Change Log" [level=3] [ref=f54e377]
+                    - blockquote [ref=f54e378]:
+                      - list [ref=f54e379]:
+                        - listitem [ref=f54e380]:
+                          - text: Read
+                          - link "Keep a Changelog" [ref=f54e381] [cursor=pointer]:
+                            - /url: https://keepachangelog.com/en/1.1.0/
+                          - text: "! Track your changes, like a cat tracks a laser pointer."
+                        - listitem [ref=f54e382]: Describe the impact of the changes on developers, not the solution approach.
+                        - listitem [ref=f54e383]:
+                          - text: "Reference:"
+                          - link "https://ant.design/changelog" [ref=f54e384] [cursor=pointer]:
+                            - /url: https://ant.design/changelog
+                    - table [ref=f54e386]:
+                      - rowgroup [ref=f54e387]:
+                        - row [ref=f54e388]:
+                          - columnheader "Language" [ref=f54e389]
+                          - columnheader "Changelog" [ref=f54e390]
+                      - rowgroup [ref=f54e391]:
+                        - row [ref=f54e392]:
+                          - cell "🇺🇸 English" [ref=f54e393]
+                          - cell "-" [ref=f54e394]
+                        - row [ref=f54e395]:
+                          - cell "🇨🇳 Chinese" [ref=f54e396]
+                          - cell "-" [ref=f54e397]
+                    - separator [ref=f54e398]
+                    - generic [ref=f54e399]:
+                      - paragraph [ref=f54e400]: Note
+                      - paragraph [ref=f54e403]:
+                        - strong [ref=f54e404]: Medium Risk
+                        - text: Introduces new network calls to an external AI endpoint for recommendations and expands client-side state updates for dynamic theming; changes are UI-scoped but add asynchronous behavior and abort/cancel flows that could regress the homepage experience.
+                      - paragraph [ref=f54e405]:
+                        - strong [ref=f54e406]: Overview
+                        - text: Adds an
+                        - strong [ref=f54e407]: AI theme generation entry point
+                        - text: to the homepage theme list and wires it to open a new
+                        - code [ref=f54e408]: PromptDrawer
+                        - text: ", with"
+                        - code [ref=f54e409]: SiteContext.dynamicTheme
+                        - text: updates applied from the AI response.
+                      - paragraph [ref=f54e410]:
+                        - text: Significantly upgrades
+                        - code [ref=f54e411]: PromptDrawer
+                        - text: "UX: split-pane layout with a live"
+                        - code [ref=f54e412]: ComponentsBlock
+                        - text: preview, welcome + recommended prompt chips (with refresh), improved streaming bubble rendering, and a “reset to default theme” action.
+                      - paragraph [ref=f54e413]:
+                        - text: Updates the theme preview demo components (
+                        - code [ref=f54e414]: ComponentsBlock
+                        - text: ) to showcase more variants (e.g., filled inputs, segmented, radio buttons) and tweaks related styling/structure (
+                        - code [ref=f54e415]: Group
+                        - text: title
+                        - code [ref=f54e416]: extra
+                        - text: ", theme selection list styles, minor glass theme adjustment)."
+                      - paragraph [ref=f54e417]:
+                        - superscript [ref=f54e418]:
+                          - text: Written by
+                          - link "Cursor Bugbot" [ref=f54e419] [cursor=pointer]:
+                            - /url: https://cursor.com/dashboard?tab=bugbot
+                          - text: for commit
+                          - link "88a74cd" [ref=f54e420] [cursor=pointer]:
+                            - /url: https://github.com/ant-design/ant-design/commit/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+                          - text: . This will update automatically on new commits. Configure
+                          - link "here" [ref=f54e421] [cursor=pointer]:
+                            - /url: https://cursor.com/dashboard?tab=bugbot
+                          - text: .
+              - generic [ref=f54e422]:
+                - generic [ref=f54e424]:
+                  - generic [ref=f54e429]:
+                    - link "afc163" [ref=f54e430] [cursor=pointer]:
+                      - /url: /afc163
+                    - text: and others added 2 commits
+                    - link "February 11, 2026 18:528 months ago" [ref=f54e431] [cursor=pointer]:
+                      - /url: "#commits-pushed-8f95529"
+                  - generic [ref=f54e432]:
+                    - generic [ref=f54e440]:
+                      - link [ref=f54e443] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e444]
+                      - code [ref=f54e446]:
+                        - link "commit" [ref=f54e447] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/8f95529432448eff8e3c76f111a90100efdcda3c
+                      - button "Unverified" [ref=f54e449] [cursor=pointer]
+                      - group [ref=f54e454]:
+                        - img "2 / 4 checks OK" [ref=f54e456] [cursor=pointer]
+                      - code [ref=f54e459]:
+                        - link "8f95529" [ref=f54e460] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/8f95529432448eff8e3c76f111a90100efdcda3c
+                    - generic [ref=f54e468]:
+                      - generic [ref=f54e470]:
+                        - link [ref=f54e471] [cursor=pointer]:
+                          - /url: /afc163
+                          - img "@afc163" [ref=f54e472]
+                        - link [ref=f54e473] [cursor=pointer]:
+                          - /url: /claude
+                          - img "@claude" [ref=f54e474]
+                      - generic [ref=f54e475]:
+                        - code [ref=f54e476]:
+                          - 'link "feat: add AI theme recommendation feature" [ref=f54e477] [cursor=pointer]':
+                            - /url: /ant-design/ant-design/pull/56952/commits/caf62f4e56f7fe50101fd6b08108491ef52b782d
+                        - button "Commit message body" [ref=f54e479] [cursor=pointer]: …
+                      - button "Unverified" [ref=f54e481] [cursor=pointer]
+                      - group [ref=f54e486]:
+                        - img "18 / 41 checks OK" [ref=f54e488] [cursor=pointer]
+                      - code [ref=f54e491]:
+                        - link "caf62f4" [ref=f54e492] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/caf62f4e56f7fe50101fd6b08108491ef52b782d
+                - generic [ref=f54e494]:
+                  - link [ref=f54e496] [cursor=pointer]:
+                    - /url: /apps/bolt-new-by-stackblitz
+                    - img "@bolt-new-by-stackblitz" [ref=f54e497]
+                  - generic [ref=f54e499]:
+                    - generic [ref=f54e500]:
+                      - heading "bolt-new-by-stackblitz Bot commented Feb 11, 2026on Feb 11" [level=3] [ref=f54e501]:
+                        - generic [ref=f54e502]:
+                          - strong [ref=f54e503]:
+                            - link "bolt-new-by-stackblitz" [ref=f54e504] [cursor=pointer]:
+                              - /url: /apps/bolt-new-by-stackblitz
+                            - generic [ref=f54e505]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e506] [cursor=pointer]:
+                            - /url: "#issuecomment-3885243564"
+                      - group [ref=f54e509]:
+                        - button [ref=f54e510] [cursor=pointer]:
+                          - img "Show options" [ref=f54e513]
+                    - table [ref=f54e517]:
+                      - rowgroup [ref=f54e518]:
+                        - row [ref=f54e519]:
+                          - cell [ref=f54e520]:
+                            - paragraph [ref=f54e521]:
+                              - link "Review PR in StackBlitz Codeflow":
+                                - /url: https://stackblitz.com/~/github.com/ant-design/ant-design/pull/56952
+                                - img "Review PR in StackBlitz Codeflow" [ref=f54e522] [cursor=pointer]
+                              - emphasis [ref=f54e523]:
+                                - text: Run & review this pull request in
+                                - link "StackBlitz Codeflow" [ref=f54e524] [cursor=pointer]:
+                                  - /url: https://stackblitz.com/~/github.com/ant-design/ant-design/pull/56952
+                                - text: .
+                - generic [ref=f54e535]:
+                  - link [ref=f54e538] [cursor=pointer]:
+                    - /url: /afc163
+                    - img "@afc163" [ref=f54e539]
+                  - code [ref=f54e541]:
+                    - 'link "chore: remove unused AI theme prompts en-US doc" [ref=f54e542] [cursor=pointer]':
+                      - /url: /ant-design/ant-design/pull/56952/commits/87f59266e54306f05703c24f39ade91980c2d47e
+                  - button "Unverified" [ref=f54e544] [cursor=pointer]
+                  - code [ref=f54e549]:
+                    - link "87f5926" [ref=f54e550] [cursor=pointer]:
+                      - /url: /ant-design/ant-design/pull/56952/commits/87f59266e54306f05703c24f39ade91980c2d47e
+                - generic [ref=f54e552]:
+                  - link [ref=f54e554] [cursor=pointer]:
+                    - /url: /apps/github-actions
+                    - img "@github-actions" [ref=f54e555]
+                  - generic [ref=f54e557]:
+                    - generic [ref=f54e558]:
+                      - heading "github-actions Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e559]:
+                        - generic [ref=f54e560]:
+                          - strong [ref=f54e561]:
+                            - link "github-actions" [ref=f54e562] [cursor=pointer]:
+                              - /url: /apps/github-actions
+                            - generic [ref=f54e563]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e564] [cursor=pointer]:
+                            - /url: "#issuecomment-3885245361"
+                          - generic [ref=f54e565]:
+                            - generic [ref=f54e566]: •
+                            - group [ref=f54e567]:
+                              - button "edited" [ref=f54e568] [cursor=pointer]
+                      - generic [ref=f54e572]:
+                        - group [ref=f54e574]:
+                          - button [ref=f54e575] [cursor=pointer]:
+                            - img "Show options" [ref=f54e578]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e581]: Contributor
+                    - table [ref=f54e585]:
+                      - rowgroup [ref=f54e586]:
+                        - row [ref=f54e587]:
+                          - cell [ref=f54e588]:
+                            - paragraph [ref=f54e589]:
+                              - link [ref=f54e590] [cursor=pointer]:
+                                - /url: https://preview-56952-ant-design.surge.sh
+                                - img "Preview is ready" [ref=f54e591]
+                - generic [ref=f54e593]:
+                  - link [ref=f54e595] [cursor=pointer]:
+                    - /url: /apps/github-actions
+                    - img "@github-actions" [ref=f54e596]
+                  - generic [ref=f54e598]:
+                    - generic [ref=f54e599]:
+                      - heading "github-actions Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e600]:
+                        - generic [ref=f54e601]:
+                          - strong [ref=f54e602]:
+                            - link "github-actions" [ref=f54e603] [cursor=pointer]:
+                              - /url: /apps/github-actions
+                            - generic [ref=f54e604]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e605] [cursor=pointer]:
+                            - /url: "#issuecomment-3885245913"
+                          - generic [ref=f54e606]:
+                            - generic [ref=f54e607]: •
+                            - group [ref=f54e608]:
+                              - button "edited" [ref=f54e609] [cursor=pointer]
+                      - generic [ref=f54e613]:
+                        - group [ref=f54e615]:
+                          - button [ref=f54e616] [cursor=pointer]:
+                            - img "Show options" [ref=f54e619]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e622]: Contributor
+                    - table [ref=f54e626]:
+                      - rowgroup [ref=f54e627]:
+                        - row [ref=f54e628]:
+                          - cell [ref=f54e629]:
+                            - heading [level=2] [ref=f54e630]:
+                              - text: 👁 Visual Regression Report for PR
+                              - link "#56952" [ref=f54e631] [cursor=pointer]:
+                                - /url: https://github.com/ant-design/ant-design/pull/56952
+                              - text: Passed ✅
+                            - blockquote [ref=f54e632]:
+                              - paragraph [ref=f54e633]:
+                                - strong [ref=f54e634]: "🎯 Target branch:"
+                                - text: master (
+                                - link "2670afa" [ref=f54e635] [cursor=pointer]:
+                                  - /url: https://github.com/ant-design/ant-design/commit/2670afab7238cc1ced0dd8cda196e8c8e56bad25
+                                - text: ) 📖
+                                - link "View Full Report ↗︎" [ref=f54e636] [cursor=pointer]:
+                                  - /url: https://antd-visual-diff.oss-accelerate.aliyuncs.com/pr-56952/visualRegressionReport/report.html
+                                - text: 📖
+                                - link "Alternative Report ↗︎" [ref=f54e637] [cursor=pointer]:
+                                  - /url: https://antd-visual-diff.oss-accelerate.aliyuncs.com/pr-56952/visualRegressionReport/index.html
+                            - paragraph [ref=f54e638]: 🎊 Congrats! No visual-regression diff found.
+                            - link [ref=f54e639] [cursor=pointer]:
+                              - /url: https://private-user-images.githubusercontent.com/507615/302171235-2d1a77dc-dbc6-4b0f-9cbc-19a43d3c29cd.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3OTE3NzUyNTcsIm5iZiI6MTc5MTc3NDk1NywicGF0aCI6Ii81MDc2MTUvMzAyMTcxMjM1LTJkMWE3N2RjLWRiYzYtNGIwZi05Y2JjLTE5YTQzZDNjMjljZC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYxMDEyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MTAxMlQwMzE1NTdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1jMDA2ZmFkNzlhMTAyNDE3MjgxMWVlMTdjODgzYjk3MTQzNjNhNjkwZTAyZWRjY2I0YWE0NGVhMmIxMzQ0NmRkJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LXR5cGU9aW1hZ2UlMkZwbmcifQ.sj93E1UtTwK7iLSUls4uEgTOoKvTKLlkR7nL-WEkpCc
+                - generic [ref=f54e642]:
+                  - link [ref=f54e644] [cursor=pointer]:
+                    - /url: /apps/gemini-code-assist
+                    - img "@gemini-code-assist" [ref=f54e645]
+                  - generic [ref=f54e647]:
+                    - generic [ref=f54e648]:
+                      - heading "gemini-code-assist Bot commented Feb 11, 2026on Feb 11" [level=3] [ref=f54e649]:
+                        - generic [ref=f54e650]:
+                          - strong [ref=f54e651]:
+                            - link "gemini-code-assist" [ref=f54e652] [cursor=pointer]:
+                              - /url: /apps/gemini-code-assist
+                            - generic [ref=f54e653]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e654] [cursor=pointer]:
+                            - /url: "#issuecomment-3885246266"
+                      - generic [ref=f54e655]:
+                        - group [ref=f54e657]:
+                          - button [ref=f54e658] [cursor=pointer]:
+                            - img "Show options" [ref=f54e661]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e664]: Contributor
+                    - table [ref=f54e668]:
+                      - rowgroup [ref=f54e669]:
+                        - row [ref=f54e670]:
+                          - cell [ref=f54e671]:
+                            - heading "Summary of Changes" [level=2] [ref=f54e672]
+                            - paragraph [ref=f54e673]:
+                              - text: Hello
+                              - link "@afc163" [ref=f54e674] [cursor=pointer]:
+                                - /url: https://github.com/afc163
+                              - text: ", I'm Gemini Code Assist"
+                              - superscript [ref=f54e675]:
+                                - link "[1]" [ref=f54e676] [cursor=pointer]:
+                                  - /url: "#user-content-fn-1-a6e8ae864dded4548111b6c083cd73bc"
+                              - text: "! I'm currently reviewing this pull request and will post my feedback shortly. In the meantime, here's a summary to help you and other reviewers quickly get up to speed!"
+                            - paragraph [ref=f54e677]: 此拉取请求为 Ant Design 站点引入了 AI 驱动的主题定制功能，极大地增强了用户体验。通过自然语言描述，用户可以轻松生成个性化主题，并实时预览效果。同时，优化了主题管理界面，并提供了全面的使用文档，使主题定制变得更加智能和便捷。
+                            - heading "Highlights" [level=3] [ref=f54e678]
+                            - list [ref=f54e679]:
+                              - listitem [ref=f54e680]:
+                                - strong [ref=f54e681]: AI 主题推荐系统
+                                - text: ": 引入 AI 驱动的主题推荐功能，用户可以通过自然语言描述期望的风格，AI 将自动生成对应的主题配置。该系统能够通过 AI API 生成多样化的主题风格描述，并参考官方内建风格（如暗黑、MUI、shadcn、卡通等），同时支持中英文双语，并提供“换一换”刷新功能。"
+                              - listitem [ref=f54e682]:
+                                - strong [ref=f54e683]: 优化交互体验
+                                - text: ": 在首页主题列表中新增了“🎨 AI 生成主题”入口。初始界面展示欢迎信息和推荐提示卡片。生成主题完成后，会显示推荐主题和“换一换”按钮，并支持加载状态的骨架屏动画。"
+                              - listitem [ref=f54e684]:
+                                - strong [ref=f54e685]: 便捷主题管理
+                                - text: ": 主题抽屉右上角新增了“恢复默认主题”按钮，方便用户快速还原设置。抽屉宽度调整为 80vw，支持左右分屏预览，提升了主题定制的效率和体验。"
+                              - listitem [ref=f54e686]:
+                                - strong [ref=f54e687]: 新增 AI 主题生成器文档
+                                - text: ": 新增了中英文两份详细文档（ai-theme-prompts.zh-CN.md 和 ai-theme-prompts.en-US.md），指导用户如何使用 AI 主题生成器，提供了丰富的推荐提示词、撰写优秀提示词的技巧以及常见问题解答。"
+                            - paragraph [ref=f54e688]:
+                              - text: 🧠
+                              - strong [ref=f54e689]: "New Feature in Public Preview:"
+                              - text: You can now enable
+                              - strong [ref=f54e690]: Memory
+                              - text: to help
+                              - strong [ref=f54e691]: Gemini Code Assist
+                              - text: learn from your team's feedback. This makes future code reviews more consistent and personalized to your project's style.
+                              - strong [ref=f54e692]:
+                                - text: Click
+                                - link "here" [ref=f54e693] [cursor=pointer]:
+                                  - /url: https://codeassist.google/code-review/login
+                                - text: to enable Memory in your admin console.
+                            - group [ref=f54e694]:
+                              - generic "Changelog" [ref=f54e695] [cursor=pointer]
+                            - group [ref=f54e696]:
+                              - generic "Activity" [ref=f54e697] [cursor=pointer]
+                            - group [ref=f54e698]:
+                              - generic "Using Gemini Code Assist" [ref=f54e699] [cursor=pointer]
+                            - generic [ref=f54e700]:
+                              - heading "Footnotes" [level=2] [ref=f54e701]
+                              - list [ref=f54e702]:
+                                - listitem [ref=f54e703]:
+                                  - paragraph [ref=f54e704]:
+                                    - text: Review the
+                                    - link "Privacy Notices" [ref=f54e705] [cursor=pointer]:
+                                      - /url: https://policies.google.com/privacy
+                                    - text: ","
+                                    - link "Generative AI Prohibited Use Policy" [ref=f54e706] [cursor=pointer]:
+                                      - /url: https://policies.google.com/terms/generative-ai/use-policy
+                                    - text: ","
+                                    - link "Terms of Service" [ref=f54e707] [cursor=pointer]:
+                                      - /url: https://policies.google.com/terms
+                                    - text: ", and learn how to configure Gemini Code Assist in GitHub"
+                                    - link "here" [ref=f54e708] [cursor=pointer]:
+                                      - /url: https://developers.google.com/gemini-code-assist/docs/customize-gemini-behavior-github
+                                    - text: . Gemini can make mistakes, so double check it and
+                                    - link "use code with caution" [ref=f54e709] [cursor=pointer]:
+                                      - /url: https://support.google.com/legal/answer/13505487
+                                    - text: .
+                                    - link "Back to reference 1" [ref=f54e710] [cursor=pointer]:
+                                      - /url: "#user-content-fnref-1-a6e8ae864dded4548111b6c083cd73bc"
+                                      - text: ↩
+                - generic [ref=f54e721]:
+                  - link [ref=f54e724] [cursor=pointer]:
+                    - /url: /afc163
+                    - img "@afc163" [ref=f54e725]
+                  - code [ref=f54e727]:
+                    - 'link "chore: remove unused AI theme prompts zh-CN doc" [ref=f54e728] [cursor=pointer]':
+                      - /url: /ant-design/ant-design/pull/56952/commits/73c6168e3fcd6e435881c5d135ae543d5335e0d1
+                  - button "Unverified" [ref=f54e730] [cursor=pointer]
+                  - group [ref=f54e735]:
+                    - img "43 / 45 checks OK" [ref=f54e737] [cursor=pointer]
+                  - code [ref=f54e740]:
+                    - link "73c6168" [ref=f54e741] [cursor=pointer]:
+                      - /url: /ant-design/ant-design/pull/56952/commits/73c6168e3fcd6e435881c5d135ae543d5335e0d1
+                - generic [ref=f54e743]:
+                  - link [ref=f54e745] [cursor=pointer]:
+                    - /url: /apps/coderabbitai
+                    - img "@coderabbitai" [ref=f54e746]
+                  - generic [ref=f54e748]:
+                    - generic [ref=f54e749]:
+                      - heading "coderabbitai Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e750]:
+                        - generic [ref=f54e751]:
+                          - strong [ref=f54e752]:
+                            - link "coderabbitai" [ref=f54e753] [cursor=pointer]:
+                              - /url: /apps/coderabbitai
+                            - generic [ref=f54e754]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e755] [cursor=pointer]:
+                            - /url: "#issuecomment-3885246568"
+                          - generic [ref=f54e756]:
+                            - generic [ref=f54e757]: •
+                            - group [ref=f54e758]:
+                              - button "edited" [ref=f54e759] [cursor=pointer]
+                      - generic [ref=f54e763]:
+                        - group [ref=f54e765]:
+                          - button [ref=f54e766] [cursor=pointer]:
+                            - img "Show options" [ref=f54e769]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e772]: Contributor
+                    - table [ref=f54e776]:
+                      - rowgroup [ref=f54e777]:
+                        - row [ref=f54e778]:
+                          - cell [ref=f54e779]:
+                            - group [ref=f54e780]:
+                              - generic "📝 Walkthrough" [ref=f54e781] [cursor=pointer]
+                            - group [ref=f54e782]:
+                              - generic "🚥 Pre-merge checks | ✅ 2 | ❌ 1" [ref=f54e783] [cursor=pointer]
+                            - group [ref=f54e784]:
+                              - generic "✨ Finishing Touches" [ref=f54e785] [cursor=pointer]
+                            - separator [ref=f54e786]
+                            - paragraph [ref=f54e787]:
+                              - text: Thanks for using
+                              - link "CodeRabbit" [ref=f54e788] [cursor=pointer]:
+                                - /url: https://coderabbit.ai?utm_source=oss&utm_medium=github&utm_campaign=ant-design/ant-design&utm_content=56952
+                              - text: "! It's free for OSS, and your support helps us grow. If you like it, consider giving us a shout-out."
+                            - group [ref=f54e789]:
+                              - generic "❤️ Share" [ref=f54e790] [cursor=pointer]
+                            - paragraph [ref=f54e791]:
+                              - subscript [ref=f54e792]:
+                                - text: Comment
+                                - code [ref=f54e793]: "@coderabbitai help"
+                                - text: to get the list of available commands and usage tips.
+                - generic [ref=f54e795]:
+                  - link [ref=f54e797] [cursor=pointer]:
+                    - /url: /apps/cloudflare-workers-and-pages
+                    - img "@cloudflare-workers-and-pages" [ref=f54e798]
+                  - generic [ref=f54e800]:
+                    - generic [ref=f54e801]:
+                      - heading "cloudflare-workers-and-pages Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e802]:
+                        - generic [ref=f54e803]:
+                          - strong [ref=f54e804]:
+                            - link "cloudflare-workers-and-pages" [ref=f54e805] [cursor=pointer]:
+                              - /url: /apps/cloudflare-workers-and-pages
+                            - generic [ref=f54e806]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e807] [cursor=pointer]:
+                            - /url: "#issuecomment-3885249562"
+                          - generic [ref=f54e808]:
+                            - generic [ref=f54e809]: •
+                            - group [ref=f54e810]:
+                              - button "edited" [ref=f54e811] [cursor=pointer]
+                      - group [ref=f54e817]:
+                        - button [ref=f54e818] [cursor=pointer]:
+                          - img "Show options" [ref=f54e821]
+                    - table [ref=f54e825]:
+                      - rowgroup [ref=f54e826]:
+                        - row [ref=f54e827]:
+                          - cell [ref=f54e828]:
+                            - heading [level=2] [ref=f54e829]:
+                              - text: Deploying ant-design-next with
+                              - link [ref=f54e830] [cursor=pointer]:
+                                - /url: https://pages.dev
+                                - img "Cloudflare Pages" [ref=f54e831]
+                              - text: Cloudflare Pages
+                            - table [ref=f54e833]:
+                              - rowgroup [ref=f54e834]:
+                                - row [ref=f54e835]:
+                                  - cell [ref=f54e836]:
+                                    - strong [ref=f54e837]: "Latest commit:"
+                                  - cell [ref=f54e838]:
+                                    - code [ref=f54e839]: 88a74cd
+                                - row [ref=f54e840]:
+                                  - cell [ref=f54e841]:
+                                    - strong [ref=f54e842]: "Status:"
+                                  - cell "✅ Deploy successful!" [ref=f54e843]
+                                - row [ref=f54e844]:
+                                  - cell [ref=f54e845]:
+                                    - strong [ref=f54e846]: "Preview URL:"
+                                  - cell [ref=f54e847]:
+                                    - link "https://43459634.ant-design-next.pages.dev" [ref=f54e848] [cursor=pointer]:
+                                      - /url: https://43459634.ant-design-next.pages.dev
+                                - row [ref=f54e849]:
+                                  - cell [ref=f54e850]:
+                                    - strong [ref=f54e851]: "Branch Preview URL:"
+                                  - cell [ref=f54e852]:
+                                    - link "https://docs-themer.ant-design-next.pages.dev" [ref=f54e853] [cursor=pointer]:
+                                      - /url: https://docs-themer.ant-design-next.pages.dev
+                            - paragraph [ref=f54e854]:
+                              - link "View logs" [ref=f54e855] [cursor=pointer]:
+                                - /url: https://dash.cloudflare.com/?to=/e6395b6beb3487d0b05d2b606540a2d0/pages/view/ant-design-next/43459634-2a55-454e-aeaf-df726d151604
+                - generic [ref=f54e857]:
+                  - link [ref=f54e859] [cursor=pointer]:
+                    - /url: /apps/cloudflare-workers-and-pages
+                    - img "@cloudflare-workers-and-pages" [ref=f54e860]
+                  - generic [ref=f54e862]:
+                    - generic [ref=f54e863]:
+                      - heading "cloudflare-workers-and-pages Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e864]:
+                        - generic [ref=f54e865]:
+                          - strong [ref=f54e866]:
+                            - link "cloudflare-workers-and-pages" [ref=f54e867] [cursor=pointer]:
+                              - /url: /apps/cloudflare-workers-and-pages
+                            - generic [ref=f54e868]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e869] [cursor=pointer]:
+                            - /url: "#issuecomment-3885259813"
+                          - generic [ref=f54e870]:
+                            - generic [ref=f54e871]: •
+                            - group [ref=f54e872]:
+                              - button "edited" [ref=f54e873] [cursor=pointer]
+                      - group [ref=f54e879]:
+                        - button [ref=f54e880] [cursor=pointer]:
+                          - img "Show options" [ref=f54e883]
+                    - table [ref=f54e887]:
+                      - rowgroup [ref=f54e888]:
+                        - row [ref=f54e889]:
+                          - cell [ref=f54e890]:
+                            - heading [level=2] [ref=f54e891]:
+                              - text: Deploying ant-design with
+                              - link [ref=f54e892] [cursor=pointer]:
+                                - /url: https://pages.dev
+                                - img "Cloudflare Pages" [ref=f54e893]
+                              - text: Cloudflare Pages
+                            - table [ref=f54e895]:
+                              - rowgroup [ref=f54e896]:
+                                - row [ref=f54e897]:
+                                  - cell [ref=f54e898]:
+                                    - strong [ref=f54e899]: "Latest commit:"
+                                  - cell [ref=f54e900]:
+                                    - code [ref=f54e901]: 88a74cd
+                                - row [ref=f54e902]:
+                                  - cell [ref=f54e903]:
+                                    - strong [ref=f54e904]: "Status:"
+                                  - cell "✅ Deploy successful!" [ref=f54e905]
+                                - row [ref=f54e906]:
+                                  - cell [ref=f54e907]:
+                                    - strong [ref=f54e908]: "Preview URL:"
+                                  - cell [ref=f54e909]:
+                                    - link "https://8f9961a9.ant-design.pages.dev" [ref=f54e910] [cursor=pointer]:
+                                      - /url: https://8f9961a9.ant-design.pages.dev
+                                - row [ref=f54e911]:
+                                  - cell [ref=f54e912]:
+                                    - strong [ref=f54e913]: "Branch Preview URL:"
+                                  - cell [ref=f54e914]:
+                                    - link "https://docs-themer.ant-design.pages.dev" [ref=f54e915] [cursor=pointer]:
+                                      - /url: https://docs-themer.ant-design.pages.dev
+                            - paragraph [ref=f54e916]:
+                              - link "View logs" [ref=f54e917] [cursor=pointer]:
+                                - /url: https://dash.cloudflare.com/?to=/e6395b6beb3487d0b05d2b606540a2d0/pages/view/ant-design/8f9961a9-df51-4b5d-88ae-2e7d8460408e
+                - generic [ref=f54e919]:
+                  - link [ref=f54e921] [cursor=pointer]:
+                    - /url: /apps/github-actions
+                    - img "@github-actions" [ref=f54e922]
+                  - generic [ref=f54e924]:
+                    - generic [ref=f54e925]:
+                      - heading "github-actions Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e926]:
+                        - generic [ref=f54e927]:
+                          - strong [ref=f54e928]:
+                            - link "github-actions" [ref=f54e929] [cursor=pointer]:
+                              - /url: /apps/github-actions
+                            - generic [ref=f54e930]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e931] [cursor=pointer]:
+                            - /url: "#issuecomment-3885267096"
+                          - generic [ref=f54e932]:
+                            - generic [ref=f54e933]: •
+                            - group [ref=f54e934]:
+                              - button "edited" [ref=f54e935] [cursor=pointer]
+                      - generic [ref=f54e939]:
+                        - group [ref=f54e941]:
+                          - button [ref=f54e942] [cursor=pointer]:
+                            - img "Show options" [ref=f54e945]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e948]: Contributor
+                    - table [ref=f54e952]:
+                      - rowgroup [ref=f54e953]:
+                        - row [ref=f54e954]:
+                          - cell [ref=f54e955]:
+                            - heading "size-limit report 📦" [level=2] [ref=f54e956]
+                            - table [ref=f54e958]:
+                              - rowgroup [ref=f54e959]:
+                                - row [ref=f54e960]:
+                                  - columnheader "Path" [ref=f54e961]
+                                  - columnheader "Size" [ref=f54e962]
+                              - rowgroup [ref=f54e963]:
+                                - row [ref=f54e964]:
+                                  - cell [ref=f54e965]:
+                                    - code [ref=f54e966]: dist/antd.min.js
+                                  - cell "430.29 KB (-44 B 🔽)" [ref=f54e967]
+                                - row [ref=f54e968]:
+                                  - cell [ref=f54e969]:
+                                    - code [ref=f54e970]: dist/antd-with-locales.min.js
+                                  - cell "503.69 KB (-43 B 🔽)" [ref=f54e971]
+                - generic [ref=f54e973]:
+                  - link [ref=f54e975] [cursor=pointer]:
+                    - /url: /apps/pkg-pr-new
+                    - img "@pkg-pr-new" [ref=f54e976]
+                  - generic [ref=f54e978]:
+                    - generic [ref=f54e979]:
+                      - heading "pkg-pr-new Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e980]:
+                        - generic [ref=f54e981]:
+                          - strong [ref=f54e982]:
+                            - link "pkg-pr-new" [ref=f54e983] [cursor=pointer]:
+                              - /url: /apps/pkg-pr-new
+                            - generic [ref=f54e984]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e985] [cursor=pointer]:
+                            - /url: "#issuecomment-3885271364"
+                          - generic [ref=f54e986]:
+                            - generic [ref=f54e987]: •
+                            - group [ref=f54e988]:
+                              - button "edited" [ref=f54e989] [cursor=pointer]
+                      - group [ref=f54e995]:
+                        - button [ref=f54e996] [cursor=pointer]:
+                          - img "Show options" [ref=f54e999]
+                    - table [ref=f54e1003]:
+                      - rowgroup [ref=f54e1004]:
+                        - row [ref=f54e1005]:
+                          - cell [ref=f54e1006]:
+                            - group [ref=f54e1007]:
+                              - generic "More templates" [ref=f54e1008] [cursor=pointer]
+                            - generic [ref=f54e1009]:
+                              - code [ref=f54e1011]: npm i https://pkg.pr.new/ant-design/ant-design/antd@56952
+                              - button "Copy code to clipboard" [ref=f54e1013] [cursor=pointer]
+                            - paragraph [ref=f54e1017]:
+                              - emphasis [ref=f54e1018]:
+                                - text: "commit:"
+                                - link [ref=f54e1019] [cursor=pointer]:
+                                  - /url: https://github.com/ant-design/ant-design/runs/64642821358
+                                  - code [ref=f54e1020]: 88a74cd
+                - generic [ref=f54e1026]:
+                  - link [ref=f54e1027] [cursor=pointer]:
+                    - /url: /afc163
+                    - img "@afc163" [ref=f54e1028]
+                  - link "afc163" [ref=f54e1029] [cursor=pointer]:
+                    - /url: /afc163
+                  - text: changed the title
+                  - deletion [ref=f54e1030]: Docs/themer
+                  - insertion [ref=f54e1031]: "docs: improve theme ai chat"
+                  - link "Feb 11, 2026on Feb 11" [ref=f54e1032] [cursor=pointer]:
+                    - /url: "#event-22707928407"
+                - generic [ref=f54e1034]:
+                  - link [ref=f54e1036] [cursor=pointer]:
+                    - /url: /apps/codecov
+                    - img "@codecov" [ref=f54e1037]
+                  - generic [ref=f54e1039]:
+                    - generic [ref=f54e1040]:
+                      - heading "codecov Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e1041]:
+                        - generic [ref=f54e1042]:
+                          - strong [ref=f54e1043]:
+                            - link "codecov" [ref=f54e1044] [cursor=pointer]:
+                              - /url: /apps/codecov
+                            - generic [ref=f54e1045]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e1046] [cursor=pointer]:
+                            - /url: "#issuecomment-3885292014"
+                          - generic [ref=f54e1047]:
+                            - generic [ref=f54e1048]: •
+                            - group [ref=f54e1049]:
+                              - button "edited" [ref=f54e1050] [cursor=pointer]
+                      - group [ref=f54e1056]:
+                        - button [ref=f54e1057] [cursor=pointer]:
+                          - img "Show options" [ref=f54e1060]
+                    - table [ref=f54e1064]:
+                      - rowgroup [ref=f54e1065]:
+                        - row [ref=f54e1066]:
+                          - cell [ref=f54e1067]:
+                            - heading [level=2] [ref=f54e1068]:
+                              - link "Bundle" [ref=f54e1069] [cursor=pointer]:
+                                - /url: https://app.codecov.io/gh/ant-design/ant-design/pull/56952?dropdown=bundle
+                              - text: Report
+                            - paragraph [ref=f54e1070]: Bundle size has no change ✅
+                - generic [ref=f54e1073]:
+                  - generic [ref=f54e1074]:
+                    - link [ref=f54e1075] [cursor=pointer]:
+                      - /url: /apps/coderabbitai
+                      - img "coderabbitai[bot]" [ref=f54e1076]
+                    - generic [ref=f54e1080]:
+                      - generic [ref=f54e1081]:
+                        - strong [ref=f54e1082]:
+                          - link "coderabbitai" [ref=f54e1083] [cursor=pointer]:
+                            - /url: /apps/coderabbitai
+                          - generic [ref=f54e1084]: Bot
+                        - text: reviewed
+                        - link "Feb 11, 2026on Feb 11" [ref=f54e1086] [cursor=pointer]:
+                          - /url: "#pullrequestreview-3785644466"
+                      - link "View reviewed changes" [ref=f54e1088] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1
+                  - generic [ref=f54e1093]:
+                    - generic [ref=f54e1094]:
+                      - heading "coderabbitai Bot left a comment" [level=3] [ref=f54e1095]:
+                        - generic [ref=f54e1096]:
+                          - strong [ref=f54e1097]:
+                            - link "coderabbitai" [ref=f54e1098] [cursor=pointer]:
+                              - /url: /apps/coderabbitai
+                            - generic [ref=f54e1099]: Bot
+                          - text: left a comment
+                      - generic [ref=f54e1100]:
+                        - group [ref=f54e1102]:
+                          - button [ref=f54e1103] [cursor=pointer]:
+                            - img "Show options" [ref=f54e1106]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e1109]: Contributor
+                    - generic [ref=f54e1113]:
+                      - paragraph [ref=f54e1114]:
+                        - strong [ref=f54e1115]: "Actionable comments posted: 9"
+                      - group [ref=f54e1116]:
+                        - generic "🤖 Fix all issues with AI agents" [ref=f54e1117] [cursor=pointer]
+                      - group [ref=f54e1118]:
+                        - generic "🧹 Nitpick comments (6)" [ref=f54e1119] [cursor=pointer]
+                  - generic [ref=f54e1121]:
+                    - generic [ref=f54e1124]:
+                      - button "Comment thread" [ref=f54e1125] [cursor=pointer]
+                      - generic [ref=f54e1126]:
+                        - link ".dumi/pages/index/components/Group.tsx" [ref=f54e1127] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-935d4f3f1f1185da224c9f1168ce1e28a667f4374033983d472a1b1923a14a7e
+                        - 'generic "Label: Outdated" [ref=f54e1128]': Outdated
+                      - button "Show resolved" [ref=f54e1129] [cursor=pointer]
+                    - generic [ref=f54e1134]:
+                      - button "Comment thread" [ref=f54e1135] [cursor=pointer]
+                      - link ".dumi/pages/index/components/ThemePreview/ComponentsBlock.tsx" [ref=f54e1137] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-7fac8ebd7389d7804f7f9cbe9d8b6926398419cfba32b1ccbb876abaa990b19f
+                      - button "Show resolved" [ref=f54e1138] [cursor=pointer]
+                    - generic [ref=f54e1143]:
+                      - button "Comment thread" [ref=f54e1144] [cursor=pointer]
+                      - link ".dumi/pages/index/components/ThemePreview/index.tsx" [ref=f54e1146] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480
+                      - button "Show resolved" [ref=f54e1147] [cursor=pointer]
+                    - generic [ref=f54e1152]:
+                      - button "Comment thread" [ref=f54e1153] [cursor=pointer]
+                      - link ".dumi/pages/index/components/ThemePreview/index.tsx" [ref=f54e1155] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480
+                      - button "Show resolved" [ref=f54e1156] [cursor=pointer]
+                    - generic [ref=f54e1160]:
+                      - generic [ref=f54e1161]:
+                        - button "Comment thread" [expanded] [ref=f54e1162] [cursor=pointer]
+                        - link ".dumi/pages/index/components/ThemePreview/index.tsx" [ref=f54e1164] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480
+                      - generic [ref=f54e1165]:
+                        - generic [ref=f54e1166]: Comment on lines 216 to 229
+                        - table [ref=f54e1170]:
+                          - rowgroup [ref=f54e1171]:
+                            - row [ref=f54e1172]:
+                              - cell "153" [ref=f54e1173] [cursor=pointer]
+                              - cell "216" [ref=f54e1174] [cursor=pointer]
+                              - cell "<div" [ref=f54e1175]
+                            - row [ref=f54e1177]:
+                              - cell "154" [ref=f54e1178] [cursor=pointer]
+                              - cell [ref=f54e1179] [cursor=pointer]
+                              - 'cell "- className={clsx(" [ref=f54e1180]'
+                            - row [ref=f54e1182]:
+                              - cell "155" [ref=f54e1183] [cursor=pointer]
+                              - cell [ref=f54e1184] [cursor=pointer]
+                              - cell "- styles.listItem," [ref=f54e1185]
+                            - row [ref=f54e1187]:
+                              - cell "156" [ref=f54e1188] [cursor=pointer]
+                              - cell [ref=f54e1189] [cursor=pointer]
+                              - cell "- activeName === theme.name && 'active'," [ref=f54e1190]
+                            - row [ref=f54e1192]:
+                              - cell "157" [ref=f54e1193] [cursor=pointer]
+                              - cell [ref=f54e1194] [cursor=pointer]
+                              - cell "- activeTheme?.bgImgDark && 'dark'," [ref=f54e1195]
+                            - row [ref=f54e1197]:
+                              - cell "158" [ref=f54e1198] [cursor=pointer]
+                              - cell [ref=f54e1199] [cursor=pointer]
+                              - 'cell "- )}" [ref=f54e1200]'
+                            - row [ref=f54e1202]:
+                              - cell "159" [ref=f54e1203] [cursor=pointer]
+                              - cell [ref=f54e1204] [cursor=pointer]
+                              - 'cell "- key={theme.name}" [ref=f54e1205]'
+                            - row [ref=f54e1207]:
+                              - cell [ref=f54e1208] [cursor=pointer]
+                              - cell "217" [ref=f54e1209] [cursor=pointer]
+                              - 'cell "+ className={clsx(styles.listItem)}" [ref=f54e1210]'
+                            - row [ref=f54e1212]:
+                              - cell "160" [ref=f54e1213] [cursor=pointer]
+                              - cell "218" [ref=f54e1214] [cursor=pointer]
+                              - cell "role=\"tab\"" [ref=f54e1215]
+                            - row [ref=f54e1217]:
+                              - cell "161" [ref=f54e1218] [cursor=pointer]
+                              - cell [ref=f54e1219] [cursor=pointer]
+                              - 'cell "- tabIndex={activeName === theme.name ? 0 : -1}" [ref=f54e1220]'
+                            - row [ref=f54e1222]:
+                              - cell "162" [ref=f54e1223] [cursor=pointer]
+                              - cell [ref=f54e1224] [cursor=pointer]
+                              - 'cell "- aria-selected={activeName === theme.name}" [ref=f54e1225]'
+                            - row [ref=f54e1227]:
+                              - cell "163" [ref=f54e1228] [cursor=pointer]
+                              - cell [ref=f54e1229] [cursor=pointer]
+                              - 'cell "- onClick={() => handleThemeClick(theme.name)}" [ref=f54e1230]'
+                            - row [ref=f54e1232]:
+                              - cell "164" [ref=f54e1233] [cursor=pointer]
+                              - cell [ref=f54e1234] [cursor=pointer]
+                              - 'cell "- onKeyDown={(event) => handleKeyDown(event, theme.name)}" [ref=f54e1235]'
+                            - row [ref=f54e1237]:
+                              - cell [ref=f54e1238] [cursor=pointer]
+                              - cell "219" [ref=f54e1239] [cursor=pointer]
+                              - 'cell "+ tabIndex={0}" [ref=f54e1240]'
+                            - row [ref=f54e1242]:
+                              - cell [ref=f54e1243] [cursor=pointer]
+                              - cell "220" [ref=f54e1244] [cursor=pointer]
+                              - 'cell "+ onClick={onOpenPromptDrawer}" [ref=f54e1245]'
+                            - row [ref=f54e1247]:
+                              - cell [ref=f54e1248] [cursor=pointer]
+                              - cell "221" [ref=f54e1249] [cursor=pointer]
+                              - 'cell "+ onKeyDown={(event) => {" [ref=f54e1250]'
+                            - row [ref=f54e1252]:
+                              - cell [ref=f54e1253] [cursor=pointer]
+                              - cell "222" [ref=f54e1254] [cursor=pointer]
+                              - 'cell "+ if (event.key === ''Enter'' || event.key === '' '') {" [ref=f54e1255]'
+                            - row [ref=f54e1257]:
+                              - cell [ref=f54e1258] [cursor=pointer]
+                              - cell "223" [ref=f54e1259] [cursor=pointer]
+                              - cell "+ event.preventDefault();" [ref=f54e1260]
+                            - row [ref=f54e1262]:
+                              - cell [ref=f54e1263] [cursor=pointer]
+                              - cell "224" [ref=f54e1264] [cursor=pointer]
+                              - cell "+ onOpenPromptDrawer?.();" [ref=f54e1265]
+                            - row [ref=f54e1267]:
+                              - cell [ref=f54e1268] [cursor=pointer]
+                              - cell "225" [ref=f54e1269] [cursor=pointer]
+                              - 'cell "+ }" [ref=f54e1270]'
+                            - row [ref=f54e1272]:
+                              - cell [ref=f54e1273] [cursor=pointer]
+                              - cell "226" [ref=f54e1274] [cursor=pointer]
+                              - 'cell "+ }}" [ref=f54e1275]'
+                            - row [ref=f54e1277]:
+                              - cell "165" [ref=f54e1278] [cursor=pointer]
+                              - cell "227" [ref=f54e1279] [cursor=pointer]
+                              - cell ">" [ref=f54e1280]
+                            - row [ref=f54e1282]:
+                              - cell "166" [ref=f54e1283] [cursor=pointer]
+                              - cell [ref=f54e1284] [cursor=pointer]
+                              - 'cell "- {theme.name}" [ref=f54e1285]'
+                            - row [ref=f54e1287]:
+                              - cell [ref=f54e1288] [cursor=pointer]
+                              - cell "228" [ref=f54e1289] [cursor=pointer]
+                              - 'cell "+ 🎨 {locale.aiGenerate}" [ref=f54e1290]'
+                            - row [ref=f54e1292]:
+                              - cell "167" [ref=f54e1293] [cursor=pointer]
+                              - cell "229" [ref=f54e1294] [cursor=pointer]
+                              - cell "</div>" [ref=f54e1295]
+                        - generic [ref=f54e1300]:
+                          - generic [ref=f54e1301]:
+                            - heading "@coderabbitai coderabbitai Bot Feb 11, 2026on Feb 11" [level=3] [ref=f54e1302]:
+                              - generic [ref=f54e1303]:
+                                - img "@coderabbitai" [ref=f54e1305]
+                                - strong [ref=f54e1306]:
+                                  - link "coderabbitai" [ref=f54e1307] [cursor=pointer]:
+                                    - /url: /apps/coderabbitai
+                                  - generic [ref=f54e1308]: Bot
+                                - link "Feb 11, 2026on Feb 11" [ref=f54e1309] [cursor=pointer]:
+                                  - /url: "#discussion_r2794025274"
+                            - generic [ref=f54e1310]:
+                              - group [ref=f54e1312]:
+                                - button [ref=f54e1313] [cursor=pointer]:
+                                  - img "Show options" [ref=f54e1316]
+                              - generic "This user has previously committed to the ant-design repository." [ref=f54e1319]: Contributor
+                          - generic [ref=f54e1324]:
+                            - paragraph [ref=f54e1325]:
+                              - emphasis [ref=f54e1326]: 🛠️ Refactor suggestion
+                              - text: "|"
+                              - emphasis [ref=f54e1327]: 🟠 Major
+                            - paragraph [ref=f54e1328]:
+                              - strong [ref=f54e1329]:
+                                - text: AI 生成主题项的
+                                - code [ref=f54e1330]: onClick
+                                - text: 缺少可选链调用，与
+                                - code [ref=f54e1331]: onKeyDown
+                                - text: 不一致。
+                            - paragraph [ref=f54e1332]:
+                              - text: Line 220 的
+                              - code [ref=f54e1333]: "onClick={onOpenPromptDrawer}"
+                              - text: 直接赋值，而 Line 224 的
+                              - code [ref=f54e1334]: onKeyDown
+                              - text: 中使用了
+                              - code [ref=f54e1335]: onOpenPromptDrawer?.()
+                              - text: 。如果
+                              - code [ref=f54e1336]: onOpenPromptDrawer
+                              - text: 为
+                              - code [ref=f54e1337]: undefined
+                              - text: ，点击事件不会报错（React 会忽略
+                              - code [ref=f54e1338]: undefined
+                              - text: handler），但为了一致性和防御性编码，建议统一使用可选链：
+                            - group [ref=f54e1339]:
+                              - generic "♻️ 建议修复" [ref=f54e1340] [cursor=pointer]
+                            - paragraph [ref=f54e1341]:
+                              - text: 此修复同时将遗漏的
+                              - code [ref=f54e1342]: aiGenerateItem
+                              - text: 样式和
+                              - code [ref=f54e1343]: ai-generate-item
+                              - text: 类名应用到元素上，解决前面提到的样式未使用问题。
+                            - group [ref=f54e1344]:
+                              - generic "📝 Committable suggestion" [ref=f54e1345] [cursor=pointer]
+                              - text: 216 - 217 - 218 - 219 - 220 - 221 - 222 - 223 - 224 - 225 - 226 - 227 - 228 - 229 - 230 - 231 - 232 - 233 - 234 - 235 - 236 - 237 - 238 - 239 - 240 - 216 + 217 + 218 + 219 + 220 + 221 + 222 + 223 + 224 + 225 + 226 + 227 + 228 + 229 +
+                            - group [ref=f54e1346]:
+                              - generic "🤖 Prompt for AI Agents" [ref=f54e1347] [cursor=pointer]
+                    - generic [ref=f54e1350]:
+                      - button "Comment thread" [ref=f54e1351] [cursor=pointer]
+                      - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e1353] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                      - button "Show resolved" [ref=f54e1354] [cursor=pointer]
+                    - generic [ref=f54e1359]:
+                      - button "Comment thread" [ref=f54e1360] [cursor=pointer]
+                      - link ".dumi/theme/common/ThemeSwitch/usePromptRecommend.ts" [ref=f54e1362] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-58f6a1600e4305bf29617962460f7efec80200675d2862347f7998254372e8af
+                      - button "Show resolved" [ref=f54e1363] [cursor=pointer]
+                    - generic [ref=f54e1368]:
+                      - button "Comment thread" [ref=f54e1369] [cursor=pointer]
+                      - link ".dumi/theme/common/ThemeSwitch/usePromptRecommend.ts" [ref=f54e1371] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-58f6a1600e4305bf29617962460f7efec80200675d2862347f7998254372e8af
+                      - button "Show resolved" [ref=f54e1372] [cursor=pointer]
+                    - generic [ref=f54e1377]:
+                      - button "Comment thread" [ref=f54e1378] [cursor=pointer]
+                      - link ".dumi/theme/common/ThemeSwitch/usePromptRecommend.ts" [ref=f54e1380] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1#diff-58f6a1600e4305bf29617962460f7efec80200675d2862347f7998254372e8af
+                      - button "Show resolved" [ref=f54e1381] [cursor=pointer]
+                - generic [ref=f54e1386]:
+                  - generic [ref=f54e1387]:
+                    - link [ref=f54e1388] [cursor=pointer]:
+                      - /url: /apps/gemini-code-assist
+                      - img "gemini-code-assist[bot]" [ref=f54e1389]
+                    - generic "Only reviews by reviewers with write access count toward mergeability" [ref=f54e1390]
+                    - generic [ref=f54e1393]:
+                      - generic [ref=f54e1394]:
+                        - strong [ref=f54e1395]:
+                          - link "gemini-code-assist" [ref=f54e1396] [cursor=pointer]:
+                            - /url: /apps/gemini-code-assist
+                          - generic [ref=f54e1397]: Bot
+                        - text: reviewed
+                        - link "Feb 11, 2026on Feb 11" [ref=f54e1399] [cursor=pointer]:
+                          - /url: "#pullrequestreview-3785652950"
+                      - link "View reviewed changes" [ref=f54e1401] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1
+                  - generic [ref=f54e1406]:
+                    - generic [ref=f54e1407]:
+                      - heading "gemini-code-assist Bot left a comment" [level=3] [ref=f54e1408]:
+                        - generic [ref=f54e1409]:
+                          - strong [ref=f54e1410]:
+                            - link "gemini-code-assist" [ref=f54e1411] [cursor=pointer]:
+                              - /url: /apps/gemini-code-assist
+                            - generic [ref=f54e1412]: Bot
+                          - text: left a comment
+                      - generic [ref=f54e1413]:
+                        - group [ref=f54e1415]:
+                          - button [ref=f54e1416] [cursor=pointer]:
+                            - img "Show options" [ref=f54e1419]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e1422]: Contributor
+                    - generic [ref=f54e1426]:
+                      - heading "Code Review" [level=2] [ref=f54e1427]
+                      - paragraph [ref=f54e1428]: "This PR introduces an AI theme generation feature. A security audit revealed two high-severity vulnerabilities: Improper Output Handling (potential XSS) due to unvalidated AI theme configurations, and Prompt Injection. Implementing input sanitization for prompts and strict output validation for AI-generated theme configurations is crucial. Additionally, improvements can be made in type safety, React best practices, and minor bug fixes. Please refer to the specific comments for detailed feedback."
+                      - group [ref=f54e1429]:
+                        - generic "I am having trouble creating individual review comments. Click here to see my feedback." [ref=f54e1430] [cursor=pointer]
+                - generic [ref=f54e1432]:
+                  - link [ref=f54e1434] [cursor=pointer]:
+                    - /url: /apps/codecov
+                    - img "@codecov" [ref=f54e1435]
+                  - generic [ref=f54e1437]:
+                    - generic [ref=f54e1438]:
+                      - heading "codecov Bot commented Feb 11, 2026on Feb 11 •" [level=3] [ref=f54e1439]:
+                        - generic [ref=f54e1440]:
+                          - strong [ref=f54e1441]:
+                            - link "codecov" [ref=f54e1442] [cursor=pointer]:
+                              - /url: /apps/codecov
+                            - generic [ref=f54e1443]: Bot
+                          - text: commented
+                          - link "Feb 11, 2026on Feb 11" [ref=f54e1444] [cursor=pointer]:
+                            - /url: "#issuecomment-3885331242"
+                          - generic [ref=f54e1445]:
+                            - generic [ref=f54e1446]: •
+                            - group [ref=f54e1447]:
+                              - button "edited" [ref=f54e1448] [cursor=pointer]
+                      - group [ref=f54e1454]:
+                        - button [ref=f54e1455] [cursor=pointer]:
+                          - img "Show options" [ref=f54e1458]
+                    - table [ref=f54e1462]:
+                      - rowgroup [ref=f54e1463]:
+                        - row [ref=f54e1464]:
+                          - cell "Codecov Report ✅ All modified and coverable lines are covered by tests. ✅ Project coverage is 100.00%. Comparing base (2670afa) to head (88a74cd). ⚠️ Report is 2 commits behind head on master. ☔ View full report in Codecov by Sentry. 📢 Have feedback on the report? Share it here." [ref=f54e1465]:
+                            - heading [level=2] [ref=f54e1466]:
+                              - link "Codecov" [ref=f54e1467] [cursor=pointer]:
+                                - /url: https://app.codecov.io/gh/ant-design/ant-design/pull/56952?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=ant-design
+                              - text: Report
+                            - paragraph [ref=f54e1468]:
+                              - text: ✅ All modified and coverable lines are covered by tests. ✅ Project coverage is 100.00%. Comparing base (
+                              - link [ref=f54e1469] [cursor=pointer]:
+                                - /url: https://app.codecov.io/gh/ant-design/ant-design/commit/2670afab7238cc1ced0dd8cda196e8c8e56bad25?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=ant-design
+                                - code [ref=f54e1470]: 2670afa
+                              - text: ) to head (
+                              - link [ref=f54e1471] [cursor=pointer]:
+                                - /url: https://app.codecov.io/gh/ant-design/ant-design/commit/88a74cd9e5b636ee10369a9f93a8928c9d97e27a?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=ant-design
+                                - code [ref=f54e1472]: 88a74cd
+                              - text: ).
+                              - generic [ref=f54e1473]: ⚠️
+                              - text: Report is 2 commits behind head on master.
+                            - group [ref=f54e1474]:
+                              - generic "Additional details and impacted files" [ref=f54e1475] [cursor=pointer]
+                            - paragraph [ref=f54e1476]:
+                              - link "☔ View full report in Codecov by Sentry" [ref=f54e1477] [cursor=pointer]:
+                                - /url: https://app.codecov.io/gh/ant-design/ant-design/pull/56952?dropdown=coverage&src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=ant-design
+                              - text: . 📢 Have feedback on the report?
+                              - link "Share it here" [ref=f54e1478] [cursor=pointer]:
+                                - /url: https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=ant-design
+                              - text: .
+                            - group [ref=f54e1479]:
+                              - generic "🚀 New features to boost your workflow:" [ref=f54e1480] [cursor=pointer]
+                - generic [ref=f54e1482]:
+                  - generic [ref=f54e1487]:
+                    - link "afc163" [ref=f54e1488] [cursor=pointer]:
+                      - /url: /afc163
+                    - text: and others added 4 commits
+                    - link "February 11, 2026 23:528 months ago" [ref=f54e1489] [cursor=pointer]:
+                      - /url: "#commits-pushed-23e2c4a"
+                  - generic [ref=f54e1490]:
+                    - generic [ref=f54e1498]:
+                      - link [ref=f54e1501] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1502]
+                      - code [ref=f54e1504]:
+                        - link "commit" [ref=f54e1505] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/23e2c4a4721bea425403a68409cb2c33073f48cd
+                      - button "Unverified" [ref=f54e1507] [cursor=pointer]
+                      - group [ref=f54e1512]:
+                        - img "22 / 39 checks OK" [ref=f54e1514] [cursor=pointer]
+                      - code [ref=f54e1517]:
+                        - link "23e2c4a" [ref=f54e1518] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/23e2c4a4721bea425403a68409cb2c33073f48cd
+                    - generic [ref=f54e1526]:
+                      - link [ref=f54e1529] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1530]
+                      - code [ref=f54e1532]:
+                        - link "Merge branch 'master' into docs/themer" [ref=f54e1533] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/3dbba0e639471bee2007d15368b098a291dd6e6d
+                      - button "Verified" [ref=f54e1535] [cursor=pointer]
+                      - group [ref=f54e1540]:
+                        - img "43 / 45 checks OK" [ref=f54e1542] [cursor=pointer]
+                      - code [ref=f54e1545]:
+                        - link "3dbba0e" [ref=f54e1546] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/3dbba0e639471bee2007d15368b098a291dd6e6d
+                    - generic [ref=f54e1554]:
+                      - generic [ref=f54e1556]:
+                        - link [ref=f54e1557] [cursor=pointer]:
+                          - /url: /afc163
+                          - img "@afc163" [ref=f54e1558]
+                        - link [ref=f54e1559] [cursor=pointer]:
+                          - /url: /claude
+                          - img "@claude" [ref=f54e1560]
+                      - generic [ref=f54e1561]:
+                        - code [ref=f54e1562]:
+                          - 'link "fix: resolve TypeScript errors in PromptDrawer" [ref=f54e1563] [cursor=pointer]':
+                            - /url: /ant-design/ant-design/pull/56952/commits/fde6fa97950930fb3fe546a73f64944a204a3926
+                        - button "Commit message body" [ref=f54e1565] [cursor=pointer]: …
+                      - button "Unverified" [ref=f54e1567] [cursor=pointer]
+                      - code [ref=f54e1572]:
+                        - link "fde6fa9" [ref=f54e1573] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/fde6fa97950930fb3fe546a73f64944a204a3926
+                    - generic [ref=f54e1581]:
+                      - link [ref=f54e1584] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1585]
+                      - code [ref=f54e1587]:
+                        - link "commit" [ref=f54e1588] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/276a8921cf198c07081b458efcbac874f94ab49b
+                      - button "Unverified" [ref=f54e1590] [cursor=pointer]
+                      - group [ref=f54e1595]:
+                        - img "39 / 43 checks OK" [ref=f54e1597] [cursor=pointer]
+                      - code [ref=f54e1600]:
+                        - link "276a892" [ref=f54e1601] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/276a8921cf198c07081b458efcbac874f94ab49b
+                - generic [ref=f54e1604]:
+                  - generic [ref=f54e1605]:
+                    - link [ref=f54e1606] [cursor=pointer]:
+                      - /url: /apps/coderabbitai
+                      - img "coderabbitai[bot]" [ref=f54e1607]
+                    - generic [ref=f54e1611]:
+                      - generic [ref=f54e1612]:
+                        - strong [ref=f54e1613]:
+                          - link "coderabbitai" [ref=f54e1614] [cursor=pointer]:
+                            - /url: /apps/coderabbitai
+                          - generic [ref=f54e1615]: Bot
+                        - text: reviewed
+                        - link "Feb 11, 2026on Feb 12" [ref=f54e1617] [cursor=pointer]:
+                          - /url: "#pullrequestreview-3785892499"
+                      - link "View reviewed changes" [ref=f54e1619] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/276a8921cf198c07081b458efcbac874f94ab49b
+                  - generic [ref=f54e1624]:
+                    - generic [ref=f54e1625]:
+                      - heading "coderabbitai Bot left a comment" [level=3] [ref=f54e1626]:
+                        - generic [ref=f54e1627]:
+                          - strong [ref=f54e1628]:
+                            - link "coderabbitai" [ref=f54e1629] [cursor=pointer]:
+                              - /url: /apps/coderabbitai
+                            - generic [ref=f54e1630]: Bot
+                          - text: left a comment
+                      - generic [ref=f54e1631]:
+                        - group [ref=f54e1633]:
+                          - button [ref=f54e1634] [cursor=pointer]:
+                            - img "Show options" [ref=f54e1637]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e1640]: Contributor
+                    - generic [ref=f54e1644]:
+                      - paragraph [ref=f54e1645]:
+                        - strong [ref=f54e1646]: "Actionable comments posted: 3"
+                      - group [ref=f54e1647]:
+                        - generic "🤖 Fix all issues with AI agents" [ref=f54e1648] [cursor=pointer]
+                      - group [ref=f54e1649]:
+                        - generic "🧹 Nitpick comments (1)" [ref=f54e1650] [cursor=pointer]
+                  - generic [ref=f54e1652]:
+                    - generic [ref=f54e1655]:
+                      - button "Comment thread" [ref=f54e1656] [cursor=pointer]
+                      - generic [ref=f54e1657]:
+                        - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e1658] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/276a8921cf198c07081b458efcbac874f94ab49b#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                        - 'generic "Label: Outdated" [ref=f54e1659]': Outdated
+                      - button "Show resolved" [ref=f54e1660] [cursor=pointer]
+                    - generic [ref=f54e1665]:
+                      - button "Comment thread" [ref=f54e1666] [cursor=pointer]
+                      - generic [ref=f54e1667]:
+                        - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e1668] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/276a8921cf198c07081b458efcbac874f94ab49b#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                        - 'generic "Label: Outdated" [ref=f54e1669]': Outdated
+                      - button "Show resolved" [ref=f54e1670] [cursor=pointer]
+                    - generic [ref=f54e1675]:
+                      - button "Comment thread" [ref=f54e1676] [cursor=pointer]
+                      - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e1678] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/276a8921cf198c07081b458efcbac874f94ab49b#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                      - button "Show resolved" [ref=f54e1679] [cursor=pointer]
+                - generic [ref=f54e1683]:
+                  - generic [ref=f54e1688]:
+                    - link "afc163" [ref=f54e1689] [cursor=pointer]:
+                      - /url: /afc163
+                    - text: and others added 2 commits
+                    - link "February 12, 2026 00:438 months ago" [ref=f54e1690] [cursor=pointer]:
+                      - /url: "#commits-pushed-7868764"
+                  - generic [ref=f54e1691]:
+                    - generic [ref=f54e1699]:
+                      - generic [ref=f54e1701]:
+                        - link [ref=f54e1702] [cursor=pointer]:
+                          - /url: /afc163
+                          - img "@afc163" [ref=f54e1703]
+                        - link [ref=f54e1704] [cursor=pointer]:
+                          - /url: /claude
+                          - img "@claude" [ref=f54e1705]
+                      - generic [ref=f54e1706]:
+                        - code [ref=f54e1707]:
+                          - 'link "fix: resolve AI bot review feedback" [ref=f54e1708] [cursor=pointer]':
+                            - /url: /ant-design/ant-design/pull/56952/commits/7868764b90c522b759f6df7aef08924da60d8553
+                        - button "Commit message body" [ref=f54e1710] [cursor=pointer]: …
+                      - button "Unverified" [ref=f54e1712] [cursor=pointer]
+                      - group [ref=f54e1717]:
+                        - img "19 / 39 checks OK" [ref=f54e1719] [cursor=pointer]
+                      - code [ref=f54e1722]:
+                        - link "7868764" [ref=f54e1723] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/7868764b90c522b759f6df7aef08924da60d8553
+                    - generic [ref=f54e1731]:
+                      - link [ref=f54e1734] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1735]
+                      - code [ref=f54e1737]:
+                        - link "Merge branch 'master' into docs/themer" [ref=f54e1738] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/4aadae9bf6ad802ee45111c46e22b637a68c06eb
+                      - button "Verified" [ref=f54e1740] [cursor=pointer]
+                      - group [ref=f54e1745]:
+                        - img "39 / 43 checks OK" [ref=f54e1747] [cursor=pointer]
+                      - code [ref=f54e1750]:
+                        - link "4aadae9" [ref=f54e1751] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/4aadae9bf6ad802ee45111c46e22b637a68c06eb
+                - generic [ref=f54e1754]:
+                  - generic [ref=f54e1755]:
+                    - link [ref=f54e1756] [cursor=pointer]:
+                      - /url: /apps/coderabbitai
+                      - img "coderabbitai[bot]" [ref=f54e1757]
+                    - generic [ref=f54e1761]:
+                      - generic [ref=f54e1762]:
+                        - strong [ref=f54e1763]:
+                          - link "coderabbitai" [ref=f54e1764] [cursor=pointer]:
+                            - /url: /apps/coderabbitai
+                          - generic [ref=f54e1765]: Bot
+                        - text: reviewed
+                        - link "Feb 11, 2026on Feb 12" [ref=f54e1767] [cursor=pointer]:
+                          - /url: "#pullrequestreview-3786050679"
+                      - link "View reviewed changes" [ref=f54e1769] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/4aadae9bf6ad802ee45111c46e22b637a68c06eb
+                  - generic [ref=f54e1774]:
+                    - generic [ref=f54e1775]:
+                      - heading "coderabbitai Bot left a comment" [level=3] [ref=f54e1776]:
+                        - generic [ref=f54e1777]:
+                          - strong [ref=f54e1778]:
+                            - link "coderabbitai" [ref=f54e1779] [cursor=pointer]:
+                              - /url: /apps/coderabbitai
+                            - generic [ref=f54e1780]: Bot
+                          - text: left a comment
+                      - generic [ref=f54e1781]:
+                        - group [ref=f54e1783]:
+                          - button [ref=f54e1784] [cursor=pointer]:
+                            - img "Show options" [ref=f54e1787]
+                        - generic "This user has previously committed to the ant-design repository." [ref=f54e1790]: Contributor
+                    - generic [ref=f54e1794]:
+                      - paragraph [ref=f54e1795]:
+                        - strong [ref=f54e1796]: "Actionable comments posted: 1"
+                      - group [ref=f54e1797]:
+                        - generic "🤖 Fix all issues with AI agents" [ref=f54e1798] [cursor=pointer]
+                      - group [ref=f54e1799]:
+                        - generic "🧹 Nitpick comments (9)" [ref=f54e1800] [cursor=pointer]
+                  - generic [ref=f54e1805]:
+                    - button "Comment thread" [ref=f54e1806] [cursor=pointer]
+                    - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e1808] [cursor=pointer]:
+                      - /url: /ant-design/ant-design/pull/56952/files/4aadae9bf6ad802ee45111c46e22b637a68c06eb#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                    - button "Show resolved" [ref=f54e1809] [cursor=pointer]
+                - generic [ref=f54e1813]:
+                  - generic [ref=f54e1818]:
+                    - link "afc163" [ref=f54e1819] [cursor=pointer]:
+                      - /url: /afc163
+                    - text: added 2 commits
+                    - link "February 24, 2026 15:018 months ago" [ref=f54e1820] [cursor=pointer]:
+                      - /url: "#commits-pushed-bbdd6e5"
+                  - generic [ref=f54e1821]:
+                    - generic [ref=f54e1829]:
+                      - link [ref=f54e1832] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1833]
+                      - code [ref=f54e1835]:
+                        - link "Merge branch 'master' into docs/themer" [ref=f54e1836] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/bbdd6e53f79a49f5cfee0255f5a4563669de5964
+                      - button "Verified" [ref=f54e1838] [cursor=pointer]
+                      - group [ref=f54e1843]:
+                        - img "37 / 44 checks OK" [ref=f54e1845] [cursor=pointer]
+                      - code [ref=f54e1848]:
+                        - link "bbdd6e5" [ref=f54e1849] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/bbdd6e53f79a49f5cfee0255f5a4563669de5964
+                    - generic [ref=f54e1857]:
+                      - link [ref=f54e1860] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e1861]
+                      - generic [ref=f54e1862]:
+                        - code [ref=f54e1863]:
+                          - link "Update ColorTrigger.tsx" [ref=f54e1864] [cursor=pointer]:
+                            - /url: /ant-design/ant-design/pull/56952/commits/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+                        - button "Commit message body" [ref=f54e1866] [cursor=pointer]: …
+                      - button "Verified" [ref=f54e1868] [cursor=pointer]
+                      - group [ref=f54e1873]:
+                        - img "46 / 48 checks OK" [ref=f54e1875] [cursor=pointer]
+                      - code [ref=f54e1878]:
+                        - link "88a74cd" [ref=f54e1879] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/commits/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+                - generic [ref=f54e1882]:
+                  - generic [ref=f54e1883]:
+                    - link [ref=f54e1884] [cursor=pointer]:
+                      - /url: /apps/cursor
+                      - img "cursor[bot]" [ref=f54e1885]
+                    - generic [ref=f54e1889]:
+                      - generic [ref=f54e1890]:
+                        - strong [ref=f54e1891]:
+                          - link "cursor" [ref=f54e1892] [cursor=pointer]:
+                            - /url: /apps/cursor
+                          - generic [ref=f54e1893]: Bot
+                        - text: reviewed
+                        - link "Feb 24, 2026on Feb 24" [ref=f54e1895] [cursor=pointer]:
+                          - /url: "#pullrequestreview-3845678107"
+                      - link "View reviewed changes" [ref=f54e1897] [cursor=pointer]:
+                        - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+                  - generic [ref=f54e1902]:
+                    - generic [ref=f54e1903]:
+                      - heading "cursor Bot left a comment" [level=3] [ref=f54e1904]:
+                        - generic [ref=f54e1905]:
+                          - strong [ref=f54e1906]:
+                            - link "cursor" [ref=f54e1907] [cursor=pointer]:
+                              - /url: /apps/cursor
+                            - generic [ref=f54e1908]: Bot
+                          - text: left a comment
+                      - group [ref=f54e1911]:
+                        - button [ref=f54e1912] [cursor=pointer]:
+                          - img "Show options" [ref=f54e1915]
+                    - generic [ref=f54e1919]:
+                      - paragraph [ref=f54e1920]: Cursor Bugbot has reviewed your changes and found 3 potential issues.
+                      - paragraph [ref=f54e1921]:
+                        - superscript [ref=f54e1922]:
+                          - text: Bugbot Autofix is OFF. To automatically fix reported issues with Cloud Agents, enable Autofix in the
+                          - link "Cursor dashboard" [ref=f54e1923] [cursor=pointer]:
+                            - /url: https://www.cursor.com/dashboard?tab=bugbot
+                          - text: .
+                      - heading "This is the final PR Bugbot will review for you during this billing cycle" [level=3] [ref=f54e1924]
+                      - paragraph [ref=f54e1925]: Your free Bugbot reviews will reset on March 21
+                      - group [ref=f54e1926]:
+                        - generic "Details" [ref=f54e1927] [cursor=pointer]
+                  - generic [ref=f54e1929]:
+                    - generic [ref=f54e1931]:
+                      - generic [ref=f54e1932]:
+                        - button "Comment thread" [expanded] [ref=f54e1933] [cursor=pointer]
+                        - link ".dumi/pages/index/components/ThemePreview/index.tsx" [ref=f54e1935] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a#diff-f14b84f6572a05c04bf618106eb2c4b851e516eb2bd47b38c7950c507c6af480
+                      - generic [ref=f54e1936]:
+                        - table [ref=f54e1939]:
+                          - rowgroup [ref=f54e1940]:
+                            - row [ref=f54e1941]:
+                              - cell "157" [ref=f54e1942] [cursor=pointer]
+                              - cell [ref=f54e1943] [cursor=pointer]
+                              - cell "- activeTheme?.bgImgDark && 'dark'," [ref=f54e1944]
+                            - row [ref=f54e1946]:
+                              - cell "158" [ref=f54e1947] [cursor=pointer]
+                              - cell [ref=f54e1948] [cursor=pointer]
+                              - 'cell "- )}" [ref=f54e1949]'
+                            - row [ref=f54e1951]:
+                              - cell "159" [ref=f54e1952] [cursor=pointer]
+                              - cell [ref=f54e1953] [cursor=pointer]
+                              - 'cell "- key={theme.name}" [ref=f54e1954]'
+                            - row [ref=f54e1956]:
+                              - cell [ref=f54e1957] [cursor=pointer]
+                              - cell "216" [ref=f54e1958] [cursor=pointer]
+                              - 'cell "+ className={clsx(styles.listItem, styles.aiGenerateItem, ''ai-generate-item'')}" [ref=f54e1959]'
+                        - generic [ref=f54e1964]:
+                          - generic [ref=f54e1965]:
+                            - heading "@cursor cursor Bot Feb 24, 2026on Feb 24" [level=3] [ref=f54e1966]:
+                              - generic [ref=f54e1967]:
+                                - img "@cursor" [ref=f54e1969]
+                                - strong [ref=f54e1970]:
+                                  - link "cursor" [ref=f54e1971] [cursor=pointer]:
+                                    - /url: /apps/cursor
+                                  - generic [ref=f54e1972]: Bot
+                                - link "Feb 24, 2026on Feb 24" [ref=f54e1973] [cursor=pointer]:
+                                  - /url: "#discussion_r2845022388"
+                            - group [ref=f54e1976]:
+                              - button [ref=f54e1977] [cursor=pointer]:
+                                - img "Show options" [ref=f54e1980]
+                          - generic [ref=f54e1985]:
+                            - heading "AI generate item invisible on dark theme backgrounds" [level=3] [ref=f54e1986]
+                            - paragraph [ref=f54e1987]:
+                              - strong [ref=f54e1988]: Medium Severity
+                            - paragraph [ref=f54e1989]:
+                              - text: The AI generate item's
+                              - code [ref=f54e1990]: className
+                              - text: is missing the
+                              - code [ref=f54e1991]: dark
+                              - text: class that all other list items conditionally receive via
+                              - code [ref=f54e1992]: activeTheme?.bgImgDark && 'dark'
+                              - text: . When a dark-background theme is active (Dark, Glass, or Geek), regular list items switch to light text colors through the
+                              - code [ref=f54e1993]: .dark
+                              - text: CSS class, but the AI generate item keeps its default
+                              - code [ref=f54e1994]: colorTextSecondary
+                              - text: — making its text unreadable against the dark background image.
+                            - paragraph [ref=f54e1995]:
+                              - link [ref=f54e1996] [cursor=pointer]:
+                                - /url: https://cursor.com/open?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9DVVJTT1IiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmZkYzVjOGMzLTI4YmYtNDU3Ni1iMjVhLTk5MzZhZjYyNWRiZCIsImVuY3J5cHRpb25LZXkiOiI1dC1fRjZhN0tESTYxMTl5OXNLX3hlWjcyVlc1d3d0UDU1MGtzOHgyY1RZIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIn0sImlhdCI6MTc3MTkxNzc2MiwiZXhwIjoxNzc0NTA5NzYyfQ.CX-PnAU2bOkuMtcOYdBp_gp7t6dy3QQDX_1n0REF5knB7WOtg6_QewONnDgHnZjoqFoMyBYra1Iinfn1W65N3eJigjldIUeFDIFSqHTYsieV9Sud_0ijgEYW-lee-vah4s4Z-smr2CWsLdHFTZdrDBwiPOHKj5HuJZ2x0dnyOnDIJoSfhsZxT42ndLEf1RQw0QPCy2bNW3uwMOq7O6GWigjTz-pdeAfW51nCWmybZSm1DtoEUdMg2Y2fgPaVpEWm1Z-AZph6h6jV3i2poMIiVfSbRrxWdN66-4VOpalrCYRFjXXNR1NIRyxTO8iUkAOmiC47pfgqWSaX9RGTlud6JA
+                                - img "Fix in Cursor" [ref=f54e1999]
+                              - link [ref=f54e2000] [cursor=pointer]:
+                                - /url: https://cursor.com/agents?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9XRUIiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmZkYzVjOGMzLTI4YmYtNDU3Ni1iMjVhLTk5MzZhZjYyNWRiZCIsImVuY3J5cHRpb25LZXkiOiI1dC1fRjZhN0tESTYxMTl5OXNLX3hlWjcyVlc1d3d0UDU1MGtzOHgyY1RZIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIiwicHJOdW1iZXIiOjU2OTUyLCJjb21taXRTaGEiOiI4OGE3NGNkOWU1YjYzNmVlMTAzNjlhOWY5M2E4OTI4YzlkOTdlMjdhIiwicHJvdmlkZXIiOiJnaXRodWIifSwiaWF0IjoxNzcxOTE3NzYyLCJleHAiOjE3NzQ1MDk3NjJ9.SpaiVyaq9hE9P0aMaBX0L9Ra5w_BWjfNxmQJg27i18L5XA2CCOyhWZZ025lmeR5EmJ5vuve4c7qTlo9aqb1dpffqvGkeR8_TbUFNNP6xL8idSZscDOSkPcqVmbcXZNlHWDs72BCqIiIXhIa4tVkcvgIm1RbecMn3jcx1flRnOfhZOHRhx8FghPEx35GpsgBr9W9ZcaSPAPVvlJDypTMXVUWpZOmXb0mQXp2muY7HBu7BK_wMo15yNgMZUHFgGpJ4UTpi2mFPa7DEhoEtmumaQti8UiMOE97krwAgLyYJOReENBdGTTjt4CY-sCkEMEYvWUFfY3tCyw5aYnQEdeZ7VA
+                                - img "Fix in Web" [ref=f54e2003]
+                    - generic [ref=f54e2005]:
+                      - generic [ref=f54e2006]:
+                        - button "Comment thread" [expanded] [ref=f54e2007] [cursor=pointer]
+                        - link ".dumi/theme/common/ThemeSwitch/usePromptRecommend.ts" [ref=f54e2009] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a#diff-58f6a1600e4305bf29617962460f7efec80200675d2862347f7998254372e8af
+                      - generic [ref=f54e2010]:
+                        - table [ref=f54e2012]:
+                          - rowgroup [ref=f54e2013]:
+                            - row [ref=f54e2014]:
+                              - cell [ref=f54e2015] [cursor=pointer]
+                              - cell "152" [ref=f54e2016] [cursor=pointer]
+                              - cell "+ abortControllerRef.current = null;" [ref=f54e2017]
+                            - row [ref=f54e2019]:
+                              - cell [ref=f54e2020] [cursor=pointer]
+                              - cell "153" [ref=f54e2021] [cursor=pointer]
+                              - 'cell "+ }" [ref=f54e2022]'
+                            - row [ref=f54e2024]:
+                              - cell [ref=f54e2025] [cursor=pointer]
+                              - cell "154" [ref=f54e2026] [cursor=pointer]
+                              - 'cell "+ }" [ref=f54e2027]'
+                            - row [ref=f54e2029]:
+                              - cell [ref=f54e2030] [cursor=pointer]
+                              - cell "155" [ref=f54e2031] [cursor=pointer]
+                              - 'cell "+ };" [ref=f54e2032]'
+                        - generic [ref=f54e2037]:
+                          - generic [ref=f54e2038]:
+                            - heading "@cursor cursor Bot Feb 24, 2026on Feb 24" [level=3] [ref=f54e2039]:
+                              - generic [ref=f54e2040]:
+                                - img "@cursor" [ref=f54e2042]
+                                - strong [ref=f54e2043]:
+                                  - link "cursor" [ref=f54e2044] [cursor=pointer]:
+                                    - /url: /apps/cursor
+                                  - generic [ref=f54e2045]: Bot
+                                - link "Feb 24, 2026on Feb 24" [ref=f54e2046] [cursor=pointer]:
+                                  - /url: "#discussion_r2845022391"
+                            - group [ref=f54e2049]:
+                              - button [ref=f54e2050] [cursor=pointer]:
+                                - img "Show options" [ref=f54e2053]
+                          - generic [ref=f54e2058]:
+                            - heading [level=3] [ref=f54e2059]:
+                              - text: Unstable
+                              - code [ref=f54e2060]: fetch
+                              - text: reference defeats downstream memoization
+                            - paragraph [ref=f54e2061]:
+                              - strong [ref=f54e2062]: Low Severity
+                            - paragraph [ref=f54e2063]:
+                              - text: The
+                              - code [ref=f54e2064]: fetch
+                              - text: function returned from
+                              - code [ref=f54e2065]: usePromptRecommend
+                              - text: is not wrapped in
+                              - code [ref=f54e2066]: useCallback
+                              - text: ", creating a new reference every render. It's used as"
+                              - code [ref=f54e2067]: fetchRecommendations
+                              - text: in
+                              - code [ref=f54e2068]: PromptDrawer.tsx
+                              - text: and listed as a dependency of
+                              - code [ref=f54e2069]: handleRefreshRecommendations
+                              - text: (
+                              - code [ref=f54e2070]: useCallback
+                              - text: ),
+                              - code [ref=f54e2071]: items
+                              - text: (
+                              - code [ref=f54e2072]: useMemo
+                              - text: ), and
+                              - code [ref=f54e2073]: renderedPrompts
+                              - text: (
+                              - code [ref=f54e2074]: useMemo
+                              - text: ), causing all of them to recompute on every render and defeating their intended memoization.
+                            - group [ref=f54e2075]:
+                              - generic "Additional Locations (1)" [ref=f54e2076] [cursor=pointer]
+                            - paragraph [ref=f54e2077]:
+                              - link [ref=f54e2078] [cursor=pointer]:
+                                - /url: https://cursor.com/open?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9DVVJTT1IiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OjgzN2IxMDdjLTUyZWItNDIxMC1hY2ExLWM3NDM5ZTQyZTVjZSIsImVuY3J5cHRpb25LZXkiOiJLTmpQOThtTXNsLXZQbnc3YmowS3dYMTFaQk9yRXp0X2tNUUdrM1R5OHhzIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIn0sImlhdCI6MTc3MTkxNzc2MiwiZXhwIjoxNzc0NTA5NzYyfQ.c_mp4krBMTd9DQQS1Z6vjWdEKQtRUJeYF_wTKwspA9UYUh-FjTx4AWDAt06OBVttwt4oSzx6-I23vDp5gehut6IIkvnnZkoGdGnuCHfTQGP6cMD60PrrxIQby7k9pNkg4jV-LJG5FEAG8GfN8dN_QKP3UtUFdCt-vtvd1CtngX7a4kHHketqOiFYwlmVtl1qgtKQKtv4HC52aLhx4zZwLmebIQHd_rLylxVkokSt1cS3wWj0U5JZ9ZSVKgAnIY8GeeXxOVFPgZKutmbASgWVkf-O5mdjMclCGTw1JKj6JlzdpatXVYAjkXAe9Hb3Dw7fvwk01SPQaexyF5KJ7EjWzg
+                                - img "Fix in Cursor" [ref=f54e2081]
+                              - link [ref=f54e2082] [cursor=pointer]:
+                                - /url: https://cursor.com/agents?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9XRUIiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OjgzN2IxMDdjLTUyZWItNDIxMC1hY2ExLWM3NDM5ZTQyZTVjZSIsImVuY3J5cHRpb25LZXkiOiJLTmpQOThtTXNsLXZQbnc3YmowS3dYMTFaQk9yRXp0X2tNUUdrM1R5OHhzIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIiwicHJOdW1iZXIiOjU2OTUyLCJjb21taXRTaGEiOiI4OGE3NGNkOWU1YjYzNmVlMTAzNjlhOWY5M2E4OTI4YzlkOTdlMjdhIiwicHJvdmlkZXIiOiJnaXRodWIifSwiaWF0IjoxNzcxOTE3NzYyLCJleHAiOjE3NzQ1MDk3NjJ9.OcTorIcoGcne7mZW0Wd0am1Su2mp-vNUrvH_KoCIfrb-1tbhorN7c_cJsGiGebiwrT0cqP7DGEfxTte-ZoG6xN_Q4J4XSdV4I0fr6rnmImRDF8Chs0IQSR_xBCrpwm6Hl4UkI_pmkBH_nYTsRil5hk07NWvWr270I5mHqMeY_Cx-8HbPmm49hvMzwPxXeIcEiZ4hCgj1QhpD2CFg7E8yAnjQRcST7mHkBk1ghb4tMbE_PZCBnfp-khzPezs1GStXyl8_CUSVUWryklmqbGCLwpEEvVvZXwsw-4slwTSiJfyV_HXAoW61CZn3Vq2Z69WNeQ3Q6uBmgX086OXWkvs6Rw
+                                - img "Fix in Web" [ref=f54e2085]
+                    - generic [ref=f54e2087]:
+                      - generic [ref=f54e2088]:
+                        - button "Comment thread" [expanded] [ref=f54e2089] [cursor=pointer]
+                        - link ".dumi/theme/common/ThemeSwitch/PromptDrawer.tsx" [ref=f54e2091] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a#diff-712fe5ef5ea5648a7c60ba86eeecf78bf10efcd652883521c7f4943122066d8a
+                      - generic [ref=f54e2092]:
+                        - table [ref=f54e2094]:
+                          - rowgroup [ref=f54e2095]:
+                            - row [ref=f54e2096]:
+                              - cell [ref=f54e2097] [cursor=pointer]
+                              - cell "207" [ref=f54e2098] [cursor=pointer]
+                              - 'cell "+ }" [ref=f54e2099]'
+                            - row [ref=f54e2101]:
+                              - cell [ref=f54e2102] [cursor=pointer]
+                              - cell "208" [ref=f54e2103] [cursor=pointer]
+                              - 'cell "+ }}" [ref=f54e2104]'
+                            - row [ref=f54e2106]:
+                              - cell [ref=f54e2107] [cursor=pointer]
+                              - cell "209" [ref=f54e2108] [cursor=pointer]
+                              - 'cell "+ styles={{ root: { marginTop: 8 } }}" [ref=f54e2109]'
+                            - row [ref=f54e2111]:
+                              - cell [ref=f54e2112] [cursor=pointer]
+                              - cell "210" [ref=f54e2113] [cursor=pointer]
+                              - cell "+ />" [ref=f54e2114]
+                        - generic [ref=f54e2119]:
+                          - generic [ref=f54e2120]:
+                            - heading "@cursor cursor Bot Feb 24, 2026on Feb 24" [level=3] [ref=f54e2121]:
+                              - generic [ref=f54e2122]:
+                                - img "@cursor" [ref=f54e2124]
+                                - strong [ref=f54e2125]:
+                                  - link "cursor" [ref=f54e2126] [cursor=pointer]:
+                                    - /url: /apps/cursor
+                                  - generic [ref=f54e2127]: Bot
+                                - link "Feb 24, 2026on Feb 24" [ref=f54e2128] [cursor=pointer]:
+                                  - /url: "#discussion_r2845022395"
+                            - group [ref=f54e2131]:
+                              - button [ref=f54e2132] [cursor=pointer]:
+                                - img "Show options" [ref=f54e2135]
+                          - generic [ref=f54e2140]:
+                            - heading "Duplicated prompt item creation and click handling" [level=3] [ref=f54e2141]
+                            - paragraph [ref=f54e2142]:
+                              - strong [ref=f54e2143]: Low Severity
+                            - paragraph [ref=f54e2144]:
+                              - text: The logic for building prompt items (mapping recommendations with
+                              - code [ref=f54e2145]: getEmojiForTheme
+                              - text: ", adding"
+                              - code [ref=f54e2146]: originalDescription
+                              - text: ", appending a refresh button) and the"
+                              - code [ref=f54e2147]: onItemClick
+                              - text: handler (checking
+                              - code [ref=f54e2148]: isRefresh
+                              - text: ", falling back from"
+                              - code [ref=f54e2149]: originalDescription
+                              - text: to
+                              - code [ref=f54e2150]: description
+                              - text: ") are duplicated across three places: the"
+                              - code [ref=f54e2151]: items
+                              - text: useMemo (post-generation bubbles), the
+                              - code [ref=f54e2152]: prompts
+                              - text: useMemo (welcome screen data), and the
+                              - code [ref=f54e2153]: renderedPrompts
+                              - text: useMemo (welcome screen render). This increases maintenance burden and risks inconsistent behavior if one copy is updated without the others.
+                            - group [ref=f54e2154]:
+                              - generic "Additional Locations (1)" [ref=f54e2155] [cursor=pointer]
+                            - paragraph [ref=f54e2156]:
+                              - link [ref=f54e2157] [cursor=pointer]:
+                                - /url: https://cursor.com/open?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9DVVJTT1IiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmFmZjQ4YWEyLWU5NzYtNDgxMC1hOGFhLTkxMTY1MDBmZjY2NCIsImVuY3J5cHRpb25LZXkiOiI4M3h6eTRINkVLc3FaZEhuRFctXzBHaXZuNUJFNDJEQmRJa3c2R09FckpFIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIn0sImlhdCI6MTc3MTkxNzc2MiwiZXhwIjoxNzc0NTA5NzYyfQ.rSGSQL2ibJrI2Yj6cY8mOfDXFuvQ-5YgTTlyGTpJB70Papqqx4b0fY--YSpeb9NL9ViaXp1mtP2YX7Xr1e4xhAwl2KCNhTKe7d8jtDKhl12QYpes2RD_PR1geg8EzMzjH5gxwsR6V_ZoW4Ws-pg-B0ikNBtGmoeyWM8wR2mpeuZUS66NsrKgVzFfO151kAp8SXfwI66bhJboZsv5T76HsycKKkSmc_FKW1G31DY6QTWy5oL8AvWkkqvPvqF6bdm7-dP8FaVGqwB5sBgY9xKRA-0nK97g9h_K0oEmr7HZRY8p0JlDeH4CfoVQ6Md3R8oCP2NbuC83Xq7EbCxDJZobOg
+                                - img "Fix in Cursor" [ref=f54e2160]
+                              - link [ref=f54e2161] [cursor=pointer]:
+                                - /url: https://cursor.com/agents?data=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJ1Z2JvdC12MiJ9.eyJ2ZXJzaW9uIjoxLCJ0eXBlIjoiQlVHQk9UX0ZJWF9JTl9XRUIiLCJkYXRhIjp7InJlZGlzS2V5IjoiYnVnYm90OmFmZjQ4YWEyLWU5NzYtNDgxMC1hOGFhLTkxMTY1MDBmZjY2NCIsImVuY3J5cHRpb25LZXkiOiI4M3h6eTRINkVLc3FaZEhuRFctXzBHaXZuNUJFNDJEQmRJa3c2R09FckpFIiwiYnJhbmNoIjoiZG9jcy90aGVtZXIiLCJyZXBvT3duZXIiOiJhbnQtZGVzaWduIiwicmVwb05hbWUiOiJhbnQtZGVzaWduIiwicHJOdW1iZXIiOjU2OTUyLCJjb21taXRTaGEiOiI4OGE3NGNkOWU1YjYzNmVlMTAzNjlhOWY5M2E4OTI4YzlkOTdlMjdhIiwicHJvdmlkZXIiOiJnaXRodWIifSwiaWF0IjoxNzcxOTE3NzYyLCJleHAiOjE3NzQ1MDk3NjJ9.DKFynkAaQQqNmhJDZMUaj08z13bQFAEiWeGQf-T00Lwp9H3HGv2R5XKw4rUoqIC0y5c6bcBUoe_d74U8MKETt4iU2YSC98q1Tnh79P2ddEG4vOlJC5N58my_BAvHDyn-iNCMfLKAPaRGRIUpia72K0_vtdQPYHN3IZeperLTsupdZl-0XqshdIHjSV9dwP3j4xDVhWsXSK7ZyGXbsuOQAStUrfDtuMlxebV446WRnnMDN--oHULuUf414-CJ53FylNKl7S_IFF3tQqr1ykaZqdb3lOjs2ox5gZsabPU2JColEkCmLbEaQnqqHrpWRCrs67H0uF9H_oKMdI6JXLDfng
+                                - img "Fix in Web" [ref=f54e2164]
+                - generic [ref=f54e2168]:
+                  - link [ref=f54e2169] [cursor=pointer]:
+                    - /url: /meet-student
+                    - img "meet-student" [ref=f54e2170]
+                  - generic [ref=f54e2174]:
+                    - generic [ref=f54e2175]:
+                      - strong [ref=f54e2176]:
+                        - link "meet-student" [ref=f54e2177] [cursor=pointer]:
+                          - /url: /meet-student
+                      - text: approved these changes
+                      - link "Feb 24, 2026on Feb 24" [ref=f54e2179] [cursor=pointer]:
+                        - /url: "#pullrequestreview-3845678099"
+                    - link "View reviewed changes" [ref=f54e2181] [cursor=pointer]:
+                      - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+                - generic [ref=f54e2184]:
+                  - generic [ref=f54e2189]:
+                    - link [ref=f54e2190] [cursor=pointer]:
+                      - /url: /apps/dosubot
+                      - img "@dosubot" [ref=f54e2191]
+                    - link "dosubot" [ref=f54e2192] [cursor=pointer]:
+                      - /url: /apps/dosubot
+                    - generic [ref=f54e2193]: Bot
+                    - text: added the
+                    - link "lgtm" [ref=f54e2194] [cursor=pointer]:
+                      - /url: /ant-design/ant-design/issues?q=state%3Aopen%20label%3Algtm
+                    - text: label
+                    - link "Feb 24, 2026on Feb 24" [ref=f54e2195] [cursor=pointer]:
+                      - /url: "#event-23024581526"
+                  - generic [ref=f54e2200]:
+                    - button "View details" [ref=f54e2201] [cursor=pointer]
+                    - generic [ref=f54e2202]:
+                      - link [ref=f54e2204] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e2205]
+                      - generic [ref=f54e2206]:
+                        - link "afc163" [ref=f54e2207] [cursor=pointer]:
+                          - /url: /afc163
+                        - text: merged commit
+                        - link [ref=f54e2208] [cursor=pointer]:
+                          - /url: /ant-design/ant-design/commit/decf297691161283cca4149d06d3ba7286129b57
+                          - code [ref=f54e2209]: decf297
+                        - text: into
+                        - generic [ref=f54e2210]: master
+                        - link "Feb 24, 2026on Feb 24" [ref=f54e2212] [cursor=pointer]:
+                          - /url: https://github.com/ant-design/ant-design/pull/56952#event-23024634546
+                        - generic [ref=f54e2213]: 49 checks passed
+                  - generic [ref=f54e2220]:
+                    - link [ref=f54e2222] [cursor=pointer]:
+                      - /url: /afc163
+                      - img "@afc163" [ref=f54e2223]
+                    - generic [ref=f54e2224]:
+                      - link "afc163" [ref=f54e2225] [cursor=pointer]:
+                        - /url: /afc163
+                      - text: deleted the
+                      - generic [ref=f54e2226]: docs/themer
+                      - text: branch
+                      - link "February 24, 2026 07:258 months ago" [ref=f54e2228] [cursor=pointer]:
+                        - /url: "#event-23024635335"
+                  - generic [ref=f54e2233]:
+                    - generic [ref=f54e2234]:
+                      - link [ref=f54e2235] [cursor=pointer]:
+                        - /url: /afc163
+                        - img "@afc163" [ref=f54e2236]
+                      - link "afc163" [ref=f54e2237] [cursor=pointer]:
+                        - /url: /afc163
+                      - text: mentioned this pull request
+                      - link "Mar 9, 2026on Mar 9" [ref=f54e2238] [cursor=pointer]:
+                        - /url: "#ref-issue-3868250860"
+                    - generic [ref=f54e2239]:
+                      - 'link "AI 生成主题 - 反馈 #56792" [ref=f54e2241] [cursor=pointer]':
+                        - /url: /ant-design/ant-design/issues/56792
+                      - 'generic "Status: Closed" [ref=f54e2243]': Closed
+                    - generic [ref=f54e2248]:
+                      - 'img "Progress: 100.0%" [ref=f54e2250]'
+                      - generic [ref=f54e2253]: 4 tasks done
+            - generic [ref=f54e2257]:
+              - link "Sign up for free" [ref=f54e2258] [cursor=pointer]:
+                - /url: /join?source=comment-repo
+              - strong [ref=f54e2259]: to join this conversation on GitHub
+              - text: . Already have an account?
+              - link "Sign in to comment" [ref=f54e2260] [cursor=pointer]:
+                - /url: /login?return_to=https%3A%2F%2Fgithub.com%2Fant-design%2Fant-design%2Fpull%2F56952
+        - generic [ref=f54e2264]:
+          - form "Select reviewers" [ref=f54e2266]:
+            - heading "Reviewers" [level=3] [ref=f54e2267]
+            - generic [ref=f54e2268]:
+              - generic [ref=f54e2269]:
+                - generic [ref=f54e2270]:
+                  - link [ref=f54e2271] [cursor=pointer]:
+                    - /url: /apps/coderabbitai
+                    - img "@coderabbitai" [ref=f54e2272]
+                  - link "coderabbitai[bot]" [ref=f54e2273] [cursor=pointer]:
+                    - /url: /apps/coderabbitai
+                - link "coderabbitai[bot] left review comments" [ref=f54e2274] [cursor=pointer]:
+                  - /url: /ant-design/ant-design/pull/56952/files/4aadae9bf6ad802ee45111c46e22b637a68c06eb
+              - generic [ref=f54e2278]:
+                - generic [ref=f54e2279]:
+                  - link [ref=f54e2280] [cursor=pointer]:
+                    - /url: /apps/cursor
+                    - img "@cursor" [ref=f54e2281]
+                  - link "cursor[bot]" [ref=f54e2282] [cursor=pointer]:
+                    - /url: /apps/cursor
+                - link "cursor[bot] left review comments" [ref=f54e2283] [cursor=pointer]:
+                  - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+              - generic [ref=f54e2287]:
+                - generic [ref=f54e2288]:
+                  - link [ref=f54e2289] [cursor=pointer]:
+                    - /url: /meet-student
+                    - img "@meet-student" [ref=f54e2290]
+                  - link "meet-student" [ref=f54e2291] [cursor=pointer]:
+                    - /url: /meet-student
+                - link "meet-student approved these changes" [ref=f54e2292] [cursor=pointer]:
+                  - /url: /ant-design/ant-design/pull/56952/files/88a74cd9e5b636ee10369a9f93a8928c9d97e27a
+              - group [ref=f54e2296]:
+                - generic [ref=f54e2297] [cursor=pointer]
+                - generic [ref=f54e2302]:
+                  - generic [ref=f54e2303]:
+                    - link [ref=f54e2304] [cursor=pointer]:
+                      - /url: /apps/gemini-code-assist
+                      - img "@gemini-code-assist" [ref=f54e2305]
+                    - link "gemini-code-assist[bot]" [ref=f54e2306] [cursor=pointer]:
+                      - /url: /apps/gemini-code-assist
+                  - link "gemini-code-assist[bot] left review comments" [ref=f54e2307] [cursor=pointer]:
+                    - /url: /ant-design/ant-design/pull/56952/files/73c6168e3fcd6e435881c5d135ae543d5335e0d1
+          - form "Select assignees" [ref=f54e2312]:
+            - heading "Assignees" [level=3] [ref=f54e2313]
+            - text: No one assigned
+          - generic [ref=f54e2314]:
+            - heading "Labels" [level=3] [ref=f54e2315]
+            - link "lgtm" [ref=f54e2317] [cursor=pointer]:
+              - /url: /ant-design/ant-design/issues?q=state%3Aopen%20label%3Algtm
+          - form "Select projects" [ref=f54e2320]:
+            - heading "Projects" [level=3] [ref=f54e2321]
+            - text: None yet
+          - form "Select milestones" [ref=f54e2323]:
+            - heading "Milestone" [level=3] [ref=f54e2324]
+            - text: No milestone
+          - form "Link issues" [ref=f54e2330]:
+            - heading "Development" [level=3] [ref=f54e2331]
+            - paragraph [ref=f54e2332]: Successfully merging this pull request may close these issues.
+            - paragraph [ref=f54e2334]: None yet
+          - generic [ref=f54e2336]:
+            - heading "2 participants" [level=3] [ref=f54e2337]
+            - generic [ref=f54e2338]:
+              - link [ref=f54e2339] [cursor=pointer]:
+                - /url: /afc163
+                - img "@afc163" [ref=f54e2340]
+              - link [ref=f54e2341] [cursor=pointer]:
+                - /url: /meet-student
+                - img "@meet-student" [ref=f54e2342]
+  - contentinfo [ref=f54e2343]:
+    - heading "Footer" [level=2] [ref=f54e2344]
+    - generic [ref=f54e2345]:
+      - generic [ref=f54e2346]:
+        - link "GitHub Homepage" [ref=f54e2347] [cursor=pointer]:
+          - /url: https://github.com
+        - generic [ref=f54e2350]: © 2026 GitHub, Inc.
+      - navigation "Footer" [ref=f54e2351]:
+        - heading "Footer navigation" [level=3] [ref=f54e2352]
+        - list "Footer navigation" [ref=f54e2353]:
+          - listitem [ref=f54e2354]:
+            - link "Terms" [ref=f54e2355] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/github-terms/github-terms-of-service
+          - listitem [ref=f54e2356]:
+            - link "Privacy" [ref=f54e2357] [cursor=pointer]:
+              - /url: https://docs.github.com/site-policy/privacy-policies/github-privacy-statement
+          - listitem [ref=f54e2358]:
+            - link "Security" [ref=f54e2359] [cursor=pointer]:
+              - /url: https://github.com/security
+          - listitem [ref=f54e2360]:
+            - link "Status" [ref=f54e2361] [cursor=pointer]:
+              - /url: https://www.githubstatus.com/
+          - listitem [ref=f54e2362]:
+            - link "Community" [ref=f54e2363] [cursor=pointer]:
+              - /url: https://github.community/
+          - listitem [ref=f54e2364]:
+            - link "Docs" [ref=f54e2365] [cursor=pointer]:
+              - /url: https://docs.github.com/
+          - listitem [ref=f54e2366]:
+            - link "Contact" [ref=f54e2367] [cursor=pointer]:
+              - /url: https://support.github.com?tags=dotcom-footer
+          - listitem [ref=f54e2368]:
+            - button "Manage cookies" [ref=f54e2370] [cursor=pointer]
+          - listitem [ref=f54e2371]:
+            - button "Do not share my personal information" [ref=f54e2373] [cursor=pointer]

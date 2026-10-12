@@ -1,0 +1,2379 @@
+- generic [ref=f5e3]:
+  - banner [ref=f5e4]:
+    - generic [ref=f5e5]:
+      - heading [level=1] [ref=f5e7]:
+        - link "logo Ant Design" [ref=f5e8] [cursor=pointer]:
+          - /url: /index-cn
+          - img "logo" [ref=f5e9]
+          - generic [ref=f5e10]: Ant Design
+      - generic [ref=f5e12]:
+        - generic [ref=f5e13]:
+          - img "Search" [ref=f5e14]
+          - textbox "输入关键字搜索..." [ref=f5e16]
+        - menu [ref=f5e17]:
+          - menuitem [ref=f5e18] [cursor=pointer]:
+            - link "设计" [ref=f5e20]:
+              - /url: /docs/spec/introduce-cn
+          - menuitem [ref=f5e21] [cursor=pointer]:
+            - link "研发" [ref=f5e23]:
+              - /url: /docs/react/introduce-cn
+          - menuitem [ref=f5e24] [cursor=pointer]:
+            - link "组件" [ref=f5e26]:
+              - /url: /components/overview-cn/
+          - menuitem [ref=f5e27] [cursor=pointer]:
+            - link "博客" [ref=f5e29]:
+              - /url: /docs/blog/ai-open-source-contribution-cn
+          - menuitem [ref=f5e30] [cursor=pointer]:
+            - link "资源" [ref=f5e32]:
+              - /url: /docs/resources-cn
+          - menuitem [ref=f5e33] [cursor=pointer]:
+            - link "国内镜像" [ref=f5e35]:
+              - /url: https://ant-design.antgroup.com
+        - generic "Sponsors" [ref=f5e36]:
+          - link [ref=f5e37] [cursor=pointer]:
+            - /url: https://youmind.com/zh-CN?utm_source=ant-design
+            - img "YouMind" [ref=f5e38]
+          - link [ref=f5e39] [cursor=pointer]:
+            - /url: https://tractian.com?utm_source=ant-design
+            - img "TRACTIAN" [ref=f5e40]
+          - link [ref=f5e41] [cursor=pointer]:
+            - /url: https://lobehub.com?utm_source=ant-design
+            - img "LobeHub" [ref=f5e42]
+          - link [ref=f5e43] [cursor=pointer]:
+            - /url: https://coderabbit.ai?utm_source=ant-design
+            - img "CodeRabbit" [ref=f5e44]
+        - generic [ref=f5e45] [cursor=pointer]:
+          - generic "6.6.5" [ref=f5e46]:
+            - text: 6.6.5
+            - combobox [ref=f5e47]
+          - img "down" [ref=f5e49]
+        - button "中 En" [ref=f5e52] [cursor=pointer]:
+          - generic [ref=f5e54]:
+            - generic [ref=f5e55]: 中
+            - generic [ref=f5e56]: En
+        - button "RTL Switch Button" [ref=f5e57] [cursor=pointer]:
+          - img [ref=f5e59]:
+            - img "Direction Icon" [ref=f5e60]
+        - button [ref=f5e62] [cursor=pointer]
+        - link [ref=f5e69] [cursor=pointer]:
+          - /url: https://github.com/ant-design/ant-design
+          - button [ref=f5e70]:
+            - img "github" [ref=f5e72]
+  - main [ref=f5e75]:
+    - menu [ref=f5e77]:
+      - menuitem [ref=f5e78] [cursor=pointer]:
+        - link "Ant Design of React" [ref=f5e80]:
+          - /url: /docs/react/introduce-cn
+      - menuitem [ref=f5e83] [cursor=pointer]:
+        - link "更新日志 v6.6.5" [ref=f5e85]:
+          - /url: /changelog-cn
+          - generic [ref=f5e86]: 更新日志
+          - generic [ref=f5e88]: v6.6.5
+      - text: 如何使用
+      - group [ref=f5e89]:
+        - menuitem [ref=f5e90] [cursor=pointer]:
+          - link "快速上手" [ref=f5e92]:
+            - /url: /docs/react/getting-started-cn
+        - menuitem [ref=f5e95] [cursor=pointer]:
+          - link "在 Vite 中使用" [ref=f5e97]:
+            - /url: /docs/react/use-with-vite-cn
+        - menuitem [ref=f5e100] [cursor=pointer]:
+          - link "在 Next.js 中使用 更新" [ref=f5e102]:
+            - /url: /docs/react/use-with-next-cn
+            - generic [ref=f5e103]: 在 Next.js 中使用
+            - generic [ref=f5e105]: 更新
+        - menuitem [ref=f5e106] [cursor=pointer]:
+          - link "在 Umi 中使用" [ref=f5e108]:
+            - /url: /docs/react/use-with-umi-cn
+        - menuitem [ref=f5e111] [cursor=pointer]:
+          - link "在 Rsbuild 中使用" [ref=f5e113]:
+            - /url: /docs/react/use-with-rsbuild-cn
+        - menuitem [ref=f5e116] [cursor=pointer]:
+          - link "在 Farm 中使用" [ref=f5e118]:
+            - /url: /docs/react/use-with-farm-cn
+        - menuitem [ref=f5e121] [cursor=pointer]:
+          - link "使用 Refine" [ref=f5e123]:
+            - /url: /docs/react/use-with-refine-cn
+      - text: AI
+      - group [ref=f5e126]:
+        - menuitem [ref=f5e127] [cursor=pointer]:
+          - link "For Agents 新增" [ref=f5e129]:
+            - /url: /docs/react/for-agents-cn
+            - generic [ref=f5e130]: For Agents
+            - generic [ref=f5e132]: 新增
+        - menuitem [ref=f5e133] [cursor=pointer]:
+          - link "design.md 新增" [ref=f5e135]:
+            - /url: /docs/react/design-md-cn
+            - generic [ref=f5e136]: design.md
+            - generic [ref=f5e138]: 新增
+        - menuitem [ref=f5e139] [cursor=pointer]:
+          - link "LLMs.txt 新增" [ref=f5e141]:
+            - /url: /docs/react/llms-cn
+            - generic [ref=f5e142]: LLMs.txt
+            - generic [ref=f5e144]: 新增
+        - menuitem [ref=f5e145] [cursor=pointer]:
+          - link "MCP Server 新增" [ref=f5e147]:
+            - /url: /docs/react/mcp-cn
+            - generic [ref=f5e148]: MCP Server
+            - generic [ref=f5e150]: 新增
+        - menuitem [ref=f5e151] [cursor=pointer]:
+          - link "CLI 新增" [ref=f5e153]:
+            - /url: /docs/react/cli-cn
+            - generic [ref=f5e154]: CLI
+            - generic [ref=f5e156]: 新增
+      - text: 进阶使用
+      - group [ref=f5e157]:
+        - menuitem [ref=f5e158] [cursor=pointer]:
+          - link "定制主题" [ref=f5e160]:
+            - /url: /docs/react/customize-theme-cn
+        - menuitem [ref=f5e163] [cursor=pointer]:
+          - link "样式兼容" [ref=f5e165]:
+            - /url: /docs/react/compatible-style-cn
+        - menuitem [ref=f5e168] [cursor=pointer]:
+          - link "服务端渲染" [ref=f5e170]:
+            - /url: /docs/react/server-side-rendering-cn
+        - menuitem [ref=f5e173] [cursor=pointer]:
+          - link "使用自定义日期库" [ref=f5e175]:
+            - /url: /docs/react/use-custom-date-library-cn
+        - menuitem [ref=f5e178] [cursor=pointer]:
+          - link "国际化" [ref=f5e180]:
+            - /url: /docs/react/i18n-cn
+        - menuitem [ref=f5e183] [cursor=pointer]:
+          - link "通用属性" [ref=f5e185]:
+            - /url: /docs/react/common-props-cn
+      - text: 迁移
+      - group [ref=f5e188]:
+        - menuitem [ref=f5e189] [cursor=pointer]:
+          - link "从 v5 到 v6" [ref=f5e191]:
+            - /url: /docs/react/migration-v6-cn
+      - text: 其他
+      - group [ref=f5e194]:
+        - menuitem [ref=f5e195] [cursor=pointer]:
+          - link "社区精选组件" [ref=f5e197]:
+            - /url: /docs/react/recommendation-cn
+        - menuitem [ref=f5e200] [cursor=pointer]:
+          - link "贡献指南" [ref=f5e202]:
+            - /url: /docs/react/contributing-cn
+        - menuitem [ref=f5e205] [cursor=pointer]:
+          - link "赞助" [ref=f5e207]:
+            - /url: /docs/react/sponsor-cn
+        - menuitem [ref=f5e210] [cursor=pointer]:
+          - link "FAQ" [ref=f5e212]:
+            - /url: /docs/react/faq-cn
+    - generic [ref=f5e215]:
+      - generic [ref=f5e218]:
+        - generic [ref=f5e219]:
+          - link "配置主题" [ref=f5e220] [cursor=pointer]:
+            - /url: "#basic-usage"
+          - link "修改主题变量" [ref=f5e222] [cursor=pointer]:
+            - /url: "#customize-design-token"
+          - link "使用预设算法" [ref=f5e224] [cursor=pointer]:
+            - /url: "#use-preset-algorithms"
+          - link "修改组件变量" [ref=f5e226] [cursor=pointer]:
+            - /url: "#customize-component-token"
+          - link "禁用动画" [ref=f5e228] [cursor=pointer]:
+            - /url: "#disable-motion"
+        - generic [ref=f5e229]:
+          - link "进阶使用" [ref=f5e230] [cursor=pointer]:
+            - /url: "#advanced"
+          - link "零运行时 zeroRuntime" [ref=f5e232] [cursor=pointer]:
+            - /url: "#zero-runtime"
+          - link "动态切换" [ref=f5e234] [cursor=pointer]:
+            - /url: "#switch-themes-dynamically"
+          - link "局部主题（嵌套主题）" [ref=f5e236] [cursor=pointer]:
+            - /url: "#nested-theme"
+          - link "使用 Design Token" [ref=f5e238] [cursor=pointer]:
+            - /url: "#consume-design-token"
+          - link "静态消费（如 less）" [ref=f5e240] [cursor=pointer]:
+            - /url: "#static-consume-eg-less"
+          - link "调试主题" [ref=f5e242] [cursor=pointer]:
+            - /url: "#theme-editor"
+        - generic [ref=f5e243]:
+          - link "基本概念" [ref=f5e244] [cursor=pointer]:
+            - /url: "#design-token"
+          - link "演变过程" [ref=f5e246] [cursor=pointer]:
+            - /url: "#life-of-design-token"
+          - link "基础变量（Seed Token）" [ref=f5e248] [cursor=pointer]:
+            - /url: "#seed-token"
+          - link "梯度变量（Map Token）" [ref=f5e250] [cursor=pointer]:
+            - /url: "#map-token"
+          - link "别名变量（Alias Token）" [ref=f5e252] [cursor=pointer]:
+            - /url: "#alias-token"
+          - link "基本算法（algorithm)" [ref=f5e254] [cursor=pointer]:
+            - /url: "#algorithm"
+        - generic [ref=f5e255]:
+          - link "API" [ref=f5e256] [cursor=pointer]:
+            - /url: "#api"
+          - link "Theme" [ref=f5e258] [cursor=pointer]:
+            - /url: "#theme"
+          - link "ComponentsConfig" [ref=f5e260] [cursor=pointer]:
+            - /url: "#componentsconfig"
+          - link "cssVar" [ref=f5e262] [cursor=pointer]:
+            - /url: "#css-var"
+          - link "SeedToken" [ref=f5e264] [cursor=pointer]:
+            - /url: "#seedtoken"
+          - link "MapToken" [ref=f5e266] [cursor=pointer]:
+            - /url: "#maptoken"
+          - link "AliasToken" [ref=f5e268] [cursor=pointer]:
+            - /url: "#aliastoken"
+        - generic [ref=f5e269]:
+          - link "FAQ" [ref=f5e270] [cursor=pointer]:
+            - /url: "#faq"
+          - link "为什么 theme 从 undefined 变为对象或者变为 undefined 时组件重新 mount 了？" [ref=f5e272] [cursor=pointer]:
+            - /url: "#faq-theme-change-remount"
+      - article [ref=f5e273]:
+        - heading "定制主题" [level=1] [ref=f5e275]
+        - table [ref=f5e280]:
+          - rowgroup [ref=f5e281]:
+            - row [ref=f5e282]:
+              - cell "文档 edit 编辑此页 file-text LLMs.md" [ref=f5e283]:
+                - generic [ref=f5e284]:
+                  - generic [ref=f5e285]: 文档
+                  - generic [ref=f5e287]:
+                    - link "edit 编辑此页" [ref=f5e288] [cursor=pointer]:
+                      - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/customize-theme.zh-CN.md
+                      - img "edit" [ref=f5e289]
+                      - generic [ref=f5e292]: 编辑此页
+                    - link "file-text LLMs.md" [ref=f5e293] [cursor=pointer]:
+                      - /url: /docs/react/customize-theme-cn.md
+                      - img "file-text" [ref=f5e294]
+                      - generic [ref=f5e297]: LLMs.md
+        - separator [ref=f5e298]
+        - generic [ref=f5e299]:
+          - generic [ref=f5e300]:
+            - paragraph [ref=f5e301]: Ant Design 设计规范和技术上支持灵活的样式定制，以满足业务和品牌上多样化的视觉需求，包括但不限于全局样式（主色、圆角、边框）和指定组件的视觉定制。
+            - paragraph [ref=f5e302]: 自从 5.0 版本以来，我们提供了一套全新的定制主题方案。不同于 4.x 版本的 less 和 CSS 变量，有了 CSS-in-JS 的加持后，动态主题的能力也得到了加强，包括但不限于：
+            - list [ref=f5e303]:
+              - listitem [ref=f5e304]: 支持动态切换主题；
+              - listitem [ref=f5e305]: 支持同时存在多个主题；
+              - listitem [ref=f5e306]: 支持针对某个/某些组件修改主题变量；
+              - listitem [ref=f5e307]: ...
+            - heading "配置主题" [level=2] [ref=f5e308]:
+              - link [aria-hidden] [ref=f5e309] [cursor=pointer]:
+                - /url: "#basic-usage"
+              - text: 配置主题
+            - paragraph [ref=f5e310]:
+              - text: 我们把影响主题的最小元素称为
+              - strong [ref=f5e311]: Design Token
+              - text: 。通过修改 Design Token，我们可以呈现出各种各样的主题或者组件。通过在
+              - code [ref=f5e312]: ConfigProvider
+              - text: 中传入
+              - code [ref=f5e313]: theme
+              - text: 属性，可以配置主题。
+          - alert [ref=f5e314]:
+            - img "exclamation-circle" [ref=f5e316]
+            - generic [ref=f5e319]:
+              - generic [ref=f5e320]: WARNING
+              - generic [ref=f5e322]:
+                - paragraph [ref=f5e323]:
+                  - code [ref=f5e324]: ConfigProvider
+                  - text: 对
+                  - code [ref=f5e325]: message.xxx
+                  - text: 、
+                  - code [ref=f5e326]: Modal.xxx
+                  - text: 、
+                  - code [ref=f5e327]: notification.xxx
+                  - text: 等静态方法不会生效，原因是在这些方法中，antd 会通过
+                  - code [ref=f5e328]: ReactDOM.render
+                  - text: 动态创建新的 React 实体。其 context 与当前代码所在 context 并不相同，因而无法获取 context 信息。
+                - paragraph [ref=f5e329]:
+                  - text: 当你需要 context 信息（例如 ConfigProvider 配置的内容）时，可以通过
+                  - code [ref=f5e330]: Modal.useModal
+                  - text: 方法返回 modal 实体以及 contextHolder 节点，将其插入到你需要获取 context 位置即可。也可通过
+                  - link "App 包裹组件" [ref=f5e331] [cursor=pointer]:
+                    - /url: /components/app-cn
+                  - text: 简化 useModal 等方法需要手动植入 contextHolder 的问题。
+          - generic [ref=f5e332]:
+            - heading "修改主题变量" [level=3] [ref=f5e333]:
+              - link [aria-hidden] [ref=f5e334] [cursor=pointer]:
+                - /url: "#customize-design-token"
+              - text: 修改主题变量
+            - paragraph [ref=f5e335]:
+              - text: 通过
+              - code [ref=f5e336]: theme
+              - text: 中的
+              - code [ref=f5e337]: token
+              - text: 属性，可以修改一些主题变量。部分主题变量会引起其他主题变量的变化，我们把这些主题变量称为 Seed Token。
+          - generic [ref=f5e338]:
+            - generic [ref=f5e340]:
+              - button "Primary" [ref=f5e342] [cursor=pointer]
+              - button "Default" [ref=f5e345] [cursor=pointer]
+            - generic [ref=f5e347]:
+              - generic [ref=f5e348]:
+                - link "修改主题变量" [ref=f5e349] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-modify-theme-token"
+                - link [ref=f5e350] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/modify-theme-token.tsx
+                  - img "edit" [ref=f5e351]
+              - generic [ref=f5e354]:
+                - img [ref=f5e356] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e357]
+                - img "Hitu Icon" [ref=f5e360] [cursor=pointer]
+                - button "open in new tab" [ref=f5e362] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e363]
+                - img [ref=f5e367] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e368]
+                - link "open in new tab" [ref=f5e370] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-modify-theme-token?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e371]:
+                    - img "External Link Icon" [ref=f5e372]
+                - button [ref=f5e375] [cursor=pointer]:
+                  - img [ref=f5e376]:
+                    - img "Expand Icon" [ref=f5e377]
+          - generic [ref=f5e379]:
+            - heading "使用预设算法" [level=3] [ref=f5e380]:
+              - link [aria-hidden] [ref=f5e381] [cursor=pointer]:
+                - /url: "#use-preset-algorithms"
+              - text: 使用预设算法
+            - paragraph [ref=f5e382]: "通过修改算法可以快速生成风格迥异的主题，我们默认提供三套预设算法，分别是:"
+            - list [ref=f5e383]:
+              - listitem [ref=f5e384]:
+                - text: 默认算法
+                - code [ref=f5e385]: theme.defaultAlgorithm
+              - listitem [ref=f5e386]:
+                - text: 暗色算法
+                - code [ref=f5e387]: theme.darkAlgorithm
+              - listitem [ref=f5e388]:
+                - text: 紧凑算法
+                - code [ref=f5e389]: theme.compactAlgorithm
+            - paragraph [ref=f5e390]:
+              - text: 你可以通过
+              - code [ref=f5e391]: theme
+              - text: 中的
+              - code [ref=f5e392]: algorithm
+              - text: 属性来切换算法，并且支持配置多种算法，将会依次生效。
+          - generic [ref=f5e393]:
+            - generic [ref=f5e395]:
+              - textbox "Please Input" [ref=f5e397]
+              - button "Submit" [ref=f5e399] [cursor=pointer]
+            - generic [ref=f5e401]:
+              - generic [ref=f5e402]:
+                - link "使用预设算法" [ref=f5e403] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-preset-algorithm"
+                - link [ref=f5e404] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/preset-algorithm.tsx
+                  - img "edit" [ref=f5e405]
+              - generic [ref=f5e408]:
+                - img [ref=f5e410] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e411]
+                - img "Hitu Icon" [ref=f5e414] [cursor=pointer]
+                - button "open in new tab" [ref=f5e416] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e417]
+                - img [ref=f5e421] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e422]
+                - link "open in new tab" [ref=f5e424] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-preset-algorithm?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e425]:
+                    - img "External Link Icon" [ref=f5e426]
+                - button [ref=f5e429] [cursor=pointer]:
+                  - img [ref=f5e430]:
+                    - img "Expand Icon" [ref=f5e431]
+          - generic [ref=f5e433]:
+            - heading "修改组件变量" [level=3] [ref=f5e434]:
+              - link [aria-hidden] [ref=f5e435] [cursor=pointer]:
+                - /url: "#customize-component-token"
+              - text: 修改组件变量
+            - paragraph [ref=f5e436]: 除了整体的 Design Token，各个组件也会开放自己的 Component Token 来实现针对组件的样式定制能力，不同的组件之间不会相互影响。同样地，也可以通过这种方式来覆盖组件的其他 Design Token。
+          - alert [ref=f5e437]:
+            - img "info-circle" [ref=f5e439]
+            - generic [ref=f5e442]:
+              - generic [ref=f5e443]: 组件级别的主题算法
+              - generic [ref=f5e445]:
+                - paragraph [ref=f5e446]: 默认情况下，所有组件变量都仅仅是覆盖，不会基于 Seed Token 计算派生变量。
+                - paragraph [ref=f5e447]:
+                  - text: 在
+                  - code [ref=f5e448]: ">= 5.8.0"
+                  - text: 版本中，组件变量支持传入
+                  - code [ref=f5e449]: algorithm
+                  - text: 属性，可以开启派生计算或者传入其他算法。
+          - generic [ref=f5e450]:
+            - generic [ref=f5e451]:
+              - generic [ref=f5e452]:
+                - generic [ref=f5e453]: "Algorithm Enabled:"
+                - textbox "Please Input" [ref=f5e456]
+                - button "Submit" [ref=f5e458] [cursor=pointer]
+              - separator [ref=f5e460]
+              - generic [ref=f5e461]:
+                - generic [ref=f5e462]: "Algorithm Disabled:"
+                - textbox "Please Input" [ref=f5e465]
+                - button "Submit" [ref=f5e467] [cursor=pointer]
+            - generic [ref=f5e469]:
+              - generic [ref=f5e470]:
+                - link "修改组件变量" [ref=f5e471] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-component-token"
+                - link [ref=f5e472] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/component-token.tsx
+                  - img "edit" [ref=f5e473]
+              - generic [ref=f5e476]:
+                - img [ref=f5e478] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e479]
+                - img "Hitu Icon" [ref=f5e482] [cursor=pointer]
+                - button "open in new tab" [ref=f5e484] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e485]
+                - img [ref=f5e489] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e490]
+                - link "open in new tab" [ref=f5e492] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-component-token?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e493]:
+                    - img "External Link Icon" [ref=f5e494]
+                - button [ref=f5e497] [cursor=pointer]:
+                  - img [ref=f5e498]:
+                    - img "Expand Icon" [ref=f5e499]
+          - generic [ref=f5e501]:
+            - heading "禁用动画" [level=3] [ref=f5e502]:
+              - link [aria-hidden] [ref=f5e503] [cursor=pointer]:
+                - /url: "#disable-motion"
+              - text: 禁用动画
+            - paragraph [ref=f5e504]:
+              - text: antd 默认内置了一些组件交互动效让企业级页面更加富有细节，在一些极端场景可能会影响页面交互性能，如需关闭动画可以
+              - code [ref=f5e505]: token
+              - text: 中的
+              - code [ref=f5e506]: motion
+              - text: 修改为
+              - code [ref=f5e507]: "false"
+              - text: ：
+          - generic [ref=f5e508]:
+            - generic [ref=f5e510]:
+              - generic [ref=f5e512]:
+                - generic [ref=f5e513] [cursor=pointer]:
+                  - checkbox "Checkbox" [ref=f5e515]
+                  - generic [ref=f5e516]: Checkbox
+                - generic [ref=f5e517] [cursor=pointer]:
+                  - radio "Radio" [ref=f5e519]
+                  - generic [ref=f5e520]: Radio
+                - switch [ref=f5e521] [cursor=pointer]
+              - generic [ref=f5e525]:
+                - generic [ref=f5e526] [cursor=pointer]:
+                  - checkbox "Checkbox" [ref=f5e528]
+                  - generic [ref=f5e529]: Checkbox
+                - generic [ref=f5e530] [cursor=pointer]:
+                  - radio "Radio" [ref=f5e532]
+                  - generic [ref=f5e533]: Radio
+                - switch [ref=f5e534] [cursor=pointer]
+            - generic [ref=f5e537]:
+              - generic [ref=f5e538]:
+                - link "禁用动画" [ref=f5e539] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-disable-motion"
+                - link [ref=f5e540] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/disable-motion.tsx
+                  - img "edit" [ref=f5e541]
+              - generic [ref=f5e544]:
+                - img [ref=f5e546] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e547]
+                - img "Hitu Icon" [ref=f5e550] [cursor=pointer]
+                - button "open in new tab" [ref=f5e552] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e553]
+                - img [ref=f5e557] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e558]
+                - link "open in new tab" [ref=f5e560] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-disable-motion?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e561]:
+                    - img "External Link Icon" [ref=f5e562]
+                - button [ref=f5e565] [cursor=pointer]:
+                  - img [ref=f5e566]:
+                    - img "Expand Icon" [ref=f5e567]
+          - generic [ref=f5e569]:
+            - heading "进阶使用" [level=2] [ref=f5e570]:
+              - link [aria-hidden] [ref=f5e571] [cursor=pointer]:
+                - /url: "#advanced"
+              - text: 进阶使用
+            - heading "零运行时 zeroRuntime" [level=3] [ref=f5e572]:
+              - link [aria-hidden] [ref=f5e573] [cursor=pointer]:
+                - /url: "#zero-runtime"
+              - text: 零运行时 zeroRuntime
+            - paragraph [ref=f5e574]:
+              - text: 自 6.0.0 起，我们提供了
+              - code [ref=f5e575]: zeroRuntime
+              - text: 模式来进一步提升应用性能。开启后，Ant Design 将不再在运行时生成组件样式，所以需要自行引入样式文件。
+            - generic [ref=f5e576]:
+              - generic [ref=f5e577]: tsx
+              - generic [ref=f5e578]:
+                - generic [ref=f5e579]: import 'antd/dist/antd.css';
+                - generic [ref=f5e583]: export default () => (
+                - generic [ref=f5e585]: "<ConfigProvider theme={{ zeroRuntime: true }}>"
+                - generic [ref=f5e587]: <App />
+                - generic [ref=f5e589]: </ConfigProvider>
+                - generic [ref=f5e591]: );
+            - paragraph [ref=f5e593]:
+              - code [ref=f5e594]: antd/dist/antd.css
+              - text: 包含了所有 antd 组件的样式，但是不会包含 hashed className。如果你希望引入更少的样式，或者因为修改了
+              - code [ref=f5e595]: prefix
+              - text: 等配置无法使用默认的样式，推荐使用
+              - link "@ant-design/static-style-extract" [ref=f5e596] [cursor=pointer]:
+                - /url: https://github.com/ant-design/static-style-extract
+              - text: 来生成静态样式。
+            - generic [ref=f5e597]:
+              - generic [ref=f5e598]: tsx
+              - generic [ref=f5e599]:
+                - generic [ref=f5e600]: import fs from 'fs';
+                - generic [ref=f5e602]: "import { extractStyle } from '@ant-design/static-style-extract';"
+                - generic [ref=f5e606]: "const cssText = extractStyle({"
+                - generic [ref=f5e608]: "includes: ['Button'], // 只包含 Button 组件的样式"
+                - generic [ref=f5e610]: "});"
+                - generic [ref=f5e614]: fs.writeFileSync('/path/to/somewhere', cssText);
+            - heading "动态切换" [level=3] [ref=f5e616]:
+              - link [aria-hidden] [ref=f5e617] [cursor=pointer]:
+                - /url: "#switch-themes-dynamically"
+              - text: 动态切换
+            - paragraph [ref=f5e618]:
+              - text: 在 v5 中，动态切换主题对用户来说是非常简单的，你可以在任何时候通过
+              - code [ref=f5e619]: ConfigProvider
+              - text: 的
+              - code [ref=f5e620]: theme
+              - text: 属性来动态切换主题，而不需要任何额外配置。
+          - generic [ref=f5e621]:
+            - generic [ref=f5e622]:
+              - generic [ref=f5e623] [cursor=pointer]: "#1677FF"
+              - separator [ref=f5e627]
+              - generic [ref=f5e628]:
+                - textbox "Please Input" [ref=f5e630]
+                - button "Submit" [ref=f5e632] [cursor=pointer]
+            - generic [ref=f5e634]:
+              - generic [ref=f5e635]:
+                - link "动态切换" [ref=f5e636] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-dynamic-theme"
+                - link [ref=f5e637] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/dynamic-theme.tsx
+                  - img "edit" [ref=f5e638]
+              - generic [ref=f5e641]:
+                - img [ref=f5e643] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e644]
+                - img "Hitu Icon" [ref=f5e647] [cursor=pointer]
+                - button "open in new tab" [ref=f5e649] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e650]
+                - img [ref=f5e654] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e655]
+                - link "open in new tab" [ref=f5e657] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-dynamic-theme?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e658]:
+                    - img "External Link Icon" [ref=f5e659]
+                - button [ref=f5e662] [cursor=pointer]:
+                  - img [ref=f5e663]:
+                    - img "Expand Icon" [ref=f5e664]
+          - generic [ref=f5e666]:
+            - heading "局部主题（嵌套主题）" [level=3] [ref=f5e667]:
+              - link [aria-hidden] [ref=f5e668] [cursor=pointer]:
+                - /url: "#nested-theme"
+              - text: 局部主题（嵌套主题）
+            - paragraph [ref=f5e669]:
+              - text: 可以嵌套使用
+              - code [ref=f5e670]: ConfigProvider
+              - text: 来实现局部主题的更换。在子主题中未被改变的 Design Token 将会继承父主题。
+          - generic [ref=f5e671]:
+            - generic [ref=f5e673]:
+              - button "Theme 1" [ref=f5e675] [cursor=pointer]
+              - button "Theme 2" [ref=f5e678] [cursor=pointer]
+            - generic [ref=f5e680]:
+              - generic [ref=f5e681]:
+                - link "局部主题" [ref=f5e682] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-local-theme"
+                - link [ref=f5e683] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/local-theme.tsx
+                  - img "edit" [ref=f5e684]
+              - generic [ref=f5e687]:
+                - img [ref=f5e689] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e690]
+                - img "Hitu Icon" [ref=f5e693] [cursor=pointer]
+                - button "open in new tab" [ref=f5e695] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e696]
+                - img [ref=f5e700] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e701]
+                - link "open in new tab" [ref=f5e703] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-local-theme?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e704]:
+                    - img "External Link Icon" [ref=f5e705]
+                - button [ref=f5e708] [cursor=pointer]:
+                  - img [ref=f5e709]:
+                    - img "Expand Icon" [ref=f5e710]
+          - generic [ref=f5e712]:
+            - heading "使用 Design Token" [level=3] [ref=f5e713]:
+              - link [aria-hidden] [ref=f5e714] [cursor=pointer]:
+                - /url: "#consume-design-token"
+              - text: 使用 Design Token
+            - paragraph [ref=f5e715]:
+              - text: 如果你希望使用当前主题下的 Design Token，我们提供了
+              - code [ref=f5e716]: useToken
+              - text: 这个 hook 来获取 Design Token。
+          - generic [ref=f5e717]:
+            - generic [ref=f5e718]: Use Design Token
+            - generic [ref=f5e720]:
+              - generic [ref=f5e721]:
+                - link "使用 Design Token" [ref=f5e722] [cursor=pointer]:
+                  - /url: "#docs-react-customize-theme-demo-use-token"
+                - link [ref=f5e723] [cursor=pointer]:
+                  - /url: https://github.com/ant-design/ant-design/edit/master/docs/react/_demo/use-token.tsx
+                  - img "edit" [ref=f5e724]
+              - generic [ref=f5e727]:
+                - img [ref=f5e729] [cursor=pointer]:
+                  - img "CodeSandbox Icon" [ref=f5e730]
+                - img "Hitu Icon" [ref=f5e733] [cursor=pointer]
+                - button "open in new tab" [ref=f5e735] [cursor=pointer]:
+                  - img "thunderbolt" [ref=f5e736]
+                - img [ref=f5e740] [cursor=pointer]:
+                  - img "codepen icon" [ref=f5e741]
+                - link "open in new tab" [ref=f5e743] [cursor=pointer]:
+                  - /url: /~demos/docs-react-customize-theme-demo-use-token?routeId=docs%2Freact%2Fcustomize-theme.en-US
+                  - img [ref=f5e744]:
+                    - img "External Link Icon" [ref=f5e745]
+                - button [ref=f5e748] [cursor=pointer]:
+                  - img [ref=f5e749]:
+                    - img "Expand Icon" [ref=f5e750]
+          - generic [ref=f5e752]:
+            - heading "静态消费（如 less）" [level=3] [ref=f5e753]:
+              - link [aria-hidden] [ref=f5e754] [cursor=pointer]:
+                - /url: "#static-consume-eg-less"
+              - text: 静态消费（如 less）
+            - paragraph [ref=f5e755]:
+              - text: 当你需要非 React 生命周期消费 Token 变量时，可以通过静态方法
+              - code [ref=f5e756]: getDesignToken
+              - text: 将其导出：
+            - generic [ref=f5e757]:
+              - generic [ref=f5e758]: jsx
+              - generic [ref=f5e759]:
+                - generic [ref=f5e760]: "import { theme } from 'antd';"
+                - generic [ref=f5e764]: "const { getDesignToken } = theme;"
+                - generic [ref=f5e768]: const globalToken = getDesignToken();
+            - paragraph [ref=f5e770]:
+              - code [ref=f5e771]: getDesignToken
+              - text: 和 ConfigProvider 一样，支持传入
+              - code [ref=f5e772]: theme
+              - text: 属性，用于获取指定主题的 Design Token。
+            - generic [ref=f5e773]:
+              - generic [ref=f5e774]: tsx
+              - generic [ref=f5e775]:
+                - generic [ref=f5e776]: "import type { ThemeConfig } from 'antd';"
+                - generic [ref=f5e778]: "import { theme } from 'antd';"
+                - generic [ref=f5e780]: "import { createRoot } from 'react-dom/client';"
+                - generic [ref=f5e784]: "const { getDesignToken, useToken } = theme;"
+                - generic [ref=f5e788]: "const config: ThemeConfig = {"
+                - generic [ref=f5e790]: "token: {"
+                - generic [ref=f5e792]: "colorPrimary: '#1890ff',"
+                - generic [ref=f5e794]: "},"
+                - generic [ref=f5e796]: "};"
+                - generic [ref=f5e800]: // 通过静态方法获取
+                - generic [ref=f5e802]: const globalToken = getDesignToken(config);
+                - generic [ref=f5e806]: // 通过 hook 获取
+                - generic [ref=f5e808]: "const App = () => {"
+                - generic [ref=f5e810]: "const { token } = useToken();"
+                - generic [ref=f5e812]: return null;
+                - generic [ref=f5e814]: "};"
+                - generic [ref=f5e818]: // 渲染示意
+                - generic [ref=f5e820]: createRoot(document.getElementById('#app')).render(
+                - generic [ref=f5e822]: "<ConfigProvider theme={config}>"
+                - generic [ref=f5e824]: <App />
+                - generic [ref=f5e826]: </ConfigProvider>,
+                - generic [ref=f5e828]: );
+            - paragraph [ref=f5e830]: 如果需要将其应用到静态样式编译框架，如 less 可以通过 less-loader 注入：
+            - generic [ref=f5e831]:
+              - generic [ref=f5e832]: jsx
+              - generic [ref=f5e833]:
+                - generic [ref=f5e834]: "{"
+                - generic [ref=f5e836]: "loader: \"less-loader\","
+                - generic [ref=f5e838]: "options: {"
+                - generic [ref=f5e840]: "lessOptions: {"
+                - generic [ref=f5e842]: "modifyVars: mapToken,"
+                - generic [ref=f5e844]: "},"
+                - generic [ref=f5e846]: "},"
+                - generic [ref=f5e848]: "}"
+            - paragraph [ref=f5e850]:
+              - text: 兼容包提供了变量转换方法用于转成 v4 的 less 变量，如需使用
+              - link "点击此处" [ref=f5e851] [cursor=pointer]:
+                - /url: https://5x.ant.design/docs/react/migration-v5-cn
+              - text: 查看详情。
+            - heading "调试主题" [level=3] [ref=f5e852]:
+              - link [aria-hidden] [ref=f5e853] [cursor=pointer]:
+                - /url: "#theme-editor"
+              - text: 调试主题
+            - paragraph [ref=f5e854]:
+              - text: 我们提供了帮助用户调试主题的工具：
+              - link "主题编辑器" [ref=f5e855] [cursor=pointer]:
+                - /url: /theme-editor-cn
+            - paragraph [ref=f5e856]: 你可以使用此工具自由地修改 Design Token，以达到你对主题的期望。
+            - heading "基本概念" [level=2] [ref=f5e857]:
+              - link [aria-hidden] [ref=f5e858] [cursor=pointer]:
+                - /url: "#design-token"
+              - text: 基本概念
+            - paragraph [ref=f5e859]: 在 Design Token 中我们提供了一套更加贴合设计的三层结构，将 Design Token 拆解为 Seed Token、Map Token 和 Alias Token 三部分。这三组 Token 并不是简单的分组，而是一个三层的派生关系，由 Seed Token 派生 Map Token，再由 Map Token 派生 Alias Token。在大部分情况下，使用 Seed Token 就可以满足定制主题的需要。但如果您需要更高程度的主题定制，您需要了解 antd 中 Design Token 的生命周期。
+            - heading "演变过程" [level=3] [ref=f5e860]:
+              - link [aria-hidden] [ref=f5e861] [cursor=pointer]:
+                - /url: "#life-of-design-token"
+              - text: 演变过程
+            - paragraph [ref=f5e862]:
+              - img "token" [ref=f5e863]
+            - heading "基础变量（Seed Token）" [level=3] [ref=f5e864]:
+              - link [aria-hidden] [ref=f5e865] [cursor=pointer]:
+                - /url: "#seed-token"
+              - text: 基础变量（Seed Token）
+            - paragraph [ref=f5e866]:
+              - text: Seed Token 意味着所有设计意图的起源。比如我们可以通过改变
+              - code [ref=f5e867]: colorPrimary
+              - text: 来改变主题色，antd 内部的算法会自动的根据 Seed Token 计算出对应的一系列颜色并应用：
+            - generic [ref=f5e868]:
+              - generic [ref=f5e869]: tsx
+              - generic [ref=f5e870]:
+                - generic [ref=f5e871]: "const theme = {"
+                - generic [ref=f5e873]: "token: {"
+                - generic [ref=f5e875]: "colorPrimary: '#1890ff',"
+                - generic [ref=f5e877]: "},"
+                - generic [ref=f5e879]: "};"
+            - heading "梯度变量（Map Token）" [level=3] [ref=f5e881]:
+              - link [aria-hidden] [ref=f5e882] [cursor=pointer]:
+                - /url: "#map-token"
+              - text: 梯度变量（Map Token）
+            - paragraph [ref=f5e883]:
+              - text: Map Token 是基于 Seed 派生的梯度变量。定制 Map Token 推荐通过
+              - code [ref=f5e884]: theme.algorithm
+              - text: 来实现，这样可以保证 Map Token 之间的梯度关系。也可以通过
+              - code [ref=f5e885]: theme.token
+              - text: 覆盖，用于单独修改一些 map token 的值。
+            - generic [ref=f5e886]:
+              - generic [ref=f5e887]: tsx
+              - generic [ref=f5e888]:
+                - generic [ref=f5e889]: "const theme = {"
+                - generic [ref=f5e891]: "token: {"
+                - generic [ref=f5e893]: "colorPrimaryBg: '#e6f7ff',"
+                - generic [ref=f5e895]: "},"
+                - generic [ref=f5e897]: "};"
+            - heading "别名变量（Alias Token）" [level=3] [ref=f5e899]:
+              - link [aria-hidden] [ref=f5e900] [cursor=pointer]:
+                - /url: "#alias-token"
+              - text: 别名变量（Alias Token）
+            - paragraph [ref=f5e901]: Alias Token 用于批量控制某些共性组件的样式，基本上是 Map Token 别名，或者特殊处理过的 Map Token。
+            - generic [ref=f5e902]:
+              - generic [ref=f5e903]: tsx
+              - generic [ref=f5e904]:
+                - generic [ref=f5e905]: "const theme = {"
+                - generic [ref=f5e907]: "token: {"
+                - generic [ref=f5e909]: "colorLink: '#1890ff',"
+                - generic [ref=f5e911]: "},"
+                - generic [ref=f5e913]: "};"
+            - heading "基本算法（algorithm)" [level=3] [ref=f5e915]:
+              - link [aria-hidden] [ref=f5e916] [cursor=pointer]:
+                - /url: "#algorithm"
+              - text: 基本算法（algorithm)
+            - paragraph [ref=f5e917]: 基本算法用于将 Seed Token 展开为 Map Token，比如由一个基本色算出一个梯度色板，或者由一个基本的圆角算出各种大小的圆角。算法可以单独使用，也可以任意地组合使用，比如可以将暗色算法和紧凑算法组合使用，得到一个暗色和紧凑相结合的主题。
+            - generic [ref=f5e918]:
+              - generic [ref=f5e919]: tsx
+              - generic [ref=f5e920]:
+                - generic [ref=f5e921]: "import { theme } from 'antd';"
+                - generic [ref=f5e925]: "const { darkAlgorithm, compactAlgorithm } = theme;"
+                - generic [ref=f5e929]: "const theme = {"
+                - generic [ref=f5e931]: "algorithm: [darkAlgorithm, compactAlgorithm],"
+                - generic [ref=f5e933]: "};"
+            - heading "API" [level=2] [ref=f5e935]:
+              - link [aria-hidden] [ref=f5e936] [cursor=pointer]:
+                - /url: "#api"
+              - text: API
+            - heading "Theme" [level=3] [ref=f5e937]:
+              - link [aria-hidden] [ref=f5e938] [cursor=pointer]:
+                - /url: "#theme"
+              - text: Theme
+            - table [ref=f5e941]:
+              - rowgroup [ref=f5e942]:
+                - row [ref=f5e943]:
+                  - columnheader "属性" [ref=f5e944]
+                  - columnheader "说明" [ref=f5e945]
+                  - columnheader "类型" [ref=f5e946]
+                  - columnheader "默认值" [ref=f5e947]
+                  - columnheader "版本" [ref=f5e948]
+              - rowgroup [ref=f5e949]:
+                - row [ref=f5e950]:
+                  - cell "token" [ref=f5e951]
+                  - cell "用于修改 Design Token" [ref=f5e952]
+                  - cell [ref=f5e953]:
+                    - code [ref=f5e954]: AliasToken
+                  - cell "-" [ref=f5e955]
+                  - cell [ref=f5e956]
+                - row [ref=f5e957]:
+                  - cell "inherit" [ref=f5e958]
+                  - cell "继承上层 ConfigProvider 中配置的主题。" [ref=f5e959]
+                  - cell "boolean" [ref=f5e960]
+                  - cell "true" [ref=f5e961]
+                  - cell [ref=f5e962]
+                - row [ref=f5e963]:
+                  - cell "algorithm" [ref=f5e964]
+                  - cell "用于修改 Seed Token 到 Map Token 的算法" [ref=f5e965]
+                  - cell [ref=f5e966]:
+                    - code [ref=f5e967]: "(token: SeedToken) => MapToken"
+                    - text: "|"
+                    - code [ref=f5e968]: "((token: SeedToken) => MapToken)[]"
+                  - cell [ref=f5e969]:
+                    - code [ref=f5e970]: defaultAlgorithm
+                  - cell [ref=f5e971]
+                - row [ref=f5e972]:
+                  - cell "components" [ref=f5e973]
+                  - cell "用于修改各个组件的 Component Token 以及覆盖该组件消费的 Alias Token" [ref=f5e974]
+                  - cell [ref=f5e975]:
+                    - code [ref=f5e976]: ComponentsConfig
+                  - cell "-" [ref=f5e977]
+                  - cell [ref=f5e978]
+                - row [ref=f5e979]:
+                  - cell "cssVar" [ref=f5e980]
+                  - cell "CSS 变量配置" [ref=f5e981]
+                  - cell [ref=f5e982]:
+                    - link "cssVar" [ref=f5e983] [cursor=pointer]:
+                      - /url: /docs/react/customize-theme-cn#css-var
+                  - cell "-" [ref=f5e984]
+                  - cell [ref=f5e985]
+                - row [ref=f5e986]:
+                  - cell "hashed" [ref=f5e987]
+                  - cell "将样式添加至 hash className 上" [ref=f5e988]
+                  - cell "boolean" [ref=f5e989]
+                  - cell "true" [ref=f5e990]
+                  - cell [ref=f5e991]
+                - row [ref=f5e992]:
+                  - cell "zeroRuntime" [ref=f5e993]
+                  - cell "开启零运行时模式，不会在运行时产生样式，需要手动引入 CSS 文件" [ref=f5e994]
+                  - cell "boolean" [ref=f5e995]
+                  - cell "false" [ref=f5e996]
+                  - cell "6.0.0" [ref=f5e997]
+            - heading "ComponentsConfig" [level=3] [ref=f5e998]:
+              - link [aria-hidden] [ref=f5e999] [cursor=pointer]:
+                - /url: "#componentsconfig"
+              - text: ComponentsConfig
+            - table [ref=f5e1002]:
+              - rowgroup [ref=f5e1003]:
+                - row [ref=f5e1004]:
+                  - columnheader "属性" [ref=f5e1005]
+                  - columnheader "说明" [ref=f5e1006]
+                  - columnheader "类型" [ref=f5e1007]
+                  - columnheader "默认值" [ref=f5e1008]
+              - rowgroup [ref=f5e1009]:
+                - row [ref=f5e1010]:
+                  - cell [ref=f5e1011]:
+                    - code [ref=f5e1012]: Component
+                    - text: (可以是任意 antd 组件名，如
+                    - code [ref=f5e1013]: Button
+                    - text: )
+                  - cell "用于修改 Component Token 以及覆盖该组件消费的 Alias Token" [ref=f5e1014]
+                  - cell [ref=f5e1015]:
+                    - code [ref=f5e1016]: "ComponentToken & AliasToken & { algorithm: boolean | (token: SeedToken) => MapToken"
+                    - text: "|"
+                    - code [ref=f5e1017]: "((token: SeedToken) => MapToken)[]}"
+                  - cell "-" [ref=f5e1018]
+            - blockquote [ref=f5e1019]:
+              - paragraph [ref=f5e1020]:
+                - text: 组件级别的
+                - code [ref=f5e1021]: algorithm
+                - text: 默认为
+                - code [ref=f5e1022]: "false"
+                - text: ，此时组件 Token 仅仅会覆盖该组件使用的 token，不会进行派生计算。设置为
+                - code [ref=f5e1023]: "true"
+                - text: 时会继承当前全局算法；也可以和全局的
+                - code [ref=f5e1024]: algorithm
+                - text: 一样传入一个或多个算法，这将会针对该组件覆盖全局的算法。
+            - heading "cssVar" [level=3] [ref=f5e1025]:
+              - link [aria-hidden] [ref=f5e1026] [cursor=pointer]:
+                - /url: "#css-var"
+              - text: cssVar
+            - table [ref=f5e1029]:
+              - rowgroup [ref=f5e1030]:
+                - row [ref=f5e1031]:
+                  - columnheader "属性" [ref=f5e1032]
+                  - columnheader "说明" [ref=f5e1033]
+                  - columnheader "类型" [ref=f5e1034]
+                  - columnheader "默认值" [ref=f5e1035]
+                  - columnheader "版本" [ref=f5e1036]
+              - rowgroup [ref=f5e1037]:
+                - row [ref=f5e1038]:
+                  - cell "prefix" [ref=f5e1039]
+                  - cell [ref=f5e1040]:
+                    - text: CSS 变量的前缀，默认与 ConfigProvider 上配置的
+                    - code [ref=f5e1041]: prefixCls
+                    - text: 相同
+                  - cell "string" [ref=f5e1042]
+                  - cell [ref=f5e1043]:
+                    - code [ref=f5e1044]: ant
+                  - cell [ref=f5e1045]
+                - row [ref=f5e1046]:
+                  - cell "key" [ref=f5e1047]
+                  - cell [ref=f5e1048]:
+                    - text: 当前主题的唯一识别 key，默认用
+                    - code [ref=f5e1049]: useId
+                    - text: 填充
+                  - cell "string" [ref=f5e1050]
+                  - cell [ref=f5e1051]:
+                    - code [ref=f5e1052]: useId
+                    - text: in React 18
+                  - cell [ref=f5e1053]
+            - heading "SeedToken" [level=3] [ref=f5e1054]:
+              - link [aria-hidden] [ref=f5e1055] [cursor=pointer]:
+                - /url: "#seedtoken"
+              - text: SeedToken
+          - table [ref=f5e1062]:
+            - rowgroup [ref=f5e1063]:
+              - row [ref=f5e1064]:
+                - columnheader "Token 名称" [ref=f5e1065]
+                - columnheader "描述" [ref=f5e1066]
+                - columnheader "类型" [ref=f5e1067]
+                - columnheader "默认值" [ref=f5e1068]
+            - rowgroup [ref=f5e1069]:
+              - row [ref=f5e1070]:
+                - cell "borderRadius" [ref=f5e1071]
+                - cell "基础组件的圆角大小，例如按钮、输入框、卡片等" [ref=f5e1072]
+                - cell "number" [ref=f5e1073]
+                - cell "6" [ref=f5e1074]
+              - row [ref=f5e1075]:
+                - cell "colorBgBase" [ref=f5e1076]
+                - cell "用于派生背景色梯度的基础变量，v5 中我们添加了一层背景色的派生算法可以产出梯度明确的背景色的梯度变量。但请不要在代码中直接使用该 Seed Token ！" [ref=f5e1077]
+                - cell "string" [ref=f5e1078]
+                - cell "#fff" [ref=f5e1079]
+              - row [ref=f5e1082]:
+                - cell "colorError" [ref=f5e1083]
+                - cell "用于表示操作失败的 Token 序列，如失败按钮、错误状态提示（Result）组件等。" [ref=f5e1084]
+                - cell "string" [ref=f5e1085]
+                - cell "#ff4d4f" [ref=f5e1086]
+              - row [ref=f5e1089]:
+                - cell "colorInfo" [ref=f5e1090]
+                - cell "用于表示操作信息的 Token 序列，如 Alert 、Tag、 Progress 等组件都有用到该组梯度变量。" [ref=f5e1091]
+                - cell "string" [ref=f5e1092]
+                - cell "#1677ff" [ref=f5e1093]
+              - row [ref=f5e1096]:
+                - cell "colorLink" [ref=f5e1097]
+                - cell "控制超链接的颜色。" [ref=f5e1098]
+                - cell "string" [ref=f5e1099]
+                - cell "#1677ff" [ref=f5e1100]
+              - row [ref=f5e1103]:
+                - cell "colorPrimary" [ref=f5e1104]
+                - cell "品牌色是体现产品特性和传播理念最直观的视觉元素之一。在你完成品牌主色的选取之后，我们会自动帮你生成一套完整的色板，并赋予它们有效的设计语义" [ref=f5e1105]
+                - cell "string" [ref=f5e1106]
+                - cell "#1677ff" [ref=f5e1107]
+              - row [ref=f5e1110]:
+                - cell "colorSuccess" [ref=f5e1111]
+                - cell "用于表示操作成功的 Token 序列，如 Result、Progress 等组件会使用该组梯度变量。" [ref=f5e1112]
+                - cell "string" [ref=f5e1113]
+                - cell "#52c41a" [ref=f5e1114]
+              - row [ref=f5e1117]:
+                - cell "colorTextBase" [ref=f5e1118]
+                - cell "用于派生文本色梯度的基础变量，v5 中我们添加了一层文本色的派生算法可以产出梯度明确的文本色的梯度变量。但请不要在代码中直接使用该 Seed Token ！" [ref=f5e1119]
+                - cell "string" [ref=f5e1120]
+                - cell "#000" [ref=f5e1121]
+              - row [ref=f5e1124]:
+                - cell "colorWarning" [ref=f5e1125]
+                - cell "用于表示操作警告的 Token 序列，如 Notification、 Alert等警告类组件或 Input 输入类等组件会使用该组梯度变量。" [ref=f5e1126]
+                - cell "string" [ref=f5e1127]
+                - cell "#faad14" [ref=f5e1128]
+              - row [ref=f5e1131]:
+                - cell "controlHeight" [ref=f5e1132]
+                - cell "Ant Design 中按钮和输入框等基础控件的高度" [ref=f5e1133]
+                - cell "number" [ref=f5e1134]
+                - cell "32" [ref=f5e1135]
+              - row [ref=f5e1136]:
+                - cell "focusOutline" [ref=f5e1137]
+                - cell "用于配置组件聚焦时是否显示可见描边" [ref=f5e1138]
+                - cell "boolean" [ref=f5e1139]
+                - cell "true" [ref=f5e1140]
+              - row [ref=f5e1141]:
+                - cell "fontFamily" [ref=f5e1142]
+                - cell "Ant Design 的字体家族中优先使用系统默认的界面字体，同时提供了一套利于屏显的备用字体库，来维护在不同平台以及浏览器的显示下，字体始终保持良好的易读性和可读性，体现了友好、稳定和专业的特性。" [ref=f5e1143]
+                - cell "string" [ref=f5e1144]
+                - cell "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'" [ref=f5e1145]
+              - row [ref=f5e1146]:
+                - cell "fontFamilyCode" [ref=f5e1147]
+                - cell "代码字体，用于 Typography 内的 code、pre 和 kbd 类型的元素" [ref=f5e1148]
+                - cell "string" [ref=f5e1149]
+                - cell "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace" [ref=f5e1150]
+              - row [ref=f5e1151]:
+                - cell "fontSize" [ref=f5e1152]
+                - cell "设计系统中使用最广泛的字体大小，文本梯度也将基于该字号进行派生。" [ref=f5e1153]
+                - cell "number" [ref=f5e1154]
+                - cell "14" [ref=f5e1155]
+              - row [ref=f5e1156]:
+                - cell "lineType" [ref=f5e1157]
+                - cell "用于控制组件边框、分割线等的样式，默认是实线" [ref=f5e1158]
+                - cell "string" [ref=f5e1159]
+                - cell "solid" [ref=f5e1160]
+              - row [ref=f5e1161]:
+                - cell "lineWidth" [ref=f5e1162]
+                - cell "用于控制组件边框、分割线等的宽度" [ref=f5e1163]
+                - cell "number" [ref=f5e1164]
+                - cell "1" [ref=f5e1165]
+              - row [ref=f5e1166]:
+                - cell "motion" [ref=f5e1167]
+                - 'cell "用于配置动画效果，为 `false` 时则关闭动画" [ref=f5e1168]'
+                - cell "boolean" [ref=f5e1169]
+                - cell "true" [ref=f5e1170]
+              - row [ref=f5e1171]:
+                - cell "motionBase" [ref=f5e1172]
+                - cell "动画基础时长。" [ref=f5e1173]
+                - cell "number" [ref=f5e1174]
+                - cell "0" [ref=f5e1175]
+              - row [ref=f5e1176]:
+                - cell "motionEaseInBack" [ref=f5e1177]
+                - cell "预设动效曲率" [ref=f5e1178]
+                - cell "string" [ref=f5e1179]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.71, -0.46, 0.88, 0.6)" [ref=f5e1180]:
+                  - generic [ref=f5e1181]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1182]
+                    - generic [ref=f5e1189]:
+                      - generic [ref=f5e1190]: cubic-bezier(0.71, -0.46, 0.88, 0.6)
+                      - link [ref=f5e1191] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.71,-0.46,0.88,0.6
+                        - img [ref=f5e1193]:
+                          - img "External Link Icon" [ref=f5e1194]
+              - row [ref=f5e1197]:
+                - cell "motionEaseInOut" [ref=f5e1198]
+                - cell "预设动效曲率" [ref=f5e1199]
+                - cell "string" [ref=f5e1200]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.645, 0.045, 0.355, 1)" [ref=f5e1201]:
+                  - generic [ref=f5e1202]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1203]
+                    - generic [ref=f5e1210]:
+                      - generic [ref=f5e1211]: cubic-bezier(0.645, 0.045, 0.355, 1)
+                      - link [ref=f5e1212] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.645,0.045,0.355,1
+                        - img [ref=f5e1214]:
+                          - img "External Link Icon" [ref=f5e1215]
+              - row [ref=f5e1218]:
+                - cell "motionEaseInOutCirc" [ref=f5e1219]
+                - cell "预设动效曲率" [ref=f5e1220]
+                - cell "string" [ref=f5e1221]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.78, 0.14, 0.15, 0.86)" [ref=f5e1222]:
+                  - generic [ref=f5e1223]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1224]
+                    - generic [ref=f5e1231]:
+                      - generic [ref=f5e1232]: cubic-bezier(0.78, 0.14, 0.15, 0.86)
+                      - link [ref=f5e1233] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.78,0.14,0.15,0.86
+                        - img [ref=f5e1235]:
+                          - img "External Link Icon" [ref=f5e1236]
+              - row [ref=f5e1239]:
+                - cell "motionEaseInQuint" [ref=f5e1240]
+                - cell "预设动效曲率" [ref=f5e1241]
+                - cell "string" [ref=f5e1242]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.755, 0.05, 0.855, 0.06)" [ref=f5e1243]:
+                  - generic [ref=f5e1244]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1245]
+                    - generic [ref=f5e1252]:
+                      - generic [ref=f5e1253]: cubic-bezier(0.755, 0.05, 0.855, 0.06)
+                      - link [ref=f5e1254] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.755,0.05,0.855,0.06
+                        - img [ref=f5e1256]:
+                          - img "External Link Icon" [ref=f5e1257]
+              - row [ref=f5e1260]:
+                - cell "motionEaseOut" [ref=f5e1261]
+                - cell "预设动效曲率" [ref=f5e1262]
+                - cell "string" [ref=f5e1263]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.215, 0.61, 0.355, 1)" [ref=f5e1264]:
+                  - generic [ref=f5e1265]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1266]
+                    - generic [ref=f5e1273]:
+                      - generic [ref=f5e1274]: cubic-bezier(0.215, 0.61, 0.355, 1)
+                      - link [ref=f5e1275] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.215,0.61,0.355,1
+                        - img [ref=f5e1277]:
+                          - img "External Link Icon" [ref=f5e1278]
+              - row [ref=f5e1281]:
+                - cell "motionEaseOutBack" [ref=f5e1282]
+                - cell "预设动效曲率" [ref=f5e1283]
+                - cell "string" [ref=f5e1284]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.12, 0.4, 0.29, 1.46)" [ref=f5e1285]:
+                  - generic [ref=f5e1286]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1287]
+                    - generic [ref=f5e1294]:
+                      - generic [ref=f5e1295]: cubic-bezier(0.12, 0.4, 0.29, 1.46)
+                      - link [ref=f5e1296] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.12,0.4,0.29,1.46
+                        - img [ref=f5e1298]:
+                          - img "External Link Icon" [ref=f5e1299]
+              - row [ref=f5e1302]:
+                - cell "motionEaseOutCirc" [ref=f5e1303]
+                - cell "预设动效曲率" [ref=f5e1304]
+                - cell "string" [ref=f5e1305]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.08, 0.82, 0.17, 1)" [ref=f5e1306]:
+                  - generic [ref=f5e1307]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1308]
+                    - generic [ref=f5e1315]:
+                      - generic [ref=f5e1316]: cubic-bezier(0.08, 0.82, 0.17, 1)
+                      - link [ref=f5e1317] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.08,0.82,0.17,1
+                        - img [ref=f5e1319]:
+                          - img "External Link Icon" [ref=f5e1320]
+              - row [ref=f5e1323]:
+                - cell "motionEaseOutQuint" [ref=f5e1324]
+                - cell "预设动效曲率" [ref=f5e1325]
+                - cell "string" [ref=f5e1326]
+                - cell "Cubic Bezier Visualizer cubic-bezier(0.23, 1, 0.32, 1)" [ref=f5e1327]:
+                  - generic [ref=f5e1328]:
+                    - img "Cubic Bezier Visualizer" [ref=f5e1329]
+                    - generic [ref=f5e1336]:
+                      - generic [ref=f5e1337]: cubic-bezier(0.23, 1, 0.32, 1)
+                      - link [ref=f5e1338] [cursor=pointer]:
+                        - /url: https://cubic-bezier.com/#0.23,1,0.32,1
+                        - img [ref=f5e1340]:
+                          - img "External Link Icon" [ref=f5e1341]
+              - row [ref=f5e1344]:
+                - cell "motionUnit" [ref=f5e1345]
+                - cell "用于控制动画时长的变化单位" [ref=f5e1346]
+                - cell "number" [ref=f5e1347]
+                - cell "0.1" [ref=f5e1348]
+              - row [ref=f5e1349]:
+                - cell "opacityImage" [ref=f5e1350]
+                - cell "控制图片不透明度" [ref=f5e1351]
+                - cell "number" [ref=f5e1352]
+                - cell "1" [ref=f5e1353]
+              - row [ref=f5e1354]:
+                - cell "sizePopupArrow" [ref=f5e1355]
+                - cell "组件箭头的尺寸" [ref=f5e1356]
+                - cell "number" [ref=f5e1357]
+                - cell "16" [ref=f5e1358]
+              - row [ref=f5e1359]:
+                - cell "sizeStep" [ref=f5e1360]
+                - cell "用于控制组件尺寸的基础步长，尺寸步长结合尺寸变化单位，就可以派生各种尺寸梯度。通过调整步长即可得到不同的布局模式，例如 V5 紧凑模式下的尺寸步长为 2" [ref=f5e1361]
+                - cell "number" [ref=f5e1362]
+                - cell "4" [ref=f5e1363]
+              - row [ref=f5e1364]:
+                - cell "sizeUnit" [ref=f5e1365]
+                - cell "用于控制组件尺寸的变化单位，在 Ant Design 中我们的基础单位为 4 ，便于更加细致地控制尺寸梯度" [ref=f5e1366]
+                - cell "number" [ref=f5e1367]
+                - cell "4" [ref=f5e1368]
+              - row [ref=f5e1369]:
+                - cell "wireframe" [ref=f5e1370]
+                - cell "用于将组件的视觉效果变为线框化，如果需要使用 V4 的效果，需要开启配置项" [ref=f5e1371]
+                - cell "boolean" [ref=f5e1372]
+                - cell "false" [ref=f5e1373]
+              - row [ref=f5e1374]:
+                - cell "zIndexBase" [ref=f5e1375]
+                - cell "所有组件的基础 Z 轴值，用于一些悬浮类的组件的可以基于该值 Z 轴控制层级，例如 BackTop、 Affix 等" [ref=f5e1376]
+                - cell "number" [ref=f5e1377]
+                - cell "0" [ref=f5e1378]
+              - row [ref=f5e1379]:
+                - cell "zIndexPopupBase" [ref=f5e1380]
+                - cell "浮层类组件的基础 Z 轴值，用于一些悬浮类的组件的可以基于该值 Z 轴控制层级，例如 FloatButton、 Affix、Modal 等" [ref=f5e1381]
+                - cell "number" [ref=f5e1382]
+                - cell "1000" [ref=f5e1383]
+              - row [ref=f5e1384]:
+                - cell "blue" [ref=f5e1385]
+                - cell "预设blue颜色" [ref=f5e1386]
+                - cell "color" [ref=f5e1387]
+                - cell "#1677FF" [ref=f5e1388]
+              - row [ref=f5e1391]:
+                - cell "purple" [ref=f5e1392]
+                - cell "预设purple颜色" [ref=f5e1393]
+                - cell "color" [ref=f5e1394]
+                - cell "#722ED1" [ref=f5e1395]
+              - row [ref=f5e1398]:
+                - cell "cyan" [ref=f5e1399]
+                - cell "预设cyan颜色" [ref=f5e1400]
+                - cell "color" [ref=f5e1401]
+                - cell "#13C2C2" [ref=f5e1402]
+              - row [ref=f5e1405]:
+                - cell "green" [ref=f5e1406]
+                - cell "预设green颜色" [ref=f5e1407]
+                - cell "color" [ref=f5e1408]
+                - cell "#52C41A" [ref=f5e1409]
+              - row [ref=f5e1412]:
+                - cell "magenta" [ref=f5e1413]
+                - cell "预设magenta颜色" [ref=f5e1414]
+                - cell "color" [ref=f5e1415]
+                - cell "#EB2F96" [ref=f5e1416]
+              - row [ref=f5e1419]:
+                - cell "pink" [ref=f5e1420]
+                - cell "预设pink颜色" [ref=f5e1421]
+                - cell "color" [ref=f5e1422]
+                - cell "#EB2F96" [ref=f5e1423]
+              - row [ref=f5e1426]:
+                - cell "red" [ref=f5e1427]
+                - cell "预设red颜色" [ref=f5e1428]
+                - cell "color" [ref=f5e1429]
+                - cell "#F5222D" [ref=f5e1430]
+              - row [ref=f5e1433]:
+                - cell "orange" [ref=f5e1434]
+                - cell "预设orange颜色" [ref=f5e1435]
+                - cell "color" [ref=f5e1436]
+                - cell "#FA8C16" [ref=f5e1437]
+              - row [ref=f5e1440]:
+                - cell "yellow" [ref=f5e1441]
+                - cell "预设yellow颜色" [ref=f5e1442]
+                - cell "color" [ref=f5e1443]
+                - cell "#FADB14" [ref=f5e1444]
+              - row [ref=f5e1447]:
+                - cell "volcano" [ref=f5e1448]
+                - cell "预设volcano颜色" [ref=f5e1449]
+                - cell "color" [ref=f5e1450]
+                - cell "#FA541C" [ref=f5e1451]
+              - row [ref=f5e1454]:
+                - cell "geekblue" [ref=f5e1455]
+                - cell "预设geekblue颜色" [ref=f5e1456]
+                - cell "color" [ref=f5e1457]
+                - cell "#2F54EB" [ref=f5e1458]
+              - row [ref=f5e1461]:
+                - cell "lime" [ref=f5e1462]
+                - cell "预设lime颜色" [ref=f5e1463]
+                - cell "color" [ref=f5e1464]
+                - cell "#A0D911" [ref=f5e1465]
+              - row [ref=f5e1468]:
+                - cell "gold" [ref=f5e1469]
+                - cell "预设gold颜色" [ref=f5e1470]
+                - cell "color" [ref=f5e1471]
+                - cell "#FAAD14" [ref=f5e1472]
+          - generic [ref=f5e1475]:
+            - heading "MapToken" [level=3] [ref=f5e1476]:
+              - link [aria-hidden] [ref=f5e1477] [cursor=pointer]:
+                - /url: "#maptoken"
+              - text: MapToken
+            - blockquote [ref=f5e1478]:
+              - paragraph [ref=f5e1479]: 继承所有 SeedToken 的属性
+          - table [ref=f5e1486]:
+            - rowgroup [ref=f5e1487]:
+              - row [ref=f5e1488]:
+                - columnheader "Token 名称" [ref=f5e1489]
+                - columnheader "描述" [ref=f5e1490]
+                - columnheader "类型" [ref=f5e1491]
+                - columnheader "默认值" [ref=f5e1492]
+            - rowgroup [ref=f5e1493]:
+              - row [ref=f5e1494]:
+                - cell "borderRadiusLG" [ref=f5e1495]
+                - cell "LG号圆角，用于组件中的一些大圆角，如 Card、Modal 等一些组件样式。" [ref=f5e1496]
+                - cell "number" [ref=f5e1497]
+                - cell "8" [ref=f5e1498]
+              - row [ref=f5e1499]:
+                - cell "borderRadiusOuter" [ref=f5e1500]
+                - cell "外部圆角" [ref=f5e1501]
+                - cell "number" [ref=f5e1502]
+                - cell "4" [ref=f5e1503]
+              - row [ref=f5e1504]:
+                - cell "borderRadiusSM" [ref=f5e1505]
+                - cell "SM号圆角，用于组件小尺寸下的圆角，如 Button、Input、Select 等输入类控件在 small size 下的圆角" [ref=f5e1506]
+                - cell "number" [ref=f5e1507]
+                - cell "4" [ref=f5e1508]
+              - row [ref=f5e1509]:
+                - cell "borderRadiusXS" [ref=f5e1510]
+                - cell "XS号圆角，用于组件中的一些小圆角，如 Segmented 、Arrow 等一些内部圆角的组件样式中。" [ref=f5e1511]
+                - cell "number" [ref=f5e1512]
+                - cell "2" [ref=f5e1513]
+              - row [ref=f5e1514]:
+                - cell "colorBgBlur" [ref=f5e1515]
+                - cell "控制毛玻璃容器的背景色，通常为透明色。" [ref=f5e1516]
+                - cell "string" [ref=f5e1517]
+                - cell "transparent" [ref=f5e1518]
+              - row [ref=f5e1519]:
+                - cell "colorBgContainer" [ref=f5e1520]
+                - 'cell "组件的容器背景色，例如：默认按钮、输入框等。务必不要将其与 `colorBgElevated` 混淆。" [ref=f5e1521]'
+                - cell "string" [ref=f5e1522]
+                - cell "#ffffff" [ref=f5e1523]
+              - row [ref=f5e1526]:
+                - cell "colorBgElevated" [ref=f5e1527]
+                - 'cell "浮层容器背景色，在暗色模式下该 token 的色值会比 `colorBgContainer` 要亮一些。例如：模态框、弹出框、菜单等。" [ref=f5e1528]'
+                - cell "string" [ref=f5e1529]
+                - cell "#ffffff" [ref=f5e1530]
+              - row [ref=f5e1533]:
+                - cell "colorBgLayout" [ref=f5e1534]
+                - cell "该色用于页面整体布局的背景色，只有需要在页面中处于 B1 的视觉层级时才会使用该 token，其他用法都是错误的" [ref=f5e1535]
+                - cell "string" [ref=f5e1536]
+                - cell "#f5f5f5" [ref=f5e1537]
+              - row [ref=f5e1540]:
+                - cell "colorBgMask" [ref=f5e1541]
+                - cell "浮层的背景蒙层颜色，用于遮罩浮层下面的内容，Modal、Drawer、Image 等组件的蒙层使用的是该 token" [ref=f5e1542]
+                - cell "string" [ref=f5e1543]
+                - cell "rgba(0,0,0,0.45)" [ref=f5e1544]
+              - row [ref=f5e1547]:
+                - cell "colorBgSolid" [ref=f5e1548]
+                - cell "实心的背景颜色，目前只用在默认实心按钮背景色上。" [ref=f5e1549]
+                - cell "string" [ref=f5e1550]
+                - cell "rgb(0,0,0)" [ref=f5e1551]
+              - row [ref=f5e1554]:
+                - cell "colorBgSolidActive" [ref=f5e1555]
+                - cell "实心的背景颜色激活态，目前只用在默认实心按钮的 active 效果。" [ref=f5e1556]
+                - cell "string" [ref=f5e1557]
+                - cell "rgba(0,0,0,0.95)" [ref=f5e1558]
+              - row [ref=f5e1561]:
+                - cell "colorBgSolidHover" [ref=f5e1562]
+                - cell "实心的背景颜色悬浮态，目前只用在默认实心按钮的 hover 效果。" [ref=f5e1563]
+                - cell "string" [ref=f5e1564]
+                - cell "rgba(0,0,0,0.75)" [ref=f5e1565]
+              - row [ref=f5e1568]:
+                - cell "colorBgSpotlight" [ref=f5e1569]
+                - cell "该色用于引起用户强烈关注注意的背景色，目前只用在 Tooltip 的背景色上。" [ref=f5e1570]
+                - cell "string" [ref=f5e1571]
+                - cell "rgba(0,0,0,0.85)" [ref=f5e1572]
+              - row [ref=f5e1575]:
+                - cell "colorBorder" [ref=f5e1576]
+                - cell "默认使用的边框颜色, 用于分割不同的元素，例如：表单的分割线、卡片的分割线等。" [ref=f5e1577]
+                - cell "string" [ref=f5e1578]
+                - cell "#d9d9d9" [ref=f5e1579]
+              - row [ref=f5e1582]:
+                - cell "colorBorderDisabled" [ref=f5e1583]
+                - cell "控制元素在禁用状态下的边框颜色。" [ref=f5e1584]
+                - cell "string" [ref=f5e1585]
+                - cell "#d9d9d9" [ref=f5e1586]
+              - row [ref=f5e1589]:
+                - cell "colorBorderSecondary" [ref=f5e1590]
+                - cell "比默认使用的边框色要浅一级，此颜色和 colorSplit 的颜色一致。使用的是实色。" [ref=f5e1591]
+                - cell "string" [ref=f5e1592]
+                - cell "#f0f0f0" [ref=f5e1593]
+              - row [ref=f5e1596]:
+                - cell "colorErrorActive" [ref=f5e1597]
+                - cell "错误色的深色激活态" [ref=f5e1598]
+                - cell "string" [ref=f5e1599]
+                - cell "#d9363e" [ref=f5e1600]
+              - row [ref=f5e1603]:
+                - cell "colorErrorBg" [ref=f5e1604]
+                - cell "错误色的浅色背景颜色" [ref=f5e1605]
+                - cell "string" [ref=f5e1606]
+                - cell "#fff2f0" [ref=f5e1607]
+              - row [ref=f5e1610]:
+                - cell "colorErrorBgActive" [ref=f5e1611]
+                - cell "错误色的浅色背景色激活态" [ref=f5e1612]
+                - cell "string" [ref=f5e1613]
+                - cell "#ffccc7" [ref=f5e1614]
+              - row [ref=f5e1617]:
+                - cell "colorErrorBgFilledHover" [ref=f5e1618]
+                - cell "错误色的浅色填充背景色悬浮态，目前只用在危险填充按钮的 hover 效果。" [ref=f5e1619]
+                - cell "string" [ref=f5e1620]
+                - cell "#ffdfdc" [ref=f5e1621]
+              - row [ref=f5e1624]:
+                - cell "colorErrorBgHover" [ref=f5e1625]
+                - cell "错误色的浅色背景色悬浮态" [ref=f5e1626]
+                - cell "string" [ref=f5e1627]
+                - cell "#fff1f0" [ref=f5e1628]
+              - row [ref=f5e1631]:
+                - cell "colorErrorBorder" [ref=f5e1632]
+                - cell "错误色的描边色" [ref=f5e1633]
+                - cell "string" [ref=f5e1634]
+                - cell "#ffccc7" [ref=f5e1635]
+              - row [ref=f5e1638]:
+                - cell "colorErrorBorderHover" [ref=f5e1639]
+                - cell "错误色的描边色悬浮态" [ref=f5e1640]
+                - cell "string" [ref=f5e1641]
+                - cell "#ffa39e" [ref=f5e1642]
+              - row [ref=f5e1645]:
+                - cell "colorErrorHover" [ref=f5e1646]
+                - cell "错误色的深色悬浮态" [ref=f5e1647]
+                - cell "string" [ref=f5e1648]
+                - cell "#ff7875" [ref=f5e1649]
+              - row [ref=f5e1652]:
+                - cell "colorErrorText" [ref=f5e1653]
+                - cell "错误色的文本默认态" [ref=f5e1654]
+                - cell "string" [ref=f5e1655]
+                - cell "#ff4d4f" [ref=f5e1656]
+              - row [ref=f5e1659]:
+                - cell "colorErrorTextActive" [ref=f5e1660]
+                - cell "错误色的文本激活态" [ref=f5e1661]
+                - cell "string" [ref=f5e1662]
+                - cell "#d9363e" [ref=f5e1663]
+              - row [ref=f5e1666]:
+                - cell "colorErrorTextHover" [ref=f5e1667]
+                - cell "错误色的文本悬浮态" [ref=f5e1668]
+                - cell "string" [ref=f5e1669]
+                - cell "#ff7875" [ref=f5e1670]
+              - row [ref=f5e1673]:
+                - cell "colorFill" [ref=f5e1674]
+                - cell "最深的填充色，用于拉开与二、三级填充色的区分度，目前只用在 Slider 的 hover 效果。" [ref=f5e1675]
+                - cell "string" [ref=f5e1676]
+                - cell "rgba(0,0,0,0.15)" [ref=f5e1677]
+              - row [ref=f5e1680]:
+                - cell "colorFillQuaternary" [ref=f5e1681]
+                - cell "最弱一级的填充色，适用于不易引起注意的色块，例如斑马纹、区分边界的色块等。" [ref=f5e1682]
+                - cell "string" [ref=f5e1683]
+                - cell "rgba(0,0,0,0.02)" [ref=f5e1684]
+              - row [ref=f5e1687]:
+                - cell "colorFillSecondary" [ref=f5e1688]
+                - cell "二级填充色可以较为明显地勾勒出元素形体，如 Rate、Skeleton 等。也可以作为三级填充色的 Hover 状态，如 Table 等。" [ref=f5e1689]
+                - cell "string" [ref=f5e1690]
+                - cell "rgba(0,0,0,0.06)" [ref=f5e1691]
+              - row [ref=f5e1694]:
+                - cell "colorFillTertiary" [ref=f5e1695]
+                - cell "三级填充色用于勾勒出元素形体的场景，如 Slider、Segmented 等。如无强调需求的情况下，建议使用三级填色作为默认填色。" [ref=f5e1696]
+                - cell "string" [ref=f5e1697]
+                - cell "rgba(0,0,0,0.04)" [ref=f5e1698]
+              - row [ref=f5e1701]:
+                - cell "colorInfoActive" [ref=f5e1702]
+                - cell "信息色的深色激活态。" [ref=f5e1703]
+                - cell "string" [ref=f5e1704]
+                - cell "#0958d9" [ref=f5e1705]
+              - row [ref=f5e1708]:
+                - cell "colorInfoBg" [ref=f5e1709]
+                - cell "信息色的浅色背景颜色。" [ref=f5e1710]
+                - cell "string" [ref=f5e1711]
+                - cell "#e6f4ff" [ref=f5e1712]
+              - row [ref=f5e1715]:
+                - cell "colorInfoBgHover" [ref=f5e1716]
+                - cell "信息色的浅色背景色悬浮态。" [ref=f5e1717]
+                - cell "string" [ref=f5e1718]
+                - cell "#bae0ff" [ref=f5e1719]
+              - row [ref=f5e1722]:
+                - cell "colorInfoBorder" [ref=f5e1723]
+                - cell "信息色的描边色。" [ref=f5e1724]
+                - cell "string" [ref=f5e1725]
+                - cell "#91caff" [ref=f5e1726]
+              - row [ref=f5e1729]:
+                - cell "colorInfoBorderHover" [ref=f5e1730]
+                - cell "信息色的描边色悬浮态。" [ref=f5e1731]
+                - cell "string" [ref=f5e1732]
+                - cell "#69b1ff" [ref=f5e1733]
+              - row [ref=f5e1736]:
+                - cell "colorInfoHover" [ref=f5e1737]
+                - cell "信息色的深色悬浮态。" [ref=f5e1738]
+                - cell "string" [ref=f5e1739]
+                - cell "#69b1ff" [ref=f5e1740]
+              - row [ref=f5e1743]:
+                - cell "colorInfoText" [ref=f5e1744]
+                - cell "信息色的文本默认态。" [ref=f5e1745]
+                - cell "string" [ref=f5e1746]
+                - cell "#1677ff" [ref=f5e1747]
+              - row [ref=f5e1750]:
+                - cell "colorInfoTextActive" [ref=f5e1751]
+                - cell "信息色的文本激活态。" [ref=f5e1752]
+                - cell "string" [ref=f5e1753]
+                - cell "#0958d9" [ref=f5e1754]
+              - row [ref=f5e1757]:
+                - cell "colorInfoTextHover" [ref=f5e1758]
+                - cell "信息色的文本悬浮态。" [ref=f5e1759]
+                - cell "string" [ref=f5e1760]
+                - cell "#4096ff" [ref=f5e1761]
+              - row [ref=f5e1764]:
+                - cell "colorLinkActive" [ref=f5e1765]
+                - cell "控制超链接被点击时的颜色。" [ref=f5e1766]
+                - cell "string" [ref=f5e1767]
+                - cell "#0958d9" [ref=f5e1768]
+              - row [ref=f5e1771]:
+                - cell "colorLinkHover" [ref=f5e1772]
+                - cell "控制超链接悬浮时的颜色。" [ref=f5e1773]
+                - cell "string" [ref=f5e1774]
+                - cell "#69b1ff" [ref=f5e1775]
+              - row [ref=f5e1778]:
+                - cell "colorPrimaryActive" [ref=f5e1779]
+                - cell "主色梯度下的深色激活态。" [ref=f5e1780]
+                - cell "string" [ref=f5e1781]
+                - cell "#0958d9" [ref=f5e1782]
+              - row [ref=f5e1785]:
+                - cell "colorPrimaryBg" [ref=f5e1786]
+                - cell "主色浅色背景颜色，一般用于视觉层级较弱的选中状态。" [ref=f5e1787]
+                - cell "string" [ref=f5e1788]
+                - cell "#e6f4ff" [ref=f5e1789]
+              - row [ref=f5e1792]:
+                - cell "colorPrimaryBgHover" [ref=f5e1793]
+                - cell "与主色浅色背景颜色相对应的悬浮态颜色。" [ref=f5e1794]
+                - cell "string" [ref=f5e1795]
+                - cell "#bae0ff" [ref=f5e1796]
+              - row [ref=f5e1799]:
+                - cell "colorPrimaryBorder" [ref=f5e1800]
+                - cell "主色梯度下的描边用色，用在 Slider 等组件的描边上。" [ref=f5e1801]
+                - cell "string" [ref=f5e1802]
+                - cell "#91caff" [ref=f5e1803]
+              - row [ref=f5e1806]:
+                - cell "colorPrimaryBorderHover" [ref=f5e1807]
+                - cell "主色梯度下的描边用色的悬浮态，Slider 、Button 等组件的描边 Hover 时会使用。" [ref=f5e1808]
+                - cell "string" [ref=f5e1809]
+                - cell "#69b1ff" [ref=f5e1810]
+              - row [ref=f5e1813]:
+                - cell "colorPrimaryHover" [ref=f5e1814]
+                - cell "主色梯度下的悬浮态。" [ref=f5e1815]
+                - cell "string" [ref=f5e1816]
+                - cell "#4096ff" [ref=f5e1817]
+              - row [ref=f5e1820]:
+                - cell "colorPrimaryText" [ref=f5e1821]
+                - cell "主色梯度下的文本颜色。" [ref=f5e1822]
+                - cell "string" [ref=f5e1823]
+                - cell "#1677ff" [ref=f5e1824]
+              - row [ref=f5e1827]:
+                - cell "colorPrimaryTextActive" [ref=f5e1828]
+                - cell "主色梯度下的文本激活态。" [ref=f5e1829]
+                - cell "string" [ref=f5e1830]
+                - cell "#0958d9" [ref=f5e1831]
+              - row [ref=f5e1834]:
+                - cell "colorPrimaryTextHover" [ref=f5e1835]
+                - cell "主色梯度下的文本悬浮态。" [ref=f5e1836]
+                - cell "string" [ref=f5e1837]
+                - cell "#4096ff" [ref=f5e1838]
+              - row [ref=f5e1841]:
+                - cell "colorSuccessActive" [ref=f5e1842]
+                - cell "成功色的深色激活态" [ref=f5e1843]
+                - cell "string" [ref=f5e1844]
+                - cell "#389e0d" [ref=f5e1845]
+              - row [ref=f5e1848]:
+                - cell "colorSuccessBg" [ref=f5e1849]
+                - cell "成功色的浅色背景颜色，用于 Tag 和 Alert 的成功态背景色" [ref=f5e1850]
+                - cell "string" [ref=f5e1851]
+                - cell "#f6ffed" [ref=f5e1852]
+              - row [ref=f5e1855]:
+                - cell "colorSuccessBgHover" [ref=f5e1856]
+                - cell "成功色浅色背景颜色，一般用于视觉层级较弱的选中状态，不过 antd 目前没有使用到该 token" [ref=f5e1857]
+                - cell "string" [ref=f5e1858]
+                - cell "#d9f7be" [ref=f5e1859]
+              - row [ref=f5e1862]:
+                - cell "colorSuccessBorder" [ref=f5e1863]
+                - cell "成功色的描边色，用于 Tag 和 Alert 的成功态描边色" [ref=f5e1864]
+                - cell "string" [ref=f5e1865]
+                - cell "#b7eb8f" [ref=f5e1866]
+              - row [ref=f5e1869]:
+                - cell "colorSuccessBorderHover" [ref=f5e1870]
+                - cell "成功色的描边色悬浮态" [ref=f5e1871]
+                - cell "string" [ref=f5e1872]
+                - cell "#95de64" [ref=f5e1873]
+              - row [ref=f5e1876]:
+                - cell "colorSuccessHover" [ref=f5e1877]
+                - cell "成功色的深色悬浮态" [ref=f5e1878]
+                - cell "string" [ref=f5e1879]
+                - cell "#95de64" [ref=f5e1880]
+              - row [ref=f5e1883]:
+                - cell "colorSuccessText" [ref=f5e1884]
+                - cell "成功色的文本默认态" [ref=f5e1885]
+                - cell "string" [ref=f5e1886]
+                - cell "#52c41a" [ref=f5e1887]
+              - row [ref=f5e1890]:
+                - cell "colorSuccessTextActive" [ref=f5e1891]
+                - cell "成功色的文本激活态" [ref=f5e1892]
+                - cell "string" [ref=f5e1893]
+                - cell "#389e0d" [ref=f5e1894]
+              - row [ref=f5e1897]:
+                - cell "colorSuccessTextHover" [ref=f5e1898]
+                - cell "成功色的文本悬浮态" [ref=f5e1899]
+                - cell "string" [ref=f5e1900]
+                - cell "#73d13d" [ref=f5e1901]
+              - row [ref=f5e1904]:
+                - cell "colorText" [ref=f5e1905]
+                - cell "最深的文本色。为了符合W3C标准，默认的文本颜色使用了该色，同时这个颜色也是最深的中性色。" [ref=f5e1906]
+                - cell "string" [ref=f5e1907]
+                - cell "rgba(0,0,0,0.88)" [ref=f5e1908]
+              - row [ref=f5e1911]:
+                - cell "colorTextQuaternary" [ref=f5e1912]
+                - cell "第四级文本色是最浅的文本色，例如表单的输入提示文本、禁用色文本等。" [ref=f5e1913]
+                - cell "string" [ref=f5e1914]
+                - cell "rgba(0,0,0,0.25)" [ref=f5e1915]
+              - row [ref=f5e1918]:
+                - cell "colorTextSecondary" [ref=f5e1919]
+                - cell "作为第二梯度的文本色，一般用在不那么需要强化文本颜色的场景，例如 Label 文本、Menu 的文本选中态等场景。" [ref=f5e1920]
+                - cell "string" [ref=f5e1921]
+                - cell "rgba(0,0,0,0.65)" [ref=f5e1922]
+              - row [ref=f5e1925]:
+                - cell "colorTextTertiary" [ref=f5e1926]
+                - cell "第三级文本色一般用于描述性文本，例如表单的中的补充说明文本、列表的描述性文本等场景。" [ref=f5e1927]
+                - cell "string" [ref=f5e1928]
+                - cell "rgba(0,0,0,0.45)" [ref=f5e1929]
+              - row [ref=f5e1932]:
+                - cell "colorWarningActive" [ref=f5e1933]
+                - cell "警戒色的深色激活态" [ref=f5e1934]
+                - cell "string" [ref=f5e1935]
+                - cell "#d48806" [ref=f5e1936]
+              - row [ref=f5e1939]:
+                - cell "colorWarningBg" [ref=f5e1940]
+                - cell "警戒色的浅色背景颜色" [ref=f5e1941]
+                - cell "string" [ref=f5e1942]
+                - cell "#fffbe6" [ref=f5e1943]
+              - row [ref=f5e1946]:
+                - cell "colorWarningBgHover" [ref=f5e1947]
+                - cell "警戒色的浅色背景色悬浮态" [ref=f5e1948]
+                - cell "string" [ref=f5e1949]
+                - cell "#fff1b8" [ref=f5e1950]
+              - row [ref=f5e1953]:
+                - cell "colorWarningBorder" [ref=f5e1954]
+                - cell "警戒色的描边色" [ref=f5e1955]
+                - cell "string" [ref=f5e1956]
+                - cell "#ffe58f" [ref=f5e1957]
+              - row [ref=f5e1960]:
+                - cell "colorWarningBorderHover" [ref=f5e1961]
+                - cell "警戒色的描边色悬浮态" [ref=f5e1962]
+                - cell "string" [ref=f5e1963]
+                - cell "#ffd666" [ref=f5e1964]
+              - row [ref=f5e1967]:
+                - cell "colorWarningHover" [ref=f5e1968]
+                - cell "警戒色的深色悬浮态" [ref=f5e1969]
+                - cell "string" [ref=f5e1970]
+                - cell "#ffd666" [ref=f5e1971]
+              - row [ref=f5e1974]:
+                - cell "colorWarningText" [ref=f5e1975]
+                - cell "警戒色的文本默认态" [ref=f5e1976]
+                - cell "string" [ref=f5e1977]
+                - cell "#faad14" [ref=f5e1978]
+              - row [ref=f5e1981]:
+                - cell "colorWarningTextActive" [ref=f5e1982]
+                - cell "警戒色的文本激活态" [ref=f5e1983]
+                - cell "string" [ref=f5e1984]
+                - cell "#d48806" [ref=f5e1985]
+              - row [ref=f5e1988]:
+                - cell "colorWarningTextHover" [ref=f5e1989]
+                - cell "警戒色的文本悬浮态" [ref=f5e1990]
+                - cell "string" [ref=f5e1991]
+                - cell "#ffc53d" [ref=f5e1992]
+              - row [ref=f5e1995]:
+                - cell "colorWhite" [ref=f5e1996]
+                - cell "不随主题变化的纯白色" [ref=f5e1997]
+                - cell "string" [ref=f5e1998]
+                - cell "#fff" [ref=f5e1999]
+              - row [ref=f5e2002]:
+                - cell "controlHeightLG" [ref=f5e2003]
+                - cell "较高的组件高度" [ref=f5e2004]
+                - cell "number" [ref=f5e2005]
+                - cell "40" [ref=f5e2006]
+              - row [ref=f5e2007]:
+                - cell "controlHeightSM" [ref=f5e2008]
+                - cell "较小的组件高度" [ref=f5e2009]
+                - cell "number" [ref=f5e2010]
+                - cell "24" [ref=f5e2011]
+              - row [ref=f5e2012]:
+                - cell "controlHeightXS" [ref=f5e2013]
+                - cell "更小的组件高度" [ref=f5e2014]
+                - cell "number" [ref=f5e2015]
+                - cell "16" [ref=f5e2016]
+              - row [ref=f5e2017]:
+                - cell "fontSizeHeading1" [ref=f5e2018]
+                - cell "H1 标签所使用的字号" [ref=f5e2019]
+                - cell "string | number" [ref=f5e2020]
+                - cell "38" [ref=f5e2021]
+              - row [ref=f5e2022]:
+                - cell "fontSizeHeading2" [ref=f5e2023]
+                - cell "h2 标签所使用的字号" [ref=f5e2024]
+                - cell "string | number" [ref=f5e2025]
+                - cell "30" [ref=f5e2026]
+              - row [ref=f5e2027]:
+                - cell "fontSizeHeading3" [ref=f5e2028]
+                - cell "h3 标签使用的字号" [ref=f5e2029]
+                - cell "string | number" [ref=f5e2030]
+                - cell "24" [ref=f5e2031]
+              - row [ref=f5e2032]:
+                - cell "fontSizeHeading4" [ref=f5e2033]
+                - cell "h4 标签使用的字号" [ref=f5e2034]
+                - cell "string | number" [ref=f5e2035]
+                - cell "20" [ref=f5e2036]
+              - row [ref=f5e2037]:
+                - cell "fontSizeHeading5" [ref=f5e2038]
+                - cell "h5 标签使用的字号" [ref=f5e2039]
+                - cell "string | number" [ref=f5e2040]
+                - cell "16" [ref=f5e2041]
+              - row [ref=f5e2042]:
+                - cell "fontSizeLG" [ref=f5e2043]
+                - cell "大号字体大小" [ref=f5e2044]
+                - cell "number" [ref=f5e2045]
+                - cell "16" [ref=f5e2046]
+              - row [ref=f5e2047]:
+                - cell "fontSizeSM" [ref=f5e2048]
+                - cell "小号字体大小" [ref=f5e2049]
+                - cell "number" [ref=f5e2050]
+                - cell "12" [ref=f5e2051]
+              - row [ref=f5e2052]:
+                - cell "fontSizeXL" [ref=f5e2053]
+                - cell "超大号字体大小" [ref=f5e2054]
+                - cell "number" [ref=f5e2055]
+                - cell "20" [ref=f5e2056]
+              - row [ref=f5e2057]:
+                - cell "lineHeight" [ref=f5e2058]
+                - cell "文本行高" [ref=f5e2059]
+                - cell "number" [ref=f5e2060]
+                - cell "1.5714285714285714" [ref=f5e2061]
+              - row [ref=f5e2062]:
+                - cell "lineHeightHeading1" [ref=f5e2063]
+                - cell "H1 标签所使用的行高" [ref=f5e2064]
+                - cell "number" [ref=f5e2065]
+                - cell "1.2105263157894737" [ref=f5e2066]
+              - row [ref=f5e2067]:
+                - cell "lineHeightHeading2" [ref=f5e2068]
+                - cell "h2 标签所使用的行高" [ref=f5e2069]
+                - cell "number" [ref=f5e2070]
+                - cell "1.2666666666666666" [ref=f5e2071]
+              - row [ref=f5e2072]:
+                - cell "lineHeightHeading3" [ref=f5e2073]
+                - cell "h3 标签所使用的行高" [ref=f5e2074]
+                - cell "number" [ref=f5e2075]
+                - cell "1.3333333333333333" [ref=f5e2076]
+              - row [ref=f5e2077]:
+                - cell "lineHeightHeading4" [ref=f5e2078]
+                - cell "h4 标签所使用的行高" [ref=f5e2079]
+                - cell "number" [ref=f5e2080]
+                - cell "1.4" [ref=f5e2081]
+              - row [ref=f5e2082]:
+                - cell "lineHeightHeading5" [ref=f5e2083]
+                - cell "h5 标签所使用的行高" [ref=f5e2084]
+                - cell "number" [ref=f5e2085]
+                - cell "1.5" [ref=f5e2086]
+              - row [ref=f5e2087]:
+                - cell "lineHeightLG" [ref=f5e2088]
+                - cell "大型文本行高" [ref=f5e2089]
+                - cell "number" [ref=f5e2090]
+                - cell "1.5" [ref=f5e2091]
+              - row [ref=f5e2092]:
+                - cell "lineHeightSM" [ref=f5e2093]
+                - cell "小型文本行高" [ref=f5e2094]
+                - cell "number" [ref=f5e2095]
+                - cell "1.6666666666666667" [ref=f5e2096]
+              - row [ref=f5e2097]:
+                - cell "lineWidthBold" [ref=f5e2098]
+                - cell "描边类组件的默认线宽，如 Button、Input、Select 等输入类控件。" [ref=f5e2099]
+                - cell "number" [ref=f5e2100]
+                - cell "2" [ref=f5e2101]
+              - row [ref=f5e2102]:
+                - cell "motionDurationFast" [ref=f5e2103]
+                - cell "动效播放速度，快速。用于小型元素动画交互" [ref=f5e2104]
+                - cell "string" [ref=f5e2105]
+                - cell "0.1s" [ref=f5e2106]
+              - row [ref=f5e2107]:
+                - cell "motionDurationMid" [ref=f5e2108]
+                - cell "动效播放速度，中速。用于中型元素动画交互" [ref=f5e2109]
+                - cell "string" [ref=f5e2110]
+                - cell "0.2s" [ref=f5e2111]
+              - row [ref=f5e2112]:
+                - cell "motionDurationSlow" [ref=f5e2113]
+                - cell "动效播放速度，慢速。用于大型元素如面板动画交互" [ref=f5e2114]
+                - cell "string" [ref=f5e2115]
+                - cell "0.3s" [ref=f5e2116]
+              - row [ref=f5e2117]:
+                - cell "size" [ref=f5e2118]
+                - cell "中等尺寸" [ref=f5e2119]
+                - cell "number" [ref=f5e2120]
+                - cell "16" [ref=f5e2121]
+              - row [ref=f5e2122]:
+                - cell "sizeLG" [ref=f5e2123]
+                - cell "大尺寸" [ref=f5e2124]
+                - cell "number" [ref=f5e2125]
+                - cell "24" [ref=f5e2126]
+              - row [ref=f5e2127]:
+                - cell "sizeMD" [ref=f5e2128]
+                - cell "中大尺寸" [ref=f5e2129]
+                - cell "number" [ref=f5e2130]
+                - cell "20" [ref=f5e2131]
+              - row [ref=f5e2132]:
+                - cell "sizeMS" [ref=f5e2133]
+                - cell "与size大小相同，但在紧凑模式下可能更大" [ref=f5e2134]
+                - cell "number" [ref=f5e2135]
+                - cell "16" [ref=f5e2136]
+              - row [ref=f5e2137]:
+                - cell "sizeSM" [ref=f5e2138]
+                - cell "中小尺寸" [ref=f5e2139]
+                - cell "number" [ref=f5e2140]
+                - cell "12" [ref=f5e2141]
+              - row [ref=f5e2142]:
+                - cell "sizeXL" [ref=f5e2143]
+                - cell "超大尺寸" [ref=f5e2144]
+                - cell "number" [ref=f5e2145]
+                - cell "32" [ref=f5e2146]
+              - row [ref=f5e2147]:
+                - cell "sizeXS" [ref=f5e2148]
+                - cell "小尺寸" [ref=f5e2149]
+                - cell "number" [ref=f5e2150]
+                - cell "8" [ref=f5e2151]
+              - row [ref=f5e2152]:
+                - cell "sizeXXL" [ref=f5e2153]
+                - cell "最大尺寸" [ref=f5e2154]
+                - cell "number" [ref=f5e2155]
+                - cell "48" [ref=f5e2156]
+              - row [ref=f5e2157]:
+                - cell "sizeXXS" [ref=f5e2158]
+                - cell "最小尺寸" [ref=f5e2159]
+                - cell "number" [ref=f5e2160]
+                - cell "4" [ref=f5e2161]
+          - generic [ref=f5e2162]:
+            - heading "AliasToken" [level=3] [ref=f5e2163]:
+              - link [aria-hidden] [ref=f5e2164] [cursor=pointer]:
+                - /url: "#aliastoken"
+              - text: AliasToken
+            - blockquote [ref=f5e2165]:
+              - paragraph [ref=f5e2166]: 继承所有 SeedToken 和 MapToken 的属性
+          - table [ref=f5e2173]:
+            - rowgroup [ref=f5e2174]:
+              - row [ref=f5e2175]:
+                - columnheader "Token 名称" [ref=f5e2176]
+                - columnheader "描述" [ref=f5e2177]
+                - columnheader "类型" [ref=f5e2178]
+                - columnheader "默认值" [ref=f5e2179]
+            - rowgroup [ref=f5e2180]:
+              - row [ref=f5e2181]:
+                - cell "boxShadow" [ref=f5e2182]
+                - cell "控制元素阴影样式。" [ref=f5e2183]
+                - cell "string" [ref=f5e2184]
+                - cell "0 6px 16px 0 rgba(0,0,0,0.08), 0 3px 6px -4px rgba(0,0,0,0.12), 0 9px 28px 8px rgba(0,0,0,0.05)" [ref=f5e2185]
+              - row [ref=f5e2186]:
+                - cell "boxShadowSecondary" [ref=f5e2187]
+                - cell "控制元素二级阴影样式。" [ref=f5e2188]
+                - cell "string" [ref=f5e2189]
+                - cell "0 6px 16px 0 rgba(0,0,0,0.08), 0 3px 6px -4px rgba(0,0,0,0.12), 0 9px 28px 8px rgba(0,0,0,0.05)" [ref=f5e2190]
+              - row [ref=f5e2191]:
+                - cell "boxShadowTertiary" [ref=f5e2192]
+                - cell "控制元素三级盒子阴影样式。" [ref=f5e2193]
+                - cell "string" [ref=f5e2194]
+                - cell "0 1px 2px 0 rgba(0,0,0,0.05), 0 1px 6px -1px rgba(0,0,0,0.03), 0 2px 4px 0 rgba(0,0,0,0.03)" [ref=f5e2195]
+              - row [ref=f5e2196]:
+                - cell "colorBgContainerDisabled" [ref=f5e2197]
+                - cell "控制容器在禁用状态下的背景色。" [ref=f5e2198]
+                - cell "string" [ref=f5e2199]
+                - cell "rgba(0,0,0,0.04)" [ref=f5e2200]
+              - row [ref=f5e2203]:
+                - cell "colorBgTextActive" [ref=f5e2204]
+                - cell "控制文本在激活状态下的背景色。" [ref=f5e2205]
+                - cell "string" [ref=f5e2206]
+                - cell "rgba(0,0,0,0.15)" [ref=f5e2207]
+              - row [ref=f5e2210]:
+                - cell "colorBgTextHover" [ref=f5e2211]
+                - cell "控制文本在悬停状态下的背景色。" [ref=f5e2212]
+                - cell "string" [ref=f5e2213]
+                - cell "rgba(0,0,0,0.06)" [ref=f5e2214]
+              - row [ref=f5e2217]:
+                - cell "colorBorderBg" [ref=f5e2218]
+                - cell "控制元素背景边框的颜色。" [ref=f5e2219]
+                - cell "string" [ref=f5e2220]
+                - cell "#ffffff" [ref=f5e2221]
+              - row [ref=f5e2224]:
+                - cell "colorErrorAffix" [ref=f5e2225]
+                - cell "控制表单控件前后缀在错误状态下的颜色。" [ref=f5e2226]
+                - cell "string" [ref=f5e2227]
+                - cell "#ff4d4f" [ref=f5e2228]
+              - row [ref=f5e2231]:
+                - cell "colorErrorOutline" [ref=f5e2232]
+                - cell "控制输入组件错误状态下的外轮廓线颜色。" [ref=f5e2233]
+                - cell "string" [ref=f5e2234]
+                - cell "rgba(255,38,5,0.06)" [ref=f5e2235]
+              - row [ref=f5e2238]:
+                - cell "colorFillAlter" [ref=f5e2239]
+                - cell "控制元素替代背景色。" [ref=f5e2240]
+                - cell "string" [ref=f5e2241]
+                - cell "rgba(0,0,0,0.02)" [ref=f5e2242]
+              - row [ref=f5e2245]:
+                - cell "colorFillContent" [ref=f5e2246]
+                - cell "控制内容区域的背景色。" [ref=f5e2247]
+                - cell "string" [ref=f5e2248]
+                - cell "rgba(0,0,0,0.06)" [ref=f5e2249]
+              - row [ref=f5e2252]:
+                - cell "colorFillContentHover" [ref=f5e2253]
+                - cell "控制内容区域背景色在鼠标悬停时的样式。" [ref=f5e2254]
+                - cell "string" [ref=f5e2255]
+                - cell "rgba(0,0,0,0.15)" [ref=f5e2256]
+              - row [ref=f5e2259]:
+                - cell "colorHighlight" [ref=f5e2260]
+                - cell "控制页面元素高亮时的颜色。" [ref=f5e2261]
+                - cell "string" [ref=f5e2262]
+                - cell "#ff4d4f" [ref=f5e2263]
+              - row [ref=f5e2266]:
+                - cell "colorIcon" [ref=f5e2267]
+                - cell "控制弱操作图标的颜色，例如 allowClear 或 Alert 关闭按钮。 *" [ref=f5e2268]
+                - cell "string" [ref=f5e2269]
+                - cell "rgba(0,0,0,0.45)" [ref=f5e2270]
+              - row [ref=f5e2273]:
+                - cell "colorIconHover" [ref=f5e2274]
+                - cell "控制弱操作图标在悬浮状态下的颜色，例如 allowClear 或 Alert 关闭按钮。" [ref=f5e2275]
+                - cell "string" [ref=f5e2276]
+                - cell "rgba(0,0,0,0.88)" [ref=f5e2277]
+              - row [ref=f5e2280]:
+                - cell "colorSplit" [ref=f5e2281]
+                - cell "用于作为分割线的颜色，此颜色和 colorBorderSecondary 的颜色一致，但是用的是透明色。" [ref=f5e2282]
+                - cell "string" [ref=f5e2283]
+                - cell "rgba(5,5,5,0.06)" [ref=f5e2284]
+              - row [ref=f5e2287]:
+                - cell "colorTextDescription" [ref=f5e2288]
+                - cell "控制文本描述字体颜色。" [ref=f5e2289]
+                - cell "string" [ref=f5e2290]
+                - cell "rgba(0,0,0,0.45)" [ref=f5e2291]
+              - row [ref=f5e2294]:
+                - cell "colorTextDisabled" [ref=f5e2295]
+                - cell "控制禁用状态下的字体颜色。" [ref=f5e2296]
+                - cell "string" [ref=f5e2297]
+                - cell "rgba(0,0,0,0.25)" [ref=f5e2298]
+              - row [ref=f5e2301]:
+                - cell "colorTextHeading" [ref=f5e2302]
+                - cell "控制标题字体颜色。" [ref=f5e2303]
+                - cell "string" [ref=f5e2304]
+                - cell "rgba(0,0,0,0.88)" [ref=f5e2305]
+              - row [ref=f5e2308]:
+                - cell "colorTextLabel" [ref=f5e2309]
+                - cell "控制文本标签字体颜色。" [ref=f5e2310]
+                - cell "string" [ref=f5e2311]
+                - cell "rgba(0,0,0,0.65)" [ref=f5e2312]
+              - row [ref=f5e2315]:
+                - cell "colorTextLightSolid" [ref=f5e2316]
+                - cell "控制带背景色的文本，例如 Primary Button 组件中的文本高亮颜色。" [ref=f5e2317]
+                - cell "string" [ref=f5e2318]
+                - cell "#fff" [ref=f5e2319]
+              - row [ref=f5e2322]:
+                - cell "colorTextPlaceholder" [ref=f5e2323]
+                - cell "控制占位文本的颜色。" [ref=f5e2324]
+                - cell "string" [ref=f5e2325]
+                - cell "rgba(0,0,0,0.25)" [ref=f5e2326]
+              - row [ref=f5e2329]:
+                - cell "colorWarningAffix" [ref=f5e2330]
+                - cell "控制表单控件前后缀在警告状态下的颜色。" [ref=f5e2331]
+                - cell "string" [ref=f5e2332]
+                - cell "#faad14" [ref=f5e2333]
+              - row [ref=f5e2336]:
+                - cell "colorWarningOutline" [ref=f5e2337]
+                - cell "控制输入组件警告状态下的外轮廓线颜色。" [ref=f5e2338]
+                - cell "string" [ref=f5e2339]
+                - cell "rgba(255,215,5,0.1)" [ref=f5e2340]
+              - row [ref=f5e2343]:
+                - cell "controlInteractiveSize" [ref=f5e2344]
+                - cell "控制组件的交互大小。" [ref=f5e2345]
+                - cell "number" [ref=f5e2346]
+                - cell "16" [ref=f5e2347]
+              - row [ref=f5e2348]:
+                - cell "controlItemBgActive" [ref=f5e2349]
+                - cell "控制组件项在激活状态下的背景颜色。" [ref=f5e2350]
+                - cell "string" [ref=f5e2351]
+                - cell "#e6f4ff" [ref=f5e2352]
+              - row [ref=f5e2355]:
+                - cell "controlItemBgActiveDisabled" [ref=f5e2356]
+                - cell "控制组件项在禁用状态下的激活背景颜色。" [ref=f5e2357]
+                - cell "string" [ref=f5e2358]
+                - cell "rgba(0,0,0,0.15)" [ref=f5e2359]
+              - row [ref=f5e2362]:
+                - cell "controlItemBgActiveHover" [ref=f5e2363]
+                - cell "控制组件项在鼠标悬浮且激活状态下的背景颜色。" [ref=f5e2364]
+                - cell "string" [ref=f5e2365]
+                - cell "#bae0ff" [ref=f5e2366]
+              - row [ref=f5e2369]:
+                - cell "controlItemBgHover" [ref=f5e2370]
+                - cell "控制组件项在鼠标悬浮时的背景颜色。" [ref=f5e2371]
+                - cell "string" [ref=f5e2372]
+                - cell "rgba(0,0,0,0.04)" [ref=f5e2373]
+              - row [ref=f5e2376]:
+                - cell "controlOutline" [ref=f5e2377]
+                - cell "控制输入组件的外轮廓线颜色。" [ref=f5e2378]
+                - cell "string" [ref=f5e2379]
+                - cell "rgba(5,145,255,0.1)" [ref=f5e2380]
+              - row [ref=f5e2383]:
+                - cell "controlOutlineWidth" [ref=f5e2384]
+                - cell "控制输入组件的外轮廓线宽度。" [ref=f5e2385]
+                - cell "number" [ref=f5e2386]
+                - cell "2" [ref=f5e2387]
+              - row [ref=f5e2388]:
+                - cell "controlPaddingHorizontal" [ref=f5e2389]
+                - cell "控制元素水平内间距。" [ref=f5e2390]
+                - cell "number" [ref=f5e2391]
+                - cell "12" [ref=f5e2392]
+              - row [ref=f5e2393]:
+                - cell "controlPaddingHorizontalSM" [ref=f5e2394]
+                - cell "控制元素中小尺寸水平内间距。" [ref=f5e2395]
+                - cell "number" [ref=f5e2396]
+                - cell "8" [ref=f5e2397]
+              - row [ref=f5e2398]:
+                - cell "fontSizeIcon" [ref=f5e2399]
+                - cell "控制选择器、级联选择器等中的操作图标字体大小。正常情况下与 fontSizeSM 相同。" [ref=f5e2400]
+                - cell "number" [ref=f5e2401]
+                - cell "12" [ref=f5e2402]
+              - row [ref=f5e2403]:
+                - cell "fontWeightStrong" [ref=f5e2404]
+                - cell "控制标题类组件（如 h1、h2、h3）或选中项的字体粗细。" [ref=f5e2405]
+                - cell "number" [ref=f5e2406]
+                - cell "600" [ref=f5e2407]
+              - row [ref=f5e2408]:
+                - cell "lineWidthFocus" [ref=f5e2409]
+                - cell "控制线条的宽度，当组件处于聚焦态时。" [ref=f5e2410]
+                - cell "number" [ref=f5e2411]
+                - cell "3" [ref=f5e2412]
+              - row [ref=f5e2413]:
+                - cell "linkDecoration" [ref=f5e2414]
+                - cell "控制链接文本的装饰样式。" [ref=f5e2415]
+                - cell "TextDecoration<string | number> | undefined" [ref=f5e2416]
+                - cell "none" [ref=f5e2417]
+              - row [ref=f5e2418]:
+                - cell "linkFocusDecoration" [ref=f5e2419]
+                - cell "控制链接聚焦时文本的装饰样式。" [ref=f5e2420]
+                - cell "TextDecoration<string | number> | undefined" [ref=f5e2421]
+                - cell "none" [ref=f5e2422]
+              - row [ref=f5e2423]:
+                - cell "linkHoverDecoration" [ref=f5e2424]
+                - cell "控制链接鼠标悬浮时文本的装饰样式。" [ref=f5e2425]
+                - cell "TextDecoration<string | number> | undefined" [ref=f5e2426]
+                - cell "none" [ref=f5e2427]
+              - row [ref=f5e2428]:
+                - cell "margin" [ref=f5e2429]
+                - cell "控制元素外边距，中等尺寸。" [ref=f5e2430]
+                - cell "number" [ref=f5e2431]
+                - cell "16" [ref=f5e2432]
+              - row [ref=f5e2433]:
+                - cell "marginLG" [ref=f5e2434]
+                - cell "控制元素外边距，大尺寸。" [ref=f5e2435]
+                - cell "number" [ref=f5e2436]
+                - cell "24" [ref=f5e2437]
+              - row [ref=f5e2438]:
+                - cell "marginMD" [ref=f5e2439]
+                - cell "控制元素外边距，中大尺寸。" [ref=f5e2440]
+                - cell "number" [ref=f5e2441]
+                - cell "20" [ref=f5e2442]
+              - row [ref=f5e2443]:
+                - cell "marginSM" [ref=f5e2444]
+                - cell "控制元素外边距，中小尺寸。" [ref=f5e2445]
+                - cell "number" [ref=f5e2446]
+                - cell "12" [ref=f5e2447]
+              - row [ref=f5e2448]:
+                - cell "marginXL" [ref=f5e2449]
+                - cell "控制元素外边距，超大尺寸。" [ref=f5e2450]
+                - cell "number" [ref=f5e2451]
+                - cell "32" [ref=f5e2452]
+              - row [ref=f5e2453]:
+                - cell "marginXS" [ref=f5e2454]
+                - cell "控制元素外边距，小尺寸。" [ref=f5e2455]
+                - cell "number" [ref=f5e2456]
+                - cell "8" [ref=f5e2457]
+              - row [ref=f5e2458]:
+                - cell "marginXXL" [ref=f5e2459]
+                - cell "控制元素外边距，最大尺寸。" [ref=f5e2460]
+                - cell "number" [ref=f5e2461]
+                - cell "48" [ref=f5e2462]
+              - row [ref=f5e2463]:
+                - cell "marginXXS" [ref=f5e2464]
+                - cell "控制元素外边距，最小尺寸。" [ref=f5e2465]
+                - cell "number" [ref=f5e2466]
+                - cell "4" [ref=f5e2467]
+              - row [ref=f5e2468]:
+                - cell "opacityLoading" [ref=f5e2469]
+                - cell "控制加载状态的透明度。" [ref=f5e2470]
+                - cell "number" [ref=f5e2471]
+                - cell "0.65" [ref=f5e2472]
+              - row [ref=f5e2473]:
+                - cell "padding" [ref=f5e2474]
+                - cell "控制元素的内间距。" [ref=f5e2475]
+                - cell "number" [ref=f5e2476]
+                - cell "16" [ref=f5e2477]
+              - row [ref=f5e2478]:
+                - cell "paddingContentHorizontal" [ref=f5e2479]
+                - cell "控制内容元素水平内间距。" [ref=f5e2480]
+                - cell "number" [ref=f5e2481]
+                - cell "16" [ref=f5e2482]
+              - row [ref=f5e2483]:
+                - cell "paddingContentHorizontalLG" [ref=f5e2484]
+                - cell "控制内容元素水平内间距，适用于大屏幕设备。" [ref=f5e2485]
+                - cell "number" [ref=f5e2486]
+                - cell "24" [ref=f5e2487]
+              - row [ref=f5e2488]:
+                - cell "paddingContentHorizontalSM" [ref=f5e2489]
+                - cell "控制内容元素水平内间距，适用于小屏幕设备。" [ref=f5e2490]
+                - cell "number" [ref=f5e2491]
+                - cell "16" [ref=f5e2492]
+              - row [ref=f5e2493]:
+                - cell "paddingContentVertical" [ref=f5e2494]
+                - cell "控制内容元素垂直内间距。" [ref=f5e2495]
+                - cell "number" [ref=f5e2496]
+                - cell "12" [ref=f5e2497]
+              - row [ref=f5e2498]:
+                - cell "paddingContentVerticalLG" [ref=f5e2499]
+                - cell "控制内容元素垂直内间距，适用于大屏幕设备。" [ref=f5e2500]
+                - cell "number" [ref=f5e2501]
+                - cell "16" [ref=f5e2502]
+              - row [ref=f5e2503]:
+                - cell "paddingContentVerticalSM" [ref=f5e2504]
+                - cell "控制内容元素垂直内间距，适用于小屏幕设备。" [ref=f5e2505]
+                - cell "number" [ref=f5e2506]
+                - cell "8" [ref=f5e2507]
+              - row [ref=f5e2508]:
+                - cell "paddingLG" [ref=f5e2509]
+                - cell "控制元素的大内间距。" [ref=f5e2510]
+                - cell "number" [ref=f5e2511]
+                - cell "24" [ref=f5e2512]
+              - row [ref=f5e2513]:
+                - cell "paddingMD" [ref=f5e2514]
+                - cell "控制元素的中等内间距。" [ref=f5e2515]
+                - cell "number" [ref=f5e2516]
+                - cell "20" [ref=f5e2517]
+              - row [ref=f5e2518]:
+                - cell "paddingSM" [ref=f5e2519]
+                - cell "控制元素的小内间距。" [ref=f5e2520]
+                - cell "number" [ref=f5e2521]
+                - cell "12" [ref=f5e2522]
+              - row [ref=f5e2523]:
+                - cell "paddingXL" [ref=f5e2524]
+                - cell "控制元素的特大内间距。" [ref=f5e2525]
+                - cell "number" [ref=f5e2526]
+                - cell "32" [ref=f5e2527]
+              - row [ref=f5e2528]:
+                - cell "paddingXS" [ref=f5e2529]
+                - cell "控制元素的特小内间距。" [ref=f5e2530]
+                - cell "number" [ref=f5e2531]
+                - cell "8" [ref=f5e2532]
+              - row [ref=f5e2533]:
+                - cell "paddingXXS" [ref=f5e2534]
+                - cell "控制元素的极小内间距。" [ref=f5e2535]
+                - cell "number" [ref=f5e2536]
+                - cell "4" [ref=f5e2537]
+              - row [ref=f5e2538]:
+                - cell "screenLG" [ref=f5e2539]
+                - cell "控制大屏幕的屏幕宽度。" [ref=f5e2540]
+                - cell "number" [ref=f5e2541]
+                - cell "992" [ref=f5e2542]
+              - row [ref=f5e2543]:
+                - cell "screenLGMax" [ref=f5e2544]
+                - cell "控制大屏幕的最大宽度。" [ref=f5e2545]
+                - cell "number" [ref=f5e2546]
+                - cell "1199" [ref=f5e2547]
+              - row [ref=f5e2548]:
+                - cell "screenLGMin" [ref=f5e2549]
+                - cell "控制大屏幕的最小宽度。" [ref=f5e2550]
+                - cell "number" [ref=f5e2551]
+                - cell "992" [ref=f5e2552]
+              - row [ref=f5e2553]:
+                - cell "screenMD" [ref=f5e2554]
+                - cell "控制中等屏幕的屏幕宽度。" [ref=f5e2555]
+                - cell "number" [ref=f5e2556]
+                - cell "768" [ref=f5e2557]
+              - row [ref=f5e2558]:
+                - cell "screenMDMax" [ref=f5e2559]
+                - cell "控制中等屏幕的最大宽度。" [ref=f5e2560]
+                - cell "number" [ref=f5e2561]
+                - cell "991" [ref=f5e2562]
+              - row [ref=f5e2563]:
+                - cell "screenMDMin" [ref=f5e2564]
+                - cell "控制中等屏幕的最小宽度。" [ref=f5e2565]
+                - cell "number" [ref=f5e2566]
+                - cell "768" [ref=f5e2567]
+              - row [ref=f5e2568]:
+                - cell "screenSM" [ref=f5e2569]
+                - cell "控制小屏幕的屏幕宽度。" [ref=f5e2570]
+                - cell "number" [ref=f5e2571]
+                - cell "576" [ref=f5e2572]
+              - row [ref=f5e2573]:
+                - cell "screenSMMax" [ref=f5e2574]
+                - cell "控制小屏幕的最大宽度。" [ref=f5e2575]
+                - cell "number" [ref=f5e2576]
+                - cell "767" [ref=f5e2577]
+              - row [ref=f5e2578]:
+                - cell "screenSMMin" [ref=f5e2579]
+                - cell "控制小屏幕的最小宽度。" [ref=f5e2580]
+                - cell "number" [ref=f5e2581]
+                - cell "576" [ref=f5e2582]
+              - row [ref=f5e2583]:
+                - cell "screenXL" [ref=f5e2584]
+                - cell "控制超大屏幕的屏幕宽度。" [ref=f5e2585]
+                - cell "number" [ref=f5e2586]
+                - cell "1200" [ref=f5e2587]
+              - row [ref=f5e2588]:
+                - cell "screenXLMax" [ref=f5e2589]
+                - cell "控制超大屏幕的最大宽度。" [ref=f5e2590]
+                - cell "number" [ref=f5e2591]
+                - cell "1599" [ref=f5e2592]
+              - row [ref=f5e2593]:
+                - cell "screenXLMin" [ref=f5e2594]
+                - cell "控制超大屏幕的最小宽度。" [ref=f5e2595]
+                - cell "number" [ref=f5e2596]
+                - cell "1200" [ref=f5e2597]
+              - row [ref=f5e2598]:
+                - cell "screenXS" [ref=f5e2599]
+                - cell "控制超小屏幕的屏幕宽度。" [ref=f5e2600]
+                - cell "number" [ref=f5e2601]
+                - cell "480" [ref=f5e2602]
+              - row [ref=f5e2603]:
+                - cell "screenXSMax" [ref=f5e2604]
+                - cell "控制超小屏幕的最大宽度。" [ref=f5e2605]
+                - cell "number" [ref=f5e2606]
+                - cell "575" [ref=f5e2607]
+              - row [ref=f5e2608]:
+                - cell "screenXSMin" [ref=f5e2609]
+                - cell "控制超小屏幕的最小宽度。" [ref=f5e2610]
+                - cell "number" [ref=f5e2611]
+                - cell "480" [ref=f5e2612]
+              - row [ref=f5e2613]:
+                - cell "screenXXL" [ref=f5e2614]
+                - cell "控制超超大屏幕的屏幕宽度。" [ref=f5e2615]
+                - cell "number" [ref=f5e2616]
+                - cell "1600" [ref=f5e2617]
+              - row [ref=f5e2618]:
+                - cell "screenXXLMax" [ref=f5e2619]
+                - cell "控制超超大屏幕的最大宽度。" [ref=f5e2620]
+                - cell "number" [ref=f5e2621]
+                - cell "1919" [ref=f5e2622]
+              - row [ref=f5e2623]:
+                - cell "screenXXLMin" [ref=f5e2624]
+                - cell "控制超超大屏幕的最小宽度。" [ref=f5e2625]
+                - cell "number" [ref=f5e2626]
+                - cell "1600" [ref=f5e2627]
+              - row [ref=f5e2628]:
+                - cell "screenXXXL" [ref=f5e2629]
+                - cell "控制超超超大屏幕的屏幕宽度。" [ref=f5e2630]
+                - cell "number" [ref=f5e2631]
+                - cell "1920" [ref=f5e2632]
+              - row [ref=f5e2633]:
+                - cell "screenXXXLMin" [ref=f5e2634]
+                - cell "控制超超超大屏幕的最小宽度。" [ref=f5e2635]
+                - cell "number" [ref=f5e2636]
+                - cell "1920" [ref=f5e2637]
+          - generic [ref=f5e2638]:
+            - heading "FAQ" [level=2] [ref=f5e2639]:
+              - link [aria-hidden] [ref=f5e2640] [cursor=pointer]:
+                - /url: "#faq"
+              - text: FAQ
+            - heading [level=3] [ref=f5e2641]:
+              - link [aria-hidden] [ref=f5e2642] [cursor=pointer]:
+                - /url: "#faq-theme-change-remount"
+              - text: 为什么
+              - code [ref=f5e2643]: theme
+              - text: 从
+              - code [ref=f5e2644]: undefined
+              - text: 变为对象或者变为
+              - code [ref=f5e2645]: undefined
+              - text: 时组件重新 mount 了？
+            - paragraph [ref=f5e2646]:
+              - text: 在 ConfigProvider 中我们通过
+              - code [ref=f5e2647]: DesignTokenContext
+              - text: 传递 context，
+              - code [ref=f5e2648]: theme
+              - text: 为
+              - code [ref=f5e2649]: undefined
+              - text: 时不会套一层 Provider，所以从无到有或者从有到无时 React 的 VirtualDOM 结构变化，导致组件重新 mount。解决方法：将
+              - code [ref=f5e2650]: undefined
+              - text: 替换为空对象
+              - code [ref=f5e2651]: "{}"
+              - text: 即可。
+      - generic [ref=f5e2652]:
+        - link [ref=f5e2653] [cursor=pointer]:
+          - /url: /docs/react/cli-cn
+          - img "left" [ref=f5e2654]
+          - text: CLI
+        - link [ref=f5e2657] [cursor=pointer]:
+          - /url: /docs/react/compatible-style-cn
+          - text: 样式兼容
+          - img "right" [ref=f5e2658]
+      - generic [ref=f5e2661]:
+        - generic [ref=f5e2663]:
+          - generic [ref=f5e2664]:
+            - heading "相关资源" [level=2] [ref=f5e2665]
+            - link "Ant Design X" [ref=f5e2667] [cursor=pointer]:
+              - /url: https://ant-design-x.antgroup.com
+            - link "Ant Design Charts" [ref=f5e2669] [cursor=pointer]:
+              - /url: https://ant-design-charts.antgroup.com
+            - link "Ant Design Pro" [ref=f5e2671] [cursor=pointer]:
+              - /url: https://pro.ant.design
+            - link "Pro Components" [ref=f5e2673] [cursor=pointer]:
+              - /url: https://pro-components.antdigital.dev
+            - link "Ant Design Mobile" [ref=f5e2675] [cursor=pointer]:
+              - /url: https://ant-design-mobile.antgroup.com/zh
+            - link "Ant Design Mini" [ref=f5e2677] [cursor=pointer]:
+              - /url: https://ant-design-mini.antgroup.com/
+            - link "Ant Design Web3" [ref=f5e2679] [cursor=pointer]:
+              - /url: https://web3.antdigital.dev
+            - generic [ref=f5e2680]:
+              - link "Ant Design Landing" [ref=f5e2681] [cursor=pointer]:
+                - /url: https://landing.ant.design
+              - text: "-首页模板集"
+            - generic [ref=f5e2682]:
+              - link "Scaffolds" [ref=f5e2683] [cursor=pointer]:
+                - /url: https://scaffold.ant.design
+              - text: "-脚手架市场"
+            - generic [ref=f5e2684]:
+              - link "Umi" [ref=f5e2685] [cursor=pointer]:
+                - /url: https://umijs.org
+              - text: "-React 应用开发框架"
+            - generic [ref=f5e2686]:
+              - link "dumi" [ref=f5e2687] [cursor=pointer]:
+                - /url: https://d.umijs.org
+              - text: "-组件/文档研发工具"
+            - generic [ref=f5e2688]:
+              - link "qiankun" [ref=f5e2689] [cursor=pointer]:
+                - /url: https://qiankun.umijs.org
+              - text: "-微前端框架"
+            - generic [ref=f5e2690]:
+              - link "Ant Motion" [ref=f5e2691] [cursor=pointer]:
+                - /url: https://motion.ant.design
+              - text: "-设计动效"
+            - link "国内镜像站点 🇨🇳" [ref=f5e2693] [cursor=pointer]:
+              - /url: https://ant-design.antgroup.com
+          - generic [ref=f5e2694]:
+            - heading "社区" [level=2] [ref=f5e2695]
+            - link [ref=f5e2697] [cursor=pointer]:
+              - /url: https://github.com/websemantics/awesome-ant-design
+              - img "ant-design" [ref=f5e2699]
+              - text: Awesome Ant Design
+            - link [ref=f5e2703] [cursor=pointer]:
+              - /url: http://medium.com/ant-design/
+              - img "medium" [ref=f5e2705]
+              - text: Medium
+            - link [ref=f5e2709] [cursor=pointer]:
+              - /url: http://x.com/antdesignui
+              - img "x" [ref=f5e2711]
+              - text: X
+            - link [ref=f5e2715] [cursor=pointer]:
+              - /url: https://yuque.com/ant-design/ant-design
+              - img "yuque logo" [ref=f5e2717]
+              - text: Ant Design 语雀专栏
+            - link [ref=f5e2719] [cursor=pointer]:
+              - /url: https://www.zhihu.com/column/c_1564262000561106944
+              - img "zhihu" [ref=f5e2721]
+              - text: Ant Design 知乎专栏
+            - link [ref=f5e2725] [cursor=pointer]:
+              - /url: https://www.zhihu.com/column/c_1543658574504751104
+              - img "zhihu" [ref=f5e2727]
+              - text: 体验科技专栏
+            - generic [ref=f5e2730]:
+              - link [ref=f5e2731] [cursor=pointer]:
+                - /url: https://seeconf.antfin.com/
+                - img "seeconf logo" [ref=f5e2733]
+                - text: SEE Conf
+              - text: "-蚂蚁体验科技大会"
+            - link [ref=f5e2735] [cursor=pointer]:
+              - /url: /docs/resources-cn#加入我们
+              - img "usergroup-add" [ref=f5e2737]
+              - text: 加入我们
+          - generic [ref=f5e2740]:
+            - heading "帮助" [level=2] [ref=f5e2741]
+            - link [ref=f5e2743] [cursor=pointer]:
+              - /url: https://github.com/ant-design/ant-design
+              - img "github" [ref=f5e2745]
+              - text: GitHub
+            - link [ref=f5e2749] [cursor=pointer]:
+              - /url: /changelog-cn
+              - img "history" [ref=f5e2751]
+              - text: 更新日志
+            - link [ref=f5e2755] [cursor=pointer]:
+              - /url: /docs/react/faq-cn
+              - img "question-circle" [ref=f5e2757]
+              - text: 常见问题
+            - link [ref=f5e2762] [cursor=pointer]:
+              - /url: https://ant.design/docs/react/for-agents-cn.md
+              - img "robot" [ref=f5e2764]
+              - text: For Agents
+            - link [ref=f5e2768] [cursor=pointer]:
+              - /url: https://new-issue.ant.design/
+              - img "bug" [ref=f5e2770]
+              - text: 报告 Bug
+            - link [ref=f5e2775] [cursor=pointer]:
+              - /url: https://github.com/ant-design/ant-design/issues
+              - img "issues-close" [ref=f5e2777]
+              - text: 议题
+            - link [ref=f5e2781] [cursor=pointer]:
+              - /url: https://github.com/ant-design/ant-design/discussions
+              - img "message" [ref=f5e2783]
+              - text: 讨论区
+            - link [ref=f5e2787] [cursor=pointer]:
+              - /url: http://stackoverflow.com/questions/tagged/antd
+              - img "question-circle" [ref=f5e2789]
+              - text: StackOverflow
+            - link [ref=f5e2794] [cursor=pointer]:
+              - /url: https://segmentfault.com/t/antd
+              - img "question-circle" [ref=f5e2796]
+              - text: SegmentFault
+          - generic [ref=f5e2800]:
+            - heading [level=2] [ref=f5e2801]:
+              - img "Ant XTech logo" [ref=f5e2803]
+              - text: 更多产品
+            - generic [ref=f5e2804]:
+              - link [ref=f5e2805] [cursor=pointer]:
+                - /url: https://yuque.com
+                - img "yuque logo" [ref=f5e2807]
+                - text: 语雀
+              - text: "-构建你的数字花园"
+            - generic [ref=f5e2808]:
+              - link [ref=f5e2809] [cursor=pointer]:
+                - /url: https://antv.antgroup.com
+                - img "AntV logo" [ref=f5e2811]
+                - text: AntV
+              - text: "-数据可视化解决方案"
+            - generic [ref=f5e2812]:
+              - link [ref=f5e2813] [cursor=pointer]:
+                - /url: https://eggjs.org
+                - img "Egg logo" [ref=f5e2815]
+                - text: Egg
+              - text: "-企业级 Node.js 框架"
+            - generic [ref=f5e2816]:
+              - link [ref=f5e2817] [cursor=pointer]:
+                - /url: https://kitchen.alipay.com
+                - img "Kitchen logo" [ref=f5e2819]
+                - text: Kitchen
+              - text: "-Sketch 工具集"
+            - generic [ref=f5e2820]:
+              - link [ref=f5e2821] [cursor=pointer]:
+                - /url: https://galacean.antgroup.com/
+                - img "Galacean logo" [ref=f5e2823]
+                - text: Galacean
+              - text: "-互动图形解决方案"
+            - generic [ref=f5e2824]:
+              - link [ref=f5e2825] [cursor=pointer]:
+                - /url: https://weavefox.cn/
+                - img "WeaveFox logo" [ref=f5e2827]
+                - text: WeaveFox
+              - text: "-前端智能研发"
+            - link [ref=f5e2829] [cursor=pointer]:
+              - /url: https://xtech.antfin.com/
+              - img "xtech logo" [ref=f5e2831]
+              - text: 蚂蚁体验科技
+            - link [ref=f5e2833] [cursor=pointer]:
+              - /url: /theme-editor-cn
+              - img "bg-colors" [ref=f5e2835]
+              - text: 主题编辑器
+        - generic [ref=f5e2839]:
+          - generic [ref=f5e2840]: Made with ❤ by
+          - generic [ref=f5e2841]: 蚂蚁集团和 Ant Design 开源社区
