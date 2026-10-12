@@ -7,6 +7,7 @@ import { createJSONEditor, Mode } from 'vanilla-jsoneditor'
 
 import type { Content } from 'vanilla-jsoneditor'
 import ProModal from '../../pro-modal'
+import { THEME_SEED_PRESETS } from './themeSeedPresets'
 
 /** 主题配置编辑器。确定前只改文本，不碰个性化草稿。 */
 export default function ThemeSeedConfigDialog(props: {
@@ -137,18 +138,37 @@ export default function ThemeSeedConfigDialog(props: {
               '如需借助主流 AI 生成方案，请使用「一键复制提示词」。复制后请自行修改提示词末尾的风格描述，再交给模型，即可生成符合目标风格的 Seed Token。',
             )}
           </p>
-          <Button
-            icon={<CopyOutlined />}
-            onClick={() => {
-              copyPrompt(intl.getMessage(
-                'zby.pro.layout.seed.configPrompt',
-                '你是 Ant Design 主题生成器。请根据文末的风格描述，改写下面这份主题 Token。',
-              ))
-              void messageApi.success(intl.getMessage('zby.pro.layout.seed.configCopied', '提示词已复制'))
-            }}
-          >
-            {intl.getMessage('zby.pro.layout.seed.configCopyPrompt', '一键复制提示词')}
-          </Button>
+          <div className={`${root}-config-presets`}>
+            <Button
+              icon={<CopyOutlined />}
+              onClick={() => {
+                copyPrompt(intl.getMessage(
+                  'zby.pro.layout.seed.configPrompt',
+                  '你是 Ant Design 主题生成器。请根据文末的风格描述，改写下面这份主题 Token。',
+                ))
+                void messageApi.success(intl.getMessage('zby.pro.layout.seed.configCopied', '提示词已复制'))
+              }}
+            >
+              {intl.getMessage('zby.pro.layout.seed.configCopyPrompt', '一键复制提示词')}
+            </Button>
+            {THEME_SEED_PRESETS.map((preset) => (
+              <Button
+                key={preset.id}
+                onClick={() => {
+                  textRef.current = preset.text
+                  editorRef.current?.set({ text: preset.text })
+                  setInvalid(false)
+                  void messageApi.success(intl.getMessage('zby.pro.layout.seed.presetFilled', '已填入编辑器'))
+                }}
+              >
+                <span
+                  className={`${root}-config-preset-mark`}
+                  style={{ background: preset.mark }}
+                />
+                {intl.getMessage(preset.labelKey, preset.label)}
+              </Button>
+            ))}
+          </div>
         </div>
         <div ref={bindHost} className={`${root}-config-editor`} />
         {invalid

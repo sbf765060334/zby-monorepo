@@ -199,6 +199,11 @@ describe('theme seed drawer', () => {
       expect(configEditorText()).toContain('{')
     })
     expect(screen.getByRole('button', { name: /一键复制提示词/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '清新薄荷风' }))
+    expect(configEditorText()).toContain('#36B37E')
+    fireEvent.click(screen.getByRole('button', { name: '新中式国风' }))
+    expect(configEditorText()).toContain('#9c2b25')
+    expect(configEditorText()).toContain('colorPrimaryBg')
 
     replaceConfigText('{\n  "fontSize": 14,\n  "extra": 1\n}')
     fireEvent.click(configConfirm())

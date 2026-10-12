@@ -283,6 +283,18 @@ export function useThemeSeedStyles(prefixCls: string) {
             marginBlockEnd: styleToken.marginXS,
           },
         },
+        [`${root}-config-presets`]: {
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'nowrap',
+          gap: styleToken.marginXS,
+        },
+        [`${root}-config-preset-mark`]: {
+          width: 16,
+          height: 16,
+          borderRadius: styleToken.borderRadiusSM,
+          flex: 'none',
+        },
         [`${root}-config-editor`]: {
           minHeight: 150,
         },
