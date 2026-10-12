@@ -138,7 +138,15 @@ export function useThemeSeedStyles(prefixCls: string) {
           gap: styleToken.marginXS,
         },
         [`${root}-field-name`]: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: styleToken.marginXXS,
           color: styleToken.colorText,
+        },
+        [`${root}-field-hint`]: {
+          color: styleToken.colorTextDescription,
+          fontSize: styleToken.fontSizeSM,
+          cursor: 'help',
         },
         [`${root}-field-meta`]: {
           display: 'flex',

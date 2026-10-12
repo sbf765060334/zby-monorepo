@@ -179,6 +179,16 @@ describe('theme seed drawer', () => {
     expect(stored.config.colorInfo).toBe('#722ed1')
   }, 40000)
 
+  it('explains that base text and background colors lock both appearances', async () => {
+    renderSeedFixture()
+    await openSeedDrawer('个性化')
+    const hint = '指定具体颜色后会锁定该色，亮色和暗色主题都会使用它。'
+    const hints = screen.getAllByRole('img', { name: hint })
+    expect(hints).toHaveLength(2)
+    expect(hints[0].compareDocumentPosition(screen.getByText('基础文本色')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(hints[1].compareDocumentPosition(screen.getByText('基础背景色')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+  })
+
   it('discards a draft when the drawer closes', async () => {
     renderSeedFixture()
     await openSeedDrawer('个性化')
@@ -201,6 +211,8 @@ describe('theme seed drawer', () => {
     expect(screen.getByRole('button', { name: /一键复制提示词/ })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '清新薄荷风' }))
     expect(configEditorText()).toContain('#36B37E')
+    expect(configEditorText()).not.toContain('colorTextBase')
+    expect(configEditorText()).not.toContain('colorBgBase')
     await dismissConfigDialog()
     fireEvent.click(screen.getByRole('button', { name: '主题配置' }))
     await waitFor(() => {

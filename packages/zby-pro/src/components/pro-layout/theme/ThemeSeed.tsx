@@ -1,3 +1,4 @@
+import { QuestionCircleOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import {
   Button,
@@ -6,6 +7,7 @@ import {
   InputNumber,
   Slider,
   Switch,
+  Tooltip,
 } from 'antd'
 import { clsx } from 'clsx'
 import { useState } from 'react'
@@ -104,6 +106,10 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
   const configChanged = !themeSeedConfigEquals(config, committedConfig)
   const sessionDirty = themeSeedDraftChanged(draft, value) || configChanged
   const resetLabel = intl.getMessage('zby.pro.layout.seed.resetField', '重置')
+  const appearanceLockHint = intl.getMessage(
+    'zby.pro.layout.seed.appearanceLockHint',
+    '指定具体颜色后会锁定该色，亮色和暗色主题都会使用它。',
+  )
 
   const patch = (next: Partial<ProThemeSeedPreference>) => {
     setConfig((current) => syncThemeSeedConfigPatch(current, draft, next))
@@ -229,6 +235,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
               prefixCls={prefixCls}
               label={intl.getMessage('zby.pro.layout.seed.colorTextBase', '基础文本色')}
               token="colorTextBase"
+              hint={appearanceLockHint}
               resetLabel={resetLabel}
               changed={draft.colorTextBase !== ANTD_THEME_SEED.colorTextBase}
               color={draft.colorTextBase ?? (appearance === 'dark' ? '#ffffff' : '#000000')}
@@ -239,6 +246,7 @@ export default function ProThemeSeed(props: ProThemeSeedProps) {
               prefixCls={prefixCls}
               label={intl.getMessage('zby.pro.layout.seed.colorBgBase', '基础背景色')}
               token="colorBgBase"
+              hint={appearanceLockHint}
               resetLabel={resetLabel}
               changed={draft.colorBgBase !== ANTD_THEME_SEED.colorBgBase}
               color={draft.colorBgBase ?? (appearance === 'dark' ? '#000000' : '#ffffff')}
@@ -342,6 +350,7 @@ function FieldMeta(props: {
   prefixCls: string
   label: string
   token: string
+  hint?: string
   resetLabel: string
   changed: boolean
   onReset: () => void
@@ -349,7 +358,20 @@ function FieldMeta(props: {
   const root = `${props.prefixCls}-theme-seed`
   return (
     <>
-      <div className={`${root}-field-name`}>{props.label}</div>
+      <div className={`${root}-field-name`}>
+        <span>{props.label}</span>
+        {props.hint
+          ? (
+              <Tooltip title={props.hint}>
+                <QuestionCircleOutlined
+                  className={`${root}-field-hint`}
+                  tabIndex={0}
+                  aria-label={props.hint}
+                />
+              </Tooltip>
+            )
+          : null}
+      </div>
       <div className={`${root}-field-meta`}>
         <span>{props.token}</span>
         {props.changed ? (
@@ -366,6 +388,7 @@ function ColorField(props: {
   prefixCls: string
   label: string
   token: string
+  hint?: string
   resetLabel: string
   changed: boolean
   color: string
@@ -382,6 +405,7 @@ function ColorField(props: {
             prefixCls={props.prefixCls}
             label={props.label}
             token={props.token}
+            hint={props.hint}
             resetLabel={props.resetLabel}
             changed={props.changed}
             onReset={props.onReset}
