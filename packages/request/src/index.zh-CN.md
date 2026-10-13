@@ -123,7 +123,7 @@ await apiClient.get('/orders', {
 
 ### 请求体
 
-普通对象和数组会 `JSON.stringify`，并在请求头里还没有 `Content-Type` 时补上 `application/json`。`FormData`、`Blob`、字符串、`URLSearchParams`、`ArrayBuffer` 原样发送。
+普通对象、数组和业务 interface 会 `JSON.stringify`，并在请求头里还没有 `Content-Type` 时补上 `application/json`。`FormData`、`Blob`、字符串、`URLSearchParams`、`ArrayBuffer` 原样发送。
 
 ```tsx
 await apiClient.post('/upload', formData)

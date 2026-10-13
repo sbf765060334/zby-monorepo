@@ -32,15 +32,19 @@ export type ApiResponse<T = unknown> = (SingleResponse<T> & { total?: number }) 
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-/** 查询参数。普通对象里的嵌套对象会按 JSON 字符串写入查询串。 */
-export type RequestParams = Record<string, unknown> | URLSearchParams
+/**
+ * 查询参数。普通对象里的嵌套对象会按 JSON 字符串写入查询串。
+ * 索引用 `any`，这样没有索引签名的 interface 也能传入。
+ */
+export type RequestParams = Record<string, any> | URLSearchParams
 
 /**
  * 请求体。
- * 普通对象和数组会序列化成 JSON，并在缺少 `Content-Type` 时补上 `application/json`。
+ * 普通对象、数组和业务 interface 会序列化成 JSON，并在缺少 `Content-Type` 时补上 `application/json`。
+ * 索引用 `any`，这样没有索引签名的 interface 也能传入。`Record<string, unknown>` 接不住这种类型。
  * `FormData`、`Blob`、字符串等现成请求体原样发送，不改已有请求头。
  */
-export type RequestBody = BodyInit | Record<string, unknown> | unknown[] | null | undefined
+export type RequestBody = BodyInit | Record<string, any> | null | undefined
 
 export type RequestContext = {
   url: string
@@ -128,7 +132,7 @@ export type ClientConfig = {
   /** 替换默认的 `fetch` 传输层，测试里用来注入假响应。 */
   transport?: Transport
   /** 自定义查询串序列化。不提供时，嵌套对象使用 `JSON.stringify`。 */
-  paramsSerializer?: (params: Record<string, unknown>) => string
+  paramsSerializer?: (params: Record<string, any>) => string
 }
 
 export type RequestOptions = {

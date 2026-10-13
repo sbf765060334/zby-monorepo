@@ -123,7 +123,7 @@ await apiClient.get('/orders', {
 
 ### Body
 
-Plain objects and arrays are `JSON.stringify`'d. `Content-Type: application/json` is added when that header is absent. `FormData`, `Blob`, strings, `URLSearchParams`, and `ArrayBuffer` are sent as-is.
+Plain objects, arrays, and business interfaces are `JSON.stringify`'d. `Content-Type: application/json` is added when that header is absent. `FormData`, `Blob`, strings, `URLSearchParams`, and `ArrayBuffer` are sent as-is.
 
 ```tsx
 await apiClient.post('/upload', formData)

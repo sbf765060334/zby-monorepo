@@ -90,7 +90,7 @@ export function isAbsoluteURL(url: string): boolean {
  * 普通对象使用 `JSON.stringify`，避免变成 `[object Object]`。
  */
 export function serializeParams(
-  params: Record<string, unknown>,
+  params: Record<string, any>,
   paramsSerializer: ClientConfig['paramsSerializer'],
 ): string {
   if (paramsSerializer) return paramsSerializer(params)

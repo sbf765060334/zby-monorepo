@@ -36,6 +36,19 @@ function createResponse(
 }
 
 describe('@zby/request core', () => {
+  it('accepts an interface as JSON body and query params', async () => {
+    interface OrderQuery {
+      id?: string
+    }
+    const query: OrderQuery = { id: '1' }
+    const client = createClient({
+      transport: createTransport(() => createResponse({ errCode: '0', data: query })),
+    })
+
+    await expect(client.post('/orders', query)).resolves.toMatchObject({ errCode: '0' })
+    await expect(client.get('/orders', { params: query })).resolves.toMatchObject({ errCode: '0' })
+  })
+
   it('returns full response by default and preserves pagination fields', async () => {
     const client = createClient({
       transport: createTransport(() =>
