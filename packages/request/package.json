@@ -1,6 +1,6 @@
 {
   "name": "@zby/request",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Business API request client and TanStack Query adapters.",
   "type": "module",
   "main": "./dist/index.cjs",
