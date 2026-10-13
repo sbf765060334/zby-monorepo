@@ -1,5 +1,12 @@
 # @zby/pro
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @zby/router-core@0.1.1
+
 ## 0.2.2
 
 ### Patch Changes
