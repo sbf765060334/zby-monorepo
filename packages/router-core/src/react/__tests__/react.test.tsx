@@ -6,8 +6,8 @@
  */
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation, useParams } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ReactNode } from 'react'
@@ -18,6 +18,9 @@ import {
   RouterPageProvider,
   useRouterCore,
   useRouterCoreSelector,
+  usePageLocation,
+  usePageParams,
+  usePageSearchParams,
   useRouterPage,
   useRouterPageSelector,
 } from '../index'
@@ -320,5 +323,503 @@ describe('RouterPageProvider', () => {
     })
 
     expect(screen.getByText('/project/2:/project/2')).toBeTruthy()
+  })
+})
+
+/** 验证页面路径参数来自这一页自己的 pathname，而不是 React Router 的 Route 匹配。 */
+describe('usePageParams', () => {
+  /** 静态页、多段参数、通配符和尾斜杠都按叶子 pattern 解析，并且不走 useParams。 */
+  it('reads this page pattern and leaves React Router params empty', () => {
+    const router = createRouterCore({
+      routes: [
+        { path: '/home', title: '首页', element: 'home' },
+        {
+          path: '/project/:projectId/task/:taskId',
+          title: '任务',
+          element: 'task',
+          supportMultipleTabs: true,
+        },
+        { path: '/docs/*', title: '文档', element: 'docs', supportMultipleTabs: true },
+        { path: '/record/:id', title: '记录', element: 'record', supportMultipleTabs: true },
+      ],
+      storageAdapter: false,
+    })
+    router.syncLocation({ pathname: '/home', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/9/task/3/', search: '', hash: '' })
+    router.syncLocation({ pathname: '/docs/guide/intro', search: '', hash: '' })
+    router.syncLocation({ pathname: '/record/AbC', search: '', hash: '' })
+
+    /** 同时展示页面参数和 React Router 参数，确认后者在这棵树上始终为空。 */
+    function Probe() {
+      const pathname = useRouterPageSelector((page) => page.pathname)
+      const pageParams = usePageParams()
+      const routeParams = useParams()
+
+      return (
+        <span>
+          {`${pathname}:${JSON.stringify(pageParams)}:${JSON.stringify(routeParams)}`}
+        </span>
+      )
+    }
+
+    /** 按 core 保留的页面逐个挂上 Provider，模拟 KeepAlive 同时留着多页。 */
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/record/AbC?from=browser'],
+    })
+
+    expect(screen.getByText('/home:{}:{}')).toBeTruthy()
+    expect(screen.getByText('/project/9/task/3/:{"projectId":"9","taskId":"3"}:{}')).toBeTruthy()
+    expect(screen.getByText('/docs/guide/intro:{"*":"guide/intro"}:{}')).toBeTruthy()
+    expect(screen.getByText('/record/AbC:{"id":"AbC"}:{}')).toBeTruthy()
+  })
+
+  /** 百分号编码按 useParams 的方式解码，残缺编码不能让页面抛错。 */
+  it('decodes path params and keeps a malformed escape as-is', () => {
+    const router = createRouterCore({
+      routes: [
+        { path: '/record/:id', title: '记录', element: 'record', supportMultipleTabs: true },
+      ],
+      storageAdapter: false,
+    })
+    router.syncLocation({ pathname: '/record/a%2Fb', search: '', hash: '' })
+    router.syncLocation({ pathname: '/record/100%', search: '', hash: '' })
+
+    function Probe() {
+      const { id } = usePageParams()
+      const pathname = useRouterPageSelector((page) => page.pathname)
+      return <span>{`${pathname}:${id}`}</span>
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, { initialEntries: ['/record/100%'] })
+
+    expect(screen.getByText('/record/a%2Fb:a/b')).toBeTruthy()
+    expect(screen.getByText('/record/100%:100%')).toBeTruthy()
+  })
+
+  /** 共享动态页签换真实地址后，参数跟着这一页的 pathname 变，不看浏览器旧地址。 */
+  it('updates params when a shared dynamic page changes pathname', () => {
+    const router = createRouterCore({
+      routes: [{ path: '/project/:id', title: '项目', element: 'project' }],
+      storageAdapter: false,
+    })
+    router.syncLocation({ pathname: '/project/1', search: '', hash: '' })
+
+    /** 只输出 id，方便观察共享页签上的参数变化。 */
+    function Probe() {
+      const { id } = usePageParams()
+      return <span>{id}</span>
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, { initialEntries: ['/project/1'] })
+    expect(screen.getByText('1')).toBeTruthy()
+
+    act(() => {
+      router.syncLocation({ pathname: '/project/2', search: '', hash: '' })
+    })
+
+    expect(screen.getByText('2')).toBeTruthy()
+  })
+
+  /** 只有查询串变化时，路径参数引用不变，页面不应因此重渲染。 */
+  it('does not rerender when only the query string changes', () => {
+    const router = createRouterCore({
+      routes: [{ path: '/project/:id', title: '项目', element: 'project' }],
+      storageAdapter: false,
+    })
+    router.syncLocation({ pathname: '/project/7', search: '?tab=base', hash: '' })
+    let renders = 0
+
+    /** 记录渲染次数，用来确认 search 更新没有打破参数订阅。 */
+    function Probe() {
+      renders += 1
+      const { id } = usePageParams()
+      return <span>{id}</span>
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/project/7?tab=base'],
+    })
+    expect(screen.getByText('7')).toBeTruthy()
+    const rendersAfterMount = renders
+
+    act(() => {
+      router.syncLocation({
+        pathname: '/project/7',
+        search: '?tab=activity',
+        hash: '#detail',
+      })
+    })
+
+    expect(renders).toBe(rendersAfterMount)
+    expect(screen.getByText('7')).toBeTruthy()
+  })
+
+  /** 离开页面 Provider 时必须明确失败，避免静默读到空参数。 */
+  it('throws outside RouterPageProvider', () => {
+    /** 故意不包 Provider，确认错误指向页面 Hook 的使用位置。 */
+    function Orphan() {
+      usePageParams()
+      return null
+    }
+
+    expect(() => render(<Orphan />)).toThrow(
+      '页面路由 Hook 必须在 RouterPageProvider 内调用。',
+    )
+  })
+})
+
+/** 验证地址和查询串属于当前页面，缓存页不会改到浏览器正在显示的地址。 */
+describe('usePageLocation and usePageSearchParams', () => {
+  /** 列表和详情各自记住自己的 search/hash，浏览器地址只反映正在显示的详情。 */
+  it('keeps a cached page location when the browser moves to another page', () => {
+    const router = createRouterCore({
+      routes: [
+        { path: '/list', title: '列表', element: 'list' },
+        { path: '/detail', title: '详情', element: 'detail' },
+      ],
+      storageAdapter: false,
+    })
+
+    /** 把这一页的地址和查询串拼出来，和浏览器地址分开断言。 */
+    function Probe() {
+      const pageLocation = usePageLocation()
+      const [params] = usePageSearchParams()
+      const status = params.get('status') ?? ''
+      const id = params.get('id') ?? ''
+
+      return (
+        <span>
+          {`${pageLocation.pathname}${pageLocation.search}${pageLocation.hash}:${status}:${id}`}
+        </span>
+      )
+    }
+
+    /** 浏览器地址单独渲染，用来证明它和缓存页的 location 不是同一份。 */
+    function BrowserProbe() {
+      const location = useLocation()
+      return <span>{`browser:${location.pathname}${location.search}${location.hash}`}</span>
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          <BrowserProbe />
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/list?status=open#filters'],
+    })
+    expect(screen.getByText('/list?status=open#filters:open:')).toBeTruthy()
+
+    act(() => {
+      router.jumpTo('/detail?id=1')
+    })
+
+    expect(screen.getByText('/list?status=open#filters:open:')).toBeTruthy()
+    expect(screen.getByText('/detail?id=1::1')).toBeTruthy()
+    expect(screen.getByText('browser:/detail?id=1')).toBeTruthy()
+  })
+
+  /** 活动页替换查询串时同步地址栏，并保留这一页原来的 hash。 */
+  it('replaces the browser query string from the active page', () => {
+    const router = createRouterCore({
+      routes: [{ path: '/list', title: '列表', element: 'list' }],
+      storageAdapter: false,
+    })
+
+    /** 按钮文本就是当前页面地址，点击后整段替换 status。 */
+    function Probe() {
+      const pageLocation = usePageLocation()
+      const [params, setParams] = usePageSearchParams()
+
+      return (
+        <button
+          type="button"
+          onClick={() => setParams({ status: 'done' })}
+        >
+          {`${pageLocation.pathname}${pageLocation.search}${pageLocation.hash}:${params.get('status')}`}
+        </button>
+      )
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/list?status=open#filters'],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '/list?status=open#filters:open' }))
+
+    expect(screen.getByRole('button', { name: '/list?status=done#filters:done' })).toBeTruthy()
+  })
+
+  /** 同一次点击里的函数式更新要看见刚才写入的查询串，字符串里的 # 也不能变成 hash。 */
+  it('chains functional updates and keeps a hash character inside the query', () => {
+    const router = createRouterCore({
+      routes: [{ path: '/list', title: '列表', element: 'list' }],
+      storageAdapter: false,
+    })
+
+    function Probe() {
+      const pageLocation = usePageLocation()
+      const [params, setParams] = usePageSearchParams()
+
+      return (
+        <>
+          <button
+            type="button"
+            aria-label="chain"
+            onClick={() => {
+              setParams({ status: 'a' })
+              setParams((current) => {
+                current.set('extra', 'b')
+                return current
+              })
+            }}
+          >
+            {`chain:${pageLocation.search}${pageLocation.hash}:${params.get('status')}:${params.get('extra')}`}
+          </button>
+          <button
+            type="button"
+            aria-label="hash"
+            onClick={() => setParams('q=1#nope')}
+          >
+            {`hash:${pageLocation.search}${pageLocation.hash}:${params.get('q')}`}
+          </button>
+        </>
+      )
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/list?status=open#filters'],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'chain' }))
+    expect(
+      screen.getByRole('button', { name: 'chain' }).textContent,
+    ).toBe('chain:?status=a&extra=b#filters:a:b')
+
+    fireEvent.click(screen.getByRole('button', { name: 'hash' }))
+    expect(
+      screen.getByRole('button', { name: 'hash' }).textContent,
+    ).toBe('hash:?q=1%23nope#filters:1#nope')
+  })
+
+  /** 缓存页改查询串只影响自己；回到该页时地址栏恢复这次写入。 */
+  it('updates a cached page search without moving the browser URL', () => {
+    const router = createRouterCore({
+      routes: [
+        { path: '/list', title: '列表', element: 'list' },
+        { path: '/detail', title: '详情', element: 'detail' },
+      ],
+      storageAdapter: false,
+    })
+
+    /** 只有列表页提供写入按钮，避免点到当前正在显示的详情。 */
+    function Probe() {
+      const pathname = useRouterPageSelector((page) => page.pathname)
+      const pageLocation = usePageLocation()
+      const [params, setParams] = usePageSearchParams()
+      const label = `${pageLocation.pathname}${pageLocation.search}${pageLocation.hash}:${params.get('status') ?? ''}`
+
+      if (pathname !== '/list')
+        return <span>{label}</span>
+
+      return (
+        <button type="button" onClick={() => setParams({ status: 'done' })}>
+          {label}
+        </button>
+      )
+    }
+
+    function BrowserProbe() {
+      const location = useLocation()
+      return <span>{`browser:${location.pathname}${location.search}${location.hash}`}</span>
+    }
+
+    function Pages() {
+      const pages = useRouterCoreSelector((state) => state.pages)
+      const activePage = useRouterCoreSelector((state) => state.activePage)
+
+      return (
+        <>
+          <BrowserProbe />
+          {pages.map((page) => (
+            <RouterPageProvider
+              key={page.key}
+              page={page}
+              active={page.key === activePage}
+            >
+              <Probe />
+            </RouterPageProvider>
+          ))}
+        </>
+      )
+    }
+
+    renderWithProvider(router, <Pages />, {
+      initialEntries: ['/list?status=open#filters'],
+    })
+    act(() => {
+      router.jumpTo('/detail?id=1')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '/list?status=open#filters:open' }))
+
+    expect(screen.getByRole('button', { name: '/list?status=done#filters:done' })).toBeTruthy()
+    expect(screen.getByText('browser:/detail?id=1')).toBeTruthy()
+
+    act(() => {
+      router.jumpTo({ pathname: '/list' })
+    })
+
+    expect(screen.getByText('browser:/list?status=done#filters')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '/list?status=done#filters:done' })).toBeTruthy()
+  })
+
+  /** 离开页面 Provider 时，地址和查询串 Hook 都要明确失败。 */
+  it('throws outside RouterPageProvider', () => {
+    /** 两个 Hook 都依赖页面 Context，缺 Provider 时不能静默返回浏览器地址。 */
+    function OrphanLocation() {
+      usePageLocation()
+      return null
+    }
+    function OrphanSearch() {
+      usePageSearchParams()
+      return null
+    }
+
+    expect(() => render(<OrphanLocation />)).toThrow(
+      '页面路由 Hook 必须在 RouterPageProvider 内调用。',
+    )
+    expect(() => render(<OrphanSearch />)).toThrow(
+      '页面路由 Hook 必须在 RouterPageProvider 内调用。',
+    )
   })
 })

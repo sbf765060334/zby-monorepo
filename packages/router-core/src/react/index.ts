@@ -27,5 +27,20 @@ export type {
   RouterPageProviderProps,
 } from './RouterPageProvider'
 
+/** 当前 KeepAlive 页面自己的路径参数，用法与 React Router `useParams` 相同。 */
+export { usePageParams } from './usePageParams'
+export type { PageParams } from './usePageParams'
+
+/** 当前 KeepAlive 页面自己的 pathname、search 和 hash。 */
+export { usePageLocation } from './usePageLocation'
+export type { PageLocation } from './usePageLocation'
+
+/** 当前 KeepAlive 页面自己的查询串，用法与 React Router `useSearchParams` 相同。 */
+export { usePageSearchParams } from './usePageSearchParams'
+export type {
+  PageSearchParamsInit,
+  SetPageSearchParams,
+} from './usePageSearchParams'
+
 /** selector 比较函数的公共类型。 */
 export type { RouterSelectorEqualityFn } from './useStoreSelector'

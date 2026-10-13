@@ -26,6 +26,7 @@
 - 不渲染菜单、页签、403/404 或页面容器，这些 UI 由 ProLayout 实现。
 - 不替业务决定权限来源，只在创建时调用传入的 `hasAuth`。
 - 不保存任意页面表单状态；KeepAlive 只维护仍应渲染哪些页面的描述。
+- 不把业务路由注册成 React Router 的 `<Route>`。页面里的 `useParams`、`useLocation`、`useSearchParams` 要改用 `usePageParams`、`usePageLocation`、`usePageSearchParams`。对照表见下文「页面里的路由 Hooks」。
 
 新手可以把一次导航理解成下面四步：
 
@@ -271,6 +272,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `syncLocation(location)` | `RouterLocation` | `void` | 接收宿主最终确认的地址，这是浏览器地址进入 Core 的唯一入口。 |
 | `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | 校验目录、权限和页签后请求完整导航。没有宿主或地址无效时安全地不做事。未具体化且没有可恢复缓存的 pattern 会被忽略，并给出控制台警告。 |
 | `smartNavigate(data)` | `RouterSmartNavigateData` | `void` | 同页只替换 search/hash；pathname 变化时自动走完整 `jumpTo`。 |
+| `replacePageSearch(tabKey, searchParams, options?)` | `string, string \| null, { replace?: boolean }` | `void` | 替换一个页签自己的查询串。活动页默认 replace 地址栏；缓存页只更新该页 search，不改浏览器当前地址。空串和 `null` 都清空。 |
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | 把真实地址转换成稳定页签身份；未知地址返回 `null`。 |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | 返回从根到叶子的匹配链，适合菜单和面包屑。 |
 | `reorderTabs(keys)` | `readonly string[]` | `boolean` | 参数必须包含当前全部页签且不重复；固定组不能排到普通组后面。 |
@@ -430,8 +432,61 @@ Provider 不接收 `routes`、`keepAlive`、`storageKey` 等固定配置，这�
 | `useRouterCoreSelector(selector, equalityFn?)` | 状态选择函数、可选比较函数 | `Selected` | 只订阅全局状态中真正关心的结果。 |
 | `useRouterPage<Route>()` | 无 | `RouterPageContextValue<Route>` | 读取当前页面完整 Context；PageProvider 外调用会抛错。 |
 | `useRouterPageSelector(selector, equalityFn?)` | 页面 Context 选择函数、可选比较函数 | `Selected` | 只订阅当前页面的某一部分。 |
+| `usePageParams<Key>()` | 无 | `PageParams<Key>` | 读取当前页面自己的路径参数。用法与 `useParams()` 相同。 |
+| `usePageLocation()` | 无 | `PageLocation` | 读取当前页面自己的 pathname、search、hash。 |
+| `usePageSearchParams()` | 无 | `readonly [URLSearchParams, SetPageSearchParams]` | 读取并替换当前页面自己的查询串。用法与 `useSearchParams()` 相同。 |
 
 `equalityFn` 类型为 `(left: Selected, right: Selected) => boolean`；返回 `true` 表示两次结果等价，可以复用旧引用。
+
+### 页面里的路由 Hooks
+
+KeepAlive 会同时留着多个页面，但 React Router 只有浏览器当前这一条地址。页面里要读「这一页自己的地址」时，用下面三个本地 Hook。它们都必须写在 `RouterPageProvider` 内；`ReactRouterProLayout` 已经为每个页签包了这一层。
+
+| React Router | 页面里改用 | 为什么不能继续用原来的 |
+| --- | --- | --- |
+| `useParams()` | `usePageParams()` | 它只读 `<Route path="/records/:id">` 匹配后写入的 `params`。业务路由的 `path` 没有注册成这种 `<Route>`，页面又是 KeepAlive 直接渲染的，所以结果一直是 `{}`。 |
+| `useLocation()` | `usePageLocation()` | 它读的是浏览器当前地址。缓存页还挂在树上，会看到正在显示的页签的 pathname、search 和 hash。 |
+| `useSearchParams()` | `usePageSearchParams()` | 读和写的都是浏览器当前查询串。缓存页在隐藏时拉数、写 state，或调用 setter，会用到正在显示的页签的查询串，也可能把地址栏改掉。 |
+
+```tsx
+import {
+  usePageLocation,
+  usePageParams,
+  usePageSearchParams,
+} from '@zby/router-core/react'
+
+function RecordPage() {
+  const { id } = usePageParams()
+  const location = usePageLocation()
+  const [searchParams, setSearchParams] = usePageSearchParams()
+
+  return (
+    <button onClick={() => setSearchParams({ tab: 'activity' })}>
+      {id}
+      {location.pathname}
+      {searchParams.get('tab')}
+    </button>
+  )
+}
+```
+
+`usePageParams()` 用这一页的 pathname 和叶子路由 pattern 解析。地址 `/records/100`、路由 `/records/:id` 时，`id` 为 `'100'`。字段都是字符串；pattern 里没有的名字是 `undefined`。末尾 `*` 放在 `'*'` 上。百分号编码会解码，残缺编码保留原样。缓存页保留自己的参数。`usePageLocation()` 的 pathname 用这一页自己的 pathname，不借用地址快照里可能落后的那一份。
+
+`usePageLocation()` 返回 `{ pathname, search, hash }`。`search` 非空时带 `?`，`hash` 非空时带 `#`。这里没有 React Router 的 `location.state` 和 `location.key`，因为页签不各自持有一条浏览器历史。
+
+`usePageSearchParams()` 返回 `[URLSearchParams, setter]`。setter 替换这一页的整段查询串，函数形式会拿到这一页当前的 `URLSearchParams`。正在显示的页面默认 `replace` 地址栏，和 `smartNavigate` 一样；传入 `{ replace: false }` 才新增历史记录。缓存页只更新自己的 search，不改浏览器当前地址，之后再打开该页会恢复这次写入的查询串。
+
+这些 Hook 可以直接用。它们作用在浏览器这一条地址上，不代表某个缓存页自己的历史：
+
+- `useNavigate()`、`useHref()`、`<Link>`：改地址栏或生成 href。router-core 会在宿主确认后同步页签。
+- `useNavigationType()`：最近一次浏览器导航是 push、replace 还是 pop。
+
+这些 Hook 不能用：
+
+- `useMatches()`、`useOutlet()`、`useOutletContext()`：没有对应的 `<Route>` 匹配，匹配链和出口都是空的。
+- `useMatch(pattern)`：能解析浏览器当前地址，但缓存页拿到的仍是正在显示的页签。不要拿它代替 `usePageParams()`。
+- `useResolvedPath()`：相对路径以浏览器当前 pathname 为基准，缓存页会算到别的页签上。
+- `useLoaderData()`、`useRouteLoaderData()`、`useActionData()`、`useFetcher()`、`useSubmit()`、`useNavigation()`、`useRevalidator()`、`useBlocker()`：属于 data router。当前接入是 `BrowserRouter`，这些 Hook 不可用。页签关闭拦截用 `addBeforeCloseHook`。
 
 ### `RouterPageContextValue<Route>`
 
@@ -478,6 +533,7 @@ function TabBar() {
 - `useRouterCoreSelector` 精确订阅选中的全局状态。
 - `RouterPageProvider` 包裹自定义 KeepAlive UI 渲染的每个页面。
 - `useRouterPage` 和 `useRouterPageSelector` 读取页面自己的 pathname、active 和 location。
+- `usePageParams`、`usePageLocation`、`usePageSearchParams` 读取当前页面自己的路径参数、地址和查询串。对照表见「页面里的路由 Hooks」。
 
 业务自行渲染页面时，可以遍历 `state.pages`：
 

@@ -406,6 +406,17 @@ export interface RouterCore<Route extends RouterRoute = RouterRoute> {
     searchParams?: string | null
     hash?: string | null
   }) => void
+  /**
+   * 替换一个页签自己的查询串。
+   *
+   * 该页正在显示时请求宿主更新地址栏，默认 replace。该页只是缓存时只更新这一页的
+   * search 和页面 location，不改变浏览器当前地址。空字符串和 null 都表示清空。
+   */
+  replacePageSearch: (
+    tabKey: string,
+    searchParams: string | null,
+    options?: { replace?: boolean },
+  ) => void
   /** 根据真实 pathname 计算平台页签身份。 */
   getTabKey: (pathname: string) => string | null
   /** 获取真实 pathname 从根到叶子的路由层级。 */

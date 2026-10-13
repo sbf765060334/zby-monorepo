@@ -573,6 +573,44 @@ export function createRouterCore<Route extends RouterRoute>(
     )
   }
 
+  /**
+   * 替换指定页签的查询串。
+   *
+   * 活动页交给宿主，等 syncLocation 回写缓存。缓存页不能走宿主，否则会改掉用户
+   * 正在看的地址；这里直接写该页签缓存，并通知它自己的 location。
+   */
+  function replacePageSearch(
+    tabKey: string,
+    searchParams: string | null,
+    options?: { replace?: boolean },
+  ) {
+    const state = getState()
+    const page = state.pages.find((item) => item.key === tabKey)
+    const pathname = page?.pathname || cache.getParamsPath(tabKey) || tabKey
+    const normalized = normalizeSearchParams(searchParams)
+    const active = state.activePage === tabKey
+
+    if (active && runtime.host) {
+      runtime.host.navigate(
+        {
+          pathname,
+          search: normalized ? `?${normalized}` : '',
+          hash: cache.getHash(tabKey),
+        },
+        { replace: options?.replace !== false },
+      )
+      return
+    }
+
+    cache.setSearch(tabKey, normalized)
+    const search = cache.getSearch(tabKey)
+    publishPageLocation(tabKey, {
+      pathname,
+      search: search ? `?${search}` : '',
+      hash: cache.getHash(tabKey),
+    })
+  }
+
   /** 同页 URL 状态使用 replace；真正切换 pathname 时转交完整 jumpTo 流程。 */
   function smartNavigate(data: {
     pathname?: string
@@ -706,8 +744,8 @@ export function createRouterCore<Route extends RouterRoute>(
 
     const errors: unknown[] = []
     // 没有进行中的关闭时不要 await：async 函数即使立刻返回也会多让出一次微任务。
-    const hasUnderwayClose = Boolean(getPendingCloseTabKey())
-      || tabKeys.some((tabKey) => getInFlightTabClose(tabKey))
+    const hasUnderwayClose = Boolean(getPendingCloseTabKey()) ||
+      tabKeys.some((tabKey) => getInFlightTabClose(tabKey))
     const leftOpen = hasUnderwayClose
       ? await waitForClosesAlreadyUnderway(tabKeys, errors)
       : new Set<string>()
@@ -755,9 +793,9 @@ export function createRouterCore<Route extends RouterRoute>(
       }
 
       if (
-        deferredActiveKey
-        && getState().tabs.some((tab) => tab.key === deferredActiveKey)
-        && getState().tabs.some((tab) => tab.key === anchorKey)
+        deferredActiveKey &&
+        getState().tabs.some((tab) => tab.key === deferredActiveKey) &&
+        getState().tabs.some((tab) => tab.key === anchorKey)
       ) {
         try {
           await closeDeferredActive(deferredActiveKey, anchorKey)
@@ -850,6 +888,7 @@ export function createRouterCore<Route extends RouterRoute>(
     syncLocation,
     jumpTo,
     smartNavigate,
+    replacePageSearch,
     getTabKey: registry.getTabKey,
     getCurrentRoutes: registry.getCurrentRoutes,
     reorderTabs,

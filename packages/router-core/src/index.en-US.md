@@ -26,6 +26,7 @@ It is not responsible for:
 - Rendering menus, tabs, 403/404 screens, or page containers. ProLayout owns that UI.
 - Choosing the source of authorization. It only calls the supplied `hasAuth` during creation.
 - Persisting arbitrary form state. KeepAlive only describes which pages should remain rendered.
+- Registering business routes as React Router `<Route>` elements. Inside a page, replace `useParams`, `useLocation`, and `useSearchParams` with `usePageParams`, `usePageLocation`, and `usePageSearchParams`. See “Route hooks inside a page” below.
 
 For a beginner, one navigation can be read as four steps:
 
@@ -271,6 +272,7 @@ Create a new core instance when one of these definitions must change. `RouterCor
 | `syncLocation(location)` | `RouterLocation` | `void` | Accepts the final host-confirmed URL. This is the only URL-to-Core entry. |
 | `jumpTo(target)` | `string \| RouterNavigationTarget` | `void` | Validates directories, authorization, and tabs before requesting navigation. Missing host or an invalid address is a no-op. An unresolved pattern without a cached concrete pathname is ignored and writes a console warning. |
 | `smartNavigate(data)` | `RouterSmartNavigateData` | `void` | Replaces same-page search/hash and delegates pathname changes to full `jumpTo`. |
+| `replacePageSearch(tabKey, searchParams, options?)` | `string, string \| null, { replace?: boolean }` | `void` | Replaces one tab's query string. The active tab replaces the address bar by default; a cached tab updates only its own search and does not change the browser URL. An empty string and `null` both clear it. |
 | `getTabKey(pathname)` | `pathname: string` | `string \| null` | Converts a concrete URL into a stable tab identity. |
 | `getCurrentRoutes(pathname)` | `pathname: string` | `RouterCurrentRoute<Route>[]` | Returns the root-to-leaf route chain for menus and breadcrumbs. |
 | `reorderTabs(keys)` | `readonly string[]` | `boolean` | Requires every current tab exactly once and keeps fixed tabs before normal tabs. |
@@ -430,8 +432,61 @@ The dependent `RouterPage<Route>` fields are listed in “State field dependent 
 | `useRouterCoreSelector(selector, equalityFn?)` | state selector and optional comparator | `Selected` | Subscribes only to the selected global result. |
 | `useRouterPage<Route>()` | none | `RouterPageContextValue<Route>` | Reads the complete current-page Context; throws outside PageProvider. |
 | `useRouterPageSelector(selector, equalityFn?)` | page-context selector and optional comparator | `Selected` | Subscribes only to part of the current page. |
+| `usePageParams<Key>()` | none | `PageParams<Key>` | Reads this page's own path params. Same call shape as `useParams()`. |
+| `usePageLocation()` | none | `PageLocation` | Reads this page's own pathname, search, and hash. |
+| `usePageSearchParams()` | none | `readonly [URLSearchParams, SetPageSearchParams]` | Reads and replaces this page's own query string. Same call shape as `useSearchParams()`. |
 
 `equalityFn` is `(left: Selected, right: Selected) => boolean`; returning `true` means the results are equivalent and the previous reference can be reused.
+
+### Route hooks inside a page
+
+KeepAlive retains several pages, while React Router has only the browser's current URL. To read this page's own URL, use the three page hooks below. Call them inside `RouterPageProvider`; `ReactRouterProLayout` already wraps each tab with one.
+
+| React Router | Use in a page | Why the original hook does not fit |
+| --- | --- | --- |
+| `useParams()` | `usePageParams()` | It reads only `params` written by a matched `<Route path="/records/:id">`. Business paths are not registered as those routes, and KeepAlive renders the page directly, so the result stays `{}`. |
+| `useLocation()` | `usePageLocation()` | It reads the browser's current URL. A cached page stays mounted and would see the visible tab's pathname, search, and hash. |
+| `useSearchParams()` | `usePageSearchParams()` | Both the read and the setter use the browser's current query string. A hidden page that fetches, writes state, or calls the setter follows the visible tab, and the setter can change the address bar. |
+
+```tsx
+import {
+  usePageLocation,
+  usePageParams,
+  usePageSearchParams,
+} from '@zby/router-core/react'
+
+function RecordPage() {
+  const { id } = usePageParams()
+  const location = usePageLocation()
+  const [searchParams, setSearchParams] = usePageSearchParams()
+
+  return (
+    <button onClick={() => setSearchParams({ tab: 'activity' })}>
+      {id}
+      {location.pathname}
+      {searchParams.get('tab')}
+    </button>
+  )
+}
+```
+
+`usePageParams()` parses this page's pathname against its leaf route pattern. For URL `/records/100` and route `/records/:id`, `id` is `'100'`. Every value is a string. A name absent from the pattern is `undefined`. A trailing `*` is returned under `'*'`. Percent-encoding is decoded; a malformed escape is left as-is. A cached page keeps its own params. `usePageLocation()` takes pathname from the page itself, not from a location snapshot that may still show the previous path.
+
+`usePageLocation()` returns `{ pathname, search, hash }`. A non-empty `search` starts with `?`, and a non-empty `hash` starts with `#`. There is no React Router `location.state` or `location.key`, because a tab does not own a browser history stack.
+
+`usePageSearchParams()` returns `[URLSearchParams, setter]`. The setter replaces this page's whole query string. A function updater receives this page's current `URLSearchParams`. On the visible page the default is `replace`, the same rule as `smartNavigate`; pass `{ replace: false }` to push a history entry. On a cached page it updates only that page's search and does not change the browser URL. Opening the page again restores the search written here.
+
+These hooks are safe to call. They operate on the single browser URL, not on a cached page's own history:
+
+- `useNavigate()`, `useHref()`, and `<Link>` change the address bar or build an href. router-core syncs tabs after the host confirms the URL.
+- `useNavigationType()` reports whether the latest browser navigation was push, replace, or pop.
+
+These hooks do not work here:
+
+- `useMatches()`, `useOutlet()`, and `useOutletContext()` have no matching `<Route>`, so the match list and outlet are empty.
+- `useMatch(pattern)` can parse the browser's current URL, but a cached page still sees the visible tab. Do not use it instead of `usePageParams()`.
+- `useResolvedPath()` resolves relative paths against the browser pathname, so a cached page resolves against another tab.
+- `useLoaderData()`, `useRouteLoaderData()`, `useActionData()`, `useFetcher()`, `useSubmit()`, `useNavigation()`, `useRevalidator()`, and `useBlocker()` belong to a data router. This integration uses `BrowserRouter`, so those hooks are unavailable. Tab-close guards use `addBeforeCloseHook`.
 
 ### `RouterPageContextValue<Route>`
 
@@ -479,6 +534,7 @@ function TabBar() {
 - `useRouterCoreSelector` precisely subscribes to selected global state.
 - `RouterPageProvider` wraps each page rendered by a custom KeepAlive UI.
 - `useRouterPage` and `useRouterPageSelector` read page-specific pathname, active state, and location.
+- `usePageParams`, `usePageLocation`, and `usePageSearchParams` read the current page's own path params, URL, and query string. See “Route hooks inside a page”.
 
 A custom page renderer can iterate `state.pages`:
 

@@ -217,6 +217,40 @@ export function getPathParams(pattern: string, pathname: string) {
   return params
 }
 
+/**
+ * 从真实 pathname 提取页面可用的路径参数。
+ *
+ * 先做与 `matchRoutePath` 相同的规范化。返回值的键去掉 `:`，末尾通配符的键仍是 `*`。
+ * pattern 里没有对应片段的参数不会出现。
+ */
+export function readRouteParams(pattern: string, pathname: string) {
+  const raw = getPathParams(
+    normalizeRoutePath(pattern),
+    normalizeRoutePath(pathname),
+  )
+  const params: Record<string, string | undefined> = {}
+
+  for (const key of Object.keys(raw)) {
+    const name = key.startsWith(':') ? key.slice(1) : key
+    const value = raw[key]
+    if (!name || value === undefined)
+      continue
+    // 与 React Router useParams 一样解码百分号编码；非法编码保留原片段，避免整页抛错。
+    params[name] = decodePathParam(value)
+  }
+
+  return params
+}
+
+/** 解码路径参数。decodeURIComponent 对残缺百分号会抛错，这时保留浏览器给出的原片段。 */
+function decodePathParam(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 /** 用已经提取的参数替换路径占位符；缺少参数时保留原占位符供上层识别。 */
 export function replacePathParams(
   path: string,
