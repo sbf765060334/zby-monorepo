@@ -202,7 +202,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
           width: 'auto',
           minWidth: 0,
           maxWidth: '100%',
-          flex: '0 1 auto',
+          flex: 'none',
         },
 
         [`${antCls}-picker-input > input`]: {

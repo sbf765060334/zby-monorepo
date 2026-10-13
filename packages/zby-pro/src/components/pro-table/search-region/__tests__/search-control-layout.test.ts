@@ -237,9 +237,9 @@ describe('resolveInlineSearchControlStyle', () => {
     expect(inputStyle?.width).toBeTypeOf('number')
     expect(inputStyle?.maxWidth).toBe('100%')
     expect(inputStyle?.minWidth).toBe(0)
-    expect(pickerStyle?.width).toBeTypeOf('number')
+    expect(pickerStyle?.width).toBeUndefined()
     expect(pickerStyle?.maxWidth).toBe('100%')
-    expect(pickerStyle?.minWidth).toBe(0)
+    expect(pickerStyle?.minWidth).toBeTypeOf('number')
   })
 
   it('keeps a long value as a preferred width instead of a pixel minimum', () => {
@@ -390,8 +390,9 @@ describe('resolveInlineSearchControlStyle', () => {
       'RangePicker',
     )
 
-    expect(style?.width).toBe(Math.ceil(text + padding + separator + suffix + borders))
-    expect(style?.width as number).toBeGreaterThan(154)
+    expect(style?.width).toBeUndefined()
+    expect(style?.minWidth).toBe(Math.ceil(text + padding + separator + suffix + borders))
+    expect(style?.minWidth as number).toBeGreaterThan(154)
   })
 
   it('reserves antd start and end padding in auto-width extra', () => {

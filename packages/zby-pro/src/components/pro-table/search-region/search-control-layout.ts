@@ -216,13 +216,16 @@ export function resolveInlineSearchControlStyle(
         userMin,
       )
 
-  // 用测量宽度作为首选尺寸，max-width 才能把它停在筛选行内。
-  // 内容像素如果写进 minWidth，会压过 max-width，长文本仍会撑出页面。
+  // 输入框和选择器用测量宽度封顶。像素写进 minWidth 会压过 max-width。
+  // 时间日期不写死 width：面板预选时输入框里的文字已经变了，但筛选值还没提交，
+  // 固定宽度会把预选文字挤住。最小宽度只做底，实际宽度仍由内容撑开。
   const nextStyle: CSSProperties = {
     ...style,
-    width: autoWidth,
     maxWidth: style?.maxWidth ?? '100%',
-    minWidth: style?.minWidth ?? 0,
+    minWidth: style?.minWidth ?? (kind === 'picker' ? autoWidth : 0),
+  }
+  if (kind !== 'picker') {
+    nextStyle.width = autoWidth
   }
 
   return nextStyle
