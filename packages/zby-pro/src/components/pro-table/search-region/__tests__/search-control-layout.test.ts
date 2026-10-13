@@ -208,7 +208,7 @@ describe('getSelectMeasurePlan', () => {
 })
 
 describe('resolveInlineSearchControlStyle', () => {
-  it('writes width only for select-kind controls', () => {
+  it('sizes every auto-width control and caps it at the container', () => {
     const selectStyle = resolveInlineSearchControlStyle(
       'select',
       { mode: 'multiple', options: LABEL_OPTIONS, placeholder: '标签' },
@@ -232,14 +232,46 @@ describe('resolveInlineSearchControlStyle', () => {
     )
 
     expect(selectStyle?.width).toBeTypeOf('number')
-    expect(selectStyle?.minWidth).toBe(selectStyle?.width)
-    expect(inputStyle?.minWidth).toBeTypeOf('number')
-    expect(inputStyle?.width).toBeUndefined()
-    expect(pickerStyle?.minWidth).toBeTypeOf('number')
-    expect(pickerStyle?.width).toBeUndefined()
+    expect(selectStyle?.maxWidth).toBe('100%')
+    expect(selectStyle?.minWidth).toBe(0)
+    expect(inputStyle?.width).toBeTypeOf('number')
+    expect(inputStyle?.maxWidth).toBe('100%')
+    expect(inputStyle?.minWidth).toBe(0)
+    expect(pickerStyle?.width).toBeTypeOf('number')
+    expect(pickerStyle?.maxWidth).toBe('100%')
+    expect(pickerStyle?.minWidth).toBe(0)
   })
 
-  it('keeps input minWidth aligned with affix chrome instead of select padding', () => {
+  it('keeps a long value as a preferred width instead of a pixel minimum', () => {
+    const style = resolveInlineSearchControlStyle(
+      'input',
+      { allowClear: true },
+      '1'.repeat(400),
+      TOKEN,
+      'Input',
+    )
+
+    expect(style?.width).toBeTypeOf('number')
+    expect(style?.width as number).toBeGreaterThan(400)
+    expect(style?.maxWidth).toBe('100%')
+    expect(style?.minWidth).toBe(0)
+  })
+
+  it('keeps an explicit maxWidth while still measuring the preferred width', () => {
+    const style = resolveInlineSearchControlStyle(
+      'select',
+      { options: LABEL_OPTIONS, style: { maxWidth: 240 } },
+      ['east'],
+      TOKEN,
+      'Select',
+    )
+
+    expect(style?.maxWidth).toBe(240)
+    expect(style?.width).toBeTypeOf('number')
+    expect(style?.minWidth).toBe(0)
+  })
+
+  it('keeps input width aligned with affix chrome instead of select padding', () => {
     const withClear = resolveInlineSearchControlStyle(
       'input',
       { allowClear: true, placeholder: '客户名称' },
@@ -255,8 +287,8 @@ describe('resolveInlineSearchControlStyle', () => {
       'Input',
     )
 
-    expect(withClear?.minWidth as number).toBeGreaterThan(withoutClear?.minWidth as number)
-    expect((withClear?.minWidth as number) - (withoutClear?.minWidth as number)).toBe(
+    expect(withClear?.width as number).toBeGreaterThan(withoutClear?.width as number)
+    expect((withClear?.width as number) - (withoutClear?.width as number)).toBe(
       TOKEN.fontSizeIcon + TOKEN.marginXXS,
     )
   })
@@ -283,8 +315,6 @@ describe('resolveInlineSearchControlStyle', () => {
     const compactStyle = resolveInlineSearchControlStyle('select', props, value, COMPACT_TOKEN, 'Select')
     const defaultStyle = resolveInlineSearchControlStyle('select', props, value, TOKEN, 'Select')
 
-    expect(compactStyle?.width).toBeTypeOf('number')
-    expect(defaultStyle?.width).toBeTypeOf('number')
     expect(compactStyle?.width as number).toBeLessThan(defaultStyle?.width as number)
     expect(compactStyle?.width as number).toBeLessThan(260)
     expect(defaultStyle?.width as number).toBeLessThan(320)
@@ -346,6 +376,24 @@ describe('resolveInlineSearchControlStyle', () => {
     expect(compactSingle?.width as number).toBeGreaterThan(50)
   })
 
+  it('fits both range placeholders plus separator, suffix and border', () => {
+    const text = 8 * TOKEN.fontSize
+    const padding = (TOKEN.paddingSM - TOKEN.lineWidth) * 2
+    const separator = TOKEN.fontSize + 2 + TOKEN.paddingXS * 2
+    const suffix = TOKEN.fontSize + Math.floor(TOKEN.paddingXS / 2)
+    const borders = TOKEN.lineWidth * 2
+    const style = resolveInlineSearchControlStyle(
+      'picker',
+      { placeholder: ['开始日期', '结束日期'] },
+      undefined,
+      TOKEN,
+      'RangePicker',
+    )
+
+    expect(style?.width).toBe(Math.ceil(text + padding + separator + suffix + borders))
+    expect(style?.width as number).toBeGreaterThan(154)
+  })
+
   it('reserves antd start and end padding in auto-width extra', () => {
     const inlinePad = TOKEN.paddingSM - TOKEN.lineWidth
     const arrow = Math.max(Math.ceil(TOKEN.fontSize * 1.25), TOKEN.fontSizeIcon)
@@ -366,7 +414,7 @@ describe('resolveInlineSearchControlStyle', () => {
     )
 
     expect(single?.width).toBe(Math.ceil(2 * TOKEN.fontSize + extra + 1))
-    expect(input?.minWidth).toBe(Math.ceil(4 * TOKEN.fontSize + inlinePad * 2))
+    expect(input?.width).toBe(Math.ceil(4 * TOKEN.fontSize + inlinePad * 2))
   })
 })
 

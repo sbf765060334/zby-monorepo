@@ -87,6 +87,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
       [`${componentCls}-search-row`]: {
         flexShrink: 0,
+        width: '100%',
         minWidth: 0,
         maxWidth: '100%',
 
@@ -104,7 +105,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         alignItems: 'center',
         boxSizing: 'border-box',
         height: controlHeight,
+        minWidth: 0,
         maxWidth: '100%',
+        overflow: 'hidden',
         paddingBlock: 0,
         paddingInline: paddingXS,
         border: `${line('transparent')}`,
@@ -122,11 +125,15 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-search-field-control`]: {
         display: 'inline-flex',
         alignItems: 'center',
+        flex: '1 1 auto',
         minWidth: 0,
+        maxWidth: '100%',
+        overflow: 'hidden',
         color: colorText,
 
         [`${antCls}-select, ${antCls}-picker`]: {
           minWidth: 0,
+          maxWidth: '100%',
           borderColor: 'transparent !important',
           background: 'transparent !important',
           boxShadow: 'none !important',
@@ -135,6 +142,8 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         [`${antCls}-select-content`]: {
           flexWrap: 'nowrap',
+          minWidth: 0,
+          overflow: 'hidden',
         },
 
         [`${antCls}-select:hover, ${antCls}-select-focused, ${antCls}-select-open, ${antCls}-picker:hover, ${antCls}-picker-focused`]:
@@ -147,6 +156,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         [`${antCls}-input-affix-wrapper`]: {
           width: 'auto',
+          maxWidth: '100%',
+          minWidth: 0,
+          overflow: 'hidden',
           border: '0 !important',
           boxShadow: 'none !important',
           outline: 'none !important',
@@ -162,6 +174,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         [`${antCls}-input`]: {
           width: 'auto',
+          maxWidth: '100%',
           minWidth: 0,
           paddingInline: 0,
           background: 'transparent',
@@ -170,17 +183,31 @@ function genProTableStyle(token: ProTableToken): CSSObject {
           fieldSizing: 'content',
         },
 
+        // 带清空按钮时宽度写在外层，内层继续按内容撑开会把按钮顶出筛选行。
+        [`${antCls}-input-affix-wrapper > input${antCls}-input`]: {
+          flex: '1 1 auto',
+          width: 'auto',
+          maxWidth: '100%',
+          minWidth: 0,
+          fieldSizing: 'fixed',
+        },
+
         [`${antCls}-picker`]: {
           width: 'auto',
+          maxWidth: '100%',
+          minWidth: 0,
         },
 
         [`${antCls}-picker-input`]: {
           width: 'auto',
-          flex: 'none',
+          minWidth: 0,
+          maxWidth: '100%',
+          flex: '0 1 auto',
         },
 
         [`${antCls}-picker-input > input`]: {
           width: 'auto',
+          maxWidth: '100%',
           minWidth: 0,
           fieldSizing: 'content',
         },
@@ -225,7 +252,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       },
 
       [`${componentCls}-search-overlay-body`]: {
+        width: '100%',
         minWidth: 0,
+        maxWidth: '100%',
       },
 
       [`${componentCls}-search-tags`]: {

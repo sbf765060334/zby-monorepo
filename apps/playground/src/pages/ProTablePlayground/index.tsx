@@ -22,7 +22,24 @@ import { useMemo } from 'react'
 
 type OrderStatus = 'pending' | 'shipping' | 'done'
 type OrderPriority = 'low' | 'normal' | 'high'
-type OrderLabel = 'east' | 'urgent' | 'bonded' | 'fragile' | 'cold' | 'oversize' | 'hazard'
+type OrderLabel =
+  | 'east'
+  | 'urgent'
+  | 'bonded'
+  | 'fragile'
+  | 'cold'
+  | 'oversize'
+  | 'hazard'
+  | 'trunk'
+  | 'same-day'
+  | 'bonded-direct'
+  | 'fragile-pack'
+  | 'cold-chain'
+  | 'oversize-truck'
+  | 'hazard-declare'
+  | 'cross-border'
+  | 'instant'
+  | 'night'
 
 type PlaygroundRow = {
   id: string
@@ -85,6 +102,16 @@ const LABEL_OPTIONS: Array<{ label: string; value: OrderLabel }> = [
   { label: '冷链', value: 'cold' },
   { label: '超大', value: 'oversize' },
   { label: '危品', value: 'hazard' },
+  { label: '华东干线优先', value: 'trunk' },
+  { label: '加急当日达', value: 'same-day' },
+  { label: '保税仓直发', value: 'bonded-direct' },
+  { label: '易碎品加固包装', value: 'fragile-pack' },
+  { label: '冷链全程温控', value: 'cold-chain' },
+  { label: '超大件专车配送', value: 'oversize-truck' },
+  { label: '危险品申报联运', value: 'hazard-declare' },
+  { label: '跨境保税联运', value: 'cross-border' },
+  { label: '同城即时配送', value: 'instant' },
+  { label: '夜间仓配加急', value: 'night' },
 ]
 const REGION_OPTIONS = [
   {
@@ -95,6 +122,10 @@ const REGION_OPTIONS = [
       { label: '杭州', value: 'hz' },
       { label: '苏州', value: 'sz' },
       { label: '宁波', value: 'nb' },
+      { label: '上海市浦东新区', value: 'sh-pd' },
+      { label: '杭州市余杭区', value: 'hz-yh' },
+      { label: '苏州市工业园区', value: 'sz-gy' },
+      { label: '宁波市北仑区', value: 'nb-bl' },
     ],
   },
   {
@@ -103,6 +134,8 @@ const REGION_OPTIONS = [
     children: [
       { label: '北京', value: 'bj' },
       { label: '天津', value: 'tj' },
+      { label: '北京市朝阳区', value: 'bj-cy' },
+      { label: '天津市滨海新区', value: 'tj-bh' },
     ],
   },
   {
@@ -111,6 +144,17 @@ const REGION_OPTIONS = [
     children: [
       { label: '广州', value: 'gz' },
       { label: '深圳', value: 'szn' },
+      { label: '广州市南沙区', value: 'gz-ns' },
+      { label: '深圳市前海合作区', value: 'sz-qh' },
+    ],
+  },
+  {
+    label: '西南',
+    value: 'southwest',
+    children: [
+      { label: '成都市高新区', value: 'cd-gx' },
+      { label: '重庆市两江新区', value: 'cq-lj' },
+      { label: '昆明市呈贡区', value: 'km-cg' },
     ],
   },
 ]
@@ -449,7 +493,7 @@ function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
       render: ({ value, setValue }) => (
         <Select
           allowClear
-          maxTagCount="responsive"
+          maxTagCount={1}
           mode="multiple"
           options={LABEL_OPTIONS}
           placeholder="标签"

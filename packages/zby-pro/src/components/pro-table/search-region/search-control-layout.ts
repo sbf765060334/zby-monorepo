@@ -30,6 +30,8 @@ export type SearchSizeToken = {
   controlHeight: number
   fontFamily: string
   fontSize: number
+  /** 范围选择器分隔符按 1em 使用该字号；缺省时按 fontSize + 2。 */
+  fontSizeLG?: number
   fontSizeIcon: number
   lineWidth: number
   marginXXS: number
@@ -193,7 +195,7 @@ export function resolveInlineSearchControlStyle(
     return style
   }
 
-  const extra = controlExtraWidth(kind, props, token)
+  const extra = controlExtraWidth(kind, props, token, elementName)
   const userMin = toPx(style?.minWidth)
   const minContent = token.fontSize * 2
   const contentWidth = measureContentWidth(kind, props, value, token, elementName)
@@ -214,9 +216,13 @@ export function resolveInlineSearchControlStyle(
         userMin,
       )
 
-  const nextStyle: CSSProperties = { ...style, minWidth: autoWidth }
-  if (kind === 'select') {
-    nextStyle.width = autoWidth
+  // 用测量宽度作为首选尺寸，max-width 才能把它停在筛选行内。
+  // 内容像素如果写进 minWidth，会压过 max-width，长文本仍会撑出页面。
+  const nextStyle: CSSProperties = {
+    ...style,
+    width: autoWidth,
+    maxWidth: style?.maxWidth ?? '100%',
+    minWidth: style?.minWidth ?? 0,
   }
 
   return nextStyle
@@ -447,20 +453,38 @@ function selectMultiplePlaceholderInset(token: SearchSizeToken) {
   )
 }
 
-function controlExtraWidth(kind: AutoWidthKind, props: SearchControlProps, token: SearchSizeToken) {
+function pickerSeparatorWidth(token: SearchSizeToken) {
+  // antd 分隔符宽 1em（fontSizeLG），两侧再加 paddingXS。
+  return (token.fontSizeLG ?? token.fontSize + 2) + token.paddingXS * 2
+}
+
+function pickerSuffixWidth(token: SearchSizeToken) {
+  return token.fontSize + Math.floor(token.paddingXS / 2)
+}
+
+function controlExtraWidth(
+  kind: AutoWidthKind,
+  props: SearchControlProps,
+  token: SearchSizeToken,
+  elementName: string,
+) {
   const inlinePad = selectInlinePad(token)
+  const borders = token.lineWidth * 2
 
   if (kind === 'select') {
     const arrowReserve = selectArrowReserve(token)
-    const borders = token.lineWidth * 2
     if (isMultipleControl(props)) {
       return selectMultipleStartPad(token) + inlinePad + arrowReserve + borders
     }
     return inlinePad * 2 + arrowReserve + borders
   }
 
-  if (kind === 'picker' && Array.isArray(props.placeholder)) {
-    return inlinePad * 2 + token.marginXS + token.fontSizeIcon
+  if (kind === 'picker') {
+    const suffix = pickerSuffixWidth(token)
+    const separator = elementName === 'RangePicker' || Array.isArray(props.placeholder)
+      ? pickerSeparatorWidth(token)
+      : 0
+    return inlinePad * 2 + separator + suffix + borders
   }
 
   if (kind === 'input') {
