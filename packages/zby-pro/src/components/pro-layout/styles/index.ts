@@ -6,6 +6,10 @@ import { deriveSiderPalette } from '../theme/siderPalette'
 
 const unit = (value: number | string) => typeof value === 'number' ? `${value}px` : value
 const alignToGrid = (value: number) => Math.ceil(value / 4) * 4
+/** 页签外形圆角。固定为默认主题下的 borderRadiusLG，不跟随圆角种子。 */
+const TAB_CORNER_RADIUS = 8
+/** 选中页签顶部圆弧比页签圆角多出的默认间距。 */
+const TAB_CURVE_EXTRA = 4
 
 /** 注册与 Shuzhi Drawer 模式一致的 ProLayout token 驱动样式。 */
 export default function useProLayoutStyles(prefixCls: string) {
@@ -42,15 +46,12 @@ export default function useProLayoutStyles(prefixCls: string) {
       token.marginXXS * 2 +
       token.paddingXXS,
   )
-  const tabCurveValue = Math.min(
-    headerIdleTabHeight / 2,
-    token.borderRadiusLG + token.marginXXS,
-  )
+  const tabCurveValue = Math.min(headerIdleTabHeight / 2, TAB_CORNER_RADIUS + TAB_CURVE_EXTRA)
   const tabCurveSize = unit(tabCurveValue)
   const tabSplitWidth = styleToken.marginXXS
-  const tabTrailingPadding = unit(Math.max(0, tabCurveValue - token.marginXXS))
-  const tabAdjacentCurveStartCenter = `calc(100% - ${unit(styleToken.borderRadiusLG)} - ${unit(tabSplitWidth)})`
-  const tabAdjacentCurveEndCenter = `calc(${unit(styleToken.borderRadiusLG)} + ${unit(tabSplitWidth)})`
+  const tabTrailingPadding = unit(Math.max(0, tabCurveValue - TAB_CURVE_EXTRA))
+  const tabAdjacentCurveStartCenter = `calc(100% - ${unit(TAB_CORNER_RADIUS)} - ${unit(tabSplitWidth)})`
+  const tabAdjacentCurveEndCenter = `calc(${unit(TAB_CORNER_RADIUS)} + ${unit(tabSplitWidth)})`
   const tabSplitHeight = Math.max(token.lineWidthBold, token.fontSize)
   const headerHeightVar = `--${prefixCls}-header-height`
   const headerTabHeightVar = `--${prefixCls}-header-tab-height`
@@ -392,7 +393,7 @@ export default function useProLayoutStyles(prefixCls: string) {
             flex: `0 0 ${tabWidthStyle}`,
             alignItems: 'center',
             border: `${unit(styleToken.lineWidth)} ${styleToken.lineType} transparent`,
-            borderRadius: `${unit(styleToken.borderRadiusLG)} !important`,
+            borderRadius: `${unit(TAB_CORNER_RADIUS)} !important`,
             background: styleToken.colorBgContainer,
             color: styleToken.colorTextTertiary,
             fontSize: styleToken.fontSize,
@@ -401,8 +402,20 @@ export default function useProLayoutStyles(prefixCls: string) {
 
             '&:hover, &:focus-visible': {
               borderColor: 'transparent',
+              borderRadius: `${unit(TAB_CORNER_RADIUS)} !important`,
               background: styleToken.colorFillTertiary,
               color: styleToken.colorTextSecondary,
+            },
+          },
+          // antd 卡片页签用 borderRadiusLG 写了更高优先级的圆角，悬浮胶囊会跟着主题变。
+          [`${antCls}-tabs-card${antCls}-top > ${antCls}-tabs-nav ${antCls}-tabs-tab:not(${antCls}-tabs-tab-active),
+            ${antCls}-tabs-card${antCls}-top > div > ${antCls}-tabs-nav ${antCls}-tabs-tab:not(${antCls}-tabs-tab-active),
+            ${antCls}-tabs-card${antCls}-bottom > ${antCls}-tabs-nav ${antCls}-tabs-tab:not(${antCls}-tabs-tab-active),
+            ${antCls}-tabs-card${antCls}-bottom > div > ${antCls}-tabs-nav ${antCls}-tabs-tab:not(${antCls}-tabs-tab-active)`]: {
+            borderRadius: `${unit(TAB_CORNER_RADIUS)} !important`,
+
+            '&:hover, &:focus-visible': {
+              borderRadius: `${unit(TAB_CORNER_RADIUS)} !important`,
             },
           },
           [`${antCls}-tabs-tab-btn`]: {
@@ -433,6 +446,7 @@ export default function useProLayoutStyles(prefixCls: string) {
 
             '&:hover, &:focus-visible': {
               borderColor: 'transparent',
+              borderRadius: `${tabCurveSizeStyle} ${tabCurveSizeStyle} 0 0 !important`,
               background: styleToken.colorBgLayout,
               color: styleToken.colorText,
             },
