@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.2.7
+
+### Patch Changes
+
+- 修改页签圆角
+
 ## 0.2.6
 
 ### Patch Changes
