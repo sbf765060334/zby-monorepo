@@ -1,5 +1,6 @@
 import { useEvent, useLayoutEffect, warning } from '@rc-component/util';
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import type {
   ColumnsType,
   ColumnResizeConfig,
@@ -10,6 +11,14 @@ import type {
 } from '../interface';
 import { INTERNAL_COLUMN_RESIZE_FILLER, INTERNAL_COLUMN_RESIZE_META } from '../interface';
 import { INTERNAL_COL_DEFINE } from '../utils/legacyUtil';
+import {
+  applyColumnResizeDragLayout,
+  createColumnResizeDragStore,
+  getColumnResizeStructureKey,
+  publishColumnResizeDrag,
+  type ColumnResizeDragLayout,
+  type ColumnResizeDragStore,
+} from './applyColumnResizeDrag';
 
 const DEFAULT_COLUMN_WIDTH = 160;
 const DEFAULT_MIN_WIDTH = 32;
@@ -212,6 +221,136 @@ function cloneColumnsWithResizedLeaves<RecordType>(
   return nextColumns;
 }
 
+function buildColumnResizeState<RecordType>({
+  columns,
+  flattenColumns,
+  columnsKey,
+  sourceWidths,
+  defaultWidths,
+  defaultWidth,
+  globalMinWidth,
+  globalMaxWidth,
+  measuredWidths,
+  viewportWidth,
+  expandedRowOffset,
+}: {
+  columns: ColumnsType<RecordType>;
+  flattenColumns: readonly ColumnType<RecordType>[];
+  columnsKey: React.Key[];
+  sourceWidths: ColumnResizeWidths;
+  defaultWidths?: ColumnResizeWidths;
+  defaultWidth: number;
+  globalMinWidth: number;
+  globalMaxWidth?: number;
+  measuredWidths: Record<number, number>;
+  viewportWidth?: number;
+  expandedRowOffset: number;
+}): ColumnResizeDragLayout<RecordType> {
+  const widthMap: ColumnResizeWidths = {};
+  let totalWidth = 0;
+
+  const resizedFlattenColumns = flattenColumns.map((column, index) => {
+    const { key, stable } = getResizeKeyInfo(column, columnsKey[index] ?? index);
+    const isExpand = isExpandableColumn(column);
+    const isSelection = isSelectionColumn(column);
+    const isSystemColumn = isExpand || isSelection;
+    const minWidth = getFiniteNumber(column.minWidth) ?? globalMinWidth;
+    const maxWidth = getFiniteNumber(column.maxWidth) ?? globalMaxWidth;
+    const rawColumnWidth = parsePixelWidth(column.width) ?? measuredWidths[index];
+    const fallbackWidth = isExpand || isSelection ? DEFAULT_EXPAND_WIDTH : defaultWidth;
+    const configuredWidth =
+      getFiniteNumber(sourceWidths[key]) ??
+      getFiniteNumber(defaultWidths?.[key]) ??
+      rawColumnWidth ??
+      fallbackWidth;
+    const width = isSystemColumn
+      ? Math.round(configuredWidth)
+      : clampWidth(configuredWidth, minWidth, maxWidth);
+    const resizable = stable && column.resizable !== false && !isExpand && !isSelection;
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isSystemColumn &&
+      column.width !== undefined &&
+      rawColumnWidth === undefined
+    ) {
+      warning(
+        false,
+        '`columns[].width` should be a number or pixel string when `columnResize` is enabled.',
+      );
+    }
+
+    totalWidth += width;
+    widthMap[key] = width;
+
+    return {
+      ...column,
+      width,
+      [INTERNAL_COLUMN_RESIZE_META]: {
+        key,
+        width,
+        minWidth,
+        maxWidth,
+        resizable,
+        source: column,
+      },
+    } as ColumnType<RecordType>;
+  });
+  const measuredViewportWidth = getFiniteNumber(viewportWidth);
+  const remainingWidth = measuredViewportWidth ? measuredViewportWidth - totalWidth : 0;
+  const fillerWidth = remainingWidth > 1 ? Math.round(remainingWidth) : 0;
+  const hasHorizontalOverflow = measuredViewportWidth
+    ? totalWidth - measuredViewportWidth > 1
+    : false;
+  const fillerColumn =
+    fillerWidth > 0
+      ? ({
+          key: FILLER_COLUMN_KEY,
+          title: null,
+          width: fillerWidth,
+          minWidth: fillerWidth,
+          resizable: false,
+          render: () => null,
+          [INTERNAL_COLUMN_RESIZE_FILLER]: true,
+        } as ColumnType<RecordType>)
+      : undefined;
+  const fillerLeafIndex = fillerColumn
+    ? resizedFlattenColumns.findIndex(isFixedEndColumn)
+    : undefined;
+  const normalizedFillerLeafIndex =
+    typeof fillerLeafIndex === 'number' && fillerLeafIndex >= 0
+      ? fillerLeafIndex
+      : resizedFlattenColumns.length;
+  const flattenColumnsWithFiller = fillerColumn
+    ? [
+        ...resizedFlattenColumns.slice(0, normalizedFillerLeafIndex),
+        fillerColumn,
+        ...resizedFlattenColumns.slice(normalizedFillerLeafIndex),
+      ]
+    : resizedFlattenColumns;
+  const layoutWidth = fillerWidth > 0 ? totalWidth + fillerWidth : totalWidth;
+  const expandedStickyStart = flattenColumnsWithFiller
+    .slice(0, expandedRowOffset)
+    .reduce((total, column) => total + (Number(column.width) || 0), 0);
+
+  return {
+    columns: cloneColumnsWithResizedLeaves(
+      columns,
+      resizedFlattenColumns,
+      fillerColumn,
+      normalizedFillerLeafIndex,
+    ),
+    flattenColumns: flattenColumnsWithFiller,
+    widths: widthMap,
+    scrollX: layoutWidth,
+    realScrollX: totalWidth,
+    hasHorizontalOverflow,
+    colWidths: flattenColumnsWithFiller.map(column => column.width as number),
+    structureKey: getColumnResizeStructureKey(flattenColumnsWithFiller),
+    expandedStickyStart,
+  };
+}
+
 export function useColumnResize<RecordType>({
   columnResize,
   columns,
@@ -219,6 +358,8 @@ export function useColumnResize<RecordType>({
   columnsKey,
   viewportWidth,
   measureRootRef,
+  prefixCls = 'ant-table',
+  expandedRowOffset = 0,
 }: {
   columnResize?: boolean | ColumnResizeConfig<RecordType>;
   columns: ColumnsType<RecordType>;
@@ -226,6 +367,8 @@ export function useColumnResize<RecordType>({
   columnsKey: React.Key[];
   viewportWidth?: number;
   measureRootRef?: React.RefObject<HTMLElement | null>;
+  prefixCls?: string;
+  expandedRowOffset?: number;
 }) {
   const resizeConfig = normalizeResizeConfig(columnResize);
   const enabled = Boolean(resizeConfig);
@@ -338,105 +481,19 @@ export function useColumnResize<RecordType>({
       return null;
     }
 
-    const widthMap: ColumnResizeWidths = {};
-    let totalWidth = 0;
-
-    const resizedFlattenColumns = flattenColumns.map((column, index) => {
-      const { key, stable } = getResizeKeyInfo(column, columnsKey[index] ?? index);
-      const isExpand = isExpandableColumn(column);
-      const isSelection = isSelectionColumn(column);
-      const isSystemColumn = isExpand || isSelection;
-      const minWidth = getFiniteNumber(column.minWidth) ?? globalMinWidth;
-      const maxWidth = getFiniteNumber(column.maxWidth) ?? globalMaxWidth;
-      const rawColumnWidth = parsePixelWidth(column.width) ?? measuredWidths[index];
-      const fallbackWidth = isExpand || isSelection ? DEFAULT_EXPAND_WIDTH : defaultWidth;
-      const configuredWidth =
-        getFiniteNumber(sourceWidths[key]) ??
-        getFiniteNumber(defaultWidths?.[key]) ??
-        rawColumnWidth ??
-        fallbackWidth;
-      const width = isSystemColumn
-        ? Math.round(configuredWidth)
-        : clampWidth(configuredWidth, minWidth, maxWidth);
-      const resizable = stable && column.resizable !== false && !isExpand && !isSelection;
-
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        !isSystemColumn &&
-        column.width !== undefined &&
-        rawColumnWidth === undefined
-      ) {
-        warning(
-          false,
-          '`columns[].width` should be a number or pixel string when `columnResize` is enabled.',
-        );
-      }
-
-      totalWidth += width;
-      widthMap[key] = width;
-
-      return {
-        ...column,
-        width,
-        [INTERNAL_COLUMN_RESIZE_META]: {
-          key,
-          width,
-          minWidth,
-          maxWidth,
-          resizable,
-          source: column,
-        },
-      } as ColumnType<RecordType>;
+    return buildColumnResizeState({
+      columns,
+      flattenColumns,
+      columnsKey,
+      sourceWidths,
+      defaultWidths,
+      defaultWidth,
+      globalMinWidth,
+      globalMaxWidth,
+      measuredWidths,
+      viewportWidth,
+      expandedRowOffset,
     });
-    const measuredViewportWidth = getFiniteNumber(viewportWidth);
-    const remainingWidth = measuredViewportWidth ? measuredViewportWidth - totalWidth : 0;
-    const fillerWidth = remainingWidth > 1 ? Math.round(remainingWidth) : 0;
-    const hasHorizontalOverflow = measuredViewportWidth
-      ? totalWidth - measuredViewportWidth > 1
-      : false;
-    const fillerColumn =
-      fillerWidth > 0
-        ? ({
-            key: FILLER_COLUMN_KEY,
-            title: null,
-            width: fillerWidth,
-            minWidth: fillerWidth,
-            resizable: false,
-            render: () => null,
-            [INTERNAL_COLUMN_RESIZE_FILLER]: true,
-          } as ColumnType<RecordType>)
-        : undefined;
-    const fillerLeafIndex = fillerColumn
-      ? resizedFlattenColumns.findIndex(isFixedEndColumn)
-      : undefined;
-    const normalizedFillerLeafIndex =
-      typeof fillerLeafIndex === 'number' && fillerLeafIndex >= 0
-        ? fillerLeafIndex
-        : resizedFlattenColumns.length;
-    const flattenColumnsWithFiller = fillerColumn
-      ? [
-          ...resizedFlattenColumns.slice(0, normalizedFillerLeafIndex),
-          fillerColumn,
-          ...resizedFlattenColumns.slice(normalizedFillerLeafIndex),
-        ]
-      : resizedFlattenColumns;
-    const layoutWidth = fillerWidth > 0 ? totalWidth + fillerWidth : totalWidth;
-
-    return {
-      columns: cloneColumnsWithResizedLeaves(
-        columns,
-        resizedFlattenColumns,
-        fillerColumn,
-        normalizedFillerLeafIndex,
-      ),
-      flattenColumns: flattenColumnsWithFiller,
-      widths: widthMap,
-      scrollX: layoutWidth,
-      realScrollX: totalWidth,
-      fillerWidth,
-      hasHorizontalOverflow,
-      colWidths: flattenColumnsWithFiller.map((column) => column.width as number),
-    };
   }, [
     columns,
     columnsKey,
@@ -445,6 +502,7 @@ export function useColumnResize<RecordType>({
     defaultWidths,
     defaultWidthsSignature,
     enabled,
+    expandedRowOffset,
     flattenColumns,
     globalMaxWidth,
     globalMinWidth,
@@ -461,11 +519,64 @@ export function useColumnResize<RecordType>({
     width: number;
     nativeEvent: PointerEvent;
   } | null>(null);
+  const dragStoreRef = React.useRef<ColumnResizeDragStore<RecordType> | null>(null);
+  if (!dragStoreRef.current) {
+    dragStoreRef.current = createColumnResizeDragStore<RecordType>();
+  }
+  const dragStore = dragStoreRef.current;
+  const structureCommitRef = React.useRef<string | null>(null);
+  const [, setStructureVersion] = React.useState(0);
 
   React.useEffect(() => {
+    if (dragStore.current) {
+      return;
+    }
     widthsRef.current = resizeState?.widths ?? {};
     columnsRef.current = resizeState?.flattenColumns ?? flattenColumns;
-  }, [flattenColumns, resizeState]);
+  }, [dragStore, flattenColumns, resizeState]);
+
+  const buildDragLayout = useEvent((nextWidths: ColumnResizeWidths) => {
+    if (!enabled) {
+      return null;
+    }
+
+    return buildColumnResizeState({
+      columns,
+      flattenColumns,
+      columnsKey,
+      sourceWidths: nextWidths,
+      defaultWidths,
+      defaultWidth,
+      globalMinWidth,
+      globalMaxWidth,
+      measuredWidths,
+      viewportWidth,
+      expandedRowOffset,
+    });
+  });
+
+  const commitDragWidths = useEvent(
+    (nextWidths: ColumnResizeWidths, info: ColumnResizeInfo<RecordType>) => {
+      publishColumnResizeDrag(dragStore, null);
+      structureCommitRef.current = null;
+      if (!controlledWidths) {
+        setInnerWidths(nextWidths);
+      }
+      resizeConfig?.onWidthsChange?.(nextWidths, info);
+    },
+  );
+
+  const paintDragLayout = useEvent((layout: ColumnResizeDragLayout<RecordType>) => {
+    const committedKey = structureCommitRef.current ?? resizeState?.structureKey ?? '';
+    publishColumnResizeDrag(dragStore, layout);
+    if (layout.structureKey !== committedKey) {
+      structureCommitRef.current = layout.structureKey;
+      flushSync(() => {
+        setStructureVersion(version => version + 1);
+      });
+    }
+    applyColumnResizeDragLayout(measureRootRef?.current, layout, prefixCls);
+  });
 
   const applyWidth = useEvent(
     (key: ColumnResizeKey, width: number, nativeEvent: PointerEvent, triggerResizeEnd: boolean) => {
@@ -483,12 +594,11 @@ export function useColumnResize<RecordType>({
       const nextWidth = clampWidth(width, resizeMeta.minWidth, resizeMeta.maxWidth);
 
       if (nextWidth === previousWidth) {
-        // Pointer-up often repeats the last move width after rAF. ProTable
-        // keeps `widths` controlled, which clears `resizedKeysRef` on each
-        // update, so the drag-end mark lives in `pendingResizeEndKeysRef`.
+        // Pointer-up often repeats the last move width after rAF. Width state
+        // is committed only then, so a repeated width still has to publish it.
         if (triggerResizeEnd && pendingResizeEndKeysRef.current.has(String(key))) {
           pendingResizeEndKeysRef.current.delete(String(key));
-          resizeConfig?.onResizeEnd?.({
+          const info: ColumnResizeInfo<RecordType> = {
             key,
             width: nextWidth,
             previousWidth,
@@ -496,7 +606,9 @@ export function useColumnResize<RecordType>({
             widths: currentWidths,
             column: resizeMeta.source,
             nativeEvent,
-          });
+          };
+          commitDragWidths(currentWidths, info);
+          resizeConfig?.onResizeEnd?.(info);
         }
         return;
       }
@@ -519,17 +631,19 @@ export function useColumnResize<RecordType>({
       resizedKeysRef.current.add(String(key));
       pendingResizeEndKeysRef.current.add(String(key));
 
-      if (!controlledWidths) {
-        setInnerWidths(nextWidths);
+      if (!triggerResizeEnd) {
+        const layout = buildDragLayout(nextWidths);
+        if (layout) {
+          paintDragLayout(layout);
+        }
+        resizeConfig?.onResize?.(info);
+        return;
       }
 
-      resizeConfig?.onWidthsChange?.(nextWidths, info);
+      pendingResizeEndKeysRef.current.delete(String(key));
+      commitDragWidths(nextWidths, info);
       resizeConfig?.onResize?.(info);
-
-      if (triggerResizeEnd) {
-        pendingResizeEndKeysRef.current.delete(String(key));
-        resizeConfig?.onResizeEnd?.(info);
-      }
+      resizeConfig?.onResizeEnd?.(info);
     },
   );
 
@@ -596,6 +710,7 @@ export function useColumnResize<RecordType>({
     realScrollX: resizeState?.realScrollX,
     hasHorizontalOverflow: resizeState?.hasHorizontalOverflow ?? false,
     colWidths: resizeState?.colWidths,
+    dragStore,
     onColumnResize: updateWidth,
   };
 }

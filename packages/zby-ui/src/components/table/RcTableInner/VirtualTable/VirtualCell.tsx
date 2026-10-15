@@ -3,8 +3,12 @@ import { clsx } from 'clsx';
 import * as React from 'react';
 import { getCellProps } from '../Body/BodyRow';
 import Cell from '../Cell';
+import TableContext from '../context/TableContext';
+import { getStickyOffsets } from '../hooks/useStickyOffsets';
 import type useRowInfo from '../hooks/useRowInfo';
 import type { ColumnType, CustomizeComponent } from '../interface';
+import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../../columnBodyEllipsis';
+import { getCellFixedInfo } from '../utils/fixUtil';
 import { GridContext } from './context';
 
 export interface VirtualCellProps<RecordType> {
@@ -55,6 +59,8 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
   const { render, dataIndex, className: columnClassName, width: colWidth } = column;
 
   const { columnsOffset } = useContext(GridContext, ['columnsOffset']);
+  const { columnResizeDrag } = useContext(TableContext, ['columnResizeDrag']);
+  const dragLayout = columnResizeDrag?.current;
 
   // TODO: support `expandableRowOffset`
   const { key, fixedInfo, appendCellNode, additionalCellProps, originRowSpan } = getCellProps(
@@ -70,7 +76,20 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
   // ========================= ColWidth =========================
   // column width
   const startColIndex = colIndex - 1;
-  const concatColWidth = getColumnWidth(startColIndex, colSpan, columnsOffset);
+  const concatColWidth = dragLayout
+    ? dragLayout.colWidths
+        .slice(colIndex, colIndex + (colSpan || 1))
+        .reduce((total, width) => total + (width || 0), 0)
+    : getColumnWidth(startColIndex, colSpan, columnsOffset);
+  const dragFixedInfo =
+    dragLayout && colIndex < dragLayout.flattenColumns.length
+      ? getCellFixedInfo(
+          colIndex,
+          colIndex + (colSpan || 1) - 1,
+          dragLayout.flattenColumns,
+          getStickyOffsets(dragLayout.colWidths, dragLayout.flattenColumns),
+        )
+      : null;
 
   // margin offset
   const marginOffset = colSpan > 1 ? (colWidth as number) - concatColWidth : 0;
@@ -115,6 +134,7 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
     <Cell
       className={clsx(columnClassName, className)}
       align={column.align}
+      ellipsis={shouldSkipBodyEllipsis(column) ? undefined : toBodyCellEllipsis(column.ellipsis)}
       scope={column.rowScope}
       component={component}
       prefixCls={rowInfo.prefixCls}
@@ -127,6 +147,7 @@ const VirtualCell = <RecordType,>(props: VirtualCellProps<RecordType>) => {
       render={mergedRender}
       shouldCellUpdate={column.shouldCellUpdate}
       {...fixedInfo}
+      {...dragFixedInfo}
       appendNode={appendCellNode}
       originRowSpan={originRowSpan}
       additionalProps={{

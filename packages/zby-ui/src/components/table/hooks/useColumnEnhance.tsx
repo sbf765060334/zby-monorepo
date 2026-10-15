@@ -5,8 +5,9 @@ import * as React from 'react'
 import type { AnyObject } from 'antd/es/_util/type'
 import Tooltip from 'antd/es/tooltip'
 import type { TooltipProps } from 'antd/es/tooltip'
-import ActionText from '../../action-text'
-import type { ActionTextProps } from '../../action-text'
+import { TABLE_SKIP_BODY_ELLIPSIS } from '../columnBodyEllipsis'
+import TableCellCopy, { TABLE_CELL_WITH_COPY_CLASS_NAME } from '../TableCellCopy'
+import type { ActionTextCopyConfig } from '../../action-text'
 import type {
   ColumnGroupType,
   ColumnsType,
@@ -17,9 +18,6 @@ import type {
   TransformColumns,
 } from '../interface'
 import { renderColumnTitle } from '../util'
-
-export const TABLE_CELL_ACTION_TEXT_CLASS_NAME = 'cell-action-text'
-export const TABLE_CELL_WITH_ACTION_TEXT_CLASS_NAME = 'cell-with-action-text'
 
 function isColumnGroup<RecordType extends AnyObject>(
   column: ColumnType<RecordType> | ColumnGroupType<RecordType>,
@@ -34,19 +32,6 @@ function isTooltipProps(tooltip: TableColumnTooltip): tooltip is Omit<TooltipPro
     !Array.isArray(tooltip) &&
     !React.isValidElement(tooltip)
   )
-}
-
-function resolveActionTextEllipsis(
-  ellipsis: ColumnType<any>['ellipsis'],
-): ActionTextProps['ellipsis'] {
-  if (!ellipsis) return false
-  if (ellipsis === true) return true
-
-  const { rows, showTitle, tooltip } = ellipsis
-  return {
-    rows,
-    tooltip: tooltip ?? (showTitle === false ? false : undefined),
-  }
 }
 
 function resolveTooltipProps(tooltip: TableColumnTooltip) {
@@ -80,7 +65,7 @@ function resolveCopyable<RecordType extends AnyObject>(
   record: RecordType,
   index: number,
   displayText: React.ReactNode,
-): ActionTextProps['copyable'] {
+): true | ActionTextCopyConfig | undefined {
   if (!copyable) return undefined
 
   const defaultText = toCopyText(displayText)
@@ -120,11 +105,12 @@ function enhanceColumn<RecordType extends AnyObject>(
       renderText,
       title: nextTitle,
       tooltip,
+      [TABLE_SKIP_BODY_ELLIPSIS]: true,
     }
   }
 
-  const needActionText = Boolean(copyable) || Boolean(ellipsis)
-  const needRender = Boolean(renderText) || needActionText
+  const needCopy = Boolean(copyable)
+  const needRender = Boolean(renderText) || needCopy
 
   if (!needRender) {
     return {
@@ -144,15 +130,12 @@ function enhanceColumn<RecordType extends AnyObject>(
     copyable,
     dataIndex,
     ellipsis,
-    onCell: needActionText
+    onCell: needCopy
       ? (record: RecordType, index?: number) => {
           const cellProps = onCell?.(record, index)
           return {
             ...cellProps,
-            className: clsx(
-              cellProps?.className,
-              `${prefixCls}-${TABLE_CELL_WITH_ACTION_TEXT_CLASS_NAME}`,
-            ),
+            className: clsx(cellProps?.className, `${prefixCls}-${TABLE_CELL_WITH_COPY_CLASS_NAME}`),
           }
         }
       : onCell,
@@ -163,18 +146,14 @@ function enhanceColumn<RecordType extends AnyObject>(
       const rawValue =
         value !== undefined ? value : getValue(record, getPath(dataIndex) as (string | number)[])
       const displayText = renderText ? renderText(rawValue, record, index) : rawValue
+      const resolvedCopyable = resolveCopyable(copyable, rawValue, record, index, displayText)
 
-      if (!needActionText) return displayText
+      if (!resolvedCopyable) return displayText
 
       return (
-        <ActionText
-          actionsVisibleOn="table-row-hover"
-          className={`${prefixCls}-${TABLE_CELL_ACTION_TEXT_CLASS_NAME}`}
-          copyable={resolveCopyable(copyable, rawValue, record, index, displayText)}
-          ellipsis={resolveActionTextEllipsis(ellipsis)}
-        >
+        <TableCellCopy prefixCls={prefixCls} copyable={resolvedCopyable} ellipsis={ellipsis}>
           {displayText}
-        </ActionText>
+        </TableCellCopy>
       )
     },
   }

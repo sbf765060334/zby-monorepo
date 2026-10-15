@@ -35,7 +35,7 @@ export default function ColumnEnhancementExample() {
   return (
     <PlaygroundCase
       title="列增强"
-      description="表头 tooltip 与原生 ellipsis；表体 copyable / renderText / ActionText 省略。"
+      description="表头 tooltip 与原生 ellipsis；表体 copyable、renderText 和 CSS 省略。"
     >
       <Table<OrderRecord>
         rowKey="id"

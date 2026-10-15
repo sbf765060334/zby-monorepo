@@ -41,10 +41,10 @@ const columns: TableColumnsType<Order> = [
 
 - `tooltip`：为表头增加 Tooltip；
 - `renderText`：转换显示文本；
-- `copyable`：使用 ActionText 提供复制操作，操作在表格行 hover 时显示；
-- `ellipsis`：表头走 AntD 原生单行省略与 `title`；表体由 ActionText 托管，不写原生 `title`。`ellipsis.rows` / `ellipsis.tooltip` 传给 ActionText；`ellipsis.showTitle === false` 关闭表体溢出提示。
+- `copyable`：在单元格文案右侧提供复制按钮，表格行 hover 时显示。只开复制时文案可以换行，图标保持在整段文案右侧；同时开 `ellipsis` 时文案单行省略，图标在省略号右侧；
+- `ellipsis`：表头和表体都走 AntD 原生单行 CSS 省略与 `title`。`ellipsis.showTitle === false` 关闭表体原生 `title`。`ellipsis.rows` / `ellipsis.tooltip` 不参与表体渲染。
 
-显式 `render` 始终优先。存在 `render` 时不会执行 `renderText`，也不会自动包裹 ActionText，因此表体的 `ellipsis` 与 `copyable` 不生效。表头只要列上配置了 `ellipsis`，仍走 AntD 原生省略。表头若同时开启了排序或筛选，省略效果与 AntD 相同，受 `column-title` 与图标并排布局限制。
+显式 `render` 始终优先。存在 `render` 时不会执行 `renderText`，也不会自动加复制按钮，表体 `ellipsis` 不生效。表头只要列上配置了 `ellipsis`，仍走 AntD 原生省略。表头若同时开启了排序或筛选，省略效果与 AntD 相同，受 `column-title` 与图标并排布局限制。
 
 ## 高度填充
 
@@ -96,7 +96,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - selection 列遵循 `rowSelection.columnWidth` 或 Table token，默认使用 `controlHeight`；expand 列缺少明确宽度时使用 48px 兜底；两者均不可拖拽；
 - 只有具有稳定 `key` 或可字符串化 `dataIndex` 的叶子列显示手柄；缺少两者时开发环境会警告，且该列不可拖拽；
 - `resizable={false}` 禁止单列拖拽；
-- 拖动只改变当前列，通过 `onResize`、`onWidthsChange` 和 `onResizeEnd` 通知；宽度未变化的单击不触发这些回调；RTL 下拖动手柄会按文字方向取反，向手柄外侧拖动加宽；
+- 拖动只改变当前列。拖动过程中通过 `onResize` 通知实时宽度，不要把这次回调写回 `columns` 或 `widths`；`onWidthsChange` 和 `onResizeEnd` 在宽度发生变化的拖动结束时提交。宽度未变化的单击不触发这些回调。RTL 下拖动手柄会按文字方向取反，向手柄外侧拖动加宽；
 - 业务列总宽小于 viewport 时插入 filler；存在 fixed-end 列时 filler 位于第一个 fixed-end 叶子列之前；
 - 业务列溢出时移除 filler 并启用横向滚动。
 
@@ -109,8 +109,8 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | maxWidth | `number` | 全局最大拖拽宽度 |
 | widths | `ColumnResizeWidths` | 受控宽度映射 |
 | defaultWidths | `ColumnResizeWidths` | 非受控初始宽度映射 |
-| onWidthsChange | `(widths, info) => void` | 宽度映射变化 |
-| onResize | `(info) => void` | 拖动期间触发 |
+| onWidthsChange | `(widths, info) => void` | 拖动结束时提交宽度映射 |
+| onResize | `(info) => void` | 拖动期间触发，不要写回列宽状态 |
 | onResizeEnd | `(info) => void` | 宽度发生变化的拖动结束时触发 |
 
 `ColumnResizeInfo<T>` 包含 `key`、`width`、`previousWidth`、`delta`、`widths`、`column` 和 `nativeEvent`。`column` 是拖拽层盖章前的业务列，不含内部 meta；当前宽度请用 `info.width`，不要用 `info.column.width` 当拖完后的值。用 `info.key` 去原始 `columns` 里查找，不要对 `info.column` 做引用比较。
@@ -165,7 +165,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使�
 | tooltip | `ReactNode | TooltipProps` | 表头提示 |
 | renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
 | copyable | `TableColumnCopyable<T>` | 无显式 render 时提供复制操作，详见下文 |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头：AntD 原生单行省略与 `title`。表体：无 `render` 时由 ActionText 托管；有 `render` 时表体省略不生效 |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头和表体都走 AntD 原生单行 CSS 省略与 `title`。有 `render` 时表体省略不生效。`rows` / `tooltip` 不参与表体渲染 |
 | minWidth | `number` | 普通 auto 布局最小宽度；resize 模式下为拖拽下限 |
 | maxWidth | `number` | resize 模式下的拖拽上限 |
 | resizable | `boolean` | 是否允许当前叶子列拖拽 |
@@ -228,8 +228,8 @@ const columns: TableColumnsType<Order> = [
 ]
 ```
 
-`copyable={true}` 默认复制 `renderText` 处理后的显示内容。对象形式未提供 `text` 时也使用该默认内容。`text` 函数中的 `value` 是 `dataIndex` 对应的原始单元格值，而不是 `renderText` 的结果；返回 `null` 或 `undefined` 时回退到 ActionText 的默认内容提取逻辑。
+`copyable={true}` 默认复制 `renderText` 处理后的显示内容。对象形式未提供 `text` 时也使用该默认内容。`text` 函数中的 `value` 是 `dataIndex` 对应的原始单元格值，而不是 `renderText` 的结果；返回 `null` 或 `undefined` 时从单元格子节点提取文本。
 
-显式提供列 `render` 时，Table 不会自动包裹 ActionText，因此表体的 `copyable` 与 `ellipsis` 都不生效。如需在自定义渲染结果中提供复制或省略，请直接使用 `ActionText`。
+显式提供列 `render` 时，Table 不会自动加复制按钮，表体 `ellipsis` 也不生效。如需在自定义渲染结果中提供复制，请在 `render` 里自行放置复制按钮。
 
 公开类型包括 `TableColumnCopyable`、`TableColumnCopyText`、`ColumnResizeConfig`、`ColumnResizeInfo` 和 `ColumnResizeWidths`。

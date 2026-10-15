@@ -25,7 +25,7 @@ const BodyLine = React.forwardRef<HTMLDivElement, BodyLineProps>((props, ref) =>
   const { data, index, className, rowKey, style, extra, getHeight, ...restProps } = props;
   const { record, indent, index: renderIndex } = data;
 
-  const { scrollX, flattenColumns, prefixCls, fixColumn, componentWidth, classNames, styles } =
+  const { scrollX, flattenColumns, prefixCls, fixColumn, componentWidth, classNames, styles, columnResizeDrag } =
     useContext(TableContext, [
       'prefixCls',
       'flattenColumns',
@@ -34,7 +34,9 @@ const BodyLine = React.forwardRef<HTMLDivElement, BodyLineProps>((props, ref) =>
       'scrollX',
       'classNames',
       'styles',
+      'columnResizeDrag',
     ]);
+  const liveScrollX = columnResizeDrag?.current?.scrollX ?? scrollX;
   const { getComponent } = useContext(StaticContext, ['getComponent']);
 
   const rowInfo = useRowInfo(record, rowKey, index, indent);
@@ -93,7 +95,7 @@ const BodyLine = React.forwardRef<HTMLDivElement, BodyLineProps>((props, ref) =>
   // ========================== Render ==========================
   const rowStyle: React.CSSProperties = {
     ...style,
-    width: scrollX as number,
+    width: liveScrollX as number,
   };
 
   if (extra) {

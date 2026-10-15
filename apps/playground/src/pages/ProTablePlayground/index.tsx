@@ -185,40 +185,44 @@ const STATUSES: OrderStatus[] = ['pending', 'shipping', 'done']
 const PRIORITIES: OrderPriority[] = ['low', 'normal', 'high']
 const LABEL_SETS: OrderLabel[][] = [['east'], ['east', 'urgent'], ['bonded'], ['urgent', 'bonded']]
 
-const ALL_ROWS: PlaygroundRow[] = Array.from({ length: 48 }, (_, index) => {
-  const id = index + 1
-  const owner = OWNERS[index % OWNERS.length]
-  const warehouse = WAREHOUSES[index % WAREHOUSES.length]
-  const route = ROUTES[index % ROUTES.length]
-  const createdAt = `2026-08-${String((index % 28) + 1).padStart(2, '0')} 10:30`
-  return {
-    id: String(id),
-    orderNo: `ZBY-${String(id).padStart(6, '0')}`,
-    customer: CUSTOMERS[index % CUSTOMERS.length],
-    status: STATUSES[index % STATUSES.length],
-    priority: PRIORITIES[index % PRIORITIES.length],
-    labels: LABEL_SETS[index % LABEL_SETS.length],
-    amount: 1280 + ((index * 137) % 48000),
-    rate: index % 11 === 0 ? undefined : Number((18 + ((index * 7) % 80) + index / 10).toFixed(1)),
-    quantity: 12 + ((index * 3) % 480),
-    progress: (index * 13) % 101,
-    urgent: index % 5 === 0,
-    owner,
-    warehouse,
-    route,
-    destination: DESTINATIONS[index % DESTINATIONS.length],
-    createdAt,
-    dateValue: createdAt,
-    weekValue: createdAt,
-    monthValue: createdAt,
-    yearValue: createdAt,
-    sku: index % 9 === 0 ? '' : `SKU-${String(id).padStart(4, '0')}`,
-    payload: { warehouse, route },
-    note: index % 3 === 0 ? '第一行备注\n第二行换行' : '',
-    remark: index % 4 === 0 ? '优先出库' : '',
-    regionPath: REGION_PATHS[index % REGION_PATHS.length],
-  }
-})
+function createPlaygroundRows(length: number): PlaygroundRow[] {
+  return Array.from({ length }, (_, index) => {
+    const id = index + 1
+    const owner = OWNERS[index % OWNERS.length]
+    const warehouse = WAREHOUSES[index % WAREHOUSES.length]
+    const route = ROUTES[index % ROUTES.length]
+    const createdAt = `2026-08-${String((index % 28) + 1).padStart(2, '0')} 10:30`
+    return {
+      id: String(id),
+      orderNo: `ZBY-${String(id).padStart(6, '0')}`,
+      customer: CUSTOMERS[index % CUSTOMERS.length],
+      status: STATUSES[index % STATUSES.length],
+      priority: PRIORITIES[index % PRIORITIES.length],
+      labels: LABEL_SETS[index % LABEL_SETS.length],
+      amount: 1280 + ((index * 137) % 48000),
+      rate: index % 11 === 0 ? undefined : Number((18 + ((index * 7) % 80) + index / 10).toFixed(1)),
+      quantity: 12 + ((index * 3) % 480),
+      progress: (index * 13) % 101,
+      urgent: index % 5 === 0,
+      owner,
+      warehouse,
+      route,
+      destination: DESTINATIONS[index % DESTINATIONS.length],
+      createdAt,
+      dateValue: createdAt,
+      weekValue: createdAt,
+      monthValue: createdAt,
+      yearValue: createdAt,
+      sku: index % 9 === 0 ? '' : `SKU-${String(id).padStart(4, '0')}`,
+      payload: { warehouse, route },
+      note: index % 3 === 0 ? '第一行备注\n第二行换行' : '',
+      remark: index % 4 === 0 ? '优先出库' : '',
+      regionPath: REGION_PATHS[index % REGION_PATHS.length],
+    }
+  })
+}
+
+const ALL_ROWS = createPlaygroundRows(500)
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => {
@@ -233,7 +237,7 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
   const owner = typeof params.owner === 'string' ? params.owner.trim() : ''
   const createdAt = Array.isArray(params.createdAt) ? params.createdAt : undefined
   const selectedRegions = new Set((params.regionPath ?? []).map((path) => path.join('/')))
-  const rows = ALL_ROWS.filter((row) => {
+  const matched = ALL_ROWS.filter((row) => {
     if (customer && !row.customer.includes(customer)) return false
     if (params.status && row.status !== params.status) return false
     if (createdAt?.[0] && createdAt[1]) {
@@ -249,7 +253,7 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
     return true
   })
   if (params.sort?.length) {
-    rows.sort((left, right) => {
+    matched.sort((left, right) => {
       for (const rule of params.sort!) {
         const direction = rule.order === 'ascend' ? 1 : -1
         const key = rule.field as keyof PlaygroundRow
@@ -267,8 +271,8 @@ const queryOrders: ProTableQueryRequest<PlaygroundRow, PlaygroundQuery> = async 
   const start = (params.page - 1) * params.pageSize
 
   return {
-    data: rows.slice(start, start + params.pageSize),
-    total: rows.length,
+    data: matched.slice(start, start + params.pageSize),
+    total: matched.length,
   }
 }
 
@@ -715,6 +719,7 @@ export default function ProTablePlayground() {
         thinScrollbar
         pagination={{
           showSizeChanger: true,
+          pageSizeOptions: [10, 20, 50, 100, 500],
         }}
         toolbar={{
           actions: (

@@ -40,10 +40,10 @@ When a column has no explicit `render`, Table applies the Shuzhi behavior:
 
 - `tooltip` adds a Tooltip to the header title;
 - `renderText` transforms the displayed value;
-- `copyable` uses ActionText and reveals its action on table-row hover;
-- `ellipsis` uses AntD native single-line ellipsis and `title` on the header, and ActionText on the body (no native `title`). `ellipsis.rows` / `ellipsis.tooltip` are passed to ActionText; `ellipsis.showTitle === false` turns off the body overflow tooltip.
+- `copyable` shows a copy button to the right of the cell text on row hover. Without `ellipsis`, long text wraps and the icon stays beside the whole block. With `ellipsis`, the text stays on one line and the icon sits to the right of the ellipsis;
+- `ellipsis` uses AntD native single-line CSS ellipsis and `title` on both the header and the body. `ellipsis.showTitle === false` turns off the body `title`. `ellipsis.rows` and `ellipsis.tooltip` do not affect body rendering.
 
-An explicit `render` always wins. In that case `renderText` is not called and Table does not wrap the result in ActionText, so body `ellipsis` and `copyable` have no effect. Header ellipsis still follows AntD whenever the column sets `ellipsis`. Combined with sorter or filter, header ellipsis has the same limitation as AntD because the title sits beside the icons.
+An explicit `render` always wins. In that case `renderText` is not called and Table does not add a copy button, so body `ellipsis` and `copyable` have no effect. Header ellipsis still follows AntD whenever the column sets `ellipsis`. Combined with sorter or filter, header ellipsis has the same limitation as AntD because the title sits beside the icons.
 
 ## Fill Height
 
@@ -95,7 +95,7 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 - The selection column follows `rowSelection.columnWidth` or the Table token and defaults to `controlHeight`. The expand column falls back to 48px without an explicit width. Neither can be resized.
 - Only leaves with a stable `key` or stringifiable `dataIndex` expose a handle. A missing identity warns in development and that leaf is not resizable.
 - `resizable={false}` disables an individual leaf.
-- Dragging changes only the active leaf and reports through `onResize`, `onWidthsChange`, and `onResizeEnd`. A click that does not change width does not fire these callbacks. In RTL, the handle delta follows the writing direction: dragging outward widens the column.
+- Dragging changes only the active leaf. `onResize` reports the live width and must not write that width back into `columns` or `widths`. `onWidthsChange` and `onResizeEnd` commit when a drag that changed the width ends. A click that does not change width does not fire these callbacks. In RTL, the handle delta follows the writing direction: dragging outward widens the column.
 - A filler represents unused viewport width. It is inserted before the first fixed-end leaf.
 - When business columns overflow, the filler is removed and horizontal scrolling is enabled.
 
@@ -108,8 +108,8 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 | maxWidth | `number` | Global maximum resize width |
 | widths | `ColumnResizeWidths` | Controlled width map |
 | defaultWidths | `ColumnResizeWidths` | Initial uncontrolled width map |
-| onWidthsChange | `(widths, info) => void` | Width-map change callback |
-| onResize | `(info) => void` | Called during dragging |
+| onWidthsChange | `(widths, info) => void` | Commits the width map when the drag ends |
+| onResize | `(info) => void` | Called during dragging; do not write it back into width state |
 | onResizeEnd | `(info) => void` | Called when a drag that changed the width ends |
 
 `ColumnResizeInfo<T>` contains `key`, `width`, `previousWidth`, `delta`, `widths`, `column`, and `nativeEvent`. `column` is the leaf before the resize layer stamps it, without internal meta. Read the new width from `info.width`, not `info.column.width`. Look up the original config with `info.key`; do not compare `info.column` by reference to your `columns` array.
@@ -164,7 +164,7 @@ All other props follow AntD 6.6.4 Table.
 | tooltip | `ReactNode | TooltipProps` | Header title tooltip |
 | renderText | `(value, record, index) => ReactNode` | Transform text when no explicit render exists |
 | copyable | `TableColumnCopyable<T>` | Add a copy action when no explicit render exists; see below |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Header: AntD native single-line ellipsis and `title`. Body: ActionText when there is no `render`; body ellipsis is skipped when `render` is set |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | AntD native single-line CSS ellipsis and `title` on header and body. Body ellipsis is skipped when `render` is set. `rows` / `tooltip` do not affect the body |
 | minWidth | `number` | Auto-layout minimum; resize lower bound in resize mode |
 | maxWidth | `number` | Resize upper bound |
 | resizable | `boolean` | Whether the current leaf is resizable |
@@ -227,8 +227,8 @@ const columns: TableColumnsType<Order> = [
 ]
 ```
 
-With `copyable={true}`, the default copy content is the displayed value after `renderText` processing. Object form without `text` uses the same default. The `value` received by a `text` function is the raw cell value addressed by `dataIndex`, not the `renderText` result. Returning `null` or `undefined` falls back to ActionText's default content extraction.
+With `copyable={true}`, the default copy content is the displayed value after `renderText` processing. Object form without `text` uses the same default. The `value` received by a `text` function is the raw cell value addressed by `dataIndex`, not the `renderText` result. Returning `null` or `undefined` extracts text from the cell children.
 
-When a column provides an explicit `render`, Table does not wrap its result in ActionText, so body `copyable` and `ellipsis` have no effect. Use `ActionText` directly when a custom render result needs copy or ellipsis.
+When a column provides an explicit `render`, Table does not add a copy button, and body `ellipsis` has no effect. Place a copy button inside `render` when a custom result needs copy.
 
 Public types include `TableColumnCopyable`, `TableColumnCopyText`, `ColumnResizeConfig`, `ColumnResizeInfo`, and `ColumnResizeWidths`.

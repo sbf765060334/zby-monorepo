@@ -386,7 +386,7 @@ describe('Table', () => {
     expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
   })
 
-  it('enhances column title, display text, copyable and multi-line ellipsis', () => {
+  it('enhances column title, display text and copyable beside ellipsis', () => {
     const renderText = vi.fn((value: unknown) => `Name: ${String(value)}`)
     const { container } = render(
       <ZbyIntlProvider locale="zh-CN" resources={zbyUiIntlResources}>
@@ -400,7 +400,7 @@ describe('Table', () => {
               tooltip: 'Name details',
               renderText,
               copyable: true,
-              ellipsis: { rows: 2 },
+              ellipsis: true,
             },
           ]}
           dataSource={data.slice(0, 1)}
@@ -411,19 +411,19 @@ describe('Table', () => {
     expect(container.querySelector('.ant-table-column-title-tooltip')).not.toBeNull()
     const bodyCell = container.querySelector('.ant-table-tbody .ant-table-cell')
     expect(bodyCell?.textContent).toContain('Name: Alpha')
-    expect(container.querySelector('.ant-table-cell-action-text')).not.toBeNull()
+    expect(container.querySelector('.ant-table-cell-copy')).not.toBeNull()
     expect(container.querySelector('[data-action-text-copy]')).not.toBeNull()
-    expect(
-      bodyCell?.classList.contains('ant-table-cell-with-action-text'),
-    ).toBe(true)
+    expect(bodyCell?.classList.contains('ant-table-cell-with-copy')).toBe(true)
     expect(renderText).toHaveBeenCalledWith('Alpha', data[0], 0)
     const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
     expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
-    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
-    expect(bodyCell?.getAttribute('title')).toBeNull()
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.querySelector('.ant-table-cell-copy-text')?.getAttribute('title')).toBe(
+      'Name: Alpha',
+    )
   })
 
-  it('uses ActionText for body ellipsis and native header ellipsis', () => {
+  it('uses CSS ellipsis for body text and native header ellipsis', () => {
     const { container } = render(
       <Table<RowData>
         rowKey="id"
@@ -438,10 +438,10 @@ describe('Table', () => {
 
     expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
     expect(headerCell?.getAttribute('title')).toBe('Name')
-    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
-    expect(bodyCell?.getAttribute('title')).toBeNull()
-    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).not.toBeNull()
-    expect(bodyCell?.classList.contains('ant-table-cell-with-action-text')).toBe(true)
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.getAttribute('title')).toBe('Alpha')
+    expect(bodyCell?.querySelector('.ant-table-cell-copy')).toBeNull()
+    expect(bodyCell?.querySelector('[data-action-text-copy]')).toBeNull()
   })
 
   it('skips body ActionText and native body ellipsis when a custom render is set', () => {
@@ -467,13 +467,13 @@ describe('Table', () => {
 
     expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
     expect(bodyCell?.querySelector('[data-custom-cell]')).not.toBeNull()
-    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).toBeNull()
+    expect(bodyCell?.querySelector('[data-action-text-copy]')).toBeNull()
     expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
-    expect(bodyCell?.classList.contains('ant-table-cell-with-action-text')).toBe(false)
+    expect(bodyCell?.classList.contains('ant-table-cell-with-copy')).toBe(false)
     expect(bodyCell?.getAttribute('title')).toBeNull()
   })
 
-  it('keeps virtual body cells off the native ellipsis path', () => {
+  it('uses CSS ellipsis for virtual body cells', () => {
     const virtualData = Array.from({ length: 8 }, (_, index) => ({
       id: index + 1,
       name: `Row ${index + 1} with a long name`,
@@ -493,9 +493,9 @@ describe('Table', () => {
     const bodyCell = container.querySelector('.ant-table-tbody-virtual .ant-table-cell')
 
     expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
-    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
-    expect(bodyCell?.getAttribute('title')).toBeNull()
-    expect(bodyCell?.querySelector('.ant-table-cell-action-text')).not.toBeNull()
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(bodyCell?.getAttribute('title')).toBe('Row 1 with a long name')
+    expect(bodyCell?.querySelector('.ant-table-cell-copy')).toBeNull()
   })
 
   it('keeps the default selection width on the AntD token path without a split header', () => {
@@ -716,6 +716,287 @@ describe('Table', () => {
     )
     expect(resizeInfo.column).not.toHaveProperty(
       'RC_TABLE_INTERNAL_COLUMN_RESIZE_META',
+    )
+  })
+
+  it('paints column width during drag and commits the width map on pointerup', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const onResize = vi.fn()
+    const onWidthsChange = vi.fn()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{
+          defaultWidths: { id: 120, name: 160 },
+          onResize,
+          onWidthsChange,
+        }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '160px',
+    )
+    expect(onResize).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'id', width: 160 }),
+    )
+    expect(onWidthsChange).not.toHaveBeenCalled()
+
+    fireEvent.pointerUp(document, { clientX: 140, pointerId: 1 })
+
+    expect(onWidthsChange).toHaveBeenCalledWith(
+      { id: 160, name: 160 },
+      expect.objectContaining({ key: 'id', width: 160 }),
+    )
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '160px',
+    )
+  })
+
+  it('keeps the dragged width when onResize rerenders the table', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    function Demo() {
+      const [, setLiveWidth] = React.useState(0)
+      return (
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columnResize={{
+            defaultWidths: { id: 120, name: 160 },
+            onResize: ({ width }) => setLiveWidth(width),
+          }}
+          columns={columns}
+          dataSource={data}
+        />
+      )
+    }
+
+    const { container } = render(<Demo />)
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '160px',
+    )
+  })
+
+  it('removes the resize filler during drag when columns overflow the viewport', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(3)
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 430, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    expect(container.querySelector('.ant-table-cell-resize-filler')).toBeNull()
+    expect(container.querySelectorAll<HTMLElement>('col')).toHaveLength(2)
+    expect(container.querySelector<HTMLElement>('.ant-table')?.classList.contains(
+      'ant-table-scroll-horizontal',
+    )).toBe(true)
+  })
+
+  it('updates the fixed header columns during drag and leaves the scrollbar gutter', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+    mockScrollbarProbe()
+
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        scroll={{ y: 120 }}
+        columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+        columns={columns}
+        dataSource={data}
+      />,
+    )
+
+    const headerCols = () =>
+      container.querySelectorAll<HTMLElement>('.ant-table-header col')
+    const bodyCols = () =>
+      container.querySelectorAll<HTMLElement>('.ant-table-body col')
+    const scrollbarWidth = headerCols()[headerCols().length - 1].style.width
+
+    expect(headerCols().length).toBe(bodyCols().length + 1)
+    expect(scrollbarWidth).not.toBe('')
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    expect(headerCols()[0].style.width).toBe('160px')
+    expect(bodyCols()[0].style.width).toBe('160px')
+    expect(headerCols()[headerCols().length - 1].style.width).toBe(scrollbarWidth)
+  })
+
+  it('does not rewrite a nested table while dragging a column', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+        columns={[
+          columns[0],
+          {
+            ...columns[1],
+            render: () => (
+              <table style={{ width: 80 }}>
+                <colgroup>
+                  <col style={{ width: 20 }} />
+                  <col style={{ width: 20 }} />
+                  <col style={{ width: 20 }} />
+                </colgroup>
+                <tbody>
+                  <tr>
+                    <td>a</td>
+                    <td>b</td>
+                    <td>c</td>
+                  </tr>
+                </tbody>
+              </table>
+            ),
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+
+    const nestedTable = container.querySelector<HTMLTableElement>(
+      '.ant-table-cell table',
+    )!
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    expect(nestedTable.style.width).toBe('80px')
+    expect(
+      Array.from(nestedTable.querySelectorAll('col')).map((col) => col.style.width),
+    ).toEqual(['20px', '20px', '20px'])
+  })
+
+  it('keeps virtual body cells on the dragged width before pointerup', () => {
+    const rafQueue: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      rafQueue.push(callback)
+      return rafQueue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      rafQueue[id - 1] = () => {}
+    })
+
+    const virtualData = Array.from({ length: 30 }, (_, index) => ({
+      id: index + 1,
+      name: `Row ${index + 1}`,
+    }))
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        virtual
+        scroll={{ x: 280, y: 120 }}
+        columnResize={{ defaultWidths: { id: 120, name: 160 } }}
+        columns={columns}
+        dataSource={virtualData}
+      />,
+    )
+
+    const handle = container.querySelector<HTMLElement>(
+      '.ant-table-cell-resize-handle',
+    )!
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(document, { clientX: 140, pointerId: 1 })
+    act(() => {
+      rafQueue.splice(0).forEach((callback) => callback(0))
+    })
+
+    const virtualCell = container.querySelector<HTMLElement>(
+      '.ant-table-tbody-virtual .ant-table-row .ant-table-cell',
+    )
+    expect(virtualCell?.style.width).toBe('160px')
+    expect(container.querySelectorAll<HTMLElement>('col')[0].style.width).toBe(
+      '160px',
     )
   })
 

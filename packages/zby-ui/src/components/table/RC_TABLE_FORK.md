@@ -10,7 +10,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`、`onResize` / `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调；`info.column` 为盖章前的 `source` 列 |
+| `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`。拖动中只改 DOM 和 `onResize`，松手提交 `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调；`info.column` 为盖章前的 `source` 列 |
 
 ## 改过的上游文件
 
@@ -29,14 +29,14 @@
 
 拖拽相关、但与 1.11.1 **相同、不必改** 的文件：`Body/index.tsx`、`Body/MeasureRow.tsx`、`Body/MeasureCell.tsx`、`VirtualTable/BodyGrid.tsx`（上游已有测量用的 `onColumnResize`）。
 
-### 表体省略（ZBY 语义，配合外层 ActionText）
+### 表体省略
 
-表头继续走上游原生 ellipsis（`Header/HeaderRow.tsx` **不要改**，保持 `ellipsis={column.ellipsis}`）。
+表头继续走上游原生 ellipsis（`Header/HeaderRow.tsx` **不要改**，保持 `ellipsis={column.ellipsis}`）。表体在没有自定义 `render` 时也把规范化后的 `ellipsis` 传给 `Cell`，走 CSS 省略。有自定义 `render` 的列带 `RC_TABLE_SKIP_BODY_ELLIPSIS`，表体不传 ellipsis。
 
 | 文件 | 贴回去时要对上的点 |
 | --- | --- |
-| `Body/BodyRow.tsx` | **不要**传 `ellipsis={column.ellipsis}`；**要**传 `column={column}`（filler / resize meta） |
-| `VirtualTable/VirtualCell.tsx` | 同上：不传 body ellipsis，传 `column` |
+| `Body/BodyRow.tsx` | 传 `ellipsis`（跳过标记除外）；**要**传 `column={column}`（filler / resize meta） |
+| `VirtualTable/VirtualCell.tsx` | 同上 |
 
 ## 当前行为备忘（不是漏补丁）
 

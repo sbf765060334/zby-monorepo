@@ -67,14 +67,38 @@ const Grid = React.forwardRef<GridRef, GridProps>((props, ref) => {
   const flattenData = useFlattenRecords(data, childrenColumnName, expandedKeys, getRowKey);
 
   // ========================== Column ==========================
+  const { columnResizeDrag } = useContext(TableContext, ['columnResizeDrag']);
+  const [, setDragFrame] = React.useState(0);
+  React.useEffect(() => {
+    if (!columnResizeDrag) {
+      return;
+    }
+    const listener = () => {
+      setDragFrame(frame => frame + 1);
+    };
+    columnResizeDrag.listeners.add(listener);
+    return () => {
+      columnResizeDrag.listeners.delete(listener);
+    };
+  }, [columnResizeDrag]);
+  const dragLayout = columnResizeDrag?.current;
+
   const columnsWidth = React.useMemo<[key: React.Key, width: number, total: number][]>(() => {
+    if (dragLayout) {
+      let total = 0;
+      return dragLayout.colWidths.map((width, index) => {
+        total += width;
+        return [dragLayout.flattenColumns[index]?.key ?? index, width, total];
+      });
+    }
+
     let total = 0;
     return flattenColumns.map(({ width, minWidth, key }) => {
       const finalWidth = Math.max((width as number) || 0, (minWidth as number) || 0);
       total += finalWidth;
       return [key, finalWidth, total];
     });
-  }, [flattenColumns]);
+  }, [dragLayout, flattenColumns]);
 
   const columnsOffset = React.useMemo<number[]>(
     () => columnsWidth.map(colWidth => colWidth[2]),
@@ -82,10 +106,13 @@ const Grid = React.forwardRef<GridRef, GridProps>((props, ref) => {
   );
 
   React.useEffect(() => {
+    if (dragLayout) {
+      return;
+    }
     columnsWidth.forEach(([key, width]) => {
       onColumnResize(key, width);
     });
-  }, [columnsWidth]);
+  }, [columnsWidth, dragLayout, onColumnResize]);
 
   // =========================== Ref ============================
   React.useImperativeHandle(ref, () => {
@@ -274,7 +301,7 @@ const Grid = React.forwardRef<GridRef, GridProps>((props, ref) => {
         data={flattenData}
         itemKey={item => getRowKey(item.record)}
         component={wrapperComponent}
-        scrollWidth={scrollX as number}
+        scrollWidth={(dragLayout?.scrollX ?? scrollX) as number}
         direction={direction}
         onVirtualScroll={({ x }) => {
           onScroll({

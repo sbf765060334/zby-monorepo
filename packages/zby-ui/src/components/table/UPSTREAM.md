@@ -30,7 +30,7 @@
 | --- | --- |
 | `interface.ts` | 列字段 `tooltip` / `renderText` / `copyable`；`ellipsis` 可带 `showTitle` / `rows` / `tooltip` |
 | `InternalTable.tsx` | `useColumnEnhance`；`transformColumns` 顺序必须是 **enhance → sorter → filter → selection → title** |
-| `style/ellipsis.ts` | `.cell-action-text` 的 maxWidth / 换行（表体不再依赖 `td.cell-ellipsis`） |
+| `style/ellipsis.ts` | `.cell-copy` 让复制图标留在文案右侧；省略文案单行截断 |
 | `index.tsx` | 如需再导出 `TableColumnCopyable` 等类型 |
 
 语义（改外层时不要回退）：

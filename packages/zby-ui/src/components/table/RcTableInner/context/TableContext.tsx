@@ -15,6 +15,7 @@ import type {
   TableLayout,
   TriggerEventHandler,
 } from '../interface';
+import type { ColumnResizeDragStore } from '../hooks/applyColumnResizeDrag';
 import type { FixedInfo } from '../utils/fixUtil';
 import type { TableProps } from '../Table';
 
@@ -75,6 +76,7 @@ export interface TableContextProps<RecordType = any> {
     nativeEvent: PointerEvent,
   ) => void;
   colWidths: number[];
+  columnResizeDrag?: ColumnResizeDragStore;
 
   // Row
   hoverStartRow: number;

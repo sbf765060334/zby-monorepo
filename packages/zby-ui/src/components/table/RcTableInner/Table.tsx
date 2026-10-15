@@ -387,12 +387,15 @@ const Table = <RecordType extends DefaultRecordType>(
     columnsKey: rawColumnsKey,
     viewportWidth: resizeViewportWidth || componentWidth,
     measureRootRef: fullTableRef,
+    prefixCls,
+    expandedRowOffset: expandableConfig.expandedRowOffset ?? 0,
   });
-  const columns = columnResizeState.columns;
-  const flattenColumns = columnResizeState.flattenColumns;
+  const dragLayout = columnResizeState.dragStore.current;
+  const columns = dragLayout?.columns ?? columnResizeState.columns;
+  const flattenColumns = dragLayout?.flattenColumns ?? columnResizeState.flattenColumns;
   const columnResizeEnabled = columnResizeState.enabled;
   const mergedScrollX = columnResizeEnabled
-    ? columnResizeState.scrollX
+    ? (dragLayout?.scrollX ?? columnResizeState.scrollX)
     : (flattenScrollX ?? scrollX);
 
   // ==================== Customize =====================
@@ -449,15 +452,14 @@ const Table = <RecordType extends DefaultRecordType>(
   // Convert map to number width
   const colsKeys = getColumnsKey(flattenColumns);
   const pureColWidths = colsKeys.map(columnKey => colsWidths.get(columnKey));
-  const colWidths = React.useMemo(
-    () => (columnResizeEnabled ? columnResizeState.colWidths! : pureColWidths),
-    [columnResizeEnabled, columnResizeState.colWidths, pureColWidths.join('_')],
-  );
+  const colWidths = columnResizeEnabled
+    ? (dragLayout?.colWidths ?? columnResizeState.colWidths!)
+    : pureColWidths;
   const stickyOffsets = useStickyOffsets(colWidths, flattenColumns);
   const fixHeader = scroll && validateValue(scroll.y);
   const horizonScroll = (scroll && validateValue(mergedScrollX)) || Boolean(expandableConfig.fixed);
   const visualHorizontalScroll = columnResizeEnabled
-    ? columnResizeState.hasHorizontalOverflow
+    ? (dragLayout?.hasHorizontalOverflow ?? columnResizeState.hasHorizontalOverflow)
     : horizonScroll;
   const fixColumn = horizonScroll && flattenColumns.some(({ fixed }) => fixed);
 
@@ -1122,6 +1124,7 @@ const Table = <RecordType extends DefaultRecordType>(
         nativeEvent: PointerEvent,
       ) => columnResizeState.onColumnResize(columnKey, width, nativeEvent, true),
       colWidths,
+      columnResizeDrag: columnResizeState.dragStore,
 
       // Row
       hoverStartRow: startRow,
@@ -1179,6 +1182,7 @@ const Table = <RecordType extends DefaultRecordType>(
       flattenColumns,
       onColumnResize,
       colWidths,
+      columnResizeState.dragStore,
 
       // Row
       startRow,

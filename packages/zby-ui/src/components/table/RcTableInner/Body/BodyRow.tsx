@@ -4,6 +4,7 @@ import Cell from '../Cell';
 import { responseImmutable } from '../context/TableContext';
 import devRenderTimes from '../hooks/useRenderTimes';
 import useRowInfo from '../hooks/useRowInfo';
+import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../../columnBodyEllipsis';
 import type { ColumnType, CustomizeComponent } from '../interface';
 import ExpandedRow from './ExpandedRow';
 import type { ExpandedRowProps } from './ExpandedRow';
@@ -206,6 +207,9 @@ const BodyRow = <RecordType extends { children?: readonly RecordType[] }>(
             className={clsx(columnClassName, classNames.cell)}
             style={styles.cell}
             align={column.align}
+            ellipsis={
+              shouldSkipBodyEllipsis(column) ? undefined : toBodyCellEllipsis(column.ellipsis)
+            }
             scope={column.rowScope}
             component={column.rowScope ? scopeCellComponent : cellComponent}
             prefixCls={prefixCls}

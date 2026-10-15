@@ -30,11 +30,33 @@ const genEllipsisStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
         },
       },
 
-      [`${componentCls}-cell-action-text`]: {
+      [`${componentCls}-cell-copy`]: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        flexWrap: 'nowrap',
         maxWidth: '100%',
         minWidth: 0,
+        verticalAlign: 'middle',
+        gap: token.marginXXS,
+      },
+
+      [`${componentCls}-cell-copy-text`]: {
+        flex: '0 1 auto',
+        minWidth: 0,
+        overflowWrap: 'break-word',
         whiteSpace: 'normal',
         wordBreak: 'normal',
+      },
+
+      [`${componentCls}-cell-copy-action`]: {
+        flex: 'none',
+      },
+
+      [`${componentCls}-cell-copy-text-ellipsis`]: {
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        wordBreak: 'keep-all',
       },
     },
   }

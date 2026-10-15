@@ -15,11 +15,11 @@ const bodyEllipsisColumns: TableColumnsType<OrderRecord> = [
     ellipsis: true,
   },
   {
-    title: '两行省略',
+    title: '单行省略',
     dataIndex: 'address',
-    key: 'ellipsis-rows',
+    key: 'ellipsis-single',
     width: 180,
-    ellipsis: { rows: 2 },
+    ellipsis: true,
   },
   {
     title: '关闭表体提示',
@@ -34,7 +34,7 @@ export default function ColumnBodyEllipsisExample() {
   return (
     <PlaygroundCase
       title="表体省略"
-      description="收窄列宽后表头走原生 title，表体由 ActionText 托管。悬停「关闭表体提示」列不应出现溢出提示。"
+      description="收窄列宽后表头和表体都走原生单行省略。悬停「关闭表体提示」列不应出现 title。"
     >
       <Table<OrderRecord>
         rowKey="id"

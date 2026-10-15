@@ -19,7 +19,7 @@ export default function ColumnResizeControlledExample() {
   return (
     <PlaygroundCase
       title="受控列宽"
-      description="widths / onWidthsChange 由实例持有，拖拽过程中同步映射。"
+      description="widths / onWidthsChange 由实例持有，松手后提交映射。"
     >
       <PlaygroundStatus label="列宽">
         {`orderNo ${Math.round(Number(widths.orderNo) || 0)} / customer ${Math.round(Number(widths.customer) || 0)}`}
