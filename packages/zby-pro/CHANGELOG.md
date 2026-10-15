@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.2.6
+
+### Patch Changes
+
+- 修改时间控件宽度计算异常问题
+
 ## 0.2.5
 
 ### Patch Changes
