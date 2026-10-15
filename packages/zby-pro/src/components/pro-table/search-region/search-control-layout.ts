@@ -20,8 +20,10 @@ export type SearchControlProps = {
   maxTagCount?: unknown
   mode?: unknown
   multiple?: boolean
+  format?: unknown
   options?: unknown
   placeholder?: unknown
+  showTime?: unknown
   style?: CSSProperties
   treeData?: unknown
 }
@@ -163,6 +165,18 @@ export function measureContentWidth(
     }
 
     return measureText(plan.labels[0] ?? '', token)
+  }
+
+  if (kind === 'picker') {
+    const format = pickerMeasureFormat(props)
+    const texts = (Array.isArray(value) ? value : [value])
+      .map((item) => formatPickerMeasureText(item, format))
+      .filter(Boolean)
+    if (texts.length === 0) {
+      return undefined
+    }
+
+    return texts.reduce((sum, text) => sum + measureText(text, token), 0)
   }
 
   if (Array.isArray(value)) {
@@ -421,6 +435,49 @@ function placeholderTexts(placeholder: unknown) {
   }
 
   return []
+}
+
+function pickerMeasureFormat(props: SearchControlProps) {
+  if (typeof props.format === 'string' && props.format) {
+    return props.format
+  }
+
+  return props.showTime ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'
+}
+
+function padDatePart(value: number) {
+  return String(value).padStart(2, '0')
+}
+
+function formatNativeDate(value: Date, format: string) {
+  return format
+    .replace(/YYYY/g, String(value.getFullYear()))
+    .replace(/MM/g, padDatePart(value.getMonth() + 1))
+    .replace(/DD/g, padDatePart(value.getDate()))
+    .replace(/HH/g, padDatePart(value.getHours()))
+    .replace(/mm/g, padDatePart(value.getMinutes()))
+    .replace(/ss/g, padDatePart(value.getSeconds()))
+}
+
+function formatPickerMeasureText(value: unknown, format: string) {
+  if (value == null || value === '') {
+    return ''
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return String(value)
+  }
+
+  if (typeof value === 'object' && typeof (value as { format?: unknown }).format === 'function') {
+    const formatted = (value as { format: (template: string) => unknown }).format(format)
+    return typeof formatted === 'string' ? formatted : ''
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatNativeDate(value, format)
+  }
+
+  return ''
 }
 
 function measurePlaceholderWidth(placeholder: unknown, token: SearchSizeToken) {

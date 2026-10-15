@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -374,6 +375,42 @@ describe('resolveInlineSearchControlStyle', () => {
     expect(multiple?.width as number).toBeGreaterThan(62)
     expect(compactSingle?.width as number).toBeLessThan(single?.width as number)
     expect(compactSingle?.width as number).toBeGreaterThan(50)
+  })
+
+  it('measures a dayjs range by the displayed date instead of its UTC string', () => {
+    const strings = resolveInlineSearchControlStyle(
+      'picker',
+      { placeholder: ['开始日期', '结束日期'] },
+      ['2026-10-05', '2026-10-14'],
+      TOKEN,
+      'RangePicker',
+    )
+    const dates = resolveInlineSearchControlStyle(
+      'picker',
+      { placeholder: ['开始日期', '结束日期'] },
+      [dayjs('2026-10-05'), dayjs('2026-10-14')],
+      TOKEN,
+      'RangePicker',
+    )
+    const custom = resolveInlineSearchControlStyle(
+      'picker',
+      { format: 'YYYY/MM/DD', placeholder: ['开始日期', '结束日期'] },
+      [dayjs('2026-10-05'), dayjs('2026-10-14')],
+      TOKEN,
+      'RangePicker',
+    )
+    const customStrings = resolveInlineSearchControlStyle(
+      'picker',
+      { placeholder: ['开始日期', '结束日期'] },
+      ['2026/10/05', '2026/10/14'],
+      TOKEN,
+      'RangePicker',
+    )
+
+    expect(String(dayjs('2026-10-05')).length).toBeGreaterThan('2026-10-05'.length)
+    expect(dates?.minWidth).toBe(strings?.minWidth)
+    expect(dates?.minWidth as number).toBeLessThan(280)
+    expect(custom?.minWidth).toBe(customStrings?.minWidth)
   })
 
   it('fits both range placeholders plus separator, suffix and border', () => {
