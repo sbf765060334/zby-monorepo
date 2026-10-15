@@ -1,5 +1,6 @@
 import type {
   ProTableFilter,
+  ProTableQueryRecord,
   ProTableViewSnapshot,
   ProTableViewSorter,
   ProTableColumnPreference,
@@ -44,7 +45,7 @@ function normalizeViewSorter(
   return items.length > 0 ? items : null
 }
 
-export function buildViewSnapshot<Query extends Record<string, unknown>>(
+export function buildViewSnapshot<Query extends ProTableQueryRecord>(
   query: Partial<Query>,
   filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
@@ -67,7 +68,7 @@ export function buildViewSnapshot<Query extends Record<string, unknown>>(
   } satisfies ProTableViewSnapshot<Query>
 }
 
-export function normalizeViewSnapshot<Query extends Record<string, unknown>>(
+export function normalizeViewSnapshot<Query extends ProTableQueryRecord>(
   snapshot: ProTableViewSnapshot<Query> | null | undefined,
   filters: ProTableFilter<Query>[],
   columnDefinitions: ProTableColumnDefinition[],
@@ -95,7 +96,7 @@ function isFieldPreferenceEqual(left: ProTableColumnPreference, right: ProTableC
   )
 }
 
-export function isViewSnapshotEqual<Query extends Record<string, unknown>>(
+export function isViewSnapshotEqual<Query extends ProTableQueryRecord>(
   left: ProTableViewSnapshot<Query>,
   right: ProTableViewSnapshot<Query>,
 ) {

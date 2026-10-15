@@ -10,6 +10,7 @@ import type {
   ProTableColumnPreference,
   ProTableFilter,
   ProTableFilterPreference,
+  ProTableQueryRecord,
 } from '../interface'
 import useStyle from '../style'
 import type { ProTableColumnDefinition } from '../utils/columns'
@@ -18,7 +19,7 @@ import { buildDefaultFilterPreferences, cloneFilterPreferences } from '../utils/
 
 type SettingsTab = 'columns' | 'filters'
 
-export type TableSettingsProps<Query extends Record<string, unknown>> = {
+export type TableSettingsProps<Query extends ProTableQueryRecord> = {
   open: boolean
   definitions: ProTableColumnDefinition[]
   currentColumnPreferences: ProTableColumnPreference[]
@@ -38,7 +39,7 @@ export type TableSettingsProps<Query extends Record<string, unknown>> = {
   style?: React.CSSProperties
 }
 
-export function TableSettings<Query extends Record<string, unknown>>({
+export function TableSettings<Query extends ProTableQueryRecord>({
   open,
   definitions,
   currentColumnPreferences,

@@ -9,6 +9,7 @@ import type {
   ProTableController,
   ProTableFilter,
   ProTableNewColumnPolicy,
+  ProTableQueryRecord,
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
@@ -32,7 +33,7 @@ const UNPERSISTED_VIEW_MANAGEMENT_INSTANCE_ID = '__pro_table_unpersisted_views__
 const DEFAULT_VIEW_MANAGEMENT_ADAPTER =
   createIndexedDBProViewManagementAdapter<ProTableViewSnapshot<any>>()
 
-type ViewPersistenceParams<RecordType, Query extends Record<string, unknown>, Summary> = {
+type ViewPersistenceParams<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   viewStore: ProTableViewStore
   views: false | ProTableViewsConfig<Query>
@@ -64,7 +65,7 @@ function createTransientViewManagementAdapter<TSnapshot>(): ProViewManagementAda
   }
 }
 
-export function useViewPersistence<RecordType, Query extends Record<string, unknown>, Summary>({
+export function useViewPersistence<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   viewStore,
   views,

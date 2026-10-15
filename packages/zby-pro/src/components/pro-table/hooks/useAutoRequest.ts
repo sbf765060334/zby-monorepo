@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react'
 
 import { ignoreProTableRequestError } from '../controller'
-import type { ProTableController } from '../interface'
+import type { ProTableController, ProTableQueryRecord } from '../interface'
 import { shallow, useControllerSelector } from './useStoreSelector'
 
-type UseAutoRequestParams<RecordType, Query extends Record<string, unknown>, Summary> = {
+type UseAutoRequestParams<RecordType, Query extends ProTableQueryRecord, Summary> = {
   autoRequest: boolean
   controller: ProTableController<RecordType, Query, Summary>
   ready: boolean
 }
 
-export function useAutoRequest<RecordType, Query extends Record<string, unknown>, Summary>({
+export function useAutoRequest<RecordType, Query extends ProTableQueryRecord, Summary>({
   autoRequest,
   controller,
   ready,

@@ -361,8 +361,14 @@ export interface ProTableColumnResizeConfig<RecordType = Record<string, unknown>
   onResizeEnd?: (info: ProTableColumnResizeInfo<RecordType>) => void
 }
 
+/**
+ * 查询对象。索引用 `any`，这样没有索引签名的 interface 也能作为 Query。
+ * `Record<string, unknown>` 接不住这种类型。
+ */
+export type ProTableQueryRecord = Record<string, any>
+
 export interface ProTableFilterRenderContext<
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Key extends Extract<keyof Query, string> = Extract<keyof Query, string>,
 > {
   value: Query[Key] | undefined
@@ -370,7 +376,7 @@ export interface ProTableFilterRenderContext<
   setValue: (value: Query[Key] | undefined) => void
 }
 
-export type ProTableFilter<Query extends Record<string, unknown> = Record<string, unknown>> = {
+export type ProTableFilter<Query extends ProTableQueryRecord = Record<string, unknown>> = {
   [Key in Extract<keyof Query, string>]: {
     key: Key
     label: ReactNode
@@ -403,7 +409,7 @@ export interface ProTableFilterPreference {
   order: number
 }
 
-export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Record<string, unknown>> {
+export interface ProTableViewSnapshot<Query extends ProTableQueryRecord = Record<string, unknown>> {
   /** 当前筛选条里相对默认值有改动的字段。空值和未出现的字段都不当作改动，恢复时回落到 defaultQuery。 */
   query: Partial<Query>
   columnPreferences: ProTableColumnPreference[]
@@ -411,7 +417,7 @@ export interface ProTableViewSnapshot<Query extends Record<string, unknown> = Re
   sorter?: ProTableViewSorter[] | null
 }
 
-export interface ProTableViewsConfig<Query extends Record<string, unknown> = Record<string, unknown>> {
+export interface ProTableViewsConfig<Query extends ProTableQueryRecord = Record<string, unknown>> {
   adapter?: false | ProViewManagementAdapter<ProTableViewSnapshot<Query>>
   onLoadError?: (
     error: unknown,
@@ -424,7 +430,7 @@ export interface ProTableViewsConfig<Query extends Record<string, unknown> = Rec
 
 export interface ProTableToolbarContext<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > {
   controller: ProTableController<RecordType, Query, Summary>
@@ -434,7 +440,7 @@ export interface ProTableToolbarContext<
 
 export interface ProTableToolbarConfig<
   RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
+  Query extends ProTableQueryRecord = Record<string, unknown>,
   Summary = unknown,
 > {
   actions?: ReactNode | ((context: ProTableToolbarContext<RecordType, Query, Summary>) => ReactNode)
@@ -456,7 +462,7 @@ export type ProTablePaginationConfig = Omit<
 >
 
 /** Assembled request payload: filters + page + pageSize + sort. */
-export type ProTableRequestParams<Query extends Record<string, unknown> = Record<string, unknown>> =
+export type ProTableRequestParams<Query extends ProTableQueryRecord = Record<string, unknown>> =
   Query & {
     page: number
     pageSize: number
@@ -467,12 +473,12 @@ export interface ProTableRequestContext {
   signal: AbortSignal
 }
 
-export type ProTableQueryRequest<RecordType, Query extends Record<string, unknown>> = (
+export type ProTableQueryRequest<RecordType, Query extends ProTableQueryRecord> = (
   params: ProTableRequestParams<Query>,
   context: ProTableRequestContext,
 ) => Promise<{ data: RecordType[]; total?: number }>
 
-export type ProTableSummaryRequest<Query extends Record<string, unknown>, Summary> = (
+export type ProTableSummaryRequest<Query extends ProTableQueryRecord, Summary> = (
   params: ProTableRequestParams<Query>,
   context: ProTableRequestContext,
 ) => Promise<Summary>
@@ -482,7 +488,7 @@ export interface ProTableControllerPaginationConfig {
   defaultPageSize?: number
 }
 
-export interface ProTableControllerConfig<RecordType, Query extends Record<string, unknown>, Summary> {
+export interface ProTableControllerConfig<RecordType, Query extends ProTableQueryRecord, Summary> {
   /** Filter defaults only. Page and sort are not part of Query. */
   defaultQuery?: Query
   rowKey?: TableProps<RecordType>['rowKey']
@@ -507,7 +513,7 @@ export interface ProTableControllerConfig<RecordType, Query extends Record<strin
   defaultExpandAllRows?: boolean
 }
 
-export interface ProTableControllerState<RecordType, Query extends Record<string, unknown>, Summary> {
+export interface ProTableControllerState<RecordType, Query extends ProTableQueryRecord, Summary> {
   query: Query
   committedQuery: Query
   defaultQuery: Query
@@ -527,7 +533,7 @@ export interface ProTableControllerState<RecordType, Query extends Record<string
   rowKey: NonNullable<TableProps<RecordType>['rowKey']>
 }
 
-export interface ProTableController<RecordType, Query extends Record<string, unknown>, Summary> {
+export interface ProTableController<RecordType, Query extends ProTableQueryRecord, Summary> {
   getState: () => ProTableControllerState<RecordType, Query, Summary>
   subscribe: (
     listener: (state: ProTableControllerState<RecordType, Query, Summary>) => void,
@@ -611,7 +617,7 @@ export type ProTableStylesType = ResolvableSemantic<
 
 export interface ProTableRef<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > {
   controller: ProTableController<RecordType, Query, Summary>
@@ -619,7 +625,7 @@ export interface ProTableRef<
 
 type ProTableUiProps<
   RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
+  Query extends ProTableQueryRecord = Record<string, unknown>,
   Summary = unknown,
 > = Omit<
   TableProps<RecordType>,
@@ -667,7 +673,7 @@ type ProTableUiProps<
 
 type ProTableControllerSource<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > =
   | {
@@ -681,14 +687,14 @@ type ProTableControllerSource<
 
 export type ProTableProps<
   RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
+  Query extends ProTableQueryRecord = Record<string, unknown>,
   Summary = unknown,
 > = ProTableUiProps<RecordType, Query, Summary> &
   ProTableControllerSource<RecordType, Query, Summary>
 
 export interface ProTableConfig<
   RecordType = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
+  Query extends ProTableQueryRecord = Record<string, unknown>,
   Summary = unknown,
 > {
   prefixCls?: string
@@ -713,7 +719,7 @@ export interface ProTableConfig<
 
 export type ProTableComponent = (<
   RecordType extends object = Record<string, unknown>,
-  Query extends Record<string, unknown> = Record<string, unknown>,
+  Query extends ProTableQueryRecord = Record<string, unknown>,
   Summary = unknown,
 >(
   props: ProTableProps<RecordType, Query, Summary> &

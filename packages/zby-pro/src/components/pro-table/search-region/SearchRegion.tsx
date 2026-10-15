@@ -3,10 +3,11 @@ import { useIntl } from '@zby/intl'
 import { Button, Flex } from 'antd'
 import { clsx } from 'clsx'
 
+import type { ProTableQueryRecord } from '../interface'
 import { SearchFields, SearchViewManagementMount } from './components'
 import type { SearchRegionProps } from './types'
 
-function SearchRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
+function SearchRegionInner<RecordType, Query extends ProTableQueryRecord, Summary>({
   className,
   controller,
   filters = [],

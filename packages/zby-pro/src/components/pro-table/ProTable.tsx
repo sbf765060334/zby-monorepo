@@ -21,6 +21,7 @@ import type {
   ProTableComponent,
   ProTableController,
   ProTableProps,
+  ProTableQueryRecord,
   ProTableRef,
 } from './interface'
 import { useColumnsState } from './columns-state'
@@ -61,7 +62,7 @@ function useShallowStableObject<T extends Record<string, unknown>>(value: T) {
 
 const VIEW_LOADING_DELAY = 300
 
-function ProTableInner<RecordType extends object, Query extends Record<string, unknown>, Summary>(
+function ProTableInner<RecordType extends object, Query extends ProTableQueryRecord, Summary>(
   props: ProTableProps<RecordType, Query, Summary>,
   ref: React.Ref<ProTableRef<RecordType, Query, Summary>>,
 ) {

@@ -7,7 +7,7 @@ import { clsx } from 'clsx'
 
 import type { ProTableColumnDefinition } from '../utils/columns'
 import { ignoreProTableRequestError } from '../controller'
-import type { ProTableController, ProTableProps, ProTableViewSorter } from '../interface'
+import type { ProTableController, ProTableProps, ProTableQueryRecord, ProTableViewSorter } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
 import { applyColumnPreferences, extractColumnKey, normalizeTableColumns, sortCurrentPageRows, toDisplaySorter, toProTableSorters } from '../utils'
@@ -17,7 +17,7 @@ type SortableTableColumn<RecordType> = TableColumnType<RecordType> & {
   children?: TableColumnsType<RecordType>
 }
 
-type TableRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+type TableRegionProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   columns: ProTableProps<RecordType, Query, Summary>['columns']
   columnDefinitions: ProTableColumnDefinition[]
@@ -129,7 +129,7 @@ function toTableExpandable<RecordType>(
   return rest
 }
 
-function TableRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
+function TableRegionInner<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   columns,
   columnDefinitions,

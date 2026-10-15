@@ -7,9 +7,10 @@ import {
 import type {
   ProTableController,
   ProTableControllerConfig,
+  ProTableQueryRecord,
 } from '../interface'
 
-export interface UseProTableControllerOptions<RecordType, Query extends Record<string, unknown>, Summary> {
+export interface UseProTableControllerOptions<RecordType, Query extends ProTableQueryRecord, Summary> {
   controller?: ProTableController<RecordType, Query, Summary>
   config: ProTableControllerConfig<RecordType, Query, Summary>
   onReady?: (controller: ProTableController<RecordType, Query, Summary>) => void
@@ -17,7 +18,7 @@ export interface UseProTableControllerOptions<RecordType, Query extends Record<s
 
 export function useProTableController<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 >({
   controller: controllerProp,

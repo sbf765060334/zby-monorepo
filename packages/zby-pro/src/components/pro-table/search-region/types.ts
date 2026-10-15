@@ -8,11 +8,12 @@ import type { ProTableViewStore } from '../store'
 import type {
   ProTableController,
   ProTableFilter,
+  ProTableQueryRecord,
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
 
-export type ViewsConfigValue<Query extends Record<string, unknown>> = ProTableViewsConfig<Query>
+export type ViewsConfigValue<Query extends ProTableQueryRecord> = ProTableViewsConfig<Query>
 
 export type ModalScopeProps = {
   className?: string
@@ -20,7 +21,7 @@ export type ModalScopeProps = {
   style?: React.CSSProperties
 }
 
-export type SearchRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+export type SearchRegionProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   className?: string
   filters?: ProTableFilter<Query>[]

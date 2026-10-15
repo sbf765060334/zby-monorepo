@@ -1,4 +1,4 @@
-import type { ProTableFilter, ProTableFilterPreference } from '../interface'
+import type { ProTableFilter, ProTableFilterPreference, ProTableQueryRecord } from '../interface'
 
 function sortByOrder(items: ProTableFilterPreference[]) {
   return items.slice().sort((left, right) => left.order - right.order)
@@ -94,7 +94,7 @@ export function isFilterPreferencesEqual(
   )
 }
 
-export function splitFiltersByPreference<Query extends Record<string, unknown>>(
+export function splitFiltersByPreference<Query extends ProTableQueryRecord>(
   filters: ProTableFilter<Query>[],
   preferences: ProTableFilterPreference[],
 ) {

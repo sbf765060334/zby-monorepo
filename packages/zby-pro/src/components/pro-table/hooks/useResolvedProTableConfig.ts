@@ -8,6 +8,7 @@ import type {
   ProTableConfig,
   ProTableFilter,
   ProTableProps,
+  ProTableQueryRecord,
   ProTableSettingConfig,
   ProTableStylesType,
   ProTableToolbarConfig,
@@ -35,7 +36,7 @@ function resolveToggleConfig<T extends object>(
   return value
 }
 
-function resolveToolbarConfig<RecordType, Query extends Record<string, unknown>, Summary>(
+function resolveToolbarConfig<RecordType, Query extends ProTableQueryRecord, Summary>(
   toolbar: ProTableProps<RecordType, Query, Summary>['toolbar'],
 ): false | ProTableToolbarConfig<RecordType, Query, Summary> {
   if (toolbar === true) {
@@ -106,7 +107,7 @@ function useShallowStableRecord<T extends SemanticProps>(value: T) {
 
 export interface ResolvedProTableConfig<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > {
   mergedFilters: ProTableFilter<Query>[]
@@ -138,7 +139,7 @@ export interface ResolvedProTableConfig<
 
 export function useResolvedProTableConfig<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 >(
   props: ProTableProps<RecordType, Query, Summary>,

@@ -7,11 +7,11 @@ import type {
   ProViewManagementStorageState,
   ProViewManagementView,
 } from '../../../pro-view-management'
-import type { ProTableFilter, ProTableViewSnapshot } from '../../interface'
+import type { ProTableFilter, ProTableQueryRecord, ProTableViewSnapshot } from '../../interface'
 import { countModifiedSearchFields, isViewSnapshotEqual, pickSearchQuery, PRO_TABLE_DEFAULT_VIEW_ID } from '../../utils'
 import { DEFAULT_VIEW_LABEL } from '../constants'
 
-type ProTableViewManagementProps<Query extends Record<string, unknown>> = {
+type ProTableViewManagementProps<Query extends ProTableQueryRecord> = {
   adapter?: ProViewManagementAdapter<ProTableViewSnapshot<Query>>
   currentSnapshot: ProTableViewSnapshot<Query>
   defaultQuery: Query
@@ -31,7 +31,7 @@ type ProTableViewManagementProps<Query extends Record<string, unknown>> = {
   viewManagementInstanceId: string
 }
 
-function countViewSearchFields<Query extends Record<string, unknown>>(
+function countViewSearchFields<Query extends ProTableQueryRecord>(
   view: ProViewManagementView<ProTableViewSnapshot<Query>>,
   activeViewId: string,
   currentSnapshot: ProTableViewSnapshot<Query>,
@@ -45,7 +45,7 @@ function countViewSearchFields<Query extends Record<string, unknown>>(
   return count > 0 ? count : null
 }
 
-function ProTableViewManagementInner<Query extends Record<string, unknown>>({
+function ProTableViewManagementInner<Query extends ProTableQueryRecord>({
   adapter,
   currentSnapshot,
   defaultQuery,

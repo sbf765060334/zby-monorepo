@@ -5,6 +5,7 @@ import type {
   ProTableController,
   ProTableControllerConfig,
   ProTableControllerState,
+  ProTableQueryRecord,
   ProTableRequestParams,
   ProTableViewSorter,
 } from './interface'
@@ -16,7 +17,7 @@ const QUERY_OVERLAY = Symbol('ProTableQueryOverlay')
 
 type InternalControllerState<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > = ProTableControllerState<RecordType, Query, Summary> & {
   selectedRowMap: Map<Key, RecordType>;
@@ -33,7 +34,7 @@ type InternalControllerState<
 
 type OverlayableProTableController<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > = ProTableController<RecordType, Query, Summary> & {
   [QUERY_OVERLAY]?: {
@@ -44,7 +45,7 @@ type OverlayableProTableController<
 
 type AbortableProTableController<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 > = ProTableController<RecordType, Query, Summary> & {
   [CANCEL_REQUESTS]?: () => void
@@ -222,7 +223,7 @@ function isQueryEqual<Query>(left: Query, right: Query) {
   return Array.from(keys).every((key) => isSearchValueEqual(leftRecord[key], rightRecord[key]))
 }
 
-function assembleRequestParams<Query extends Record<string, unknown>>(
+function assembleRequestParams<Query extends ProTableQueryRecord>(
   filters: Query,
   currentPage: number,
   pageSize: number,
@@ -243,7 +244,7 @@ function assembleRequestParams<Query extends Record<string, unknown>>(
   return params as ProTableRequestParams<Query>
 }
 
-function toPublicState<RecordType, Query extends Record<string, unknown>, Summary>(
+function toPublicState<RecordType, Query extends ProTableQueryRecord, Summary>(
   state: InternalControllerState<RecordType, Query, Summary>,
 ): ProTableControllerState<RecordType, Query, Summary> {
   return {
@@ -267,7 +268,7 @@ function toPublicState<RecordType, Query extends Record<string, unknown>, Summar
   }
 }
 
-function collectSelectedRows<RecordType, Query extends Record<string, unknown>, Summary>(
+function collectSelectedRows<RecordType, Query extends ProTableQueryRecord, Summary>(
   state: InternalControllerState<RecordType, Query, Summary>,
 ) {
   return state.selectedRowKeys
@@ -341,7 +342,7 @@ export function ignoreProTableRequestError(task: Promise<unknown>) {
   void task.catch(() => undefined)
 }
 
-export function consumeProTableQueryOverlay<Query extends Record<string, unknown>>(
+export function consumeProTableQueryOverlay<Query extends ProTableQueryRecord>(
   controller: ProTableController<any, Query, any>,
 ): Partial<Query> {
   return (
@@ -355,7 +356,7 @@ export function clearProTableQueryOverlay(controller: ProTableController<any, an
 
 export function createProTableController<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary = unknown,
 >(
   config: ProTableControllerConfig<RecordType, Query, Summary> = {},

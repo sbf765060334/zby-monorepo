@@ -8,7 +8,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { Cascader, DatePicker, Drawer, Flex, Input, Select, theme as antdTheme, TimePicker, TreeSelect } from 'antd'
 
 import { shallow, useControllerSelector } from '../../hooks'
-import type { ProTableController, ProTableFilter, ProTableFilterRenderContext } from '../../interface'
+import type { ProTableController, ProTableFilter, ProTableFilterRenderContext, ProTableQueryRecord } from '../../interface'
 import {
   getAutoWidthKind,
   getElementName,
@@ -17,7 +17,7 @@ import {
 } from '../search-control-layout'
 import type { AutoWidthKind, SearchControlProps, SearchSizeToken } from '../search-control-layout'
 
-type SearchFieldsProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+type SearchFieldsProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   filters: ProTableFilter<Query>[]
   prefixCls: string
@@ -95,7 +95,7 @@ function applySearchControlLayout(
   return cloneElement(element, nextProps)
 }
 
-function SearchFieldControl<Query extends Record<string, unknown>>({
+function SearchFieldControl<Query extends ProTableQueryRecord>({
   field,
   labelId,
   query,
@@ -120,7 +120,7 @@ function SearchFieldControl<Query extends Record<string, unknown>>({
   )
 }
 
-function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summary>({
+function SearchFieldItem<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   field,
   prefixCls,
@@ -159,7 +159,7 @@ function SearchFieldItem<RecordType, Query extends Record<string, unknown>, Summ
   )
 }
 
-export function SearchFields<RecordType, Query extends Record<string, unknown>, Summary>({
+export function SearchFields<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   filters,
   prefixCls,
@@ -185,7 +185,7 @@ export function SearchFields<RecordType, Query extends Record<string, unknown>, 
   )
 }
 
-export function SearchMorePanel<RecordType, Query extends Record<string, unknown>, Summary>({
+export function SearchMorePanel<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   filters,
   onClose,

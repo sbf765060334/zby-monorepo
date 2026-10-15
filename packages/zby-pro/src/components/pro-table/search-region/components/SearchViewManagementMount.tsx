@@ -6,7 +6,7 @@ import type {
   ProViewManagementView,
 } from '../../../pro-view-management'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../../hooks'
-import type { ProTableController, ProTableFilter, ProTableViewSnapshot } from '../../interface'
+import type { ProTableController, ProTableFilter, ProTableQueryRecord, ProTableViewSnapshot } from '../../interface'
 import type { ProTableViewStore } from '../../store'
 import { isViewSnapshotEqual } from '../../utils'
 import { ProTableViewManagement } from './ProTableViewManagement'
@@ -15,7 +15,7 @@ const EMPTY_VIEW_STORAGE: ProViewManagementStorageState<ProTableViewSnapshot> = 
   views: [],
 }
 
-type SearchViewManagementMountProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+type SearchViewManagementMountProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   controller: ProTableController<RecordType, Query, Summary>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
@@ -34,7 +34,7 @@ type SearchViewManagementMountProps<RecordType, Query extends Record<string, unk
 
 const SearchViewManagementMountInner = <
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 >({
   buildSystemDefaultSnapshot,

@@ -9,13 +9,13 @@ import {
   normalizeSystemViews,
   resolveActiveView,
 } from '../../pro-view-management/utils'
-import type { ProTableController, ProTableViewSnapshot } from '../interface'
+import type { ProTableController, ProTableQueryRecord, ProTableViewSnapshot } from '../interface'
 import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewStore } from '../store'
 import { mergeViewQueryWithOverlay, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
 import { consumeProTableQueryOverlay, ignoreProTableRequestError } from '../controller'
 
-type ViewInitializationParams<RecordType, Query extends Record<string, unknown>, Summary> = {
+type ViewInitializationParams<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   viewStore: ProTableViewStore
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
@@ -37,7 +37,7 @@ const EMPTY_STORAGE_STATE = {
   views: [],
 } satisfies ProViewManagementStorageState<never>
 
-export function useViewInitialization<RecordType, Query extends Record<string, unknown>, Summary>({
+export function useViewInitialization<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   viewStore,
   buildSystemDefaultSnapshot,

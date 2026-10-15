@@ -78,6 +78,7 @@ export type {
   ProTableControllerState,
   ProTableComponent,
   ProTablePaginationConfig,
+  ProTableQueryRecord,
   ProTableQueryRequest,
   ProTableRequestContext,
   ProTableRequestParams,

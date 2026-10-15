@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { ProTableFilter, ProTableFilterPreference } from '../interface'
+import type { ProTableFilter, ProTableFilterPreference, ProTableQueryRecord } from '../interface'
 import type { ProTableViewStore } from '../store'
 import {
   isFilterPreferencesEqual,
   resolveFilterPreferences,
 } from '../utils/filter-config'
 
-type UseFiltersStateParams<Query extends Record<string, unknown>> = {
+type UseFiltersStateParams<Query extends ProTableQueryRecord> = {
   filters: ProTableFilter<Query>[]
   viewStore: ProTableViewStore
   viewInitializationReady: boolean
 }
 
-export function createFilterSchemaSignature<Query extends Record<string, unknown>>(
+export function createFilterSchemaSignature<Query extends ProTableQueryRecord>(
   filters: ProTableFilter<Query>[],
 ) {
   return JSON.stringify(
@@ -24,7 +24,7 @@ export function createFilterSchemaSignature<Query extends Record<string, unknown
   )
 }
 
-export function useFiltersState<Query extends Record<string, unknown>>({
+export function useFiltersState<Query extends ProTableQueryRecord>({
   filters,
   viewStore,
   viewInitializationReady,

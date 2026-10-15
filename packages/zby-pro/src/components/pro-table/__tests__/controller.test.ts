@@ -18,6 +18,17 @@ function wait(ms: number) {
 }
 
 describe('createProTableController', () => {
+  it('accepts an interface as the query type and keeps declared fields', () => {
+    interface EditionQuery {
+      spuCode?: string
+    }
+    const controller = createProTableController<Row, EditionQuery>({
+      rowKey: 'id',
+      defaultQuery: { spuCode: 'A001' },
+    })
+    expect(controller.getState().query.spuCode).toBe('A001')
+  })
+
   it('keeps filters on query and only puts paging on the request params', async () => {
     const queryRequest = vi.fn(async (params: Query & { page: number; pageSize: number }) => ({
       data: [{ id: String(params.page), status: params.status ?? 'all' }],

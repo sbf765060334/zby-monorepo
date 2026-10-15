@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import dayjs from 'dayjs'
 
-import type { ProTableFilter } from '../interface'
+import type { ProTableFilter, ProTableQueryRecord } from '../interface'
 
 function getTimeMs(value: unknown) {
   if (value instanceof Date) {
@@ -92,7 +92,7 @@ export function toStoredQueryValue<T>(value: T, coerceEmptyQuery: boolean): T | 
   return hasSearchValue(value) ? value : undefined
 }
 
-export function pickSearchQuery<Query extends Record<string, unknown>>(
+export function pickSearchQuery<Query extends ProTableQueryRecord>(
   query: Partial<Query>,
   filters: Array<{ key: Extract<keyof Query, string> }>,
   defaultQuery?: Partial<Query>,
@@ -110,7 +110,7 @@ export function pickSearchQuery<Query extends Record<string, unknown>>(
   }, {})
 }
 
-export function mergeSearchQuery<Query extends Record<string, unknown>>(
+export function mergeSearchQuery<Query extends ProTableQueryRecord>(
   defaultQuery: Query,
   snapshotQuery?: Partial<Query> | null,
 ): Query {
@@ -125,7 +125,7 @@ export function mergeSearchQuery<Query extends Record<string, unknown>>(
   return next as Query
 }
 
-export function mergeViewQueryWithOverlay<Query extends Record<string, unknown>>(
+export function mergeViewQueryWithOverlay<Query extends ProTableQueryRecord>(
   defaultQuery: Query,
   viewQuery?: Partial<Query> | null,
   overlay?: Partial<Query> | null,
@@ -154,7 +154,7 @@ export function hasSearchTagText(text: ReactNode) {
   return text !== null && text !== undefined && text !== '' && text !== false
 }
 
-export function resolveSearchTagText<Query extends Record<string, unknown>>(
+export function resolveSearchTagText<Query extends ProTableQueryRecord>(
   field: ProTableFilter<Query>,
   value: unknown,
   query: Query,
@@ -182,7 +182,7 @@ export type ActiveSearchTagItem = {
   nextValue: unknown
 }
 
-export function collectActiveSearchTagItems<Query extends Record<string, unknown>>(
+export function collectActiveSearchTagItems<Query extends ProTableQueryRecord>(
   filters: ProTableFilter<Query>[],
   query: Query,
   defaultQuery?: Query,
@@ -221,7 +221,7 @@ export function collectActiveSearchTagItems<Query extends Record<string, unknown
   })
 }
 
-export function countModifiedSearchFields<Query extends Record<string, unknown>>(
+export function countModifiedSearchFields<Query extends ProTableQueryRecord>(
   filters: ProTableFilter<Query>[],
   query: Query,
   defaultQuery?: Query,

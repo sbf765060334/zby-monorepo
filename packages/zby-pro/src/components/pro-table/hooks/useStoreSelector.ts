@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import type { ProTableController, ProTableControllerState } from '../interface'
+import type { ProTableController, ProTableControllerState, ProTableQueryRecord } from '../interface'
 import type { ProTableViewActions, ProTableViewState, ProTableViewStore } from '../store'
 
 export function shallow(left: unknown, right: unknown) {
@@ -15,7 +15,7 @@ export function shallow(left: unknown, right: unknown) {
   return leftKeys.length === rightKeys.length && leftKeys.every((key) => Object.is(leftRecord[key], rightRecord[key]))
 }
 
-export function useControllerSelector<RecordType, Query extends Record<string, unknown>, Summary, Selected>(
+export function useControllerSelector<RecordType, Query extends ProTableQueryRecord, Summary, Selected>(
   controller: ProTableController<RecordType, Query, Summary>,
   selector: (state: ProTableControllerState<RecordType, Query, Summary>) => Selected,
   equalityFn: (left: Selected, right: Selected) => boolean = Object.is,

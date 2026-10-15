@@ -1,13 +1,13 @@
 import React, { memo, useCallback } from 'react'
 
 import { useViewStoreSelector } from '../hooks'
-import type { ProTableColumnPreference, ProTableFilter, ProTableFilterPreference } from '../interface'
+import type { ProTableColumnPreference, ProTableFilter, ProTableFilterPreference, ProTableQueryRecord } from '../interface'
 import type { ModalScopeProps } from '../search-region'
 import type { ProTableViewStore } from '../store'
 import type { ProTableColumnDefinition } from '../utils/columns'
 import { TableSettings } from './TableSettings'
 
-type TableSettingsMountProps<Query extends Record<string, unknown>> = {
+type TableSettingsMountProps<Query extends ProTableQueryRecord> = {
   viewStore: ProTableViewStore
   definitions: ProTableColumnDefinition[]
   maxVisible?: number
@@ -20,7 +20,7 @@ type TableSettingsMountProps<Query extends Record<string, unknown>> = {
   modalProps: ModalScopeProps
 }
 
-function TableSettingsMount<Query extends Record<string, unknown>>({
+function TableSettingsMount<Query extends ProTableQueryRecord>({
   viewStore,
   definitions,
   maxVisible,

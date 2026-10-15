@@ -5,7 +5,7 @@ import { ActionIcon } from '@zby/ui'
 import { clsx } from 'clsx'
 
 import { ignoreProTableRequestError } from '../controller'
-import type { ProTableController, ProTableProps } from '../interface'
+import type { ProTableController, ProTableProps, ProTableQueryRecord } from '../interface'
 import { shallow, useControllerSelector, useViewStoreSelector } from '../hooks'
 import type { ProTableViewStore } from '../store'
 
@@ -14,12 +14,12 @@ const SETTING_ICON = <SettingOutlined />
 const FULLSCREEN_ICON = <FullscreenOutlined />
 const FULLSCREEN_EXIT_ICON = <FullscreenExitOutlined />
 
-type ToolbarConfigValue<RecordType, Query extends Record<string, unknown>, Summary> = Exclude<
+type ToolbarConfigValue<RecordType, Query extends ProTableQueryRecord, Summary> = Exclude<
   ProTableProps<RecordType, Query, Summary>['toolbar'],
   boolean | undefined
 >
 
-type ToolbarRegionProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+type ToolbarRegionProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   toolbar: ToolbarConfigValue<RecordType, Query, Summary>
   settingEnabled: boolean
@@ -114,7 +114,7 @@ const ToolbarFullscreenButton = memo(({ viewStore }: { viewStore: ProTableViewSt
 
 ToolbarFullscreenButton.displayName = 'ProTableToolbarFullscreenButton'
 
-function ToolbarRegionInner<RecordType, Query extends Record<string, unknown>, Summary>({
+function ToolbarRegionInner<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   toolbar,
   settingEnabled,

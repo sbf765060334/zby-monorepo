@@ -9,6 +9,7 @@ import type {
   ProTableColumnType,
   ProTableColumnWidthMap,
   ProTableProps,
+  ProTableQueryRecord,
 } from '../interface'
 import type { ProTableViewStore } from '../store'
 import { extractColumnKey, flattenColumnLeaves } from '../utils'
@@ -90,7 +91,7 @@ function createWidthSignature(widths: ProTableColumnWidthMap | undefined) {
 
 export function useProTableColumnResize<
   RecordType,
-  Query extends Record<string, unknown>,
+  Query extends ProTableQueryRecord,
   Summary,
 >({
   columns,

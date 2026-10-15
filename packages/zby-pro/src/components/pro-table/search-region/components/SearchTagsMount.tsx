@@ -1,17 +1,17 @@
 import { memo, useCallback, useMemo } from 'react'
 
 import { shallow, useControllerSelector } from '../../hooks'
-import type { ProTableController, ProTableFilter } from '../../interface'
+import type { ProTableController, ProTableFilter, ProTableQueryRecord } from '../../interface'
 import { collectActiveSearchTagItems, type ActiveSearchTagItem } from '../../utils'
 import { SearchTags } from './SearchTags'
 
-type SearchTagsMountProps<RecordType, Query extends Record<string, unknown>, Summary> = {
+type SearchTagsMountProps<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
   filters: ProTableFilter<Query>[]
   prefixCls: string
 }
 
-function SearchTagsMountInner<RecordType, Query extends Record<string, unknown>, Summary>({
+function SearchTagsMountInner<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
   filters,
   prefixCls,

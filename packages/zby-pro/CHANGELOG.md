@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.2.5
+
+### Patch Changes
+
+- 允许没有索引签名的 interface 作为 ProTable 的 Query。已声明的查询字段类型保持不变。
+
 ## 0.2.4
 
 ### Patch Changes

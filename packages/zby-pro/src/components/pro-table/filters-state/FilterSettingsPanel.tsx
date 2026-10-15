@@ -15,7 +15,7 @@ import type { ReactNode } from 'react'
 
 import { SortableList } from '../../pro-sortable-list'
 import { restrictToFirstScrollableAncestor } from '../../pro-sortable-list/restrict-transform'
-import type { ProTableFilter, ProTableFilterPreference } from '../interface'
+import type { ProTableFilter, ProTableFilterPreference, ProTableQueryRecord } from '../interface'
 import {
   groupFilterPreferencesByPlacement,
   moveGroupedFilterToTop,
@@ -25,7 +25,7 @@ import {
 
 const filterDragModifiers = [restrictToFirstScrollableAncestor]
 
-type FilterSettingsPanelProps<Query extends Record<string, unknown>> = {
+type FilterSettingsPanelProps<Query extends ProTableQueryRecord> = {
   filters: ProTableFilter<Query>[]
   value: ProTableFilterPreference[]
   prefixCls: string
@@ -117,7 +117,7 @@ function TransferFilterRow({
   )
 }
 
-function FilterTransferPane<Query extends Record<string, unknown>>({
+function FilterTransferPane<Query extends ProTableQueryRecord>({
   emptyText,
   filterMap,
   items,
@@ -190,7 +190,7 @@ function FilterTransferPane<Query extends Record<string, unknown>>({
   )
 }
 
-export function FilterSettingsPanel<Query extends Record<string, unknown>>({
+export function FilterSettingsPanel<Query extends ProTableQueryRecord>({
   filters,
   value,
   prefixCls,
