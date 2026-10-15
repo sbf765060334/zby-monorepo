@@ -59,6 +59,8 @@ export interface InternalColumnResizeMeta<RecordType = any> {
 
 export const INTERNAL_COLUMN_RESIZE_META = 'RC_TABLE_INTERNAL_COLUMN_RESIZE_META';
 export const INTERNAL_COLUMN_RESIZE_FILLER = 'RC_TABLE_INTERNAL_COLUMN_RESIZE_FILLER';
+/** 有自定义 render 时表体不走 CSS 省略，表头仍读列上的 ellipsis。 */
+export const TABLE_SKIP_BODY_ELLIPSIS = 'RC_TABLE_SKIP_BODY_ELLIPSIS';
 
 /**
  * Use `start` or `end` instead. `left` or `right` is deprecated.
@@ -154,6 +156,7 @@ interface ColumnSharedType<RecordType> {
   maxWidth?: number;
   [INTERNAL_COLUMN_RESIZE_META]?: InternalColumnResizeMeta<RecordType>;
   [INTERNAL_COLUMN_RESIZE_FILLER]?: boolean;
+  [TABLE_SKIP_BODY_ELLIPSIS]?: boolean;
 }
 
 export interface ColumnGroupType<RecordType> extends ColumnSharedType<RecordType> {

@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.2.1
+
+### Patch Changes
+
+- 优化 Table 单元格渲染逻辑
+
 ## 0.2.0
 
 ### Minor Changes

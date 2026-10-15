@@ -5,7 +5,7 @@ import * as React from 'react'
 import type { AnyObject } from 'antd/es/_util/type'
 import Tooltip from 'antd/es/tooltip'
 import type { TooltipProps } from 'antd/es/tooltip'
-import { TABLE_SKIP_BODY_ELLIPSIS } from '../columnBodyEllipsis'
+import { TABLE_SKIP_BODY_ELLIPSIS } from '../RcTableInner/interface'
 import TableCellCopy, { TABLE_CELL_WITH_COPY_CLASS_NAME } from '../TableCellCopy'
 import type { ActionTextCopyConfig } from '../../action-text'
 import type {

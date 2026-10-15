@@ -48,14 +48,11 @@ const TableCellCopy: React.FC<TableCellCopyProps> = ({
   const copyText = intl.getMessage('zby.ui.actionText.copy', '复制')
   const copiedText = intl.getMessage('zby.ui.actionText.copied', '已复制')
   const systemStr = copied ? copiedText : copyText
-  const titleNodes: readonly (string | undefined)[] =
-    copyConfig.tooltips === false
-      ? []
-      : typeof copyConfig.tooltips === 'string' || copyConfig.tooltips === undefined
-        ? [copyConfig.tooltips]
-        : copyConfig.tooltips
+  const tooltips = copyConfig.tooltips
   const copyTitle =
-    copyConfig.tooltips === false ? undefined : (titleNodes[copied ? 1 : 0] ?? systemStr)
+    tooltips === false
+      ? undefined
+      : (Array.isArray(tooltips) ? tooltips : [tooltips])[copied ? 1 : 0] ?? systemStr
   const showTitle = ellipsis === true || (typeof ellipsis === 'object' && ellipsis.showTitle !== false)
   const textTitle =
     showTitle && (typeof children === 'string' || typeof children === 'number')

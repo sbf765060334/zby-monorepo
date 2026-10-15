@@ -51,7 +51,7 @@ function layoutTables(root: HTMLElement, prefixCls: string) {
     .map(part => `.${prefixCls}-${part} > table`)
     .join(', ');
 
-  return Array.from(root.querySelectorAll(selector)).filter(table =>
+  return Array.from(root.querySelectorAll<HTMLTableElement>(selector)).filter(table =>
     isOwnedByTable(table, root, prefixCls),
   );
 }

@@ -4,7 +4,7 @@ import Cell from '../Cell';
 import { responseImmutable } from '../context/TableContext';
 import devRenderTimes from '../hooks/useRenderTimes';
 import useRowInfo from '../hooks/useRowInfo';
-import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../../columnBodyEllipsis';
+import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../utils/columnBodyEllipsis';
 import type { ColumnType, CustomizeComponent } from '../interface';
 import ExpandedRow from './ExpandedRow';
 import type { ExpandedRowProps } from './ExpandedRow';

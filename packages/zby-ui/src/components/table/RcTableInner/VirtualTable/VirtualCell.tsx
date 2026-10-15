@@ -7,7 +7,7 @@ import TableContext from '../context/TableContext';
 import { getStickyOffsets } from '../hooks/useStickyOffsets';
 import type useRowInfo from '../hooks/useRowInfo';
 import type { ColumnType, CustomizeComponent } from '../interface';
-import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../../columnBodyEllipsis';
+import { shouldSkipBodyEllipsis, toBodyCellEllipsis } from '../utils/columnBodyEllipsis';
 import { getCellFixedInfo } from '../utils/fixUtil';
 import { GridContext } from './context';
 

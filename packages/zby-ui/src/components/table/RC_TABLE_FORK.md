@@ -11,6 +11,7 @@
 | 文件 | 作用 |
 | --- | --- |
 | `hooks/useColumnResize.tsx` | 列宽状态、filler 列、`minWidth` / `maxWidth` / `resizable`、受控 `widths`。拖动中只改 DOM 和 `onResize`，松手提交 `onWidthsChange` / `onResizeEnd`；宽度未变化时不更新状态、不触发上述回调；`info.column` 为盖章前的 `source` 列 |
+| `utils/columnBodyEllipsis.ts` | 表体省略规范化。自定义 `render` 列读 `TABLE_SKIP_BODY_ELLIPSIS` 后不传 ellipsis |
 
 ## 改过的上游文件
 
@@ -35,6 +36,8 @@
 
 | 文件 | 贴回去时要对上的点 |
 | --- | --- |
+| `interface.ts` | `TABLE_SKIP_BODY_ELLIPSIS`，以及列上的可选标记 |
+| `utils/columnBodyEllipsis.ts` | 新增文件，见上表。标记字符串保持 `RC_TABLE_SKIP_BODY_ELLIPSIS` |
 | `Body/BodyRow.tsx` | 传 `ellipsis`（跳过标记除外）；**要**传 `column={column}`（filler / resize meta） |
 | `VirtualTable/VirtualCell.tsx` | 同上 |
 
