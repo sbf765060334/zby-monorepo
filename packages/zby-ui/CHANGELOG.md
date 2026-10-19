@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.2.3
+
+### Patch Changes
+
+- 增加 ActionText 语义色和加粗文本能力
+
 ## 0.2.2
 
 ### Patch Changes
