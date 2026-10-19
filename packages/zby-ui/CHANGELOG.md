@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.2.2
+
+### Patch Changes
+
+- ：ActionText 改为原生单行省略和自定义操作，并让表格行悬停类名跟随 prefix。
+
 ## 0.2.1
 
 ### Patch Changes
