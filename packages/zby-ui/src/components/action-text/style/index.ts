@@ -26,7 +26,7 @@ function resetComponent(token: ActionTextToken): CSSObject {
 }
 
 /** 生成文本和操作区的完整组件样式。 */
-function genActionTextStyle(token: ActionTextToken): CSSObject {
+function genActionTextStyle(token: ActionTextToken, tableRowHoverClass: string): CSSObject {
   const { componentCls } = token
   const actionVisibleStyle: CSSObject = {
     display: 'inline-flex',
@@ -111,6 +111,9 @@ function genActionTextStyle(token: ActionTextToken): CSSObject {
 
       [`&:hover ${componentCls}-actions-self-hover`]: actionVisibleStyle,
       [`${componentCls}-actions-always`]: actionVisibleStyle,
+      // 四个类压过 Table 表体里三个类的 display:none，弹层打开后按钮不会被行悬停规则藏掉。
+      [`${componentCls}-actions${componentCls}-actions-always.${tableRowHoverClass}`]:
+        actionVisibleStyle,
     },
   }
 }
@@ -119,7 +122,7 @@ function genActionTextStyle(token: ActionTextToken): CSSObject {
  * 注册 ActionText CSS-in-JS 样式并返回作用域标识。
  * hashId 隔离样式版本，cssVarCls 让组件正确读取 ConfigProvider 的 CSS 变量主题。
  */
-export default function useStyle(prefixCls: string) {
+export default function useStyle(prefixCls: string, tableRowHoverClass: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
   const { theme: themeConfig } = React.useContext(ConfigProvider.ConfigContext)
   const styleToken = cssVar ?? token
@@ -137,10 +140,10 @@ export default function useStyle(prefixCls: string) {
       theme,
       token,
       hashId,
-      path: ['zby-ui', 'action-text', prefixCls],
+      path: ['zby-ui', 'action-text', prefixCls, tableRowHoverClass],
     },
-    // path 保证同一主题和 prefixCls 下样式只注册一次。
-    () => [genActionTextStyle(mergedToken)],
+    // path 保证同一主题、组件前缀和表格前缀下样式只注册一次。
+    () => [genActionTextStyle(mergedToken, tableRowHoverClass)],
   )
 
   return [hashId, cssVarCls] as const

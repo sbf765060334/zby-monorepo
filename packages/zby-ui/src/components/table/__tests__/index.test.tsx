@@ -412,6 +412,9 @@ describe('Table', () => {
     const bodyCell = container.querySelector('.ant-table-tbody .ant-table-cell')
     expect(bodyCell?.textContent).toContain('Name: Alpha')
     expect(container.querySelector('.ant-table-cell-copy')).not.toBeNull()
+    expect(
+      container.querySelector('.ant-table-cell-hover-to-display-inline-flex'),
+    ).not.toBeNull()
     expect(container.querySelector('[data-action-text-copy]')).not.toBeNull()
     expect(bodyCell?.classList.contains('ant-table-cell-with-copy')).toBe(true)
     expect(renderText).toHaveBeenCalledWith('Alpha', data[0], 0)

@@ -21,7 +21,7 @@ ActionText 用于“文本是主体，操作是辅助”的数据展示场景：
 - 操作是页面主动作：使用 `Button` 或清晰的操作区；
 - 文本包含复杂交互组件或需要自由排版：直接组合 Typography、Flex 和 ActionIcon；
 - 编辑、确认或弹层流程：在 `actions` 中自行放入按钮和 Popover、Modal；
-- 期望跟随 Table 行 hover 展示：ActionText 只监听自身 hover，不依赖 Table 的行状态。
+- 操作区需要脱离 `@zby/ui` Table 或 ProTable、却又想跟随表格行悬停：`table-row-hover` 只在这些表格的表体里生效。
 
 ## 怎么使用
 
@@ -194,7 +194,7 @@ export default () => {
 | copyable | 是否显示内置复制操作；对象形式可配置文本、图标、原生 title 和回调 | `boolean \| ActionTextCopyConfig` | - |
 | clickable | 是否让文本具备按钮/链接语义；对象形式配置链接和访问状态 | `boolean \| ActionTextClickableConfig` | - |
 | actions | 放在复制按钮之后的自定义操作节点 | `ReactNode` | - |
-| actionsVisibleOn | 操作区跟随自身 hover 展示，或始终展示 | `self-hover \| always` | `self-hover` |
+| actionsVisibleOn | 操作区跟随自身 hover、表格行 hover，或始终展示 | `self-hover \| table-row-hover \| always` | `self-hover` |
 | actionsVisible | 为 `true` 时强制显示操作区，供自定义弹层打开时钉住按钮 | `boolean` | `false` |
 | classNames | 语义节点 className 对象或动态回调 | `ActionTextClassNamesType` | - |
 | styles | 语义节点内联样式对象或动态回调 | `ActionTextStylesType` | - |

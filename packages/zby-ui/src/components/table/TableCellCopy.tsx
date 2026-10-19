@@ -7,7 +7,7 @@ import { useIntl } from '@zby/intl'
 import { clsx } from 'clsx'
 import * as React from 'react'
 
-import { TableCellHoverRelatedClassNames } from '../_util/tableCellHover'
+import { getTableCellHoverClassNames } from '../_util/tableCellHover'
 import ActionIcon from '../action-icon'
 import useCopyAction from '../action-text/useCopyAction'
 import type { ActionTextCopyConfig } from '../action-text'
@@ -72,7 +72,7 @@ const TableCellCopy: React.FC<TableCellCopyProps> = ({
       <span
         className={clsx(
           `${prefixCls}-${TABLE_CELL_COPY_ACTION_CLASS_NAME}`,
-          TableCellHoverRelatedClassNames.hoverToDisplayInlineFlex,
+          getTableCellHoverClassNames(prefixCls).hoverToDisplayInlineFlex,
         )}
       >
         <ActionIcon

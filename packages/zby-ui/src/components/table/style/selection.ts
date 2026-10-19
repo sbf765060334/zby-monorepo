@@ -1,7 +1,7 @@
 import { unit } from '@ant-design/cssinjs'
 import type { CSSObject } from '@ant-design/cssinjs'
 
-import { TableCellHoverRelatedClassNames } from '../../_util/tableCellHover'
+import { getTableCellHoverClassNames } from '../../_util/tableCellHover'
 import type { GenerateStyle } from 'antd/es/theme/internal'
 import type { TableToken } from './index'
 
@@ -38,7 +38,8 @@ const genSelectionStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
     visibility: 'visible',
     pointerEvents: 'auto',
   }
-  const tableCellHoverClassNames = TableCellHoverRelatedClassNames
+  // componentCls 带前导点，类名生成函数接收的是表格 prefixCls。
+  const tableCellHoverClassNames = getTableCellHoverClassNames(componentCls.slice(1))
   const currentRowHoverSelector = [
     `${componentCls}-row${componentCls}-row-current:hover > ${componentCls}-cell`,
     `${componentCls}-row${componentCls}-row-current > ${componentCls}-cell-row-hover`,

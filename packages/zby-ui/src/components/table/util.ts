@@ -11,9 +11,10 @@ import type {
 } from './interface'
 
 export {
-  TABLE_ROW_HOVER_REVEAL_CLASS_NAME,
-  TableCellHoverRelatedClassNames,
+  getTableCellHoverClassNames,
+  getTableRowHoverRevealClassName,
 } from '../_util/tableCellHover'
+export type { TableCellHoverClassNames } from '../_util/tableCellHover'
 
 function isNonNullable<T>(value: T): value is NonNullable<T> {
   return value !== undefined && value !== null

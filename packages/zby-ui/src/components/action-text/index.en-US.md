@@ -21,7 +21,7 @@ It is usually the wrong choice when:
 - The action is a primary page action: use `Button` or a dedicated action area;
 - The text contains complex interactive content: compose Typography, Flex, and ActionIcon directly;
 - Editing, confirmation, or overlays are required: put the button and Popover or Modal in `actions`;
-- Actions should follow a Table row hover: ActionText only listens to its own hover.
+- Actions should follow a table row hover outside `@zby/ui` Table or ProTable: `table-row-hover` only works inside those table bodies.
 
 ## Examples
 
@@ -194,7 +194,7 @@ Besides the props below, native `div` attributes other than `children` are suppo
 | copyable | Built-in copy action. An object configures text, icons, native title, and the callback | `boolean \| ActionTextCopyConfig` | - |
 | clickable | Link or button semantics. An object configures navigation and visited state | `boolean \| ActionTextClickableConfig` | - |
 | actions | Custom nodes rendered after the copy button | `ReactNode` | - |
-| actionsVisibleOn | Show actions on self hover, or always | `self-hover \| always` | `self-hover` |
+| actionsVisibleOn | Show actions on self hover, on table row hover, or always | `self-hover \| table-row-hover \| always` | `self-hover` |
 | actionsVisible | Force the action area visible, so a custom popup can keep its trigger mounted | `boolean` | `false` |
 | classNames | Semantic class names, or a callback | `ActionTextClassNamesType` | - |
 | styles | Semantic inline styles, or a callback | `ActionTextStylesType` | - |

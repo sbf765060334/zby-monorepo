@@ -1,6 +1,6 @@
 import type { TablePaginationConfig, TableProps } from './InternalTable'
 import Table from './Table'
-import { TABLE_ROW_HOVER_REVEAL_CLASS_NAME, TableCellHoverRelatedClassNames } from './util'
+import { getTableCellHoverClassNames, getTableRowHoverRevealClassName } from './util'
 
 export type { ColumnProps } from './Column'
 export type {
@@ -17,7 +17,8 @@ export type {
   TableColumnType,
   TableRowHighlight,
 } from './interface'
-export { TABLE_ROW_HOVER_REVEAL_CLASS_NAME, TableCellHoverRelatedClassNames }
+export { getTableCellHoverClassNames, getTableRowHoverRevealClassName }
+export type { TableCellHoverClassNames } from './util'
 export type { Reference as TableRef } from './RcTableInner'
 export type { TablePaginationConfig, TableProps }
 

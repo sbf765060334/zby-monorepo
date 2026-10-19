@@ -4,11 +4,12 @@ import * as React from 'react'
 import type { AnchorHTMLAttributes } from 'react'
 
 import useControllableValue from '../_util/hooks/useControllableValue'
+import { getTableCellHoverClassNames } from '../_util/tableCellHover'
 import ActionTextCopyAction from './ActionTextCopyAction'
 import useStyle from './style'
 
-/** 操作区展示策略：跟随 ActionText 自身 hover，或始终展示。 */
-export type ActionTextVisibleOn = 'self-hover' | 'always'
+/** 操作区展示策略：跟随自身 hover、跟随表格行 hover，或始终展示。 */
+export type ActionTextVisibleOn = 'self-hover' | 'table-row-hover' | 'always'
 
 /** 单行省略配置。全文提示使用原生 title，只接受字符串。 */
 export interface ActionTextEllipsisConfig {
@@ -103,7 +104,10 @@ export interface ActionTextProps extends Omit<
   clickable?: boolean | ActionTextClickableConfig
   /** 放在复制按钮后面的自定义操作。弹层和确认逻辑由业务自己实现。 */
   actions?: React.ReactNode
-  /** 操作区的展示时机。 */
+  /**
+   * 操作区的展示时机。
+   * table-row-hover 使用和 Table 相同的前缀类名，悬停表格行时显示。
+   */
   actionsVisibleOn?: ActionTextVisibleOn
   /**
    * 为 true 时强制显示操作区。
@@ -206,15 +210,20 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
   // 前缀、方向和 CSS-in-JS hash 都跟随 antd ConfigProvider，确保主题与 RTL 一致。
   const { getPrefixCls, direction } = React.useContext(ConfigProvider.ConfigContext)
   const prefixCls = getPrefixCls('action-text', customizePrefixCls)
-  const [hashId, cssVarCls] = useStyle(prefixCls)
+  const tablePrefixCls = getPrefixCls('table')
+  const tableRowHoverClass = getTableCellHoverClassNames(tablePrefixCls).hoverToDisplayInlineFlex
+  const [hashId, cssVarCls] = useStyle(prefixCls, tableRowHoverClass)
   const hasCopyAction = !!copyable
   const hasCustomActions = actions != null && actions !== false
   const hasActions = hasCopyAction || hasCustomActions
-  // 弹层打开时钉住操作区，避免 self-hover 在鼠标移入 portal 后把触发按钮隐藏。
-  const actionsVisibleCls =
-    actionsVisibleOn === 'always' || actionsVisible
-      ? `${prefixCls}-actions-always`
-      : `${prefixCls}-actions-self-hover`
+  const isTableRowHover = actionsVisibleOn === 'table-row-hover'
+  // 弹层打开时钉住操作区。表格行悬停标记仍保留，方便样式压过 Table 的默认隐藏。
+  const forceActionsVisible = actionsVisibleOn === 'always' || actionsVisible
+  const actionsVisibleCls = clsx({
+    [`${prefixCls}-actions-always`]: forceActionsVisible,
+    [`${prefixCls}-actions-self-hover`]: !forceActionsVisible && !isTableRowHover,
+    [tableRowHoverClass]: isTableRowHover,
+  })
 
   // clickable=true 使用默认配置；对象形式则提供链接、受控 visited 等高级能力。
   const clickableConfig = clickable && clickable !== true ? clickable : {}

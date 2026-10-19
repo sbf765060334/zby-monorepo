@@ -199,6 +199,24 @@ describe('ActionText', () => {
     expect(container.querySelectorAll('.ant-action-text-actions-always')).toHaveLength(2)
   })
 
+  it('marks table row hover actions with the table prefix class', () => {
+    const action = <button type="button">Edit</button>
+    const { container } = render(
+      <ConfigProvider prefixCls="custom">
+        <ActionText actions={action} actionsVisibleOn="table-row-hover" actionsVisible>
+          Pinned row
+        </ActionText>
+      </ConfigProvider>,
+    )
+    const actions = container.querySelector('.custom-action-text-actions')!
+
+    expect(actions.classList.contains('custom-table-cell-hover-to-display-inline-flex')).toBe(
+      true,
+    )
+    expect(actions.classList.contains('custom-action-text-actions-always')).toBe(true)
+    expect(actions.classList.contains('custom-action-text-actions-self-hover')).toBe(false)
+  })
+
   it('supports semantic callbacks with normalized props', () => {
     const { container } = render(
       <ActionText

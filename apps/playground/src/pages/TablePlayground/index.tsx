@@ -12,6 +12,7 @@ import ColumnResizeControlledExample from './examples/ColumnResizeControlledExam
 import ColumnResizeExample from './examples/ColumnResizeExample'
 import ColumnResizeRtlExample from './examples/ColumnResizeRtlExample'
 import ControlledHighlightExample from './examples/ControlledHighlightExample'
+import ActionTextRowHoverExample from './examples/ActionTextRowHoverExample'
 import CopyableConfigExample from './examples/CopyableConfigExample'
 import EmptyLoadingExample from './examples/EmptyLoadingExample'
 import ExpandableRowsExample from './examples/ExpandableRowsExample'
@@ -54,6 +55,7 @@ export default function TablePlayground() {
           <ControlledHighlightExample />
           <ColumnEnhancementExample />
           <CopyableConfigExample />
+          <ActionTextRowHoverExample />
           <ColumnBodyEllipsisExample />
           <ColumnHeaderFilterExample />
         </PlaygroundGrid>
