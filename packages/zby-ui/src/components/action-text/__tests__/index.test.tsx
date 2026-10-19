@@ -137,6 +137,19 @@ describe('ActionText', () => {
     expect(text.hasAttribute('title')).toBe(false)
   })
 
+  it('applies type and strong without an underline wrapper', () => {
+    const { container } = render(
+      <ActionText type="success" strong>
+        Shop name
+      </ActionText>,
+    )
+    const text = container.querySelector('.ant-action-text-text')
+
+    expect(text?.classList.contains('ant-action-text-text-success')).toBe(true)
+    expect(text?.querySelector('strong')?.textContent).toBe('Shop name')
+    expect(text?.querySelector('u')).toBeNull()
+  })
+
   it('uses string children as the native title when ellipsis is enabled', () => {
     const { container } = render(<ActionText ellipsis>Shop name</ActionText>)
     const text = container.querySelector<HTMLElement>('.ant-action-text-text')!

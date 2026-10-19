@@ -191,6 +191,8 @@ Besides the props below, native `div` attributes other than `children` are suppo
 | rootClassName | Extra class on the root div | `string` | - |
 | children | Display content, and the default copy text and ellipsis title | `ReactNode` | - |
 | ellipsis | Single-line ellipsis. Omitted or `false` disables it; `true` uses the text inside `children` as the native title; an object accepts only `title` | `boolean \| { title?: string }` | `false` |
+| type | Text tone, matching antd Typography `type` | `secondary \| success \| warning \| danger` | - |
+| strong | Wrap the text in `strong` | `boolean` | `false` |
 | copyable | Built-in copy action. An object configures text, icons, native title, and the callback | `boolean \| ActionTextCopyConfig` | - |
 | clickable | Link or button semantics. An object configures navigation and visited state | `boolean \| ActionTextClickableConfig` | - |
 | actions | Custom nodes rendered after the copy button | `ReactNode` | - |

@@ -11,6 +11,9 @@ import useStyle from './style'
 /** 操作区展示策略：跟随自身 hover、跟随表格行 hover，或始终展示。 */
 export type ActionTextVisibleOn = 'self-hover' | 'table-row-hover' | 'always'
 
+/** 文本语义色，取值和 antd Typography 的 type 一致。 */
+export type ActionTextType = 'secondary' | 'success' | 'warning' | 'danger'
+
 /** 单行省略配置。全文提示使用原生 title，只接受字符串。 */
 export interface ActionTextEllipsisConfig {
   /** 原生 title。未传时，从 children 中的文本节点拼接全文。 */
@@ -98,6 +101,10 @@ export interface ActionTextProps extends Omit<
   children?: React.ReactNode
   /** 单行省略。不传或 false 关闭；true 用 children 中的文本作为原生 title；对象可指定 title。 */
   ellipsis?: boolean | ActionTextEllipsisConfig
+  /** 文本语义色。 */
+  type?: ActionTextType
+  /** 用 strong 包裹文本。 */
+  strong?: boolean
   /** 启用内置复制操作。 */
   copyable?: boolean | ActionTextCopyConfig
   /** 启用点击或链接语义。 */
@@ -198,6 +205,8 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
     style,
     children,
     ellipsis = false,
+    type,
+    strong,
     copyable,
     clickable,
     actions,
@@ -260,6 +269,8 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
     triggerVisitedChange()
   }
 
+  const decoratedChildren = strong ? <strong>{children}</strong> : children
+
   // 有 href 时输出语义正确的 a；无 href 时使用 button，避免用 div 模拟交互元素。
   const textNode = enableClickable ? (
     clickableConfig.href ? (
@@ -276,7 +287,7 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
         }
         onClick={handleTextClick}
       >
-        {children}
+        {decoratedChildren}
       </a>
     ) : (
       <button
@@ -286,11 +297,11 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
         })}
         onClick={handleTextClick}
       >
-        {children}
+        {decoratedChildren}
       </button>
     )
   ) : (
-    children
+    decoratedChildren
   )
 
   return (
@@ -315,6 +326,7 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
         className={clsx(
           `${prefixCls}-text`,
           { [`${prefixCls}-text-ellipsis`]: singleLineEllipsis },
+          type && `${prefixCls}-text-${type}`,
           mergedClassNames.text,
         )}
         style={{ ...mergedStyles.text, margin: 0 }}

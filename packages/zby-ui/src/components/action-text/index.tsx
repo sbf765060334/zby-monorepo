@@ -10,6 +10,7 @@ export type {
   ActionTextSemanticName,
   ActionTextSemanticStyles,
   ActionTextStylesType,
+  ActionTextType,
   ActionTextVisibleOn,
 } from './ActionText'
 

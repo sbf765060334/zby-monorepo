@@ -16,6 +16,7 @@ import MultilineEllipsisExample from './examples/MultilineEllipsisExample'
 import SemanticStylesExample from './examples/SemanticStylesExample'
 import SelfHoverActionsExample from './examples/SelfHoverActionsExample'
 import SingleLineEllipsisExample from './examples/SingleLineEllipsisExample'
+import TextStyleExample from './examples/TextStyleExample'
 import ThemeRtlExample from './examples/ThemeRtlExample'
 
 export default function ActionTextPlayground() {
@@ -29,6 +30,7 @@ export default function ActionTextPlayground() {
           <SingleLineEllipsisExample />
           <MultilineEllipsisExample />
           <DisabledEllipsisExample />
+          <TextStyleExample />
         </PlaygroundGrid>
       </PlaygroundSection>
       <PlaygroundSection title="复制能力">

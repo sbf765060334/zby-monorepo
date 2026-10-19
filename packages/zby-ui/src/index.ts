@@ -18,6 +18,7 @@ export type {
   ActionTextSemanticName,
   ActionTextSemanticStyles,
   ActionTextStylesType,
+  ActionTextType,
   ActionTextVisibleOn,
 } from './components/action-text'
 export { default as ActionReveal } from './components/action-reveal'

@@ -61,6 +61,39 @@ function genActionTextStyle(token: ActionTextToken, tableRowHoverClass: string):
         textOverflow: 'ellipsis',
       },
 
+      [`${componentCls}-text-secondary`]: {
+        color: token.colorTextDescription,
+      },
+      [`${componentCls}-text-success`]: {
+        color: token.colorSuccessText,
+      },
+      [`${componentCls}-text-warning`]: {
+        color: token.colorWarningText,
+      },
+      [`${componentCls}-text-danger`]: {
+        color: token.colorErrorText,
+      },
+
+      // 可点击文本自带链接色，有 type 时改回继承，避免盖住语义色。
+      [`
+        ${componentCls}-text-secondary,
+        ${componentCls}-text-success,
+        ${componentCls}-text-warning,
+        ${componentCls}-text-danger
+      `]: {
+        [`${componentCls}-text-link, ${componentCls}-text-button`]: {
+          color: 'inherit',
+
+          '&:hover': {
+            color: 'inherit',
+          },
+        },
+      },
+
+      strong: {
+        fontWeight: token.fontWeightStrong,
+      },
+
       [`${componentCls}-text-link, ${componentCls}-text-button`]: {
         // a 和 button 统一成文本链接外观，保留各自原生语义。
         display: 'inline',

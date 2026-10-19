@@ -191,6 +191,8 @@ export default () => {
 | rootClassName | 追加到最外层 div 的额外 className | `string` | - |
 | children | 展示内容，也是默认复制文本和省略 title 来源 | `ReactNode` | - |
 | ellipsis | 单行省略。不写或 `false` 关闭；`true` 用 children 中的文本作为原生 title；对象只接受 `title` | `boolean \| { title?: string }` | `false` |
+| type | 文本语义色，和 antd Typography 的 `type` 一致 | `secondary \| success \| warning \| danger` | - |
+| strong | 用 `strong` 加粗文本 | `boolean` | `false` |
 | copyable | 是否显示内置复制操作；对象形式可配置文本、图标、原生 title 和回调 | `boolean \| ActionTextCopyConfig` | - |
 | clickable | 是否让文本具备按钮/链接语义；对象形式配置链接和访问状态 | `boolean \| ActionTextClickableConfig` | - |
 | actions | 放在复制按钮之后的自定义操作节点 | `ReactNode` | - |
