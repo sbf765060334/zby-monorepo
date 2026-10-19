@@ -5,12 +5,10 @@ import * as React from 'react'
 
 type GlobalToken = ReturnType<typeof antdTheme.useToken>['token']
 
-/** 在 antd 全局 token 基础上补充当前组件和 antd 根选择器。 */
+/** 在 antd 全局 token 基础上补充当前组件根选择器。 */
 type ActionTextToken = GlobalToken & {
   /** 当前 ActionText 根选择器，例如 .ant-action-text。 */
   componentCls: string
-  /** ConfigProvider 生成的 antd 根前缀，例如 .ant。 */
-  antCls: string
 }
 
 /** 复用 antd 组件的基础 reset，使字体、字号和盒模型跟随主题。 */
@@ -27,10 +25,9 @@ function resetComponent(token: ActionTextToken): CSSObject {
   }
 }
 
-/** 生成文本、操作区和编辑 Popover 的完整组件样式。 */
+/** 生成文本和操作区的完整组件样式。 */
 function genActionTextStyle(token: ActionTextToken): CSSObject {
   const { componentCls } = token
-  const editPopoverCls = `${componentCls}-edit-popover`
   const actionVisibleStyle: CSSObject = {
     display: 'inline-flex',
     pointerEvents: 'auto',
@@ -49,11 +46,19 @@ function genActionTextStyle(token: ActionTextToken): CSSObject {
       gap: token.marginXXS,
 
       [`${componentCls}-text`]: {
+        // inline-block 让文本在根节点被改成 block 时仍有自己的宽度，text-overflow 才能生效。
         // minWidth: 0 是 flex 子项触发文本省略的必要条件。
+        display: 'inline-block',
         flex: '0 1 auto',
         minWidth: 0,
         maxWidth: '100%',
         margin: 0,
+      },
+
+      [`${componentCls}-text-ellipsis`]: {
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
       },
 
       [`${componentCls}-text-link, ${componentCls}-text-button`]: {
@@ -107,27 +112,6 @@ function genActionTextStyle(token: ActionTextToken): CSSObject {
       [`&:hover ${componentCls}-actions-self-hover`]: actionVisibleStyle,
       [`${componentCls}-actions-always`]: actionVisibleStyle,
     },
-
-    [editPopoverCls]: {
-      // Popover 挂载在 portal 中，因此使用独立 root className 作为样式作用域。
-      [`${componentCls}-edit-content`]: {
-        width: 260,
-      },
-
-      [`${componentCls}-edit-form`]: {
-        [`${componentCls}-edit-footer`]: {
-          // 确认和取消按钮固定右对齐，与表单主体保持小号间距。
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBlockStart: token.marginSM,
-        },
-
-        [`${componentCls}-edit-footer ${token.antCls}-form-item`]: {
-          // 自定义 footer 中若复用 Form.Item，不继承默认底部留白。
-          marginBlockEnd: 0,
-        },
-      },
-    },
   }
 }
 
@@ -137,9 +121,7 @@ function genActionTextStyle(token: ActionTextToken): CSSObject {
  */
 export default function useStyle(prefixCls: string) {
   const { theme, token, hashId, cssVar } = antdTheme.useToken()
-  const { getPrefixCls, theme: themeConfig } = React.useContext(
-    ConfigProvider.ConfigContext,
-  )
+  const { theme: themeConfig } = React.useContext(ConfigProvider.ConfigContext)
   const styleToken = cssVar ?? token
   // 开启 antd cssVar 时使用调用方 key；未开启时保留稳定的默认根类。
   const cssVarKey =
@@ -148,7 +130,6 @@ export default function useStyle(prefixCls: string) {
   const mergedToken: ActionTextToken = {
     ...styleToken,
     componentCls: `.${prefixCls}`,
-    antCls: `.${getPrefixCls()}`,
   }
 
   useStyleRegister(

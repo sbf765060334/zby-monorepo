@@ -9,6 +9,7 @@ import * as React from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { zbyUiIntlResources } from '../../../locale/intl-resources'
+import ActionIcon from '../../action-icon'
 import ActionText from '../index'
 
 const originalResizeObserver = globalThis.ResizeObserver
@@ -69,13 +70,15 @@ afterEach(() => {
 })
 
 describe('ActionText', () => {
-  it('renders text and small ActionIcon actions', () => {
+  it('renders text and custom actions', () => {
     const { container } = render(
       <ActionText
-        actions={[
-          { key: 'copy', icon: <CopyOutlined />, label: 'Copy' },
-          { key: 'edit', icon: <EditOutlined />, label: 'Edit', color: 'primary' },
-        ]}
+        actions={
+          <>
+            <ActionIcon size="small" icon={<CopyOutlined />} aria-label="Copy" />
+            <ActionIcon size="small" icon={<EditOutlined />} aria-label="Edit" />
+          </>
+        }
       >
         Shop name
       </ActionText>,
@@ -83,61 +86,135 @@ describe('ActionText', () => {
 
     expect(container.querySelector('.ant-action-text')).not.toBeNull()
     expect(container.querySelector('.ant-action-text-text')?.textContent).toBe('Shop name')
-    expect(container.querySelectorAll('.ant-action-text-action')).toHaveLength(2)
     expect(container.querySelectorAll('.ant-action-icon-sm')).toHaveLength(2)
     expect(container.querySelector('[aria-label="Copy"]')).not.toBeNull()
+    expect(container.querySelector('.ant-typography')).toBeNull()
   })
 
-  it('passes ellipsis rows to Typography.Paragraph and resets text margin', () => {
+  it('uses native single-line ellipsis and a title attribute', () => {
     const { container } = render(
-      <ActionText ellipsis={{ rows: 2, tooltip: true }}>
+      <ActionText ellipsis={{ title: 'Full shop name' }}>
         Very very very long shop name
       </ActionText>,
     )
     const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
 
-    expect(text.classList.contains('ant-typography-ellipsis-multiple-line')).toBe(true)
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(true)
+    expect(text.getAttribute('title')).toBe('Full shop name')
     expect(text.style.margin).toBe('0px')
-    expect(text.style.webkitLineClamp).toBe('2')
+    expect(container.querySelector('.ant-typography')).toBeNull()
   })
 
-  it('supports self hover and always visible modes', () => {
+  it('lets styles.text clamp multiple lines without the single-line class', () => {
+    const { container } = render(
+      <ActionText
+        styles={{
+          text: {
+            display: '-webkit-box',
+            overflow: 'hidden',
+            whiteSpace: 'normal',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: 2,
+          },
+        }}
+      >
+        Very very very long shop name
+      </ActionText>,
+    )
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(false)
+    expect(text.hasAttribute('title')).toBe(false)
+    expect(text.style.webkitLineClamp).toBe('2')
+    expect(text.style.whiteSpace).toBe('normal')
+  })
+
+  it('keeps ellipsis off unless the prop is enabled', () => {
+    const { container } = render(<ActionText>Shop name</ActionText>)
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(false)
+    expect(text.hasAttribute('title')).toBe(false)
+  })
+
+  it('uses string children as the native title when ellipsis is enabled', () => {
+    const { container } = render(<ActionText ellipsis>Shop name</ActionText>)
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(true)
+    expect(text.getAttribute('title')).toBe('Shop name')
+  })
+
+  it('joins text from arrays, fragments, and nested elements', () => {
+    const { container } = render(
+      <ActionText ellipsis style={{ display: 'block', width: 120 }}>
+        <>
+          订单 <span>{2026}</span>
+        </>
+      </ActionText>,
+    )
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.getAttribute('title')).toBe('订单 2026')
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(true)
+    expect(getComputedStyle(text).display).toBe('inline-block')
+  })
+
+  it('does not invent a title for a component that renders its own text', () => {
+    const ShopName = () => <span>Hidden shop</span>
+    const { container } = render(
+      <ActionText ellipsis>
+        <ShopName />
+      </ActionText>,
+    )
+
+    expect(container.querySelector('.ant-action-text-text')?.getAttribute('title')).toBeNull()
+  })
+
+  it('omits the ellipsis class and title when ellipsis is disabled', () => {
+    const { container } = render(<ActionText ellipsis={false}>Shop name</ActionText>)
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(false)
+    expect(text.hasAttribute('title')).toBe(false)
+  })
+
+  it('supports self hover, always visible, and forced visible modes', () => {
+    const action = <button type="button">Edit</button>
     const { container } = render(
       <>
-        <ActionText
-          actions={[{ key: 'copy', icon: <CopyOutlined />, label: 'Copy' }]}
-          actionsVisibleOn="self-hover"
-        >
+        <ActionText actions={action} actionsVisibleOn="self-hover">
           Self
         </ActionText>
-        <ActionText
-          actions={[{ key: 'copy', icon: <CopyOutlined />, label: 'Copy' }]}
-          actionsVisibleOn="always"
-        >
+        <ActionText actions={action} actionsVisibleOn="always">
           Always
+        </ActionText>
+        <ActionText actions={action} actionsVisibleOn="self-hover" actionsVisible>
+          Pinned
         </ActionText>
       </>,
     )
 
     expect(container.querySelector('.ant-action-text-actions-self-hover')).not.toBeNull()
-    expect(container.querySelector('.ant-action-text-actions-always')).not.toBeNull()
+    expect(container.querySelectorAll('.ant-action-text-actions-always')).toHaveLength(2)
   })
 
   it('supports semantic callbacks with normalized props', () => {
     const { container } = render(
       <ActionText
+        copyable
         actionsVisibleOn="always"
         classNames={({ props }) => ({
           root: props.actionsVisibleOn === 'always' ? 'custom-root' : undefined,
           text: 'custom-text',
           actions: 'custom-actions',
-          action: 'custom-action',
+          action: props.actionsVisible === false ? 'custom-action' : undefined,
         })}
         styles={({ props }) => ({
           root: { width: props.actionsVisibleOn === 'always' ? 240 : undefined },
           text: { color: 'rgb(255, 0, 0)' },
         })}
-        actions={[{ key: 'copy', icon: <CopyOutlined />, label: 'Copy' }]}
+        actions={<ActionIcon size="small" icon={<CopyOutlined />} aria-label="Copy" />}
       >
         Styled shop
       </ActionText>,
@@ -197,83 +274,11 @@ describe('ActionText', () => {
     expect(container.querySelector('.ant-tooltip')).toBeNull()
   })
 
-  it('uses zby intl messages for built-in action labels', async () => {
-    const { container, getByText } = render(
-      <ConfigProvider theme={{ token: { motion: false } }}>
-        <ActionText copyable editable>
-          Shop name
-        </ActionText>
-      </ConfigProvider>,
-      'en-US',
-    )
+  it('uses zby intl messages for the built-in copy label', () => {
+    const { container } = render(<ActionText copyable>Shop name</ActionText>, 'en-US')
 
     expect(container.querySelector('[data-action-text-copy]')?.getAttribute('aria-label')).toBe(
       'Copy',
-    )
-    expect(container.querySelector('[data-action-text-edit]')?.getAttribute('aria-label')).toBe(
-      'Edit',
-    )
-
-    fireEvent.click(container.querySelector('[data-action-text-edit]')!)
-    await waitFor(() => {
-      expect(getByText('OK')).not.toBeNull()
-      expect(getByText('Cancel')).not.toBeNull()
-    })
-  })
-
-  it('opens the editable popover and submits the form', async () => {
-    const onConfirm = vi.fn()
-    const { container, getByText } = render(
-      <ConfigProvider theme={{ token: { motion: false } }}>
-        <ActionText
-          editable={{
-            text: 'Shop name',
-            title: 'Edit shop',
-            confirmText: 'Save',
-            cancelText: 'Cancel',
-            onConfirm,
-          }}
-        >
-          Shop name
-        </ActionText>
-      </ConfigProvider>,
-    )
-
-    fireEvent.click(container.querySelector('[data-action-text-edit]')!)
-    await waitFor(() => {
-      expect(document.querySelector('.ant-input')).not.toBeNull()
-    })
-    const input = document.querySelector<HTMLInputElement>('.ant-input')!
-    expect(input.value).toBe('Shop name')
-
-    fireEvent.change(input, { target: { value: 'New shop' } })
-    fireEvent.click(getByText('Save'))
-
-    await waitFor(() => {
-      expect(onConfirm).toHaveBeenCalledWith(
-        'New shop',
-        expect.objectContaining({ values: { value: 'New shop' } }),
-      )
-    })
-  })
-
-  it('uses Form initialValues without duplicating Form.Item initialValue', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const { container } = render(
-      <ConfigProvider theme={{ token: { motion: false } }}>
-        <ActionText editable={{ text: 'Initial shop' }}>Shop name</ActionText>
-      </ConfigProvider>,
-    )
-
-    fireEvent.click(container.querySelector('[data-action-text-edit]')!)
-    await waitFor(() => {
-      expect(document.querySelector<HTMLInputElement>('.ant-input')?.value).toBe(
-        'Initial shop',
-      )
-    })
-
-    expect(consoleError.mock.calls.flat().join(' ')).not.toContain(
-      'Form already set \'initialValues\'',
     )
   })
 
@@ -306,22 +311,6 @@ describe('ActionText', () => {
     fireEvent.click(link, { ctrlKey: true })
     expect(onClick).toHaveBeenCalledTimes(1)
     expect(onVisitedChange).toHaveBeenCalledTimes(1)
-  })
-
-  it('emits controlled editable open changes once', async () => {
-    const onOpenChange = vi.fn()
-    const { container } = render(
-      <ConfigProvider theme={{ token: { motion: false } }}>
-        <ActionText editable={{ open: false, onOpenChange }}>Shop name</ActionText>
-      </ConfigProvider>,
-    )
-
-    fireEvent.click(container.querySelector('[data-action-text-edit]')!)
-
-    await waitFor(() => {
-      expect(onOpenChange).toHaveBeenCalledTimes(1)
-      expect(onOpenChange).toHaveBeenCalledWith(true)
-    })
   })
 
   it('keeps defined state semantics when switching to uncontrolled mode', () => {
@@ -379,7 +368,7 @@ describe('ActionText', () => {
 
     render(
       <StyleProvider cache={cache}>
-        <ActionText actions={[{ key: 'copy', icon: <CopyOutlined />, label: 'Copy' }]}>
+        <ActionText actions={<button type="button">Copy</button>}>
           Very very very long shop name
         </ActionText>
       </StyleProvider>,
@@ -390,6 +379,8 @@ describe('ActionText', () => {
     expect(styleText).toContain('display:inline-flex')
     expect(styleText).toContain('.ant-action-text-text')
     expect(styleText).toContain('.ant-action-text-actions-self-hover')
-    expect(styleText).toContain('.ant-action-text-edit-popover')
+    expect(styleText).toContain('.ant-action-text-text-ellipsis')
+    expect(styleText).toContain('text-overflow:ellipsis')
+    expect(styleText).toContain('display:inline-block')
   })
 })

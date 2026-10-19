@@ -9,14 +9,9 @@ export type {
 } from './components/action-icon'
 export { default as ActionText } from './components/action-text'
 export type {
-  ActionTextAction,
   ActionTextClassNamesType,
   ActionTextClickableConfig,
   ActionTextCopyConfig,
-  ActionTextEditableCancelInfo,
-  ActionTextEditableConfig,
-  ActionTextEditableConfirmInfo,
-  ActionTextEditableRenderContext,
   ActionTextEllipsisConfig,
   ActionTextProps,
   ActionTextSemanticClassNames,

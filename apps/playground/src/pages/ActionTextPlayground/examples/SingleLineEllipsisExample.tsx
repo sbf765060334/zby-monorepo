@@ -5,11 +5,11 @@ import { LONG_SHOP_NAME } from '../shared'
 export default function SingleLineEllipsisExample() {
   return (
     <PlaygroundCase
-      title="默认单行省略"
-      description="限制容器宽度，悬停文本可查看完整内容。"
+      title="单行省略"
+      description="需要显式传入 ellipsis。限制容器宽度后，悬停文本由原生 title 展示全文。"
     >
       <div style={{ width: '100%', maxWidth: 360, minWidth: 0 }}>
-        <ActionText>{LONG_SHOP_NAME}</ActionText>
+        <ActionText ellipsis>{LONG_SHOP_NAME}</ActionText>
       </div>
     </PlaygroundCase>
   )

@@ -5,10 +5,10 @@ import { LONG_SHOP_NAME } from '../shared'
 
 export default function DisabledEllipsisExample() {
   return (
-    <PlaygroundCase title="关闭省略">
+    <PlaygroundCase title="不写 ellipsis" description="省略默认关闭，文本按内容换行。">
       <Space orientation="vertical">
-        <ActionText ellipsis={false}>{LONG_SHOP_NAME}</ActionText>
-        <ActionText ellipsis={false}>{20260804}</ActionText>
+        <ActionText>{LONG_SHOP_NAME}</ActionText>
+        <ActionText>{20260804}</ActionText>
       </Space>
     </PlaygroundCase>
   )

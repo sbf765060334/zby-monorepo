@@ -1,5 +1,5 @@
 import { MoreOutlined } from '@ant-design/icons'
-import { ActionText } from '@zby/ui'
+import { ActionIcon, ActionText } from '@zby/ui'
 import { ConfigProvider, Space, Tag, theme } from 'antd'
 import { PlaygroundCase } from '../../../components/ComponentPlayground'
 
@@ -26,9 +26,7 @@ export default function ThemeRtlExample() {
           <ActionText
             copyable
             actionsVisibleOn="always"
-            actions={[
-              { key: 'rtl-more', icon: <MoreOutlined />, label: '更多' },
-            ]}
+            actions={<ActionIcon size="small" icon={<MoreOutlined />} aria-label="更多" />}
           >
             RTL、暗色主题、CSS Variables 与自定义 prefixCls
           </ActionText>

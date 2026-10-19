@@ -1,5 +1,5 @@
 import { LinkOutlined } from '@ant-design/icons'
-import { ActionText } from '@zby/ui'
+import { ActionIcon, ActionText } from '@zby/ui'
 import { Space, Switch, theme } from 'antd'
 import * as React from 'react'
 import { PlaygroundCase } from '../../../components/ComponentPlayground'
@@ -38,7 +38,9 @@ export default function SemanticStylesExample() {
                 }
               : {}
           }
-          actions={[{ key: 'link', icon: <LinkOutlined />, label: '打开链接' }]}
+          actions={
+            <ActionIcon size="small" icon={<LinkOutlined />} aria-label="打开链接" />
+          }
         >
           可切换的语义节点样式
         </ActionText>

@@ -3,14 +3,12 @@ import {
   PlaygroundPage,
   PlaygroundSection,
 } from '../../components/ComponentPlayground'
-import AdvancedEditExample from './examples/AdvancedEditExample'
 import AlwaysActionsExample from './examples/AlwaysActionsExample'
 import AsyncCopyExample from './examples/AsyncCopyExample'
 import BasicCopyExample from './examples/BasicCopyExample'
-import BasicEditExample from './examples/BasicEditExample'
 import ButtonClickExample from './examples/ButtonClickExample'
-import ControlledEditExample from './examples/ControlledEditExample'
 import ControlledVisitedExample from './examples/ControlledVisitedExample'
+import CustomPopoverExample from './examples/CustomPopoverExample'
 import DisabledEllipsisExample from './examples/DisabledEllipsisExample'
 import HtmlCopyExample from './examples/HtmlCopyExample'
 import LinkStatesExample from './examples/LinkStatesExample'
@@ -24,7 +22,7 @@ export default function ActionTextPlayground() {
   return (
     <PlaygroundPage
       title="ActionText"
-      description="文本省略、复制、编辑、点击访问、自定义操作与主题兼容。"
+      description="单行省略、复制、点击访问、自定义操作与主题兼容。"
     >
       <PlaygroundSection title="基础文本与省略">
         <PlaygroundGrid>
@@ -40,13 +38,6 @@ export default function ActionTextPlayground() {
           <HtmlCopyExample />
         </PlaygroundGrid>
       </PlaygroundSection>
-      <PlaygroundSection title="编辑能力">
-        <PlaygroundGrid>
-          <BasicEditExample />
-          <AdvancedEditExample />
-          <ControlledEditExample />
-        </PlaygroundGrid>
-      </PlaygroundSection>
       <PlaygroundSection title="点击访问状态">
         <PlaygroundGrid>
           <ButtonClickExample />
@@ -58,6 +49,7 @@ export default function ActionTextPlayground() {
         <PlaygroundGrid>
           <SelfHoverActionsExample />
           <AlwaysActionsExample />
+          <CustomPopoverExample />
           <SemanticStylesExample />
           <ThemeRtlExample />
         </PlaygroundGrid>

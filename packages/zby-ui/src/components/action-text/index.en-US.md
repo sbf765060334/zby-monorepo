@@ -2,57 +2,82 @@
 category: Components
 group: General
 title: ActionText
-description: Adds copy, edit, click-through, and custom lightweight actions to truncated text.
+subtitle: Action text
+description: Single-line ellipsis text with copy, click-through, and custom lightweight actions.
 ---
 
-## When To Use
+## When to use
 
-ActionText is designed for data displays where text is primary and actions are secondary:
+ActionText is for cases where the text is primary and the actions are secondary:
 
-- Long text in table cells, list rows, descriptions, and detail fields;
-- Single-line or multi-line ellipsis with a full-content Tooltip;
-- Copy, Popover edit, or custom icon actions after the text;
-- Text that behaves as a link or text button with controlled or uncontrolled visited state;
-- Actions that appear when ActionText itself is hovered or remain visible at all times.
+- Long text in table cells, list items, descriptions, and detail fields;
+- Single-line ellipsis with the full text in the native `title`;
+- A copy action or custom icons after the text;
+- Text that should be a link or a button, with controlled or uncontrolled visited state;
+- Actions that appear on hover of the ActionText itself, or that always take layout space.
 
-Avoid it when:
+It is usually the wrong choice when:
 
-- The action is a page-level primary action. Use a labeled `Button` or a dedicated action area;
-- The content contains complex interactive elements or requires free-form layout. Compose Typography, Flex, and ActionIcon directly;
-- Editing needs many fields, multiple steps, or a complex submission flow. Use a Modal, Drawer, or standalone form;
-- Actions are expected to follow Table row hover. ActionText observes only its own hover state and has no Table coupling.
+- The action is a primary page action: use `Button` or a dedicated action area;
+- The text contains complex interactive content: compose Typography, Flex, and ActionIcon directly;
+- Editing, confirmation, or overlays are required: put the button and Popover or Modal in `actions`;
+- Actions should follow a Table row hover: ActionText only listens to its own hover.
 
-## How To Use
+## Examples
 
 ### Ellipsis, copy, and a custom action
 
 ```tsx
 import { EyeOutlined } from '@ant-design/icons'
-import { ActionText } from '@zby/ui'
+import { ActionIcon, ActionText } from '@zby/ui'
 
 export default () => (
   <div style={{ width: 320 }}>
     <ActionText
+      ellipsis
       copyable
-      ellipsis={{ rows: 2, tooltip: true }}
-      actions={[
-        {
-          key: 'view',
-          icon: <EyeOutlined />,
-          label: 'View details',
-          onClick: () => console.log('view'),
-        },
-      ]}
+      actions={
+        <ActionIcon
+          size="small"
+          icon={<EyeOutlined />}
+          aria-label="View details"
+          onClick={() => console.log('view')}
+        />
+      }
     >
-      Long text that may need truncation, copy, and a detail action
+      A long piece of text that may be truncated, copied, and inspected
     </ActionText>
   </div>
 )
 ```
 
-Ellipsis requires a calculable width constraint from the parent, a table column, or `styles.root`. Action order is fixed: copy → edit → custom `actions`.
+Single-line ellipsis needs a calculable width from the parent, a table column, or `styles.root`. Action order is fixed: copy → `actions`.
 
-### Custom copy content and feedback
+Omitting `ellipsis` leaves the text untruncated and does not set a native `title`. `ellipsis` or `ellipsis={true}` enables single-line ellipsis and joins the text inside `children` into the native `title`. Text rendered inside a component, rather than passed through `children`, is not included; pass `ellipsis={{ title }}` for that case.
+
+### Multiple lines
+
+There is no multi-line ellipsis option. Omit `ellipsis` and put the clamp styles on `styles.text`:
+
+```tsx
+<ActionText
+  styles={{
+    text: {
+      display: '-webkit-box',
+      overflow: 'hidden',
+      whiteSpace: 'normal',
+      WebkitBoxOrient: 'vertical',
+      WebkitLineClamp: 2,
+    },
+  }}
+>
+  A long piece of text that should wrap to two lines
+</ActionText>
+```
+
+Omitting `ellipsis` does not add the single-line `nowrap` rule or a native `title`. The root `style` targets the outer flex container and cannot clamp the inner text. If `ellipsis` and `styles.text.WebkitLineClamp` are both set, the line clamp overrides `nowrap` and the title still follows `ellipsis`.
+
+### Custom copy content
 
 ```tsx
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons'
@@ -74,28 +99,51 @@ export default () => (
 
 Success feedback and `onCopy` run only after the clipboard write succeeds. Feedback remains for about three seconds. Complex React children do not automatically become useful business text; provide `copyable.text` explicitly.
 
-### Popover editing
+### Custom overlay
+
+ActionText does not ship an edit popover. Render the trigger in `actions` and own the overlay. `self-hover` hides the action area once the pointer leaves the root, which also hides a trigger whose popup is portaled to `body`. Set `actionsVisible` while that popup is open.
 
 ```tsx
-import { ActionText } from '@zby/ui'
+import { EditOutlined } from '@ant-design/icons'
+import { ActionIcon, ActionText } from '@zby/ui'
+import { Button, Input, Popover, Space } from 'antd'
 import { useState } from 'react'
 
 export default () => {
   const [name, setName] = useState('East warehouse')
+  const [draft, setDraft] = useState(name)
+  const [open, setOpen] = useState(false)
 
   return (
     <ActionText
-      editable={{
-        text: name,
-        title: 'Edit warehouse name',
-        formItemProps: {
-          rules: [{ required: true, message: 'Enter a warehouse name' }],
-        },
-        onConfirm: async (value) => {
-          await saveWarehouseName(value)
-          setName(value)
-        },
-      }}
+      actionsVisible={open}
+      actions={
+        <Popover
+          trigger="click"
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next)
+            if (next) setDraft(name)
+          }}
+          content={
+            <Space orientation="vertical">
+              <Input value={draft} onChange={(event) => setDraft(event.target.value)} />
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                  setName(draft)
+                  setOpen(false)
+                }}
+              >
+                Save
+              </Button>
+            </Space>
+          }
+        >
+          <ActionIcon size="small" icon={<EditOutlined />} aria-label="Edit" />
+        </Popover>
+      }
     >
       {name}
     </ActionText>
@@ -103,14 +151,9 @@ export default () => {
 }
 ```
 
-- `editable.text` is the current input value; business code still updates displayed `children` after a successful save;
-- When `onConfirm` returns a Promise, the confirm button loads until resolution. Rejection keeps the editor open;
-- `Form.initialValues` is the single initial-value source, and the main field overrides the same path in `formProps.initialValues`;
-- Every open synchronizes the latest `editable.text` or simple `children` and focuses the input.
-
 ### Click-through and visited state
 
-With `href`, ActionText renders a native link. Without it, it renders a `type="button"` text button:
+An `href` renders a native link. Without `href`, the text is a `type="button"` button:
 
 ```tsx
 import { ActionText } from '@zby/ui'
@@ -136,157 +179,53 @@ export default () => {
 }
 ```
 
-When `target="_blank"` is used without `rel`, `noopener noreferrer` is added automatically. Middle-clicks and Ctrl, Meta, Shift, or Alt modified link clicks keep native browser behavior and skip normal visited-state handling.
-
-### Custom edit form body
-
-`renderForm` can add fields while ActionText continues to provide confirm and cancel actions:
-
-```tsx
-import { ActionText } from '@zby/ui'
-import { Form, Switch } from 'antd'
-
-<ActionText
-  editable={{
-    name: ['product', 'name'],
-    formProps: {
-      initialValues: { product: { enabled: true } },
-    },
-    renderForm: ({ name, inputNode }) => (
-      <>
-        <Form.Item name={name} label="Name" rules={[{ required: true }]}>
-          {inputNode}
-        </Form.Item>
-        <Form.Item name={['product', 'enabled']} valuePropName="checked">
-          <Switch />
-        </Form.Item>
-      </>
-    ),
-    onConfirm: (value, { values }) => saveProduct(value, values),
-  }}
->
-  Product name
-</ActionText>
-```
+`target="_blank"` without `rel` receives `noopener noreferrer`. Middle-click and Ctrl, Meta, Shift, or Alt clicks keep the browser's native behavior and do not run the normal visited-state logic.
 
 ## Props
 
-Native `div` attributes except `children` are also accepted, including `id`, `className`, `style`, `onMouseEnter`, and `data-*`.
+Besides the props below, native `div` attributes other than `children` are supported, including `id`, `className`, `style`, `onMouseEnter`, and `data-*`.
 
 | Property | Description | Type | Default |
 | --- | --- | --- | --- |
-| prefixCls | Custom component class prefix | `string` | Generated by `ConfigProvider` |
-| rootClassName | Additional class name for the outer div | `string` | - |
-| children | Displayed content and the default copy/edit text source | `ReactNode` | - |
-| ellipsis | Ellipsis configuration; `true` means one line with children as Tooltip content | `boolean \| ActionTextEllipsisConfig` | `true` |
-| copyable | Enables the built-in copy action; object form configures text, icons, native title hints, and callback | `boolean \| ActionTextCopyConfig` | - |
-| editable | Enables the built-in edit action; object form configures Popover, Form, and submission | `boolean \| ActionTextEditableConfig` | - |
-| clickable | Gives the text link/button semantics; object form configures navigation and visited state | `boolean \| ActionTextClickableConfig` | - |
-| actions | Custom ActionIcon actions appended after copy and edit | `ActionTextAction[]` | - |
-| actionsVisibleOn | Shows actions on self hover or at all times | `self-hover \| always` | `self-hover` |
-| classNames | Semantic class-name object or callback | `ActionTextClassNamesType` | - |
-| styles | Semantic inline-style object or callback | `ActionTextStylesType` | - |
+| prefixCls | Class name prefix | `string` | From `ConfigProvider` |
+| rootClassName | Extra class on the root div | `string` | - |
+| children | Display content, and the default copy text and ellipsis title | `ReactNode` | - |
+| ellipsis | Single-line ellipsis. Omitted or `false` disables it; `true` uses the text inside `children` as the native title; an object accepts only `title` | `boolean \| { title?: string }` | `false` |
+| copyable | Built-in copy action. An object configures text, icons, native title, and the callback | `boolean \| ActionTextCopyConfig` | - |
+| clickable | Link or button semantics. An object configures navigation and visited state | `boolean \| ActionTextClickableConfig` | - |
+| actions | Custom nodes rendered after the copy button | `ReactNode` | - |
+| actionsVisibleOn | Show actions on self hover, or always | `self-hover \| always` | `self-hover` |
+| actionsVisible | Force the action area visible, so a custom popup can keep its trigger mounted | `boolean` | `false` |
+| classNames | Semantic class names, or a callback | `ActionTextClassNamesType` | - |
+| styles | Semantic inline styles, or a callback | `ActionTextStylesType` | - |
 
-Built-in copy and edit actions always use `ActionIcon size="small"`. Custom actions also default to `small`, but each `ActionTextAction` may override `size`.
-
-### ActionTextEllipsisConfig
-
-| Field | Description | Type | Default |
-| --- | --- | --- | --- |
-| rows | Maximum displayed lines | `number` | `1` |
-| tooltip | `true` uses original children; Tooltip content or full Tooltip props are also supported; `false` disables it | `boolean \| ReactNode \| TooltipProps` | Original children |
-
-`ellipsis={false}` disables Typography.Paragraph ellipsis.
+The built-in copy button always uses `ActionIcon size="small"`. `classNames.action` and `styles.action` apply only to that button. Custom action appearance belongs to the `actions` node.
 
 ### ActionTextCopyConfig
 
 | Field | Description | Type | Default |
 | --- | --- | --- | --- |
-| text | Copied text; a function is evaluated on click and may resolve asynchronously | `string \| (() => string \| Promise<string>)` | Shallow text joined from children |
-| onCopy | Called after the browser actually copies successfully | `(event?: MouseEvent<HTMLButtonElement>) => void` | - |
-| icon | One icon or `[before copy, after success]`; `false` falls back to the stage default | `ReactNode` | Copy / Check icons |
-| tooltips | One native title or `[before copy, after success]`; `false` omits the title | `string \| readonly [string?, string?] \| false` | Localized “Copy/Copied” |
+| text | Copied text. A function is evaluated on click and may be async | `string \| (() => string \| Promise<string>)` | Shallow join of children |
+| onCopy | Called after the browser copy succeeds | `(event?: MouseEvent<HTMLButtonElement>) => void` | - |
+| icon | One icon, or `[before, after]`. `false` uses the phase default | `ReactNode` | Copy / Check icons |
+| tooltips | One native title, or `[before, after]`. `false` omits the title | `string \| readonly [string?, string?] \| false` | Localized “Copy/Copied” |
 | format | Clipboard data format | `text/plain \| text/html` | `text/plain` |
-| tabIndex | Copy ActionIcon tab order | `number` | - |
+| tabIndex | Tab order of the copy ActionIcon | `number` | - |
 
-The `tooltips` property name is retained, but it now uses the browser-native `title` and no longer renders an antd Tooltip, so only strings are accepted. `aria-label` is always preserved; disabling the title does not remove the copy button's accessible name.
-
-### ActionTextEditableConfig
-
-| Field | Description | Type | Default |
-| --- | --- | --- | --- |
-| text | Current main-field text; takes priority over inferred children | `string` | String/number children or empty string |
-| open | Controlled Popover open state | `boolean` | - |
-| defaultOpen | Initial open state in uncontrolled mode | `boolean` | `false` |
-| onOpenChange | State notification from edit click, outside click, confirm, cancel, or programmatic close | `(open: boolean) => void` | - |
-| title | Popover title and edit-button accessible name | `ReactNode` | Localized “Edit” |
-| inputType | Default input component | `input \| textarea` | `input` |
-| inputProps | Props forwarded to the selected Input or Input.TextArea | `InputProps \| TextAreaProps` | - |
-| formProps | Props forwarded to Form; internal `form`, `initialValues`, and `onFinish` ultimately take control | `FormProps` | - |
-| formItemProps | Props for the default Form.Item; cannot override `name` or `initialValue` | `Omit<FormItemProps, 'name' \| 'initialValue'>` | - |
-| name | Main field path, including nested NamePath values | `NamePath` | `value` |
-| confirmText | Confirm button content | `ReactNode` | Localized “Confirm” |
-| cancelText | Cancel button content | `ReactNode` | Localized “Cancel” |
-| confirmButtonProps | Confirm Button props; loading and onClick are finally controlled internally | `ButtonProps` | - |
-| cancelButtonProps | Cancel Button props; onClick is finally controlled internally | `ButtonProps` | - |
-| popoverProps | Popover props except the component-managed content/open/trigger fields | `Omit<PopoverProps, component-managed fields>` | - |
-| renderForm | Custom form body | `(ctx: ActionTextEditableRenderContext) => ReactNode` | Default Form.Item + Input |
-| onConfirm | Runs after validation; Promise pending loads, resolve closes, and reject keeps the editor open | `(value, info) => void \| Promise<void>` | - |
-| onCancel | Runs when the user clicks cancel, before closing | `(info) => void` | - |
-
-#### ActionTextEditableRenderContext
-
-| Field | Description | Type |
-| --- | --- | --- |
-| form | Internal antd Form instance | `FormInstance` |
-| name | Main field path | `NamePath` |
-| inputNode | Default input built from `inputType` and `inputProps` | `ReactNode` |
-| open | Current Popover state | `boolean` |
-| loading | Whether asynchronous confirm is running | `boolean` |
-| confirm | Validates, submits, and closes after success | `() => Promise<void>` |
-| cancel | Calls `onCancel` and closes | `() => void` |
-| close | Closes without calling `onCancel` | `() => void` |
-
-#### ActionTextEditableConfirmInfo
-
-| Field | Description | Type |
-| --- | --- | --- |
-| form | Current edit Form instance | `FormInstance` |
-| values | Complete result from `validateFields()`, including fields added by renderForm | `any` |
-
-The first `onConfirm` argument is `form.getFieldValue(name)`; `info.values` contains the complete form result.
-
-#### ActionTextEditableCancelInfo
-
-| Field | Description | Type |
-| --- | --- | --- |
-| form | Current Form instance, available for reading values before cancellation | `FormInstance` |
+`tooltips` uses the browser native `title` and accepts only strings. `aria-label` remains when the title is disabled.
 
 ### ActionTextClickableConfig
 
 | Field | Description | Type | Default |
 | --- | --- | --- | --- |
-| href | Renders a native anchor when present; otherwise renders a text button | `string` | - |
-| target | Native anchor target | `HTMLAttributeAnchorTarget` | - |
-| rel | Native anchor rel; a safe value is added automatically for `_blank` | `string` | `noopener noreferrer` for `_blank` |
-| onClick | Normal primary-button click handler | `MouseEventHandler<HTMLElement>` | - |
+| href | Renders a native `a` when set; otherwise a text button | `string` | - |
+| target | Native link target | `HTMLAttributeAnchorTarget` | - |
+| rel | Native link rel. `_blank` fills the safe default when omitted | `string` | `noopener noreferrer` (only `_blank`) |
+| onClick | Primary-button click callback | `MouseEventHandler<HTMLElement>` | - |
 | disabled | Removes clickable semantics and renders normal text | `boolean` | `false` |
 | visited | Controlled visited state | `boolean` | - |
-| defaultVisited | Initial visited state in uncontrolled mode | `boolean` | `false` |
-| onVisitedChange | Called when entering visited state is first requested | `(visited: boolean) => void` | - |
-
-### ActionTextAction
-
-`ActionTextAction` inherits ActionIcon Props except `children`, `icon`, and `title`. It can configure `onClick`, `disabled`, `danger`, `selected`, `color`, `variant`, `shape`, `size`, `classNames`, `styles`, and native button attributes.
-
-| Field | Description | Type | Required |
-| --- | --- | --- | --- |
-| key | Stable React list key | `Key` | Yes |
-| icon | ActionIcon glyph | `ReactNode` | Yes |
-| label | Action description; a string is also the default accessible name when title is absent | `ReactNode` | No |
-| title | Native title; a string takes priority as the default accessible name | `ReactNode` | No |
-
-Provide `aria-label` explicitly when neither `label` nor `title` is a string.
+| defaultVisited | Initial uncontrolled visited state | `boolean` | `false` |
+| onVisitedChange | Called when visited first becomes true | `(visited: boolean) => void` | - |
 
 ### ActionTextClassNamesType / ActionTextStylesType
 
@@ -300,11 +239,11 @@ type ActionTextStylesType =
   | ((info: { props: ActionTextProps }) => Readonly<ActionTextSemanticStyles>)
 ```
 
-| Field | Node | classNames type | styles type |
+| Field | Node | classNames | styles |
 | --- | --- | --- | --- |
-| root | Outermost div | `string` | `CSSProperties` |
-| text | Typography.Paragraph text node | `string` | `CSSProperties` |
-| actions | Complete action-area container | `string` | `CSSProperties` |
-| action | Copy, edit, and every custom ActionIcon | `string` | `CSSProperties` |
+| root | Outer div | `string` | `CSSProperties` |
+| text | Text node | `string` | `CSSProperties` |
+| actions | Action area | `string` | `CSSProperties` |
+| action | Built-in copy button | `string` | `CSSProperties` |
 
-Callback `props.actionsVisibleOn` includes its default value of `self-hover`.
+Callback `props.actionsVisibleOn` includes its default `self-hover`. Callback `props.actionsVisible` includes its default `false`.
