@@ -207,6 +207,30 @@ const columns = [
 ]
 
 describe('Table', () => {
+  it('gives cells the table background and lets a row class override it', () => {
+    const style = document.createElement('style')
+    style.textContent = '.cover-row > td { background-color: rgb(255, 0, 0); }'
+    document.head.appendChild(style)
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        rowClassName={(_record, index) => (index === 0 ? 'cover-row' : '')}
+        columns={[{ dataIndex: 'name', title: 'Name' }]}
+        dataSource={data}
+      />,
+    )
+    const cells = container.querySelectorAll<HTMLElement>('.ant-table-tbody .ant-table-cell')
+    const css = Array.from(document.querySelectorAll('style'))
+      .map((node) => node.textContent ?? '')
+      .join('\n')
+
+    expect(css).toContain('.ant-table-cell{background:')
+    expect(getComputedStyle(cells[0]).backgroundColor).toBe('rgb(255, 0, 0)')
+    expect(getComputedStyle(cells[1]).backgroundColor).not.toBe('rgb(255, 0, 0)')
+    style.remove()
+  })
+
   it('enables uncontrolled current-row highlighting with a boolean', () => {
     const { container } = render(
       <Table<RowData>
