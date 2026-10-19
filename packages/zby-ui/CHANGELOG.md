@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.2.4
+
+### Patch Changes
+
+- 单元格增加底色
+
 ## 0.2.3
 
 ### Patch Changes
