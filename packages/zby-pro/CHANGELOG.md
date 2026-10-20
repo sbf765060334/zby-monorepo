@@ -1,5 +1,16 @@
 # @zby/pro
 
+## 0.3.0
+
+### Minor Changes
+
+- 移除 ZbyConfigProvider。应用根节点改由 ReactRouterProLayout 包裹 ConfigProvider、App 和 ZbyIntlProvider；不用布局的页面自行组合这三层。
+
+### Patch Changes
+
+- Updated dependencies
+  - @zby/ui@0.3.0
+
 ## 0.2.12
 
 ### Patch Changes
