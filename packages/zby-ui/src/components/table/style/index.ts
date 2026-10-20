@@ -268,13 +268,12 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
   } = token
   const tableBorder = `${unit(lineWidth)} ${lineType} ${tableBorderColor}`
   return {
-    // 单个类名，方便悬停、选中、当前行、排序列，以及 rowClassName 写到 td 上的背景覆盖它。
-    // 后一个单元格用和表格相同的底色盖住前一个单元格溢出来的内容。
-    [`${componentCls}-cell`]: {
-      background: tableBg,
-    },
-
     [`${componentCls}-wrapper`]: {
+      // hash 在 wrapper 上。:where 不增加优先级，悬停、选中和行样式仍能覆盖这层底色。
+      [`:where(${componentCls}-cell)`]: {
+        background: tableBg,
+      },
+
       clear: 'both',
       maxWidth: '100%',
       // fix https://github.com/ant-design/ant-design/issues/46177

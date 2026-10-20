@@ -16,7 +16,7 @@ import {
   type ProTableFilter,
   type ProTableQueryRequest,
 } from '@zby/pro'
-import { App, Button, Cascader, DatePicker, Input, Select, Switch, TimePicker, TreeSelect } from 'antd'
+import { App, Button, Cascader, DatePicker, Input, Select, Switch, Tag, TimePicker, TreeSelect } from 'antd'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
@@ -299,6 +299,17 @@ function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
       dataIndex: 'orderNo',
       width: 136,
       sorter: true,
+    },
+    {
+      key: 'longTag',
+      title: '长标签',
+      dataIndex: 'longTag',
+      width: 120,
+      render: (_value, record) => (
+        <Tag style={{ whiteSpace: 'nowrap' }}>
+          {record.customer} Pending warehouse confirmation
+        </Tag>
+      ),
     },
     {
       key: 'customer',
