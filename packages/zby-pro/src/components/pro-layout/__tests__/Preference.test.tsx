@@ -11,8 +11,8 @@ import { useContext } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import proEnUS from '../../../locale/en_US'
-import proZhCN from '../../../locale/zh_CN'
+import proEnUS from '../../../locales/en_US'
+import proZhCN from '../../../locales/zh_CN'
 import ReactRouterProLayout, { useLocale, useTheme } from '../index'
 import type { ProLayoutRoute } from '../types'
 

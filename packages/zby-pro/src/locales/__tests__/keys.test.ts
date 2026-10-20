@@ -18,7 +18,7 @@ function messageKeys(value: unknown, prefix = ''): string[] {
 }
 
 describe('pro locale packs', () => {
-  it('keeps Vietnamese and Burmese keys aligned with Chinese', () => {
+  it('keeps English, Vietnamese, and Burmese keys aligned with Chinese', () => {
     const base = messageKeys(zhCN).sort()
     expect(messageKeys(enUS).sort()).toEqual(base)
     expect(messageKeys(viVN).sort()).toEqual(base)
