@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.1
+
+### Patch Changes
+
+- 新增 layout.header
+
 ## 0.3.0
 
 ### Minor Changes
