@@ -1,6 +1,6 @@
 import * as React from 'react'
 import type { ReactNode } from 'react'
-import { Badge, Progress, Space, Tag, theme } from 'antd'
+import { Badge, Space, theme } from 'antd'
 import type { BadgeProps } from 'antd'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
@@ -40,7 +40,6 @@ type ObjectValueTypeConfig = {
   showSymbol?: boolean | ((value: unknown) => boolean)
   showColor?: boolean
   moneySymbol?: boolean
-  status?: 'normal' | 'active' | 'success' | 'exception'
 }
 
 export type FormatColumnValueOptions = {
@@ -263,13 +262,6 @@ function PercentValue({
   )
 }
 
-function getProgressStatus(value: number): 'success' | 'exception' | 'normal' | 'active' {
-  if (value === 100) return 'success'
-  if (value < 0) return 'exception'
-  if (value < 100) return 'active'
-  return 'normal'
-}
-
 function renderIndex(index: number, options?: FormatColumnValueOptions) {
   const page = options?.getIndexPage?.()
   const offset =
@@ -298,19 +290,6 @@ export function formatColumnValue(
   const typeConfig = getObjectValueTypeConfig(column.valueType)
   const fieldProps = resolveFieldProps(column.fieldProps)
   const enumItem = getEnumItem(column.valueEnum, value)
-
-  if (valueType === 'tag') {
-    const color =
-      fieldProps.color ??
-      (isEnumObject(enumItem) ? enumItem.color : undefined) ??
-      'default'
-    const { color: _color, ...tagProps } = fieldProps
-    return (
-      <Tag {...tagProps} color={color}>
-        {getEnumText(enumItem, value)}
-      </Tag>
-    )
-  }
 
   if (valueType === 'money') {
     const amount = toFiniteNumber(value)
@@ -360,36 +339,6 @@ export function formatColumnValue(
 
   if (valueType === 'index') {
     return renderIndex(index, options)
-  }
-
-  if (valueType === 'progress') {
-    const amount = toFiniteNumber(value)
-    if (amount === null) {
-      return emptyText === false ? (value as ReactNode) : emptyText
-    }
-    return (
-      <Progress
-        size="small"
-        style={{ minWidth: 100, maxWidth: 320 }}
-        percent={amount}
-        status={typeConfig.status ?? getProgressStatus(amount)}
-        {...fieldProps}
-      />
-    )
-  }
-
-  if (valueType === 'code') {
-    return <code>{String(value)}</code>
-  }
-
-  if (valueType === 'jsonCode') {
-    let json = String(value)
-    try {
-      json = JSON.stringify(value, null, 2)
-    } catch {
-      /* fall back to string */
-    }
-    return <pre style={{ margin: 0 }}>{json}</pre>
   }
 
   if (valueType === 'textarea') {

@@ -11,7 +11,7 @@ import type {
   TablePaginationConfig,
   TableProps,
 } from '@zby/ui'
-import type { ButtonProps, DropdownProps, PopconfirmProps, SpinProps, TagProps, TooltipProps } from 'antd'
+import type { ButtonProps, DropdownProps, PopconfirmProps, SpinProps, TooltipProps } from 'antd'
 
 import type { ProViewManagementAdapter } from '../pro-view-management'
 
@@ -85,7 +85,6 @@ export interface ProTableColumnFieldConfig<Meta = Record<string, unknown>> {
 export type ProTableColumnValueType =
   | 'text'
   | 'money'
-  | 'tag'
   | 'date'
   | 'dateTime'
   | 'week'
@@ -95,9 +94,6 @@ export type ProTableColumnValueType =
   | 'digit'
   | 'boolean'
   | 'index'
-  | 'progress'
-  | 'code'
-  | 'jsonCode'
   | 'textarea'
 
 type LiteralUnion<T extends string> = T | (string & {})
@@ -269,7 +265,6 @@ export type ProTableColumnValueTypeConfig = {
   showSymbol?: boolean | ((value: unknown) => boolean)
   showColor?: boolean
   moneySymbol?: boolean
-  status?: 'normal' | 'active' | 'success' | 'exception'
 }
 
 export type ProTableColumnFieldValueType =
@@ -290,12 +285,12 @@ export type ProTableColumnValueEnum =
   | Map<unknown, ProTableColumnValueEnumItem>
 
 export type ProTableColumnFieldProps<RecordType = Record<string, unknown>> =
-  | (Record<string, unknown> & Partial<TagProps>)
+  | Record<string, unknown>
   | ((
     value: unknown,
     record: RecordType,
     index: number,
-  ) => Record<string, unknown> & Partial<TagProps>)
+  ) => Record<string, unknown>)
 
 export type ProTableColumnType<
   RecordType = Record<string, unknown>,

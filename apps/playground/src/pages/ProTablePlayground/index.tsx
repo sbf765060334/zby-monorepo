@@ -51,7 +51,6 @@ type PlaygroundRow = {
   amount: number
   rate: number | undefined
   quantity: number
-  progress: number
   urgent: boolean
   owner: string
   warehouse: string
@@ -202,7 +201,6 @@ function createPlaygroundRows(length: number): PlaygroundRow[] {
       amount: 1280 + ((index * 137) % 48000),
       rate: index % 11 === 0 ? undefined : Number((18 + ((index * 7) % 80) + index / 10).toFixed(1)),
       quantity: 12 + ((index * 3) % 480),
-      progress: (index * 13) % 101,
       urgent: index % 5 === 0,
       owner,
       warehouse,
@@ -327,7 +325,6 @@ function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
       title: columnTitle(intl, 'status', '状态'),
       dataIndex: 'status',
       width: 88,
-      valueType: 'tag',
       ellipsis: true,
       valueEnum: {
         pending: { text: '待处理', color: 'warning' },
@@ -372,13 +369,6 @@ function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
       align: 'right',
       valueType: 'digit',
       fieldProps: { precision: 0 },
-    },
-    {
-      key: 'progress',
-      title: columnTitle(intl, 'progress', '进度'),
-      dataIndex: 'progress',
-      width: 200,
-      valueType: 'progress',
     },
     {
       key: 'urgent',
@@ -459,7 +449,6 @@ function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
       title: columnTitle(intl, 'sku', 'SKU Code'),
       dataIndex: 'sku',
       width: 160,
-      valueType: 'code',
     },
     {
       key: 'remark',

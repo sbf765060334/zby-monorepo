@@ -66,35 +66,6 @@ describe('formatColumnValue', () => {
     expect(node).toBe('$1,286.00')
   })
 
-  it('renders tag color from valueEnum.color', () => {
-    const { container } = render(
-      <>
-        {formatColumnValue('pending', {
-          valueType: 'tag',
-          valueEnum: { pending: { text: '待处理', color: 'gold' } },
-        })}
-      </>,
-    )
-
-    expect(container.textContent).toBe('待处理')
-    expect(container.querySelector('.ant-tag-gold')).not.toBeNull()
-  })
-
-  it('still renders a default Tag when valueEnum is a string', () => {
-    const { container } = render(
-      <>
-        {formatColumnValue('pending', {
-          valueType: 'tag',
-          valueEnum: { pending: '待处理' },
-        })}
-      </>,
-    )
-
-    expect(container.textContent).toBe('待处理')
-    expect(container.querySelector('.ant-tag')).not.toBeNull()
-    expect(container.querySelector('.ant-tag-default')).not.toBeNull()
-  })
-
   it('renders valueEnum as Badge when status or color is set', () => {
     const statusNode = render(
       <>
@@ -118,14 +89,7 @@ describe('formatColumnValue', () => {
     expect(colorNode.container.querySelector('.ant-badge-color-gold')).not.toBeNull()
   })
 
-  it('keeps code, jsonCode and textarea as local DOM wrappers', () => {
-    const code = formatColumnValue('const a = 1', { valueType: 'code' })
-    expect(React.isValidElement(code) && code.type === 'code').toBe(true)
-
-    const json = formatColumnValue({ a: 1 }, { valueType: 'jsonCode' })
-    expect(React.isValidElement(json) && json.type === 'pre').toBe(true)
-    expect(textOf(json)).toContain('"a": 1')
-
+  it('keeps textarea as a local DOM wrapper', () => {
     const textarea = formatColumnValue('line1\nline2', { valueType: 'textarea' })
     expect(React.isValidElement(textarea) && textarea.type === 'span').toBe(true)
   })
