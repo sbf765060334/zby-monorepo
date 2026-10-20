@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.2.12
+
+### Patch Changes
+
+- 移出 tag、progress、code、jsonCode 列值类型
+
 ## 0.2.11
 
 ### Patch Changes
