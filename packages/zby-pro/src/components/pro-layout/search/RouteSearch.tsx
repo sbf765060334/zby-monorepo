@@ -52,11 +52,10 @@ export interface ProRouteSearchProps {
 }
 
 /**
- * 独立的全局路由搜索入口。
+ * 顶栏内置的全局路由搜索。不从包入口导出。
  *
- * 组件只依赖当前 RouterCore 与国际化上下文，由业务自行放入 ProLayout 的
- * `header.extra`。弹窗内容少时按自然高度渲染；内容超过视口允许范围后，内容包装层
- * 负责限制总高度，只有搜索结果或最近搜索列表提供原生纵向滚动。
+ * 有顶栏时由 ProLayout 渲染。弹窗内容少时按自然高度渲染；内容超过视口允许范围后，
+ * 内容包装层负责限制总高度，只有搜索结果或最近搜索列表提供原生纵向滚动。
  */
 function RouteSearch(props: ProRouteSearchProps) {
   const {

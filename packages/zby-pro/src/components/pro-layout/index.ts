@@ -28,9 +28,7 @@ export type {
   ProLayoutSelectorEqualityFn,
   UseLocaleReturn,
 } from './metrics'
-export { ProRouteSearch } from './search'
 export { UserMenu } from './user'
-export type { ProRouteSearchProps } from './search'
 export type { UserMenuItem, UserMenuProps } from './user'
 export { isSameProLayoutTitle, resolveProLayoutTitle } from './title'
 export type {

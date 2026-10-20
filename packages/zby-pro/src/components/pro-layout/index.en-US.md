@@ -103,11 +103,11 @@ Do not use `element: <OrderListPage />`. The page chunk downloads on first visit
 
 ## Header Extensions
 
-When the header is visible, the locale and theme buttons are always shown. `header.extra` is only for application buttons, such as search and the user menu, and it renders after those two buttons. `noBar` hides the header and the buttons together.
+When the header is visible, the locale, theme, and search buttons are always shown. `header.extra` is only for application buttons, such as the user menu, and it renders after those three buttons. `noBar` hides the header and the buttons together.
 
 ```tsx
 import { mergeLocales } from '@zby/ui'
-import { ProRouteSearch, ReactRouterProLayout } from '@zby/pro/pro-layout'
+import { ReactRouterProLayout, UserMenu } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
   return (
@@ -123,7 +123,7 @@ function PlatformLayout() {
       configProvider={{ prefixCls: 'zby', theme: { cssVar: { prefix: 'zby' } } }}
       header={{
         logo: <strong>Digital Platform</strong>,
-        extra: <ProRouteSearch />,
+        extra: <UserMenu name="Ada" menus={[{ key: 'logout', label: 'Sign out' }]} />,
       }}
     />
   )
@@ -170,7 +170,7 @@ Plain literals still work: `tag: 'Beta'` matches nothing in the locale pack and 
 
 ## Global Search
 
-Place `ProRouteSearch` in `header.extra`. Users can open it with the magnifying-glass button or `Ctrl/Command + K`.
+When the header is visible, ProLayout renders the magnifying-glass button. Open search with that button or `Ctrl/Command + K`.
 
 - With an empty query, it shows only the eight most recent routes.
 - With a query, it filters authorized routes by the full title path and pathname and highlights every match.
@@ -318,13 +318,6 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | logo | Logo URL | `string` | Required |
 | url | System URL | `string` | Required |
 | active | Mark the current system | `boolean` | `false` |
-
-### ProRouteSearch
-
-| Property | Description | Type | Default |
-| --- | --- | --- | --- |
-| prefixCls | CSS class prefix; keep it aligned with ProLayout. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
-| className | Class name on the search trigger button | `string` | - |
 
 ### useTheme
 

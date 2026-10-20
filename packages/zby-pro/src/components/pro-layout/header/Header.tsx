@@ -12,7 +12,7 @@ export interface HeaderProps {
   paddingLeft: number
   scrolled?: boolean
   extra?: ReactNode
-  /** 顶栏内置的语言和主题按钮。 */
+  /** 顶栏内置的语言、主题和搜索按钮。 */
   tools?: ReactNode
   classNames?: ProLayoutClassNames
   styles?: ProLayoutStyles

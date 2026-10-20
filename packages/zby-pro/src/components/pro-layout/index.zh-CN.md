@@ -104,11 +104,11 @@ const routes: ProLayoutRoute[] = [
 
 ## 顶部扩展
 
-有顶栏时，语言按钮和主题按钮始终显示。`header.extra` 只放业务自己的按钮，例如搜索和用户菜单，排在这两个按钮后面。`noBar` 会连顶栏一起隐藏。
+有顶栏时，语言按钮、主题按钮和搜索按钮始终显示。`header.extra` 只放业务自己的按钮，例如用户菜单，排在这三个按钮后面。`noBar` 会连顶栏一起隐藏。
 
 ```tsx
 import { mergeLocales } from '@zby/ui'
-import { ProRouteSearch, ReactRouterProLayout } from '@zby/pro/pro-layout'
+import { ReactRouterProLayout, UserMenu } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
   return (
@@ -124,7 +124,7 @@ function PlatformLayout() {
       configProvider={{ prefixCls: 'zby', theme: { cssVar: { prefix: 'zby' } } }}
       header={{
         logo: <strong>Digital Platform</strong>,
-        extra: <ProRouteSearch />,
+        extra: <UserMenu name="沈彬峰" menus={[{ key: 'logout', label: '退出登录' }]} />,
       }}
     />
   )
@@ -171,7 +171,7 @@ function PlatformLayout() {
 
 ## 全局搜索
 
-`ProRouteSearch` 应放在 `header.extra`。点击放大镜或按 `Ctrl/Command + K` 打开搜索。
+有顶栏时，放大镜按钮由 ProLayout 自己渲染。点击按钮或按 `Ctrl/Command + K` 打开搜索。
 
 - 未输入时只展示最近搜索，最多保留 8 条。
 - 输入后按权限路由的完整标题路径和 pathname 过滤，并高亮所有匹配文字。
@@ -319,13 +319,6 @@ export function OrderPage() {
 | logo | Logo URL | `string` | 必填 |
 | url | 系统地址 | `string` | 必填 |
 | active | 是否为当前系统 | `boolean` | `false` |
-
-### ProRouteSearch
-
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| prefixCls | CSS 类名前缀，应与 ProLayout 保持一致；未传时为 `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
-| className | 搜索触发按钮类名 | `string` | - |
 
 ### useTheme
 

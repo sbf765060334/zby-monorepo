@@ -6,7 +6,6 @@ import antdViVN from 'antd/locale/vi_VN'
 import antdZhCN from 'antd/locale/zh_CN'
 import {
   isSameProLayoutTitle,
-  ProRouteSearch,
   type ProLayoutLocaleConfig,
   type ProLayoutRoute,
   ReactRouterProLayout,
@@ -115,12 +114,7 @@ function PlaygroundApp() {
             <div style={{ color: '#fff' }}>Zibuyu</div>
           </>
         ),
-        extra: (
-          <>
-            <ProRouteSearch />
-            <PlaygroundUserMenu />
-          </>
-        ),
+        extra: <PlaygroundUserMenu />,
       }}
       minimumContentWidth={900}
       onStorageError={(error, info) => {

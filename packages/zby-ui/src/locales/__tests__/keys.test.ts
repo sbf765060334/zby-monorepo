@@ -10,7 +10,8 @@ function messageKeys(value: unknown, prefix = ''): string[] {
     return prefix ? [prefix] : []
 
   return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => {
-    if (key === 'locale')
+    // 只跳过包根上的语言码。名为 locale 的文案分组仍要参与对齐。
+    if (!prefix && key === 'locale')
       return []
     const next = prefix ? `${prefix}.${key}` : key
     return messageKeys(child, next)

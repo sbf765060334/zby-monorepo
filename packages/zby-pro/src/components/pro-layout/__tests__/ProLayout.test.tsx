@@ -241,7 +241,7 @@ describe('ReactRouterProLayout', () => {
     expect((await screen.findByTestId('dashboard-page')).textContent).toContain('active')
     expect(screen.getByText('当前位置：')).toBeTruthy()
     expect(screen.getAllByText('工作台').length).toBeGreaterThan(0)
-    expect(screen.queryByRole('button', { name: '搜索页面（Ctrl+K）' })).toBeNull()
+    expect(screen.getByRole('button', { name: '搜索页面（Ctrl+K）' })).toBeTruthy()
     await waitFor(() => expect(document.title).toBe('工作台 - 数字化平台'))
   })
 
@@ -343,7 +343,6 @@ describe('ReactRouterProLayout', () => {
         <ReactRouterProLayout
           router={createSearchRouter()}
           title="数字化平台"
-          header={{ extra: <ProRouteSearch /> }}
         />
       </MemoryRouter>,
     )
@@ -412,7 +411,6 @@ describe('ReactRouterProLayout', () => {
         <ReactRouterProLayout
           router={createSearchRouter()}
           title="数字化平台"
-          header={{ extra: <ProRouteSearch /> }}
         />
       </MemoryRouter>,
     )
@@ -1174,7 +1172,6 @@ describe('ReactRouterProLayout', () => {
           router={router}
           title="Digital Platform"
           defaultLocale="en-US"
-          header={{ extra: <ProRouteSearch /> }}
         />
       </MemoryRouter>,
     )

@@ -127,7 +127,6 @@ export {
   lazyPage,
   isSameProLayoutTitle,
   ProLayoutContentContainer,
-  ProRouteSearch,
   UserMenu,
   ReactRouterProLayout,
   resolveProLayoutTitle,
@@ -140,7 +139,6 @@ export {
   useTheme,
 } from './components/pro-layout'
 export type {
-  ProRouteSearchProps,
   ProThemeAppearance,
   ProThemeDensity,
   ProThemeMode,

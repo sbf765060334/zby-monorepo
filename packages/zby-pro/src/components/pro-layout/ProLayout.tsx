@@ -9,6 +9,7 @@ import type { RouterCoreState } from '@zby/router-core'
 import { zbyProIntlResources } from '../../locale/intl-resources'
 import Header from './header'
 import ProLocaleSwitch from './locale/LocaleSwitch'
+import ProRouteSearch from './search/RouteSearch'
 import { useLocalePreference } from './locale/useLocalePreference'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
@@ -324,6 +325,7 @@ function ProLayoutView(props: ProLayoutViewProps) {
                     onChange={themePreference.setValue}
                     onSeedConfirm={themeSeed.setValue}
                   />
+                  <ProRouteSearch />
                 </>
               )}
             />
