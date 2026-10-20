@@ -17,7 +17,7 @@ Table 保留 Ant Design 6.6.4 与 `@rc-component/table@1.11.1` 的上游行为�
 
 ## 国际化
 
-筛选、空态、展开、分页等 Table 内置文案走 antd 语言包（由 `ZbyConfigProvider` 转给 `ConfigProvider.locale`）。列 `copyable` 使用 ActionText，文案走 `@zby/ui/locale/*`。应用用 `mergeLocales({ antd, packs: [ui, ...] })` 一次注入。
+筛选、空态、展开、分页等 Table 内置文案走 antd 语言包（由 ProLayout 内部的 `ConfigProvider.locale` 提供）。列 `copyable` 使用 ActionText，文案走 `@zby/ui/locale/*`。应用用 `mergeLocales({ antd, packs: [ui, ...] })` 一次注入。
 
 ## 列增强
 

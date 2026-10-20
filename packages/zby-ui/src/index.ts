@@ -41,14 +41,12 @@ export type {
 export {
   mergeLocales,
   toIntlResources,
-  ZbyConfigProvider,
-} from './config-provider'
+} from './locale'
 export type {
   AntdLocale,
   MergeLocalesOptions,
-  ZbyConfigProviderProps,
   ZbyLocalePack,
-} from './config-provider'
+} from './locale'
 export { default as ScrollArea } from './components/scroll-area'
 export type {
   ScrollAreaClassNamesType,

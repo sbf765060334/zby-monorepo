@@ -1,14 +1,14 @@
-// 公开运行时 API：受控选择器和可选的偏好状态 hook。
+// 运行时选择器和偏好 hook 留在布局内部。对外只从布局 store 读取 useTheme / useLocale。
 export { default as ProThemeSwitch } from './ThemeSwitch'
 export { useThemePreference } from './useThemePreference'
-export { ProThemeProvider, useTheme } from './useTheme'
+export { useLocale, useTheme } from '../metrics'
 export {
   toThemeSeedToken,
   useThemeSeedPreference,
 } from './useThemeSeedPreference'
 
-// 公开类型统一从 theme 入口转发，业务无需依赖内部文件路径。
 export type { ProThemeSwitchProps } from './ThemeSwitch'
+export type { UseLocaleReturn } from '../metrics'
 export type {
   ProThemeAppearance,
   ProThemeDensity,

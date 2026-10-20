@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { ZbyIntlProvider } from '@zby/intl'
 import { createIndexedDBRouterStorageAdapter, createRouterCore } from '@zby/router-core'
 import { RouterCoreProvider, useRouterPageSelector } from '@zby/router-core/react'
-import { ConfigProvider, theme as antdTheme } from 'antd'
+import { ConfigProvider } from 'antd'
 import {
   act,
   cleanup,
@@ -16,7 +16,7 @@ import {
   within,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { zbyProIntlResources } from '../../../locale/intl-resources'
 import ReactRouterProLayout from '../ReactRouterProLayout'
@@ -56,6 +56,12 @@ beforeAll(() => {
     configurable: true,
     value: vi.fn(),
   })
+})
+
+beforeEach(() => {
+  window.localStorage.removeItem('zby-pro:theme-preference')
+  window.localStorage.removeItem('zby-pro:locale-preference')
+  window.localStorage.removeItem('zby-pro:theme-seed')
 })
 
 afterEach(() => {
@@ -676,27 +682,27 @@ describe('ReactRouterProLayout', () => {
 
   it('在默认和紧凑主题间同步 Header、页签和内容顶部占位', async () => {
     const renderLayout = (compact: boolean) => {
-      const router = createTestRouter()
-      const renderNode = (nextCompact: boolean) => (
-        <ConfigProvider
-          theme={{
-            algorithm: nextCompact
-              ? antdTheme.compactAlgorithm
-              : antdTheme.defaultAlgorithm,
-            cssVar: { prefix: 'ant-pro-layout-test' },
-          }}
-        >
-          <MemoryRouter initialEntries={['/dashboard']}>
-            <ReactRouterProLayout router={router} title="数字化平台" />
-          </MemoryRouter>
-        </ConfigProvider>
+      window.localStorage.setItem(
+        'zby-pro:theme-preference',
+        JSON.stringify({ mode: 'light', density: compact ? 'compact' : 'default' }),
       )
-      const view = render(renderNode(compact))
-
-      return {
-        ...view,
-        rerenderDensity: (nextCompact: boolean) => view.rerender(renderNode(nextCompact)),
-      }
+      const router = createTestRouter()
+      return render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ReactRouterProLayout
+            router={router}
+            title="数字化平台"
+            configProvider={{ theme: { cssVar: { prefix: 'ant-pro-layout-test' } } }}
+          />
+        </MemoryRouter>,
+      )
+    }
+    const selectDensity = async (label: string) => {
+      fireEvent.mouseEnter(screen.getByRole('button', { name: '主题设置' }))
+      await waitFor(() => {
+        expect(screen.getByRole('menu').parentElement?.style.pointerEvents).not.toBe('none')
+      })
+      fireEvent.click(screen.getByText(label))
     }
     const expectLayoutSize = (
       container: HTMLElement,
@@ -802,7 +808,7 @@ describe('ReactRouterProLayout', () => {
     fireEvent.click(orderMenu)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
-    defaultLayout.rerenderDensity(true)
+    await selectDensity('紧凑布局')
     await waitFor(() => {
       expectLayoutSize(defaultLayout.container, '33px', '29px', '60px', '52px', '20px', '104px')
     })
@@ -819,7 +825,7 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('dashboard-page')
     expectLayoutSize(compactLayout.container, '33px', '29px', '60px', '52px', '20px', '104px')
 
-    compactLayout.rerenderDensity(false)
+    await selectDensity('默认布局')
     await waitFor(() => {
       expectLayoutSize(compactLayout.container, '38px', '34px', '68px', '60px', '24px', '124px')
     })
@@ -1167,10 +1173,10 @@ describe('ReactRouterProLayout', () => {
         <ReactRouterProLayout
           router={router}
           title="Digital Platform"
+          defaultLocale="en-US"
           header={{ extra: <ProRouteSearch /> }}
         />
       </MemoryRouter>,
-      'en-US',
     )
 
     await screen.findByTestId('dashboard-page')
@@ -1536,17 +1542,20 @@ describe('ReactRouterProLayout', () => {
   it('暗色紧凑主题下等待异步守卫时仍禁用关闭图标，尺寸跟随紧凑令牌', async () => {
     let releaseGuard: (value: boolean) => void = () => undefined
     const router = createTestRouter()
+    window.localStorage.setItem(
+      'zby-pro:theme-preference',
+      JSON.stringify({ mode: 'dark', density: 'compact' }),
+    )
     const { container } = render(
-      <ConfigProvider
-        theme={{
-          algorithm: [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm],
-          cssVar: { prefix: 'ant-pro-layout-tab-theme' },
-        }}
-      >
-        <MemoryRouter initialEntries={['/dashboard']}>
-          <ReactRouterProLayout router={router} title="数字化平台" />
-        </MemoryRouter>
-      </ConfigProvider>,
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <ReactRouterProLayout
+          router={router}
+          title="数字化平台"
+          configProvider={{
+            theme: { cssVar: { prefix: 'ant-pro-layout-tab-theme' } },
+          }}
+        />
+      </MemoryRouter>,
     )
 
     await screen.findByTestId('dashboard-page')

@@ -10,19 +10,26 @@ import useLocaleSwitchStyles from './style'
 
 export type ProLocale = 'zh-CN' | 'en-US' | 'vi-VN' | 'my-MM'
 
-/** 语言选择按钮由业务侧控制，确保 ZbyConfigProvider 使用同一语言状态。 */
+export interface ProLocaleOption {
+  key: string
+  label: string
+}
+
+/** 语言选择按钮只负责展示。当前语言和切换由 ProLayout 内部状态驱动。 */
 export interface ProLocaleSwitchProps {
   /** 当前生效的语言。 */
-  value: ProLocale
+  value: string
   /** 用户选择另一语言时触发。 */
-  onChange: (locale: ProLocale) => void
+  onChange: (locale: string) => void
+  /** 菜单选项。省略时使用内置的四种语言。 */
+  options?: readonly ProLocaleOption[]
   /** 生成样式类名的前缀；未传时使用 ConfigProvider.getPrefixCls('pro-layout')。 */
   prefixCls?: string
   /** 附加到触发按钮上的业务类名。 */
   className?: string
 }
 
-const localeOptions: ReadonlyArray<{ key: ProLocale, label: string }> = [
+const localeOptions: readonly ProLocaleOption[] = [
   { key: 'zh-CN', label: '简体中文' },
   { key: 'en-US', label: 'English' },
   { key: 'vi-VN', label: 'Tiếng Việt' },
@@ -34,6 +41,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
   const {
     className,
     onChange,
+    options = localeOptions,
     prefixCls: customizePrefixCls,
     value,
   } = props
@@ -44,7 +52,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
   const hashId = useLocaleSwitchStyles(prefixCls)
 
   // 语言名称使用各自语言的本地写法，避免菜单文案随当前语言改变后难以识别。
-  const items: NonNullable<MenuProps['items']> = localeOptions.map((option) => ({
+  const items: NonNullable<MenuProps['items']> = options.map((option) => ({
     key: option.key,
     label: (
       <span
@@ -86,7 +94,7 @@ export default function ProLocaleSwitch(props: ProLocaleSwitchProps) {
       menu={{
         items,
         onClick: ({ key }) => {
-          const nextLocale = key as ProLocale
+          const nextLocale = key
           if (nextLocale !== value)
             onChange(nextLocale)
         },

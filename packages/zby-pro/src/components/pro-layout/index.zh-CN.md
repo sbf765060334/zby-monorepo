@@ -104,58 +104,34 @@ const routes: ProLayoutRoute[] = [
 
 ## 顶部扩展
 
-搜索、语言、主题和个性化都是独立功能，由业务按需导入后放入 `header.extra`。它们会使用相同尺寸和交互风格，但 ProLayout 不会自动注入它们。
+有顶栏时，语言按钮和主题按钮始终显示。`header.extra` 只放业务自己的按钮，例如搜索和用户菜单，排在这两个按钮后面。`noBar` 会连顶栏一起隐藏。
 
 ```tsx
-import {
-  ProLocaleSwitch,
-  ProRouteSearch,
-  ProThemeSwitch,
-  ReactRouterProLayout,
-  toThemeSeedToken,
-  useLocalePreference,
-  useThemePreference,
-  useThemeSeedPreference,
-} from '@zby/pro/pro-layout'
+import { mergeLocales } from '@zby/ui'
+import { ProRouteSearch, ReactRouterProLayout } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
-  const locale = useLocalePreference({
-    defaultValue: 'zh-CN',
-  })
-  const theme = useThemePreference({
-    defaultValue: { mode: 'auto', density: 'default' },
-  })
-  const themeSeed = useThemeSeedPreference()
-
   return (
     <ReactRouterProLayout
       router={router}
       title="数字化平台"
+      locales={[
+        { key: 'zh-CN', label: '简体中文', pack: zhCN },
+        { key: 'en-US', label: 'English', pack: enUS },
+      ]}
+      defaultLocale="zh-CN"
+      defaultTheme={{ mode: 'auto', density: 'default' }}
+      configProvider={{ prefixCls: 'zby', theme: { cssVar: { prefix: 'zby' } } }}
       header={{
         logo: <strong>Digital Platform</strong>,
-        extra: (
-          <>
-            <ProRouteSearch />
-            <ProLocaleSwitch
-              value={locale.value}
-              onChange={locale.setValue}
-            />
-            <ProThemeSwitch
-              value={theme.value}
-              appearance={theme.appearance}
-              onChange={theme.setValue}
-              seed={themeSeed.value}
-              onSeedConfirm={themeSeed.setValue}
-            />
-          </>
-        ),
+        extra: <ProRouteSearch />,
       }}
     />
   )
 }
 ```
 
-`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。个性化种子用 `toThemeSeedToken(themeSeed.value, theme.appearance)` 放进 `theme.token`，并与原有 `algorithm` 一起传入。`useLocalePreference`、`useThemePreference` 和 `useThemeSeedPreference` 只管理偏好与 localStorage。把 `useThemePreference()` 的返回值传给 `ProThemeProvider` 后，子组件用 `useTheme()` 读取当前主题。`ProThemeProvider` 可以放在 `ZbyConfigProvider` 里面。
+`locales` 里的 `pack` 用 `mergeLocales` 把 antd、组件库和应用文案合成一份。不传 `locales` 时，顶栏使用内置的中文、英文、越南语和缅甸语，文案只有 ProLayout 自带语言包。主题、密度和语言都存在 ProLayout 内部，并写入内部的 `ConfigProvider` 和 `ZbyIntlProvider`。页面用 `useTheme()` 读取和切换主题，用 `useIntl().locale` 读取当前语言，用 `useLocale().setLocale` 切换语言。布局外面没有这几层，`useTheme()` 和 `useLocale()` 会抛错。不用 ProLayout 的页面自己组合 antd `ConfigProvider`、`App` 和 `ZbyIntlProvider`。
 
 ## 路由约定
 
@@ -189,7 +165,7 @@ function PlatformLayout() {
 }
 ```
 
-文案本身放进应用原有的语言包，和页面文案一起交给 `ZbyConfigProvider` 即可，路由不需要单独的多语言机制。`prompt: true` 使用 ProLayout 内置的“暂未开放”文案。
+文案本身放进应用原有的语言包，通过 `locales` 交给 ProLayout 即可，路由不需要单独的多语言机制。`prompt: true` 使用 ProLayout 内置的“暂未开放”文案。
 
 不带 key 语义的字面量可以照常写：`tag: 'Beta'` 在语言包里匹配不到，界面上仍然显示 `Beta`。
 
@@ -351,32 +327,15 @@ export function OrderPage() {
 | prefixCls | CSS 类名前缀，应与 ProLayout 保持一致；未传时为 `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
 | className | 搜索触发按钮类名 | `string` | - |
 
-### ProLocaleSwitch
+### useTheme
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| value | 当前语言 | `'zh-CN' \| 'en-US'` | 必填 |
-| onChange | 用户选择语言后的通知 | `(locale: ProLocale) => void` | 必填 |
-| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
-| className | 触发按钮类名 | `string` | - |
+`useTheme()` 只能在 `ReactRouterProLayout` 内调用。返回 `theme`（`auto`、`light` 或 `dark`）、`resolvedTheme`（实际的 `light` 或 `dark`）、`density`（`default` 或 `compact`），以及 `setMode`、`setDensity`。偏好存在 `zby-pro:theme-preference`。`defaultTheme` 只在没有本地记录时生效，默认是亮色和默认密度。
 
-`useLocalePreference(options)` 默认使用 `zh-CN`，并固定存储在 `zby-pro:locale-preference`。可通过 `defaultValue` 覆盖默认语言，并通过返回的 `value`、`setValue` 驱动选择器和外层 Provider。
+顶栏主题菜单包含跟随系统、亮色、暗黑、默认布局、紧凑布局和个性化。个性化抽屉左侧编辑全局种子，右侧预览草稿。调整、单行重置和恢复默认都只改草稿；点击确定后写入 `zby-pro:theme-seed`，并更新内部 `ConfigProvider`。关闭抽屉会丢弃草稿。`defaultThemeSeed` 只在没有本地种子时生效。颜色字段为 `null` 时跟随 antd 默认关系，例如信息色跟随品牌色。业务要读已经生效的颜色、字号和圆角时，用 antd 的 `theme.useToken()`。
 
-### ProThemeSwitch
+### useLocale
 
-| 属性 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| value | 当前明暗模式和布局密度 | `ProThemePreference` | 必填 |
-| appearance | `auto` 解析后的实际 `light` 或 `dark` 外观 | `'light' \| 'dark'` | 必填 |
-| onChange | 偏好变化通知 | `(value: ProThemePreference) => void` | 必填 |
-| prefixCls | CSS 类名前缀；未传时为 `ConfigProvider.getPrefixCls('pro-layout')`，默认 `ant-pro-layout` | `string` | `ant-pro-layout` |
-| className | 触发按钮类名 | `string` | - |
-| seed | 已确定的个性化种子。与 `onSeedConfirm` 同时传入后，菜单在紧凑布局下方显示个性化 | `ProThemeSeedPreference` | - |
-| onSeedConfirm | 个性化抽屉点击确定后的通知 | `(value: ProThemeSeedPreference) => void` | - |
-
-`ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。`ProThemeProvider` 接收这次调用的返回值。其子组件调用 `useTheme()` 得到 `theme`（用户选择的 mode）、`resolvedTheme`（实际的 light 或 dark）和 `density`。
-
-个性化入口在主题菜单内，用分割线放在紧凑布局下面。抽屉左侧编辑全局种子，右侧预览草稿。调整、单行重置和恢复默认都只改草稿；点击确定才调用 `onSeedConfirm` 并写入 `zby-pro:theme-seed`。关闭抽屉会丢弃草稿。`useThemeSeedPreference(options)` 返回 `value` 和 `setValue`。颜色字段为 `null` 时跟随 antd 默认关系，例如信息色跟随品牌色，基础文本色和背景色跟随明暗算法。`toThemeSeedToken` 负责在传给 `ConfigProvider` 前把这些空值解析成具体颜色。
+`useLocale()` 只能在 `ReactRouterProLayout` 内调用。返回 `locale` 和 `setLocale`。当前文案用 `useIntl().locale` 读取，和这里是同一份语言。偏好存在 `zby-pro:locale-preference`。`defaultLocale` 只在没有本地记录时生效；省略时使用 `locales` 的第一项，再省略则是 `zh-CN`。顶栏语言菜单只列出 `locales`。传入列表之外的语言不会被写进去。
 
 ### ProLayoutContentContainer
 

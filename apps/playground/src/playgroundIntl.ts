@@ -6,7 +6,7 @@ export type PlaygroundLocale = 'zh-CN' | 'en-US' | 'vi-VN' | 'my-MM'
  * 路由菜单文案。
  *
  * routes.tsx 里的 `title` 只存这里的 key，翻译发生在渲染时，所以这份文案和普通页面
- * 文案没有区别，一起交给 ZbyConfigProvider 即可，不需要为路由单独准备一套机制。
+ * 文案没有区别，放进 ProLayout 的 locales 即可，不需要为路由单独准备一套机制。
  */
 const menuZhCN = {
   dashboard: '首页',

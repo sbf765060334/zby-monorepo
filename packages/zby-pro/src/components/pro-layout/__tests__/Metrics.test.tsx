@@ -4,10 +4,9 @@ import 'fake-indexeddb/auto'
 
 import { ZbyIntlProvider } from '@zby/intl'
 import { createRouterCore } from '@zby/router-core'
-import { ConfigProvider, theme as antdTheme } from 'antd'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   ReactRouterProLayout,
@@ -32,6 +31,25 @@ class ResizeObserverMock {
 beforeAll(() => {
   // Ant Design Tabs uses ResizeObserver internally; ProLayout metrics do not.
   vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+})
+
+beforeEach(() => {
+  window.localStorage.removeItem('zby-pro:theme-preference')
+  window.localStorage.removeItem('zby-pro:locale-preference')
+  window.localStorage.removeItem('zby-pro:theme-seed')
 })
 
 afterEach(cleanup)
@@ -91,30 +109,26 @@ function createNoBarRouter() {
   })
 }
 
-function renderLayout(router: ReturnType<typeof createMetricsRouter>, compact = false) {
-  const renderNode = (nextCompact: boolean) => (
+function renderLayout(router: ReturnType<typeof createMetricsRouter>) {
+  return render(
     <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
-      <ConfigProvider
-        theme={{
-          algorithm: nextCompact ? antdTheme.compactAlgorithm : antdTheme.defaultAlgorithm,
-        }}
-      >
-        <MemoryRouter initialEntries={['/visible']}>
-          <ReactRouterProLayout
-            router={router}
-            title="Metrics"
-            header={{ extra: <MetricsProbe /> }}
-          />
-        </MemoryRouter>
-      </ConfigProvider>
-    </ZbyIntlProvider>
+      <MemoryRouter initialEntries={['/visible']}>
+        <ReactRouterProLayout
+          router={router}
+          title="Metrics"
+          header={{ extra: <MetricsProbe /> }}
+        />
+      </MemoryRouter>
+    </ZbyIntlProvider>,
   )
-  const view = render(renderNode(compact))
+}
 
-  return {
-    ...view,
-    rerenderDensity: (nextCompact: boolean) => view.rerender(renderNode(nextCompact)),
-  }
+async function selectCompactDensity() {
+  fireEvent.mouseEnter(screen.getByRole('button', { name: '主题设置' }))
+  await waitFor(() => {
+    expect(screen.getByRole('menu').parentElement?.style.pointerEvents).not.toBe('none')
+  })
+  fireEvent.click(screen.getByText('紧凑布局'))
 }
 
 function renderNoBarLayout(router: ReturnType<typeof createNoBarRouter>) {
@@ -134,11 +148,11 @@ function expectMetricText(value: string) {
 describe('ProLayout context metrics', () => {
   it('exposes default and compact token dimensions', async () => {
     const router = createMetricsRouter()
-    const view = renderLayout(router)
+    renderLayout(router)
 
     expectMetricText('38,32,68|38,32,68|false,true')
 
-    view.rerenderDensity(true)
+    await selectCompactDensity()
 
     await waitFor(() => {
       expectMetricText('33,28,60|33,28,60|false,true')
@@ -165,10 +179,17 @@ describe('ProLayout context metrics', () => {
     const probe = <SiderWidthProbe onRender={() => renderCount += 1} />
     const initialValue: ProLayoutContextValue = {
       breadcrumbHeight: 32,
+      density: 'default',
       headerHeight: 38,
+      locale: 'zh-CN',
       noBar: false,
+      resolvedTheme: 'light',
+      setDensity: () => undefined,
+      setLocale: () => undefined,
+      setMode: () => undefined,
       showBreadcrumb: true,
       siderWidth: 68,
+      theme: 'light',
     }
     const view = renderProvider(initialValue, probe)
 

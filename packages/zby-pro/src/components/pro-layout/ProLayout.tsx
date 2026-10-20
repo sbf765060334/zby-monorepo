@@ -1,32 +1,180 @@
-import { useIntl } from '@zby/intl'
+import { DEFAULT_LOCALE, mergeIntlResources, useIntl, ZbyIntlProvider } from '@zby/intl'
 import { useRouterCoreSelector } from '@zby/router-core/react'
-import { ConfigProvider, Layout } from 'antd'
+import { toIntlResources } from '@zby/ui'
+import { App, ConfigProvider, Layout } from 'antd'
 import { clsx } from 'clsx'
 import { memo, useContext, useEffect, useMemo, useState } from 'react'
 
 import type { RouterCoreState } from '@zby/router-core'
+import { zbyProIntlResources } from '../../locale/intl-resources'
 import Header from './header'
+import ProLocaleSwitch from './locale/LocaleSwitch'
+import { useLocalePreference } from './locale/useLocalePreference'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
 import { Breadcrumb, PageContent } from './page'
 import PageProgressProvider from './page-progress'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
+import ProThemeSwitch from './theme/ThemeSwitch'
+import { useThemePreference } from './theme/useThemePreference'
+import {
+  resolveThemeAlgorithm,
+  toThemeSeedToken,
+  useThemeSeedPreference,
+} from './theme/useThemeSeedPreference'
 import { resolveProLayoutTitle } from './title'
-import type { ProLayoutProps, ProLayoutRoute } from './types'
+import type { UseLocalePreferenceReturn } from './locale/useLocalePreference'
+import type {
+  UseThemePreferenceReturn,
+  UseThemeSeedPreferenceReturn,
+} from './theme/types'
+import type { ProLayoutLocaleConfig, ProLayoutProps, ProLayoutRoute } from './types'
+
+function toLocaleResources(option: ProLayoutLocaleConfig) {
+  if (!option.pack)
+    return undefined
+
+  // 资源挂在菜单 key 上。key 和 pack.locale 不一致时，仍然能被当前语言读到。
+  const messages = toIntlResources(option.pack)[option.pack.locale]
+  return messages ? { [option.key]: messages } : undefined
+}
+
+const BUILTIN_LOCALES: ProLayoutLocaleConfig[] = [
+  { key: 'zh-CN', label: '简体中文' },
+  { key: 'en-US', label: 'English' },
+  { key: 'vi-VN', label: 'Tiếng Việt' },
+  { key: 'my-MM', label: 'မြန်မာ' },
+]
 
 /**
  * ProLayout 的纯 UI 外壳。
  *
- * 这里不创建 Store，也不接收 routes 等 core 固定配置。菜单、页签、面包屑和页面内容
- * 会按迁移阶段接入同一个 RouterCore 实例。
+ * 主题、语言和种子只在这里创建一次，并写进内部的 ConfigProvider、App 和语言包。
+ * 菜单、页签、面包屑和页面内容仍接入同一个 RouterCore 实例。
  */
 function ProLayout(props: ProLayoutProps) {
+  const {
+    app = true,
+    configProvider,
+    defaultLocale,
+    defaultTheme,
+    defaultThemeSeed,
+    locales,
+    ...layoutProps
+  } = props
+  const localeOptions = locales?.length ? locales : BUILTIN_LOCALES
+  const allowedLocales = useMemo(
+    () => localeOptions.map((item) => item.key),
+    [localeOptions],
+  )
+  const initialLocale = defaultLocale && allowedLocales.includes(defaultLocale)
+    ? defaultLocale
+    : (allowedLocales[0] ?? DEFAULT_LOCALE)
+  const themePreference = useThemePreference({ defaultValue: defaultTheme })
+  const localePreference = useLocalePreference({
+    allowed: allowedLocales,
+    defaultValue: initialLocale,
+  })
+  const themeSeed = useThemeSeedPreference({ defaultValue: defaultThemeSeed })
+  const outerConfig = useContext(ConfigProvider.ConfigContext)
+  const {
+    prefixCls: configPrefixCls,
+    theme: themeOverride,
+    ...restConfig
+  } = configProvider ?? {}
+  const antdPrefixCls = configPrefixCls ?? outerConfig.getPrefixCls()
+  const currentPack = localeOptions.find((item) => item.key === localePreference.value)?.pack
+  // 全部语言包一次注册。只放当前语言时，切到英文后缺的文案找不到中文包。
+  const resources = useMemo(
+    () => mergeIntlResources(
+      zbyProIntlResources,
+      ...localeOptions.map(toLocaleResources),
+    ),
+    [localeOptions],
+  )
+  const themeToken = useMemo(
+    () => toThemeSeedToken(themeSeed.value, themePreference.appearance),
+    [themePreference.appearance, themeSeed.value],
+  )
+
+  useEffect(() => {
+    if (typeof document === 'undefined')
+      return undefined
+
+    const root = document.documentElement
+    const previousColorScheme = root.style.colorScheme
+    const previousTheme = root.dataset.theme
+    root.style.colorScheme = themePreference.appearance
+    root.dataset.theme = themePreference.appearance
+    return () => {
+      root.style.colorScheme = previousColorScheme
+      if (previousTheme === undefined)
+        delete root.dataset.theme
+      else
+        root.dataset.theme = previousTheme
+    }
+  }, [themePreference.appearance])
+
+  const intlNode = (
+    <ZbyIntlProvider
+      locale={localePreference.value}
+      fallbackLocale={DEFAULT_LOCALE}
+      resources={resources}
+    >
+      <ProLayoutView
+        {...layoutProps}
+        localeOptions={localeOptions}
+        localePreference={localePreference}
+        themePreference={themePreference}
+        themeSeed={themeSeed}
+      />
+    </ZbyIntlProvider>
+  )
+  const appNode = app === false
+    ? intlNode
+    : <App {...(typeof app === 'object' ? app : {})}>{intlNode}</App>
+
+  return (
+    <ConfigProvider
+      {...restConfig}
+      {...(antdPrefixCls ? { prefixCls: antdPrefixCls } : {})}
+      locale={currentPack?.antd}
+      theme={{
+        ...themeOverride,
+        algorithm: resolveThemeAlgorithm(
+          themePreference.appearance,
+          themePreference.value.density,
+        ),
+        token: {
+          ...themeOverride?.token,
+          ...themeToken,
+        },
+      }}
+    >
+      {appNode}
+    </ConfigProvider>
+  )
+}
+
+interface ProLayoutViewProps extends Omit<
+  ProLayoutProps,
+  'app' | 'configProvider' | 'defaultLocale' | 'defaultTheme' | 'defaultThemeSeed' | 'locales'
+> {
+  localeOptions: ProLayoutLocaleConfig[]
+  localePreference: UseLocalePreferenceReturn
+  themePreference: UseThemePreferenceReturn
+  themeSeed: UseThemeSeedPreferenceReturn
+}
+
+function ProLayoutView(props: ProLayoutViewProps) {
   const {
     beforeUnload,
     className,
     classNames,
     header,
+    localeOptions,
+    localePreference,
     minimumContentWidth,
     noBar = false,
     onPageError,
@@ -38,6 +186,8 @@ function ProLayout(props: ProLayoutProps) {
     style,
     styles,
     systemList,
+    themePreference,
+    themeSeed,
     title,
   } = props
   const { getPrefixCls } = useContext(ConfigProvider.ConfigContext)
@@ -59,25 +209,46 @@ function ProLayout(props: ProLayoutProps) {
         pathnameDescriptionMap[currentRoute.realPath] || currentRoute.route.title,
       )
     : ''
+  const appTitle = resolveProLayoutTitle(intl, title)
   const shouldShowBreadcrumb = Boolean(showBreadcrumb && currentRoute)
   const layoutContextValue = useMemo(
     () => ({
       breadcrumbHeight,
+      density: themePreference.value.density,
       headerHeight,
+      locale: localePreference.value,
+      noBar,
+      resolvedTheme: themePreference.appearance,
+      setDensity: themePreference.setDensity,
+      setLocale: localePreference.setValue,
+      setMode: themePreference.setMode,
+      showBreadcrumb,
+      siderWidth,
+      theme: themePreference.value.mode,
+    }),
+    [
+      breadcrumbHeight,
+      headerHeight,
+      localePreference.setValue,
+      localePreference.value,
       noBar,
       showBreadcrumb,
       siderWidth,
-    }),
-    [breadcrumbHeight, headerHeight, noBar, showBreadcrumb, siderWidth],
+      themePreference.appearance,
+      themePreference.setDensity,
+      themePreference.setMode,
+      themePreference.value.density,
+      themePreference.value.mode,
+    ],
   )
 
   useEffect(() => {
     if (typeof document === 'undefined')
       return
 
-    document.title = currentPageTitle ? `${currentPageTitle} - ${title}` : title
+    document.title = currentPageTitle ? `${currentPageTitle} - ${appTitle}` : appTitle
     setPage?.(currentPageTitle)
-  }, [currentPageTitle, setPage, title])
+  }, [appTitle, currentPageTitle, setPage])
 
   useEffect(() => {
     if (!beforeUnload || typeof window === 'undefined')
@@ -138,6 +309,23 @@ function ProLayout(props: ProLayoutProps) {
               scrolled={!shouldShowBreadcrumb && pageScrolled}
               classNames={classNames}
               styles={styles}
+              tools={(
+                <>
+                  <ProLocaleSwitch
+                    options={localeOptions}
+                    value={localePreference.value}
+                    onChange={localePreference.setValue}
+                  />
+                  <ProThemeSwitch
+                    appearance={themePreference.appearance}
+                    seed={themeSeed.value}
+                    seedConfig={themeSeed.config}
+                    value={themePreference.value}
+                    onChange={themePreference.setValue}
+                    onSeedConfirm={themeSeed.setValue}
+                  />
+                </>
+              )}
             />
           ) : null}
           <Layout.Content

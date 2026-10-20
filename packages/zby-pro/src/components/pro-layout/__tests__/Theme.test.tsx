@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLayoutEffect } from 'react'
 
 import { zbyProIntlResources } from '../../../locale/intl-resources'
-import { ProThemeProvider, ProThemeSwitch, useTheme, useThemePreference } from '../theme'
+import { ProThemeSwitch, useTheme, useThemePreference } from '../theme'
 import type { ProThemePreference } from '../theme'
 
 const THEME_STORAGE_KEY = 'zby-pro:theme-preference'
@@ -241,51 +241,14 @@ describe('ProThemeSwitch', () => {
     transitionStyle?.remove()
   })
 
-  it('shares the current theme through ProThemeProvider', () => {
-    function Reader() {
-      const current = useTheme()
-      return <output data-testid="current-theme">{JSON.stringify(current)}</output>
-    }
-
-    function Harness() {
-      const preference = useThemePreference({
-        defaultValue: { mode: 'dark', density: 'compact' },
-      })
-      return (
-        <ProThemeProvider value={preference}>
-          <button type="button" onClick={() => preference.setMode('light')}>
-            light
-          </button>
-          <Reader />
-        </ProThemeProvider>
-      )
-    }
-
-    render(
-      <ZbyIntlProvider locale="zh-CN" fallbackLocale="zh-CN" resources={zbyProIntlResources}>
-        <Harness />
-      </ZbyIntlProvider>,
-    )
-
-    expect(screen.getByTestId('current-theme').textContent).toBe(
-      JSON.stringify({ theme: 'dark', resolvedTheme: 'dark', density: 'compact' }),
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'light' }))
-
-    expect(screen.getByTestId('current-theme').textContent).toBe(
-      JSON.stringify({ theme: 'light', resolvedTheme: 'light', density: 'compact' }),
-    )
-  })
-
-  it('throws when useTheme is used outside ProThemeProvider', () => {
+  it('throws when useTheme is used outside ProLayout', () => {
     function Reader() {
       useTheme()
       return null
     }
 
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    expect(() => render(<Reader />)).toThrow(/ProThemeProvider/)
+    expect(() => render(<Reader />)).toThrow(/ProLayout/)
     consoleError.mockRestore()
   })
 })

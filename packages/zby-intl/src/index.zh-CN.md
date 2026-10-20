@@ -10,7 +10,7 @@ description: 基于 i18next 的 ZBY React 国际化基础设施。
 
 `@zby/intl` 用于在 ZBY 组件库和业务应用之间共享同一个国际化上下文。它负责注册语言资源、响应受控的语言状态，并统一提供文案读取、日期格式化和数字格式化能力。
 
-底层使用 `i18next` 和 `react-i18next`。业务应用请在根节点使用 `@zby/ui` 的 `ZbyConfigProvider`；它会内部包裹 antd `ConfigProvider`、`App` 和 `ZbyIntlProvider`。`ZbyIntlProvider` 仍可用于测试或已有 i18next 实例的进阶场景。
+底层使用 `i18next` 和 `react-i18next`。使用 `ReactRouterProLayout` 时，布局内部会包住 antd `ConfigProvider`、`App` 和 `ZbyIntlProvider`。不使用布局的页面，以及测试或已有 i18next 实例的场景，直接使用 `ZbyIntlProvider`。
 
 ## 基本用法
 
@@ -18,7 +18,8 @@ description: 基于 i18next 的 ZBY React 国际化基础设施。
 
 ```tsx
 import antdZhCN from 'antd/locale/zh_CN'
-import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import { ReactRouterProLayout } from '@zby/pro'
+import { mergeLocales } from '@zby/ui'
 import uiZhCN from '@zby/ui/locale/zh_CN'
 import proZhCN from '@zby/pro/locale/zh_CN'
 
@@ -29,14 +30,16 @@ const zhCN = mergeLocales({
 
 export default function AppRoot() {
   return (
-    <ZbyConfigProvider locale={zhCN}>
-      <App />
-    </ZbyConfigProvider>
+    <ReactRouterProLayout
+      router={router}
+      title="数字化平台"
+      locales={[{ key: 'zh-CN', label: '简体中文', pack: zhCN }]}
+    />
   )
 }
 ```
 
-`ZbyIntlProvider` 是底层引擎。`locale` 是语言码字符串，`resources` 是 `{ 'zh-CN': 文案树 }`。语言偏好、持久化和切换入口由业务状态负责。
+`ZbyIntlProvider` 是底层引擎。`locale` 是语言码字符串，`resources` 是 `{ 'zh-CN': 文案树 }`。语言偏好和顶栏切换由 ProLayout 负责。页面用 `useIntl().locale` 读取，用 `useLocale().setLocale` 切换。
 
 ## 语言资源
 

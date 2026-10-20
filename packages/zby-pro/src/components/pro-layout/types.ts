@@ -1,6 +1,7 @@
 import type { RouterCore, RouterRoute, RouterRuntimeOptions } from '@zby/router-core'
 import type { FormatValues } from '@zby/intl'
-import type { SpinProps, TagProps } from 'antd'
+import type { ZbyLocalePack } from '@zby/ui'
+import type { AppProps, ConfigProviderProps, SpinProps, TagProps } from 'antd'
 import type {
   ComponentType,
   CSSProperties,
@@ -9,6 +10,8 @@ import type {
   ReactElement,
   ReactNode,
 } from 'react'
+
+import type { ProThemePreference, ProThemeSeedPreference } from './theme/types'
 
 /** 菜单、面包屑中使用的路由图标最小属性。 */
 export interface ProLayoutRouteIconProps {
@@ -154,12 +157,43 @@ export interface ProLayoutPageLoading {
   render?: (info: { pathname: string }) => ReactNode
 }
 
+/** 顶栏语言菜单中的一项。`pack` 由 `mergeLocales` 生成。 */
+export interface ProLayoutLocaleConfig {
+  /** 语言标识，例如 `zh-CN`。 */
+  key: string
+  /** 菜单里显示的名称，使用该语言自己的写法。 */
+  label: string
+  /** 该语言的 antd 语言包和文案。省略时只有 ProLayout 自带文案。 */
+  pack?: ZbyLocalePack
+}
+
 /** 不包含任何 router-core 固定配置的纯 UI 属性。 */
 export interface ProLayoutProps {
-  /** 应用标题；当前页面存在标题时，浏览器标题显示为“页面标题 - 应用标题”。 */
-  title: string
-  /** 顶部 Logo 与页签栏右侧扩展内容。 */
+  /**
+   * 应用标题。当前页面存在标题时，浏览器标题显示为“页面标题 - 应用标题”。
+   * 字符串按文案 key 解释，缺失时原样显示；描述符对象可以带兜底文案。
+   */
+  title: ProLayoutTitle
+  /** 顶部 Logo 与页签栏右侧的业务扩展内容。语言和主题按钮由布局自己渲染。 */
   header?: ProLayoutHeaderConfig
+  /**
+   * 可选语言。省略时使用 zh-CN、en-US、vi-VN、my-MM，文案只有 ProLayout 自带语言包。
+   * 传入后顶栏只显示这里的语言。
+   */
+  locales?: ProLayoutLocaleConfig[]
+  /** 没有本地记录时使用的语言。默认取 `locales` 的第一项，否则为 zh-CN。 */
+  defaultLocale?: string
+  /** 没有本地记录时使用的明暗模式和密度。默认亮色、默认密度。 */
+  defaultTheme?: Partial<ProThemePreference>
+  /** 没有本地种子记录时使用的主题种子。缺省字段回落到 antd 预设。 */
+  defaultThemeSeed?: Partial<ProThemeSeedPreference>
+  /**
+   * 传给内部 ConfigProvider 的其余配置。
+   * `locale`、`theme.algorithm` 和主题种子 token 由布局写入，同名字段会被覆盖。
+   */
+  configProvider?: Omit<ConfigProviderProps, 'locale'>
+  /** 传给内部 antd App。`false` 表示不包 App。 */
+  app?: boolean | AppProps
   /** 是否在页签栏下方显示全局路由面包屑；默认为 true。 */
   showBreadcrumb?: boolean
   /** 当前页面标题变化后的通知回调；无匹配页面时传入空字符串。 */

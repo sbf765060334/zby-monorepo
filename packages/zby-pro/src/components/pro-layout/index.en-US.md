@@ -103,58 +103,34 @@ Do not use `element: <OrderListPage />`. The page chunk downloads on first visit
 
 ## Header Extensions
 
-Search, locale, theme, and seed customization are independent features. Import the ones required by the application and place them in `header.extra`. They share the same sizing and interaction style, but ProLayout does not inject them automatically.
+When the header is visible, the locale and theme buttons are always shown. `header.extra` is only for application buttons, such as search and the user menu, and it renders after those two buttons. `noBar` hides the header and the buttons together.
 
 ```tsx
-import {
-  ProLocaleSwitch,
-  ProRouteSearch,
-  ProThemeSwitch,
-  ReactRouterProLayout,
-  toThemeSeedToken,
-  useLocalePreference,
-  useThemePreference,
-  useThemeSeedPreference,
-} from '@zby/pro/pro-layout'
+import { mergeLocales } from '@zby/ui'
+import { ProRouteSearch, ReactRouterProLayout } from '@zby/pro/pro-layout'
 
 function PlatformLayout() {
-  const locale = useLocalePreference({
-    defaultValue: 'zh-CN',
-  })
-  const theme = useThemePreference({
-    defaultValue: { mode: 'auto', density: 'default' },
-  })
-  const themeSeed = useThemeSeedPreference()
-
   return (
     <ReactRouterProLayout
       router={router}
       title="Digital Platform"
+      locales={[
+        { key: 'zh-CN', label: '简体中文', pack: zhCN },
+        { key: 'en-US', label: 'English', pack: enUS },
+      ]}
+      defaultLocale="zh-CN"
+      defaultTheme={{ mode: 'auto', density: 'default' }}
+      configProvider={{ prefixCls: 'zby', theme: { cssVar: { prefix: 'zby' } } }}
       header={{
         logo: <strong>Digital Platform</strong>,
-        extra: (
-          <>
-            <ProRouteSearch />
-            <ProLocaleSwitch
-              value={locale.value}
-              onChange={locale.setValue}
-            />
-            <ProThemeSwitch
-              value={theme.value}
-              appearance={theme.appearance}
-              onChange={theme.setValue}
-              seed={themeSeed.value}
-              onSeedConfirm={themeSeed.setValue}
-            />
-          </>
-        ),
+        extra: <ProRouteSearch />,
       }}
     />
   )
 }
 ```
 
-`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. Pass `toThemeSeedToken(themeSeed.value, theme.appearance)` through `theme.token` together with the existing `algorithm`. `useLocalePreference`, `useThemePreference`, and `useThemeSeedPreference` only manage preferences and localStorage. Pass the `useThemePreference()` result to `ProThemeProvider`, then read it from descendants with `useTheme()`. `ProThemeProvider` can sit inside `ZbyConfigProvider`.
+Each `locales` entry's `pack` comes from `mergeLocales`, combining the antd locale with component and application messages. When `locales` is omitted, the header offers the built-in Chinese, English, Vietnamese, and Burmese entries, and only ProLayout's own messages are registered. Theme, density, and locale live inside ProLayout and are written to its `ConfigProvider` and `ZbyIntlProvider`. Pages call `useTheme()` to read or change the theme, `useIntl().locale` to read the current locale, and `useLocale().setLocale` to change it. Outside the layout those hooks throw, because the providers are not there. Pages that do not use ProLayout compose antd `ConfigProvider`, `App`, and `ZbyIntlProvider` themselves.
 
 ## Route Conventions
 
@@ -188,7 +164,7 @@ Use router-core commands for navigation. Call `router.jumpTo(path)` for full pag
 }
 ```
 
-Keep the copy in the application's existing locale pack and hand it to `ZbyConfigProvider` together with page copy; routes need no separate localization mechanism. `prompt: true` uses ProLayout's built-in "unavailable" copy.
+Keep the copy in the application's existing locale pack and pass it through `locales`; routes need no separate localization mechanism. `prompt: true` uses ProLayout's built-in "unavailable" copy.
 
 Plain literals still work: `tag: 'Beta'` matches nothing in the locale pack and renders as `Beta`.
 
@@ -350,32 +326,15 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | prefixCls | CSS class prefix; keep it aligned with ProLayout. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` | `string` | `ant-pro-layout` |
 | className | Class name on the search trigger button | `string` | - |
 
-### ProLocaleSwitch
+### useTheme
 
-| Property | Description | Type | Default |
-| --- | --- | --- | --- |
-| value | Current locale | `'zh-CN' \| 'en-US'` | Required |
-| onChange | Called when the user selects a locale | `(locale: ProLocale) => void` | Required |
-| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
-| className | Class name on the trigger button | `string` | - |
+`useTheme()` can be called only inside `ReactRouterProLayout`. It returns `theme` (`auto`, `light`, or `dark`), `resolvedTheme` (`light` or `dark`), `density` (`default` or `compact`), plus `setMode` and `setDensity`. The preference is stored at `zby-pro:theme-preference`. `defaultTheme` applies only when nothing is stored; the default is light mode and default density.
 
-`useLocalePreference(options)` defaults to `zh-CN` and always stores it under `zby-pro:locale-preference`. Override the default locale with `defaultValue`, then use the returned `value` and `setValue` to drive the selector and outer providers.
+The header theme menu contains system appearance, light, dark, default density, compact density, and customize. The customize drawer edits global seeds on the left and previews the draft on the right. Field edits, per-field reset, and Reset only change the draft. OK writes `zby-pro:theme-seed` and updates the inner `ConfigProvider`. Closing the drawer discards the draft. `defaultThemeSeed` applies only when no seed is stored. A `null` color keeps Ant Design's default relationship, for example info following the primary color. Read the applied color, font size, and radius with antd `theme.useToken()`.
 
-### ProThemeSwitch
+### useLocale
 
-| Property | Description | Type | Default |
-| --- | --- | --- | --- |
-| value | Current color mode and layout density | `ProThemePreference` | Required |
-| appearance | Resolved `light` or `dark` appearance when mode may be `auto` | `'light' \| 'dark'` | Required |
-| onChange | Called when the preference changes | `(value: ProThemePreference) => void` | Required |
-| prefixCls | CSS class prefix. Defaults to `ConfigProvider.getPrefixCls('pro-layout')` (`ant-pro-layout`) | `string` | `ant-pro-layout` |
-| className | Class name on the trigger button | `string` | - |
-| seed | Confirmed seed. When set together with `onSeedConfirm`, the menu shows Customize below compact layout | `ProThemeSeedPreference` | - |
-| onSeedConfirm | Called when the user confirms the seed drawer | `(value: ProThemeSeedPreference) => void` | - |
-
-`ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`. `ProThemeProvider` takes that result. Descendants call `useTheme()` and receive `theme` (the selected mode), `resolvedTheme` (`light` or `dark`), and `density`.
-
-Customize sits inside the theme menu, below compact layout and a divider. The drawer edits global seeds on the left and previews the draft on the right. Field edits, per-field reset, and Reset only change the draft. OK calls `onSeedConfirm` and stores the result under `zby-pro:theme-seed`. Closing the drawer discards the draft. `useThemeSeedPreference(options)` returns `value` and `setValue`. A `null` color keeps Ant Design's default relationship: info and link follow the primary color, while base text and background follow the active appearance algorithm. `toThemeSeedToken` resolves those empty values before they reach `ConfigProvider`.
+`useLocale()` can be called only inside `ReactRouterProLayout`. It returns `locale` and `setLocale`. Read the active messages with `useIntl().locale`; that value comes from the same state. The preference is stored at `zby-pro:locale-preference`. `defaultLocale` applies only when nothing is stored. Otherwise the first `locales` entry is used, or `zh-CN` when `locales` is omitted. The header menu lists only `locales`. A locale outside that list is not stored.
 
 ### ProLayoutContentContainer
 

@@ -3,6 +3,7 @@ import { createStore } from 'zustand/vanilla'
 
 import type { ReactNode } from 'react'
 import type { StoreApi } from 'zustand/vanilla'
+import type { UseThemeReturn } from '../theme/types'
 
 /** Layout dimensions calculated from ProLayout tokens rather than DOM measurements. */
 export interface ProLayoutMetrics {
@@ -11,8 +12,14 @@ export interface ProLayoutMetrics {
   siderWidth: number
 }
 
+/** 页面读取和切换当前语言。语言包仍由内部的 ZbyIntlProvider 提供。 */
+export interface UseLocaleReturn {
+  locale: string
+  setLocale: (locale: string) => void
+}
+
 /** Public layout context fields used by business pages and content containers. */
-export interface ProLayoutContextValue extends ProLayoutMetrics {
+export interface ProLayoutContextValue extends ProLayoutMetrics, UseThemeReturn, UseLocaleReturn {
   noBar: boolean
   showBreadcrumb: boolean
 }
@@ -25,6 +32,13 @@ const EMPTY_CONTEXT: ProLayoutContextValue = {
   siderWidth: 0,
   noBar: false,
   showBreadcrumb: true,
+  theme: 'light',
+  resolvedTheme: 'light',
+  density: 'default',
+  setMode: () => undefined,
+  setDensity: () => undefined,
+  locale: 'zh-CN',
+  setLocale: () => undefined,
 }
 
 const EMPTY_STORE = createStore<ProLayoutContextValue>(() => EMPTY_CONTEXT)
@@ -99,6 +113,24 @@ export function useProLayoutSiderWidth() {
   return useProLayoutContext((state) => state.siderWidth)
 }
 
+/** 读取 ProLayout 内部的主题。布局外调用会抛错，不退回空的布局数据。 */
+export function useTheme(): UseThemeReturn {
+  const store = useContext(ProLayoutStoreContext)
+  const theme = useStoreSelector(store ?? EMPTY_STORE, selectTheme, areThemeEqual)
+  if (!store)
+    throw new Error('useTheme must be used within ProLayout')
+  return theme
+}
+
+/** 读取并切换 ProLayout 内部的语言。布局外调用会抛错。 */
+export function useLocale(): UseLocaleReturn {
+  const store = useContext(ProLayoutStoreContext)
+  const locale = useStoreSelector(store ?? EMPTY_STORE, selectLocale, areLocaleEqual)
+  if (!store)
+    throw new Error('useLocale must be used within ProLayout')
+  return locale
+}
+
 function identity(state: ProLayoutContextValue) {
   return state
 }
@@ -119,13 +151,51 @@ function areMetricsEqual(left: ProLayoutMetrics, right: ProLayoutMetrics) {
   )
 }
 
+function selectTheme(state: ProLayoutContextValue): UseThemeReturn {
+  return {
+    theme: state.theme,
+    resolvedTheme: state.resolvedTheme,
+    density: state.density,
+    setMode: state.setMode,
+    setDensity: state.setDensity,
+  }
+}
+
+function areThemeEqual(left: UseThemeReturn, right: UseThemeReturn) {
+  return (
+    left.theme === right.theme &&
+    left.resolvedTheme === right.resolvedTheme &&
+    left.density === right.density &&
+    left.setMode === right.setMode &&
+    left.setDensity === right.setDensity
+  )
+}
+
+function selectLocale(state: ProLayoutContextValue): UseLocaleReturn {
+  return {
+    locale: state.locale,
+    setLocale: state.setLocale,
+  }
+}
+
+function areLocaleEqual(left: UseLocaleReturn, right: UseLocaleReturn) {
+  return left.locale === right.locale && left.setLocale === right.setLocale
+}
+
 function areContextValuesEqual(left: ProLayoutContextValue, right: ProLayoutContextValue) {
   return (
     left.headerHeight === right.headerHeight &&
     left.breadcrumbHeight === right.breadcrumbHeight &&
     left.siderWidth === right.siderWidth &&
     left.noBar === right.noBar &&
-    left.showBreadcrumb === right.showBreadcrumb
+    left.showBreadcrumb === right.showBreadcrumb &&
+    left.theme === right.theme &&
+    left.resolvedTheme === right.resolvedTheme &&
+    left.density === right.density &&
+    left.locale === right.locale &&
+    left.setMode === right.setMode &&
+    left.setDensity === right.setDensity &&
+    left.setLocale === right.setLocale
   )
 }
 

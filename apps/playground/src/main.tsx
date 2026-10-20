@@ -1,25 +1,18 @@
 import 'antd/dist/reset.css'
 import { useIntl } from '@zby/intl'
-import { theme as antdTheme } from 'antd'
 import antdEnUS from 'antd/locale/en_US'
 import antdMyMM from 'antd/locale/my_MM'
 import antdViVN from 'antd/locale/vi_VN'
 import antdZhCN from 'antd/locale/zh_CN'
 import {
   isSameProLayoutTitle,
-  ProLocaleSwitch,
   ProRouteSearch,
-  ProThemeProvider,
-  ProThemeSwitch,
+  type ProLayoutLocaleConfig,
   type ProLayoutRoute,
   ReactRouterProLayout,
-  toThemeSeedToken,
-  useLocalePreference,
-  useThemePreference,
-  useThemeSeedPreference,
   UserMenu,
 } from '@zby/pro'
-import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import { mergeLocales } from '@zby/ui'
 import uiEnUS from '@zby/ui/locale/en_US'
 import uiMyMM from '@zby/ui/locale/my_MM'
 import uiViVN from '@zby/ui/locale/vi_VN'
@@ -28,7 +21,7 @@ import proEnUS from '@zby/pro/locale/en_US'
 import proMyMM from '@zby/pro/locale/my_MM'
 import proViVN from '@zby/pro/locale/vi_VN'
 import proZhCN from '@zby/pro/locale/zh_CN'
-import React, { useLayoutEffect, useMemo } from 'react'
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { playgroundEnUS, playgroundMyMM, playgroundViVN, playgroundZhCN } from './playgroundIntl'
@@ -48,24 +41,40 @@ const routers = createRouterCore<ProLayoutRoute>({
   isSameTitle: isSameProLayoutTitle,
 })
 
-const playgroundLocales = {
-  'zh-CN': mergeLocales({
-    antd: antdZhCN,
-    packs: [uiZhCN, proZhCN, playgroundZhCN],
-  }),
-  'en-US': mergeLocales({
-    antd: antdEnUS,
-    packs: [uiEnUS, proEnUS, playgroundEnUS],
-  }),
-  'vi-VN': mergeLocales({
-    antd: antdViVN,
-    packs: [uiViVN, proViVN, playgroundViVN],
-  }),
-  'my-MM': mergeLocales({
-    antd: antdMyMM,
-    packs: [uiMyMM, proMyMM, playgroundMyMM],
-  }),
-}
+const playgroundLocales: ProLayoutLocaleConfig[] = [
+  {
+    key: 'zh-CN',
+    label: '简体中文',
+    pack: mergeLocales({
+      antd: antdZhCN,
+      packs: [uiZhCN, proZhCN, playgroundZhCN],
+    }),
+  },
+  {
+    key: 'en-US',
+    label: 'English',
+    pack: mergeLocales({
+      antd: antdEnUS,
+      packs: [uiEnUS, proEnUS, playgroundEnUS],
+    }),
+  },
+  {
+    key: 'vi-VN',
+    label: 'Tiếng Việt',
+    pack: mergeLocales({
+      antd: antdViVN,
+      packs: [uiViVN, proViVN, playgroundViVN],
+    }),
+  },
+  {
+    key: 'my-MM',
+    label: 'မြန်မာ',
+    pack: mergeLocales({
+      antd: antdMyMM,
+      packs: [uiMyMM, proMyMM, playgroundMyMM],
+    }),
+  },
+]
 
 function PlaygroundUserMenu() {
   const intl = useIntl()
@@ -82,18 +91,18 @@ function PlaygroundUserMenu() {
   )
 }
 
-function PlaygroundLayout(props: {
-  localePreference: ReturnType<typeof useLocalePreference>
-  themePreference: ReturnType<typeof useThemePreference>
-  themeSeed: ReturnType<typeof useThemeSeedPreference>
-}) {
-  const intl = useIntl()
-  const { localePreference, themePreference, themeSeed } = props
-
+function PlaygroundApp() {
   return (
     <ReactRouterProLayout
       router={routers}
-      title={intl.getMessage('playground.appTitle', '数字化平台')}
+      title={{ key: 'playground.appTitle', defaultMessage: '数字化平台' }}
+      locales={playgroundLocales}
+      defaultLocale="zh-CN"
+      defaultTheme={{ mode: 'auto', density: 'default' }}
+      configProvider={{
+        prefixCls: 'zby',
+        theme: { cssVar: { prefix: 'zby' } },
+      }}
       showBreadcrumb={true}
       header={{
         logo: (
@@ -109,18 +118,6 @@ function PlaygroundLayout(props: {
         extra: (
           <>
             <ProRouteSearch />
-            <ProLocaleSwitch
-              value={localePreference.value}
-              onChange={localePreference.setValue}
-            />
-            <ProThemeSwitch
-              value={themePreference.value}
-              appearance={themePreference.appearance}
-              onChange={themePreference.setValue}
-              seed={themeSeed.value}
-              seedConfig={themeSeed.config}
-              onSeedConfirm={themeSeed.setValue}
-            />
             <PlaygroundUserMenu />
           </>
         ),
@@ -139,62 +136,6 @@ function PlaygroundLayout(props: {
         }]
       }
     />
-  )
-}
-
-function PlaygroundApp() {
-  const localePreference = useLocalePreference({
-    defaultValue: 'zh-CN',
-  })
-
-  const themePreference = useThemePreference({
-    defaultValue: { mode: 'auto', density: 'default' },
-  })
-  const themeSeed = useThemeSeedPreference()
-
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    const previousColorScheme = root.style.colorScheme
-    const previousTheme = root.dataset.theme
-    root.style.colorScheme = themePreference.appearance
-    root.dataset.theme = themePreference.appearance
-    return () => {
-      root.style.colorScheme = previousColorScheme
-      if (previousTheme === undefined)
-        delete root.dataset.theme
-      else
-        root.dataset.theme = previousTheme
-    }
-  }, [themePreference.appearance])
-
-  const algorithm = useMemo(() => {
-    const appearanceAlgorithm = themePreference.appearance === 'dark'
-      ? antdTheme.darkAlgorithm
-      : antdTheme.defaultAlgorithm
-
-    return themePreference.value.density === 'compact'
-      ? [appearanceAlgorithm, antdTheme.compactAlgorithm]
-      : appearanceAlgorithm
-  }, [themePreference.appearance, themePreference.value.density])
-
-  return (
-    <ZbyConfigProvider
-      locale={playgroundLocales[localePreference.value]}
-      theme={{
-        algorithm,
-        cssVar: { prefix: 'zby' },
-        token: toThemeSeedToken(themeSeed.value, themePreference.appearance),
-      }}
-      prefixCls="zby"
-    >
-      <ProThemeProvider value={themePreference}>
-        <PlaygroundLayout
-          localePreference={localePreference}
-          themePreference={themePreference}
-          themeSeed={themeSeed}
-        />
-      </ProThemeProvider>
-    </ZbyConfigProvider>
   )
 }
 

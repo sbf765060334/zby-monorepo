@@ -12,13 +12,15 @@ export interface HeaderProps {
   paddingLeft: number
   scrolled?: boolean
   extra?: ReactNode
+  /** 顶栏内置的语言和主题按钮。 */
+  tools?: ReactNode
   classNames?: ProLayoutClassNames
   styles?: ProLayoutStyles
 }
 
 /** 顶部全局页签栏及业务扩展区域。 */
 const Header = (props: HeaderProps) => {
-  const { classNames, extra, hashId, height, paddingLeft, prefixCls, scrolled, styles } = props
+  const { classNames, extra, hashId, height, paddingLeft, prefixCls, scrolled, styles, tools } = props
 
   return (
     <header
@@ -48,14 +50,13 @@ const Header = (props: HeaderProps) => {
       >
         <PageTabs prefixCls={prefixCls} hashId={hashId} />
       </div>
-      {extra !== undefined && extra !== null && extra !== false ? (
-        <div
-          className={clsx(`${prefixCls}-header-extra`, classNames?.headerExtra)}
-          style={{ display: 'flex', alignItems: 'center', ...styles?.headerExtra }}
-        >
-          {extra}
-        </div>
-      ) : null}
+      <div
+        className={clsx(`${prefixCls}-header-extra`, classNames?.headerExtra)}
+        style={{ display: 'flex', alignItems: 'center', ...styles?.headerExtra }}
+      >
+        {tools}
+        {extra}
+      </div>
     </header>
   )
 }

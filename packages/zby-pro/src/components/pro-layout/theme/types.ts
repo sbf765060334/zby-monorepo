@@ -82,7 +82,7 @@ export interface UseThemePreferenceReturn {
   setDensity: (density: ProThemeDensity) => void
 }
 
-/** useTheme 读到的当前生效主题。 */
+/** useTheme 读到的当前主题，以及写回 ProLayout 内部状态的方法。 */
 export interface UseThemeReturn {
   /** 用户选择的明暗模式，可以是 auto。 */
   theme: ProThemeMode
@@ -90,4 +90,8 @@ export interface UseThemeReturn {
   resolvedTheme: ProThemeAppearance
   /** 布局密度。 */
   density: ProThemeDensity
+  /** 更新明暗模式，并写入本地存储。 */
+  setMode: (mode: ProThemeMode) => void
+  /** 更新布局密度，并写入本地存储。 */
+  setDensity: (density: ProThemeDensity) => void
 }

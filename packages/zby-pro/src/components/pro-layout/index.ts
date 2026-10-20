@@ -13,55 +13,39 @@ export type {
   ProLayoutContentContainerMode,
   ProLayoutContentContainerProps,
 } from './content-container'
-export { ProLocaleSwitch, useLocalePreference } from './locale'
 export {
+  useLocale,
   useProLayoutBreadcrumbHeight,
   useProLayoutContext,
   useProLayoutHeaderHeight,
   useProLayoutMetrics,
   useProLayoutSiderWidth,
+  useTheme,
 } from './metrics'
-export type {
-  ProLocale,
-  ProLocaleSwitchProps,
-  UseLocalePreferenceOptions,
-  UseLocalePreferenceReturn,
-} from './locale'
 export type {
   ProLayoutContextValue,
   ProLayoutMetrics,
   ProLayoutSelectorEqualityFn,
+  UseLocaleReturn,
 } from './metrics'
 export { ProRouteSearch } from './search'
 export { UserMenu } from './user'
 export type { ProRouteSearchProps } from './search'
 export type { UserMenuItem, UserMenuProps } from './user'
 export { isSameProLayoutTitle, resolveProLayoutTitle } from './title'
-export {
-  ProThemeProvider,
-  ProThemeSwitch,
-  toThemeSeedToken,
-  useTheme,
-  useThemePreference,
-  useThemeSeedPreference,
-} from './theme'
 export type {
   ProThemeAppearance,
   ProThemeDensity,
   ProThemeMode,
   ProThemePreference,
   ProThemeSeedPreference,
-  ProThemeSwitchProps,
-  UseThemePreferenceOptions,
-  UseThemePreferenceReturn,
   UseThemeReturn,
-  UseThemeSeedPreferenceOptions,
-  UseThemeSeedPreferenceReturn,
 } from './theme'
 export type {
   ProLayoutClassNames,
   ProLayoutHeaderConfig,
   ProLayoutHeaderLogo,
+  ProLayoutLocaleConfig,
   ProLayoutPageErrorContext,
   ProLayoutPageErrorHandler,
   ProLayoutPageLoading,

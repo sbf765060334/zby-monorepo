@@ -9,7 +9,7 @@ description: Shared i18next-based internationalization infrastructure for ZBY Re
 
 Use `@zby/intl` to share one internationalization context across ZBY component packages and an application. It registers locale resources, follows a controlled locale value, and provides consistent message lookup, date formatting, and number formatting.
 
-The package uses `i18next` and `react-i18next` internally. Applications should wrap the root with `ZbyConfigProvider` from `@zby/ui`, which nests antd `ConfigProvider`, `App`, and `ZbyIntlProvider`. Keep using `ZbyIntlProvider` directly in tests or when you already have an i18next instance.
+The package uses `i18next` and `react-i18next` internally. `ReactRouterProLayout` nests antd `ConfigProvider`, `App`, and `ZbyIntlProvider`. Use `ZbyIntlProvider` directly for pages outside the layout, in tests, or when you already have an i18next instance.
 
 ## Basic Usage
 
@@ -17,7 +17,8 @@ Application root:
 
 ```tsx
 import antdEnUS from 'antd/locale/en_US'
-import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import { ReactRouterProLayout } from '@zby/pro'
+import { mergeLocales } from '@zby/ui'
 import uiEnUS from '@zby/ui/locale/en_US'
 import proEnUS from '@zby/pro/locale/en_US'
 
@@ -28,14 +29,16 @@ const enUS = mergeLocales({
 
 export default function AppRoot() {
   return (
-    <ZbyConfigProvider locale={enUS}>
-      <App />
-    </ZbyConfigProvider>
+    <ReactRouterProLayout
+      router={router}
+      title="Digital Platform"
+      locales={[{ key: 'en-US', label: 'English', pack: enUS }]}
+    />
   )
 }
 ```
 
-`ZbyIntlProvider` is the lower-level engine. `locale` is a language code string and `resources` is `{ 'en-US': messageTree }`. The application owns locale preference, persistence, and switching.
+`ZbyIntlProvider` is the lower-level engine. `locale` is a language code string and `resources` is `{ 'en-US': messageTree }`. ProLayout owns the locale preference and the header switch. Pages read `useIntl().locale` and change it with `useLocale().setLocale`.
 
 ## Locale Resources
 

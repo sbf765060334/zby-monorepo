@@ -1,6 +1,6 @@
 import { mergeIntlResources } from '@zby/intl'
 
-import { toIntlResources } from '../config-provider/mergeLocales'
+import { toIntlResources } from './mergeLocales'
 import enUS from './en_US'
 import myMM from './my_MM'
 import viVN from './vi_VN'

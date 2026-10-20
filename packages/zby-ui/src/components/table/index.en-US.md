@@ -16,7 +16,7 @@ Table preserves the upstream behavior and fixes from Ant Design 6.6.4 and `@rc-c
 
 ## Internationalization
 
-Built-in Table strings for filters, empty state, expand, and pagination use the antd locale (passed through `ZbyConfigProvider` to `ConfigProvider.locale`). Column `copyable` uses ActionText and `@zby/ui/locale/*`. Applications inject both with `mergeLocales({ antd, packs: [ui, ...] })`.
+Built-in Table strings for filters, empty state, expand, and pagination use the antd locale (provided by ProLayout's inner `ConfigProvider.locale`). Column `copyable` uses ActionText and `@zby/ui/locale/*`. Applications inject both with `mergeLocales({ antd, packs: [ui, ...] })`.
 
 ## Column Enhancement
 

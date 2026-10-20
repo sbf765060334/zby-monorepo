@@ -15,7 +15,7 @@
 它负责：
 
 - 提供在 Ant Design v6 上扩增的基础组件和中后台业务组件。
-- 用 `ZbyConfigProvider` 把 antd 的 `ConfigProvider`、`App` 和内部国际化接在同一个根节点上。
+- 用 `ReactRouterProLayout` 把 antd 的 `ConfigProvider`、`App` 和内部国际化接在布局内部。
 - 提供布局、页签、国际化、请求客户端和通用 hooks，供内部应用复用。
 
 它不负责：
@@ -27,7 +27,7 @@
 接入时可以理解成三步：
 
 1. 应用依赖需要的 `@zby/*` 包，并安装 peer `antd` `^6.6.4`。
-2. 根节点使用 `@zby/ui` 的 `ZbyConfigProvider`，用 `mergeLocales` 合入 antd 语言包和内部语言包。
+2. 根节点渲染 `@zby/pro` 的 `ReactRouterProLayout`，用 `mergeLocales` 合入 antd 语言包和内部语言包后通过 `locales` 传入。
 3. 页面里 antd 组件和 `@zby/ui`、`@zby/pro` 组件一起用。主题、尺寸、禁用和表单状态沿用 antd 的 `ConfigProvider`。
 
 ## 和 Ant Design 的关系
@@ -35,7 +35,7 @@
 二次扩增指的是：视觉和交互对齐 antd，组件接 antd 的主题、语言包、`Form` 和 `ConfigProvider`，再补上公司后台需要的组件。
 
 - `@zby/ui`、`@zby/pro` 把 `antd` 声明为 peer，版本是 `^6.6.4`。应用自己安装 antd，物料库不内置一份。
-- `ZbyConfigProvider` 内部包裹 antd `ConfigProvider` 和 `App`。`theme`、`prefixCls` 等其余配置透传给 antd。
+- `ReactRouterProLayout` 内部包裹 antd `ConfigProvider` 和 `App`。`configProvider` 把 `prefixCls`、`cssVar` 等其余配置透传给 antd。主题算法和语言由布局自己写入。
 - `mergeLocales` 接收 `antd/locale/*`，和 `@zby/ui`、`@zby/pro`、业务语言包合成一份当前语言。
 - `InputNumberRange`、`ActionIcon` 等组件对齐 antd Form、Button 的尺寸、状态和变体。显式传入的属性优先于上下文。
 - `@zby/ui` 的 `Table` 只给内部表格使用。antd 官方 `Table` 仍走 antd 自己的依赖，不要用覆盖把两者换成同一个包。
@@ -44,14 +44,14 @@
 
 | 包 | 作用 | 文档 |
 | --- | --- | --- |
-| `@zby/ui` | 在 antd 上扩增的基础组件，以及 `ZbyConfigProvider` | 各组件目录下的 `index.zh-CN.md` |
+| `@zby/ui` | 在 antd 上扩增的基础组件，以及 `mergeLocales` | 各组件目录下的 `index.zh-CN.md` |
 | `@zby/pro` | 中后台业务组件，如 `ProLayout`、`ProTable`、`ProModal` | 各组件目录下的 `index.zh-CN.md` |
-| `@zby/intl` | 内部国际化。`ZbyConfigProvider` 会包住它 | `zby-intl/src/index.zh-CN.md` |
+| `@zby/intl` | 内部国际化。`ReactRouterProLayout` 会包住它 | `zby-intl/src/index.zh-CN.md` |
 | `@zby/hooks` | 内部复用的 React hooks | 无独立说明 |
 | `@zby/router-core` | `ProLayout` 使用的路由、页签和 KeepAlive 核心。业务不要单独依赖 | `router-core/src/index.zh-CN.md` |
 | `@zby/request` | 按 `errCode` 处理的业务请求客户端，以及 TanStack Query 适配 | `request/src/index.zh-CN.md` |
 
-`@zby/ui` 当前导出 `ActionIcon`、`ActionText`、`ActionReveal`、`InputNumberRange`、`ScrollArea`、`Table`，以及 `ZbyConfigProvider`、`mergeLocales`。
+`@zby/ui` 当前导出 `ActionIcon`、`ActionText`、`ActionReveal`、`InputNumberRange`、`ScrollArea`、`Table`，以及 `mergeLocales`。
 
 `@zby/pro` 在此之上提供 `ReactRouterProLayout`、`ProTable`、`ProModal`、`ProViewManagement` 等后台组件。布局和表格文档以各组件自己的说明为准。
 
@@ -67,11 +67,12 @@
 
 ## 快速开始
 
-根节点同时接入 antd 语言包和内部语言包：
+把 antd 语言包和内部文案交给 `ReactRouterProLayout`：
 
 ```tsx
 import antdZhCN from 'antd/locale/zh_CN'
-import { mergeLocales, ZbyConfigProvider } from '@zby/ui'
+import { ReactRouterProLayout } from '@zby/pro'
+import { mergeLocales } from '@zby/ui'
 import uiZhCN from '@zby/ui/locale/zh_CN'
 import proZhCN from '@zby/pro/locale/zh_CN'
 
@@ -82,9 +83,12 @@ const zhCN = mergeLocales({
 
 export function AppRoot() {
   return (
-    <ZbyConfigProvider locale={zhCN} theme={{ cssVar: true }}>
-      <App />
-    </ZbyConfigProvider>
+    <ReactRouterProLayout
+      router={router}
+      title="数字化平台"
+      locales={[{ key: 'zh-CN', label: '简体中文', pack: zhCN }]}
+      configProvider={{ theme: { cssVar: true } }}
+    />
   )
 }
 ```
