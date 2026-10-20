@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.2.5
+
+### Patch Changes
+
+- ActionText 改为原生单行省略和自定义操作，支持 type、strong；Table 去掉 shuzhi 前缀悬停名，并给单元格补上与表格背景相同的背景色，避免长内容溢出覆盖后面内容
+
 ## 0.2.4
 
 ### Patch Changes
