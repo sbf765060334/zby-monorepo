@@ -312,6 +312,7 @@ function ProLayoutView(props: ProLayoutViewProps) {
               styles={styles}
               tools={(
                 <>
+                  <ProRouteSearch />
                   <ProLocaleSwitch
                     options={localeOptions}
                     value={localePreference.value}
@@ -325,7 +326,6 @@ function ProLayoutView(props: ProLayoutViewProps) {
                     onChange={themePreference.setValue}
                     onSeedConfirm={themeSeed.setValue}
                   />
-                  <ProRouteSearch />
                 </>
               )}
             />
