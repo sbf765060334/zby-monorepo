@@ -155,7 +155,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。个性化种子用 `toThemeSeedToken(themeSeed.value, theme.appearance)` 放进 `theme.token`，并与原有 `algorithm` 一起传入。`useLocalePreference`、`useThemePreference` 和 `useThemeSeedPreference` 只管理偏好与 localStorage，不创建 Provider。
+`ProLocaleSwitch` 和 `ProThemeSwitch` 都是受控选择器。业务必须使用相同状态更新外层 `ZbyConfigProvider` 的 `locale` / `theme`。个性化种子用 `toThemeSeedToken(themeSeed.value, theme.appearance)` 放进 `theme.token`，并与原有 `algorithm` 一起传入。`useLocalePreference`、`useThemePreference` 和 `useThemeSeedPreference` 只管理偏好与 localStorage。把 `useThemePreference()` 的返回值传给 `ProThemeProvider` 后，子组件用 `useTheme()` 读取当前主题。`ProThemeProvider` 可以放在 `ZbyConfigProvider` 里面。
 
 ## 路由约定
 
@@ -374,7 +374,7 @@ export function OrderPage() {
 | seed | 已确定的个性化种子。与 `onSeedConfirm` 同时传入后，菜单在紧凑布局下方显示个性化 | `ProThemeSeedPreference` | - |
 | onSeedConfirm | 个性化抽屉点击确定后的通知 | `(value: ProThemeSeedPreference) => void` | - |
 
-`ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。
+`ProThemePreference` 包含 `mode: 'auto' | 'light' | 'dark'` 和 `density: 'default' | 'compact'`。`useThemePreference(options)` 默认使用亮色、默认密度，并固定存储在 `zby-pro:theme-preference`；返回 `value`、`appearance`、`setValue`、`setMode` 和 `setDensity`。`ProThemeProvider` 接收这次调用的返回值。其子组件调用 `useTheme()` 得到 `theme`（用户选择的 mode）、`resolvedTheme`（实际的 light 或 dark）和 `density`。
 
 个性化入口在主题菜单内，用分割线放在紧凑布局下面。抽屉左侧编辑全局种子，右侧预览草稿。调整、单行重置和恢复默认都只改草稿；点击确定才调用 `onSeedConfirm` 并写入 `zby-pro:theme-seed`。关闭抽屉会丢弃草稿。`useThemeSeedPreference(options)` 返回 `value` 和 `setValue`。颜色字段为 `null` 时跟随 antd 默认关系，例如信息色跟随品牌色，基础文本色和背景色跟随明暗算法。`toThemeSeedToken` 负责在传给 `ConfigProvider` 前把这些空值解析成具体颜色。
 

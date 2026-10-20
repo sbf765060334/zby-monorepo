@@ -1,6 +1,7 @@
 // 公开运行时 API：受控选择器和可选的偏好状态 hook。
 export { default as ProThemeSwitch } from './ThemeSwitch'
 export { useThemePreference } from './useThemePreference'
+export { ProThemeProvider, useTheme } from './useTheme'
 export {
   toThemeSeedToken,
   useThemeSeedPreference,
@@ -16,6 +17,7 @@ export type {
   ProThemeSeedPreference,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
+  UseThemeReturn,
   UseThemeSeedPreferenceOptions,
   UseThemeSeedPreferenceReturn,
 } from './types'

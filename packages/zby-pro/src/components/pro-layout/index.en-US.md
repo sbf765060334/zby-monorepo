@@ -154,7 +154,7 @@ function PlatformLayout() {
 }
 ```
 
-`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. Pass `toThemeSeedToken(themeSeed.value, theme.appearance)` through `theme.token` together with the existing `algorithm`. `useLocalePreference`, `useThemePreference`, and `useThemeSeedPreference` only manage preferences and localStorage; they do not create providers.
+`ProLocaleSwitch` and `ProThemeSwitch` are controlled selectors. The application must use the same state to update the outer `ZbyConfigProvider` `locale` / `theme`. Pass `toThemeSeedToken(themeSeed.value, theme.appearance)` through `theme.token` together with the existing `algorithm`. `useLocalePreference`, `useThemePreference`, and `useThemeSeedPreference` only manage preferences and localStorage. Pass the `useThemePreference()` result to `ProThemeProvider`, then read it from descendants with `useTheme()`. `ProThemeProvider` can sit inside `ZbyConfigProvider`.
 
 ## Route Conventions
 
@@ -373,7 +373,7 @@ When `render` is configured, ProLayout does not wrap it in the default Spin. Wit
 | seed | Confirmed seed. When set together with `onSeedConfirm`, the menu shows Customize below compact layout | `ProThemeSeedPreference` | - |
 | onSeedConfirm | Called when the user confirms the seed drawer | `(value: ProThemeSeedPreference) => void` | - |
 
-`ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`.
+`ProThemePreference` contains `mode: 'auto' | 'light' | 'dark'` and `density: 'default' | 'compact'`. `useThemePreference(options)` defaults to light mode and default density and always stores data under `zby-pro:theme-preference`. It returns `value`, `appearance`, `setValue`, `setMode`, and `setDensity`. `ProThemeProvider` takes that result. Descendants call `useTheme()` and receive `theme` (the selected mode), `resolvedTheme` (`light` or `dark`), and `density`.
 
 Customize sits inside the theme menu, below compact layout and a divider. The drawer edits global seeds on the left and previews the draft on the right. Field edits, per-field reset, and Reset only change the draft. OK calls `onSeedConfirm` and stores the result under `zby-pro:theme-seed`. Closing the drawer discards the draft. `useThemeSeedPreference(options)` returns `value` and `setValue`. A `null` color keeps Ant Design's default relationship: info and link follow the primary color, while base text and background follow the active appearance algorithm. `toThemeSeedToken` resolves those empty values before they reach `ConfigProvider`.
 

@@ -9,6 +9,7 @@ import {
   isSameProLayoutTitle,
   ProLocaleSwitch,
   ProRouteSearch,
+  ProThemeProvider,
   ProThemeSwitch,
   type ProLayoutRoute,
   ReactRouterProLayout,
@@ -186,11 +187,13 @@ function PlaygroundApp() {
       }}
       prefixCls="zby"
     >
-      <PlaygroundLayout
-        localePreference={localePreference}
-        themePreference={themePreference}
-        themeSeed={themeSeed}
-      />
+      <ProThemeProvider value={themePreference}>
+        <PlaygroundLayout
+          localePreference={localePreference}
+          themePreference={themePreference}
+          themeSeed={themeSeed}
+        />
+      </ProThemeProvider>
     </ZbyConfigProvider>
   )
 }

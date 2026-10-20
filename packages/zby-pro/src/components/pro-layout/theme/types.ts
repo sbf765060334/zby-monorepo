@@ -81,3 +81,13 @@ export interface UseThemePreferenceReturn {
   /** 只更新布局密度。 */
   setDensity: (density: ProThemeDensity) => void
 }
+
+/** useTheme 读到的当前生效主题。 */
+export interface UseThemeReturn {
+  /** 用户选择的明暗模式，可以是 auto。 */
+  theme: ProThemeMode
+  /** 实际生效的明暗外观。 */
+  resolvedTheme: ProThemeAppearance
+  /** 布局密度。 */
+  density: ProThemeDensity
+}

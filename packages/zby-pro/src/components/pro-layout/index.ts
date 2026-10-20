@@ -38,8 +38,10 @@ export type { ProRouteSearchProps } from './search'
 export type { UserMenuItem, UserMenuProps } from './user'
 export { isSameProLayoutTitle, resolveProLayoutTitle } from './title'
 export {
+  ProThemeProvider,
   ProThemeSwitch,
   toThemeSeedToken,
+  useTheme,
   useThemePreference,
   useThemeSeedPreference,
 } from './theme'
@@ -52,6 +54,7 @@ export type {
   ProThemeSwitchProps,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
+  UseThemeReturn,
   UseThemeSeedPreferenceOptions,
   UseThemeSeedPreferenceReturn,
 } from './theme'

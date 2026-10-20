@@ -142,6 +142,8 @@ export {
   useProLayoutHeaderHeight,
   useProLayoutMetrics,
   useProLayoutSiderWidth,
+  ProThemeProvider,
+  useTheme,
   useThemePreference,
   useThemeSeedPreference,
 } from './components/pro-layout'
@@ -182,6 +184,7 @@ export type {
   UseLocalePreferenceReturn,
   UseThemePreferenceOptions,
   UseThemePreferenceReturn,
+  UseThemeReturn,
   UseThemeSeedPreferenceOptions,
   UseThemeSeedPreferenceReturn,
 } from './components/pro-layout'
