@@ -329,7 +329,8 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
   const showTable = !shouldBlockViewContent
   const contentNode = useMemo(
     () => {
-      if (!showSearchRow && !showTable) {
+      const header = resolvedConfig.mergedLayout?.header
+      if (!header && !showSearchRow && !showTable) {
         return null
       }
 
@@ -343,6 +344,9 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
           )}
           style={resolvedConfig.mergedSemanticStyles.content}
         >
+          {header ? (
+            <div className={`${resolvedConfig.prefixCls}-header`}>{header}</div>
+          ) : null}
           {showSearchRow ? (
             <SearchRegion
               className={resolvedConfig.mergedSemanticClassNames.search}
@@ -513,8 +517,8 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     () => rootRef.current ?? document.body,
     [],
   )
-  const getPopupContainer = useCallback((triggerNode: HTMLElement) => {
-    return rootRef.current ?? triggerNode.parentElement ?? document.body
+  const getPopupContainer = useCallback((triggerNode?: HTMLElement) => {
+    return rootRef.current ?? triggerNode?.parentElement ?? document.body
   }, [])
 
   useProTableFullscreen({

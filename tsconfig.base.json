@@ -21,9 +21,9 @@
       "@zby/hooks": ["./packages/hooks/index.ts"],
       "@zby/intl": ["./packages/zby-intl/src/index.ts"],
       "@zby/ui": ["./packages/zby-ui/src/index.ts"],
-      "@zby/ui/locale/*": ["./packages/zby-ui/src/locale/*"],
+      "@zby/ui/locale/*": ["./packages/zby-ui/src/locales/*"],
       "@zby/pro": ["./packages/zby-pro/src/index.ts"],
-      "@zby/pro/locale/*": ["./packages/zby-pro/src/locale/*"],
+      "@zby/pro/locale/*": ["./packages/zby-pro/src/locales/*"],
       "@zby/request": ["./packages/request/src/index.ts"],
       "@zby/request/internal": ["./packages/request/src/internal.ts"],
       "@zby/request/react-query": ["./packages/request/src/react-query.ts"]

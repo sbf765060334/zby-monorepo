@@ -571,6 +571,8 @@ export interface ProTableController<RecordType, Query extends ProTableQueryRecor
 
 export interface ProTableLayoutConfig {
   separated?: boolean
+  /** 筛选区上方的内容，全屏时留在表格内。 */
+  header?: ReactNode
   tableAside?: ReactNode
   tableTop?: ReactNode
 }

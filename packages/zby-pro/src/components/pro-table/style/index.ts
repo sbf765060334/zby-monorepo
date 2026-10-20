@@ -292,6 +292,13 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         borderRadius: borderRadiusLG,
       },
 
+      [`${componentCls}-header`]: {
+        flexShrink: 0,
+        width: '100%',
+        minWidth: 0,
+        maxWidth: '100%',
+      },
+
       [`${componentCls}-toolbar-block`]: {
         display: 'flex',
         flexDirection: 'column',

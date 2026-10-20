@@ -1184,6 +1184,34 @@ describe('ProTable', () => {
     expect(screen.getByLabelText('全屏')).toBeTruthy()
   })
 
+  it('keeps layout.header above search and inside the fullscreen root', () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        toolbar
+        layout={{ header: <div>快速筛选</div> }}
+      />,
+    )
+
+    const header = screen.getByText('快速筛选')
+    const searchRow = document.querySelector('.ant-pro-table-search-row')
+    const content = header.closest('.ant-pro-table-content')
+
+    expect(header.closest('.ant-pro-table-header')).toBeTruthy()
+    expect(content).toBeTruthy()
+    expect(searchRow).toBeTruthy()
+    expect(content?.contains(searchRow ?? null)).toBe(true)
+    expect(
+      header.compareDocumentPosition(searchRow as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('全屏'))
+
+    const fullscreenRoot = document.querySelector('.ant-pro-table-fullscreen')
+    expect(fullscreenRoot?.contains(screen.getByText('快速筛选'))).toBe(true)
+  })
+
   it('portals the same table root into body, locks scroll, and exits on Escape', () => {
     const { container } = renderProTable(
       <ProTable<Row, Query> columns={[{ key: 'id', title: 'ID' }]} toolbar />,
