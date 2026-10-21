@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.5
+
+### Patch Changes
+
+- ProTable 导出 useControllerSelector 和 shallow
+
 ## 0.3.4
 
 ### Patch Changes
