@@ -531,6 +531,10 @@ export interface ProTableControllerState<RecordType, Query extends ProTableQuery
   rowKey: NonNullable<TableProps<RecordType>['rowKey']>
 }
 
+/**
+ * 外部 store。不要放进 `makeAutoObservable`。
+ * 页面 store 只保存引用，渲染用 `useControllerSelector`。
+ */
 export interface ProTableController<RecordType, Query extends ProTableQueryRecord, Summary> {
   getState: () => ProTableControllerState<RecordType, Query, Summary>
   subscribe: (

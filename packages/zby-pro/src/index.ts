@@ -43,6 +43,8 @@ export {
   ProTableColumnSettings,
   ProTableActions,
   ProTableBatchActions,
+  shallow,
+  useControllerSelector,
 } from './components/pro-table'
 export type {
   ProTableController,

@@ -15,6 +15,10 @@ export function shallow(left: unknown, right: unknown) {
   return leftKeys.length === rightKeys.length && leftKeys.every((key) => Object.is(leftRecord[key], rightRecord[key]))
 }
 
+/**
+ * 订阅 controller 的公开状态。第三个参数是相等比较，默认 `Object.is`。
+ * 选择器返回新对象时传 `shallow`。不要选择整个 state，也不要在选择器里调用 `getSelectedRows()`。
+ */
 export function useControllerSelector<RecordType, Query extends ProTableQueryRecord, Summary, Selected>(
   controller: ProTableController<RecordType, Query, Summary>,
   selector: (state: ProTableControllerState<RecordType, Query, Summary>) => Selected,

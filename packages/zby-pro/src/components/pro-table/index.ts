@@ -2,6 +2,7 @@ export {
   cancelProTableControllerRequests,
   createProTableController,
 } from './controller'
+export { shallow, useControllerSelector } from './hooks'
 export { default as ProTable } from './ProTable'
 export { default } from './ProTable'
 export { ColumnSettings as ProTableColumnSettings } from './columns-state'
