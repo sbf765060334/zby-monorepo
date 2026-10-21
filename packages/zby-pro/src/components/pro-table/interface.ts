@@ -24,10 +24,11 @@ export interface ProTableActionInfo<RecordType = Record<string, unknown>> {
 export type ProTableActionTooltip = ReactNode | Omit<TooltipProps, 'children'>
 
 export interface ProTableActionItem<RecordType = Record<string, unknown>>
-  extends Omit<ButtonProps, 'children' | 'onClick'> {
+  extends Omit<ButtonProps, 'children' | 'onClick' | 'hidden'> {
   key: Key
   label: ReactNode
-  hidden?: boolean
+  /** 省略或为 true 时展示；明确为 false 时隐藏。函数收到当前行信息。 */
+  show?: boolean | ((info: ProTableActionInfo<RecordType>) => boolean)
   tooltip?: ProTableActionTooltip
   popconfirm?: false | (Omit<PopconfirmProps, 'children' | 'onConfirm'> & {
     onConfirm?: (info: ProTableActionInfo<RecordType>) => void | Promise<void>

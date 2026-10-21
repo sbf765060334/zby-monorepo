@@ -27,6 +27,17 @@ function renderTooltip(node: React.ReactElement, tooltip: ProTableActionTooltip 
   return <Tooltip {...tooltipProps}>{node}</Tooltip>
 }
 
+function isActionShown<RecordType>(
+  item: ProTableActionItem<RecordType>,
+  record: RecordType | undefined,
+  index: number | undefined,
+) {
+  const show = typeof item.show === 'function'
+    ? item.show({ record, index, key: item.key })
+    : item.show
+  return show !== false
+}
+
 export function ProTableActions<RecordType>({
   actions,
   record,
@@ -43,7 +54,10 @@ export function ProTableActions<RecordType>({
   const prefixCls = getPrefixCls('pro-table', customizePrefixCls)
   const intl = useIntl()
   const moreHint = intl.getMessage('zby.pro.table.moreActions', '更多操作')
-  const items = actions.filter((item): item is ProTableActionItem<RecordType> => Boolean(item && !item.hidden))
+  const items = actions.filter((item): item is ProTableActionItem<RecordType> => {
+    if (!item) return false
+    return isActionShown(item, record, index)
+  })
   const visible = items.slice(0, Math.max(0, visibleCount))
   const overflow = items.slice(Math.max(0, visibleCount))
   const holdOpenRef = React.useRef(false)
@@ -120,7 +134,7 @@ export function ProTableActions<RecordType>({
   return (
     <Space className={className ?? `${prefixCls}-actions`} size={4} style={style}>
       {visible.map((item) => {
-        const { key, label, hidden: _hidden, tooltip: _tooltip, popconfirm, onClick: _onClick, ...buttonProps } = item
+        const { key, label, show: _show, tooltip: _tooltip, popconfirm, onClick: _onClick, ...buttonProps } = item
         const button = (
           <Button
             {...buttonProps}

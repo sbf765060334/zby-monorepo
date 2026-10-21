@@ -114,6 +114,44 @@ describe('ProTableActions', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  it('shows an action unless show is explicitly false', () => {
+    const show = vi.fn((info: { record?: { status: string }; index?: number; key: React.Key }) => (
+      info.record?.status === 'open'
+    ))
+    renderActions(
+      <ProTableActions
+        visibleCount={1}
+        record={{ status: 'open' }}
+        index={2}
+        dropdownProps={{ open: true }}
+        actions={[
+          { key: 'hidden', label: '隐藏项', show: false },
+          { key: 'shown', label: '展示项', show: true },
+          { key: 'default', label: '默认项' },
+          { key: 'dynamic', label: '动态项', show },
+        ]}
+      />,
+    )
+
+    expect(screen.queryByText('隐藏项')).toBeNull()
+    expect(screen.getByRole('button', { name: '展示项' })).toBeTruthy()
+    expect(screen.getByText('默认项')).toBeTruthy()
+    expect(screen.getByText('动态项')).toBeTruthy()
+    expect(show).toHaveBeenCalledWith({ record: { status: 'open' }, index: 2, key: 'dynamic' })
+  })
+
+  it('hides an action and the more trigger when show returns false', () => {
+    renderActions(
+      <ProTableActions
+        dropdownProps={{ open: true }}
+        actions={[{ key: 'view', label: '查看', show: () => false }]}
+      />,
+    )
+
+    expect(screen.queryByText('查看')).toBeNull()
+    expect(screen.queryByRole('button', { name: '更多操作' })).toBeNull()
+  })
+
   it('falls back to onClick when overflow popconfirm has no onConfirm', async () => {
     const onClick = vi.fn()
     renderActions(
