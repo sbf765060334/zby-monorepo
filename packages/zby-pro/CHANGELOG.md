@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.4
+
+### Patch Changes
+
+- 去掉 ProTableActions 暴露按钮的左右内边距
+
 ## 0.3.3
 
 ### Patch Changes
