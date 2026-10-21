@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.3
+
+### Patch Changes
+
+- ProTableActions 增加 showAll
+
 ## 0.3.2
 
 ### Patch Changes
