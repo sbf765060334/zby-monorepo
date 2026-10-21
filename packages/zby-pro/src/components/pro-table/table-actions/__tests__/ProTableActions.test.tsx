@@ -140,6 +140,48 @@ describe('ProTableActions', () => {
     expect(show).toHaveBeenCalledWith({ record: { status: 'open' }, index: 2, key: 'dynamic' })
   })
 
+  it('shows every action horizontally when showAll is true and ignores visibleCount', () => {
+    const { container } = renderActions(
+      <ProTableActions
+        showAll
+        visibleCount={1}
+        actions={[
+          { key: 'view', label: '查看' },
+          { key: 'edit', label: '编辑' },
+          { key: 'delete', label: '删除', show: false },
+        ]}
+      />,
+    )
+
+    const space = container.querySelector('.ant-pro-table-actions')
+    expect(screen.getByRole('button', { name: '查看' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '编辑' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '删除' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '更多操作' })).toBeNull()
+    expect(space?.classList.contains('ant-space-horizontal')).toBe(true)
+    expect(space?.classList.contains('ant-space-wrap')).toBe(false)
+    expect(space?.getAttribute('style') ?? '').not.toContain('overflow')
+  })
+
+  it('stacks every action vertically when showAll direction is vertical', () => {
+    const { container } = renderActions(
+      <ProTableActions
+        showAll={{ direction: 'vertical' }}
+        visibleCount={0}
+        actions={[
+          { key: 'view', label: '查看' },
+          { key: 'edit', label: '编辑' },
+        ]}
+      />,
+    )
+
+    const space = container.querySelector('.ant-pro-table-actions')
+    expect(screen.getByRole('button', { name: '查看' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '编辑' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '更多操作' })).toBeNull()
+    expect(space?.classList.contains('ant-space-vertical')).toBe(true)
+  })
+
   it('hides an action and the more trigger when show returns false', () => {
     renderActions(
       <ProTableActions

@@ -41,6 +41,8 @@ export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   record?: RecordType
   index?: number
   visibleCount?: number
+  /** 全量展示。为 true 或对象时忽略 visibleCount。true 时横向排列。 */
+  showAll?: boolean | { direction?: 'horizontal' | 'vertical' }
   moreText?: ReactNode
   moreButtonProps?: Omit<ButtonProps, 'children' | 'onClick'>
   dropdownProps?: Omit<DropdownProps, 'children' | 'menu'>

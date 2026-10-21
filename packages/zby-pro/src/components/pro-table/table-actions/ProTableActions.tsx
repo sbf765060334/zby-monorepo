@@ -38,11 +38,18 @@ function isActionShown<RecordType>(
   return show !== false
 }
 
+function resolveShowAllDirection(showAll: ProTableActionsProps['showAll']) {
+  if (!showAll) return undefined
+  if (showAll === true || showAll.direction !== 'vertical') return 'horizontal' as const
+  return 'vertical' as const
+}
+
 export function ProTableActions<RecordType>({
   actions,
   record,
   index,
   visibleCount = 0,
+  showAll,
   moreText,
   moreButtonProps,
   dropdownProps,
@@ -58,8 +65,10 @@ export function ProTableActions<RecordType>({
     if (!item) return false
     return isActionShown(item, record, index)
   })
-  const visible = items.slice(0, Math.max(0, visibleCount))
-  const overflow = items.slice(Math.max(0, visibleCount))
+  const showAllDirection = resolveShowAllDirection(showAll)
+  const visibleLimit = showAllDirection ? items.length : Math.max(0, visibleCount)
+  const visible = items.slice(0, visibleLimit)
+  const overflow = items.slice(visibleLimit)
   const holdOpenRef = React.useRef(false)
   const [holdingConfirm, setHoldingConfirm] = React.useState(false)
   const [moreOpen, setMoreOpen] = React.useState(false)
@@ -132,7 +141,12 @@ export function ProTableActions<RecordType>({
   )
 
   return (
-    <Space className={className ?? `${prefixCls}-actions`} size={4} style={style}>
+    <Space
+      className={className ?? `${prefixCls}-actions`}
+      size={4}
+      style={style}
+      orientation={showAllDirection}
+    >
       {visible.map((item) => {
         const { key, label, show: _show, tooltip: _tooltip, popconfirm, onClick: _onClick, ...buttonProps } = item
         const button = (
