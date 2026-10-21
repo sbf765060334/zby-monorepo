@@ -140,6 +140,24 @@ describe('ProTableActions', () => {
     expect(show).toHaveBeenCalledWith({ record: { status: 'open' }, index: 2, key: 'dynamic' })
   })
 
+  it('removes horizontal padding and margin from exposed buttons', () => {
+    renderActions(
+      <ProTableActions
+        visibleCount={1}
+        actions={[
+          { key: 'view', label: '查看' },
+          { key: 'edit', label: '编辑' },
+        ]}
+      />,
+    )
+
+    for (const name of ['查看', '更多操作']) {
+      const button = screen.getByRole('button', { name })
+      expect(button.style.paddingInline).toBe('0px')
+      expect(button.style.marginInline).toBe('0px')
+    }
+  })
+
   it('shows every action horizontally when showAll is true and ignores visibleCount', () => {
     const { container } = renderActions(
       <ProTableActions

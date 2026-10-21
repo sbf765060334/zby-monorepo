@@ -8,6 +8,7 @@ import { clsx } from 'clsx'
 import type { ProTableActionInfo, ProTableActionItem, ProTableActionsProps, ProTableActionTooltip } from '../interface'
 
 const DEFAULT_MORE_ICON = <EllipsisOutlined />
+const EXPOSED_BUTTON_STYLE = { paddingInline: 0, marginInline: 0 }
 
 function isTooltipProps(tooltip: ProTableActionTooltip): tooltip is Omit<TooltipProps, 'children'> {
   return (
@@ -128,6 +129,7 @@ export function ProTableActions<RecordType>({
       {...moreButtonProps}
       type={moreButtonProps?.type ?? 'link'}
       size={moreButtonProps?.size ?? 'small'}
+      style={{ ...EXPOSED_BUTTON_STYLE, ...moreButtonProps?.style }}
       className={clsx(`${prefixCls}-actions-more`, moreButtonProps?.className)}
       icon={moreButtonProps?.icon ?? (moreText === undefined ? DEFAULT_MORE_ICON : undefined)}
       title={moreButtonProps?.title ?? (moreText === undefined ? moreHint : undefined)}
@@ -154,6 +156,7 @@ export function ProTableActions<RecordType>({
             {...buttonProps}
             type={buttonProps.type ?? 'link'}
             size={buttonProps.size ?? 'small'}
+            style={{ ...EXPOSED_BUTTON_STYLE, ...buttonProps.style }}
             onClick={popconfirm ? undefined : () => executeClick(item)}
           >
             {label}
