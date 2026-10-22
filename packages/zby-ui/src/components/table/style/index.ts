@@ -349,7 +349,6 @@ const genTableStyle: GenerateStyle<TableToken, CSSObject> = (token) => {
 
       [`${componentCls}-cell-resize-filler`]: {
         padding: '0 !important',
-        pointerEvents: 'none',
       },
 
       // ============================ Title =============================

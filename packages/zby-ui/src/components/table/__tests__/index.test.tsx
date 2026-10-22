@@ -1328,6 +1328,44 @@ describe('Table', () => {
     ).toHaveLength(1)
   })
 
+  it('highlights the row when the resize filler is hovered or clicked', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        rowHighlight
+        columnResize={{ defaultWidths: { id: 120, name: 80 } }}
+        columns={[
+          { dataIndex: 'id', title: 'ID' },
+          {
+            dataIndex: 'name',
+            title: 'Name',
+            fixed: 'right',
+            resizable: false,
+          },
+        ]}
+        dataSource={data}
+      />,
+    )
+    const filler = container.querySelector<HTMLElement>(
+      '.ant-table-tbody .ant-table-cell-resize-filler',
+    )!
+    const row = filler.closest('tr')!
+
+    fireEvent.mouseEnter(filler)
+    expect(filler.classList.contains('ant-table-cell-row-hover')).toBe(true)
+    expect(row.querySelectorAll('.ant-table-cell-row-hover').length).toBeGreaterThan(1)
+
+    fireEvent.click(filler)
+    expect(row.classList.contains('ant-table-row-current')).toBe(true)
+
+    const css = Array.from(document.querySelectorAll('style'))
+      .map((node) => node.textContent ?? '')
+      .join('\n')
+    const fillerRule = css.match(/\.ant-table-cell-resize-filler\{[^}]*\}/)?.[0] ?? ''
+    expect(fillerRule).not.toContain('pointer-events')
+  })
+
   it('inserts the resize filler before a fixed-end column', () => {
     const { container } = render(
       <Table<RowData>
