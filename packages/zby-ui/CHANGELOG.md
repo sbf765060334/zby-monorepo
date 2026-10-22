@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.3.1
+
+### Patch Changes
+
+- 表格空白列也支持悬浮和点击变色了
+
 ## 0.3.0
 
 ### Minor Changes
