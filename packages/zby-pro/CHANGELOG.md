@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.8
+
+### Patch Changes
+
+- 给容器组件增加了最小宽度
+
 ## 0.3.7
 
 ### Patch Changes
