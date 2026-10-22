@@ -132,7 +132,6 @@ export function ProTableActions<RecordType>({
       style={{ ...EXPOSED_BUTTON_STYLE, ...moreButtonProps?.style }}
       className={clsx(`${prefixCls}-actions-more`, moreButtonProps?.className)}
       icon={moreButtonProps?.icon ?? (moreText === undefined ? DEFAULT_MORE_ICON : undefined)}
-      title={moreButtonProps?.title ?? (moreText === undefined ? moreHint : undefined)}
       aria-label={
         moreButtonProps?.['aria-label'] ??
         (moreText === undefined ? moreHint : undefined)

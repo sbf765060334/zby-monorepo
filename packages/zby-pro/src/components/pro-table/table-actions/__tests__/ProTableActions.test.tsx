@@ -49,7 +49,13 @@ describe('ProTableActions', () => {
     expect(screen.queryByText('更多')).toBeNull()
     const moreButton = screen.getByRole('button', { name: '更多操作' })
     expect(moreButton).toBeTruthy()
-    expect(moreButton.getAttribute('title')).toBe('更多操作')
+    expect(moreButton.getAttribute('title')).toBeNull()
+  })
+
+  it('renders moreButtonProps.title only when it is passed', () => {
+    renderActions(<ProTableActions actions={actions} moreButtonProps={{ title: '自定义提示' }} />)
+
+    expect(screen.getByRole('button', { name: '更多操作' }).getAttribute('title')).toBe('自定义提示')
   })
 
   it('renders moreText as provided without the default aria-label', () => {
