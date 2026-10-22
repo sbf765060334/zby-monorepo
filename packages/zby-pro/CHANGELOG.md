@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.7
+
+### Patch Changes
+
+- 移出更多按钮上的 title
+
 ## 0.3.6
 
 ### Patch Changes
