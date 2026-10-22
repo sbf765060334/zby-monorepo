@@ -32,6 +32,32 @@ afterAll(() => {
 afterEach(cleanup)
 
 describe('ProLayoutContentContainer', () => {
+  it('uses 960 as the default minimum width and lets style override it', () => {
+    const { container, rerender } = render(
+      <ProLayoutContentContainer>Table</ProLayoutContentContainer>,
+    )
+    const root = container.querySelector<HTMLElement>('.ant-pro-layout-content-container')!
+
+    expect(root.style.minWidth).toBe('960px')
+    expect(root.getAttribute('minWidth')).toBeNull()
+
+    rerender(<ProLayoutContentContainer minWidth={1200}>Table</ProLayoutContentContainer>)
+    expect(root.style.minWidth).toBe('1200px')
+
+    rerender(<ProLayoutContentContainer minWidth="40rem">Table</ProLayoutContentContainer>)
+    expect(root.style.minWidth).toBe('40rem')
+
+    rerender(<ProLayoutContentContainer minWidth={0}>Table</ProLayoutContentContainer>)
+    expect(root.style.minWidth).toBe('0px')
+
+    rerender(
+      <ProLayoutContentContainer minWidth={960} style={{ minWidth: 480 }}>
+        Table
+      </ProLayoutContentContainer>,
+    )
+    expect(root.style.minWidth).toBe('480px')
+  })
+
   it('uses a fill Card by default without a Card header or breadcrumb', () => {
     const { container, getByText } = render(
       <ProLayoutContentContainer>Table</ProLayoutContentContainer>,

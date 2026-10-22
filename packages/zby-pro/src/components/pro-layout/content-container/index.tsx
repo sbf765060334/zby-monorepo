@@ -10,6 +10,8 @@ export type ProLayoutContentContainerItemBodyPadding =
   | false
 export type ProLayoutContentContainerMode = 'fill' | 'stack'
 
+const DEFAULT_CONTENT_CONTAINER_MIN_WIDTH = 960
+
 type CardHeaderProp =
   | 'activeTabKey'
   | 'defaultActiveTabKey'
@@ -50,6 +52,8 @@ export interface ProLayoutContentContainerProps extends Omit<
   aside?: React.ReactNode
   asidePosition?: 'start' | 'end'
   asideWidth?: React.CSSProperties['width']
+  /** 容器最小宽度。数字按像素处理，默认 960。`style.minWidth` 可覆盖。 */
+  minWidth?: React.CSSProperties['minWidth']
   items?: ProLayoutContentContainerItemConfig[]
   padding?: React.CSSProperties['padding'] | false
   gap?: React.CSSProperties['gap']
@@ -162,6 +166,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
     aside,
     asidePosition = 'start',
     asideWidth,
+    minWidth = DEFAULT_CONTENT_CONTAINER_MIN_WIDTH,
     items,
     padding,
     gap,
@@ -253,7 +258,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
         hashId,
         className,
       )}
-      style={style}
+      style={{ minWidth, ...style }}
     >
       {header ? (
         <div className={`${prefixCls}-content-container-header`}>
