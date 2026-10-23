@@ -57,25 +57,15 @@ Omitting `ellipsis` leaves the text untruncated and does not set a native `title
 
 ### Multiple lines
 
-There is no multi-line ellipsis option. Omit `ellipsis` and put the clamp styles on `styles.text`:
+Set `ellipsis.rows` above 1 to clamp that many lines and still set the native `title`. Omitting `rows`, or setting it to 1 or less, keeps single-line ellipsis.
 
 ```tsx
-<ActionText
-  styles={{
-    text: {
-      display: '-webkit-box',
-      overflow: 'hidden',
-      whiteSpace: 'normal',
-      WebkitBoxOrient: 'vertical',
-      WebkitLineClamp: 2,
-    },
-  }}
->
+<ActionText ellipsis={{ rows: 2 }}>
   A long piece of text that should wrap to two lines
 </ActionText>
 ```
 
-Omitting `ellipsis` does not add the single-line `nowrap` rule or a native `title`. The root `style` targets the outer flex container and cannot clamp the inner text. If `ellipsis` and `styles.text.WebkitLineClamp` are both set, the line clamp overrides `nowrap` and the title still follows `ellipsis`.
+Multiple lines also need a calculable width from the parent, a table column, or `styles.root`. Omitting `ellipsis` leaves the text untruncated and does not set a native `title`. The root `style` targets the outer flex container and cannot clamp the inner text. If `styles.text.WebkitLineClamp` is set, the component does not add its own ellipsis styles and that value controls the line count; a set `ellipsis` still provides the `title`.
 
 ### Custom copy content
 
@@ -190,8 +180,8 @@ Besides the props below, native `div` attributes other than `children` are suppo
 | prefixCls | Class name prefix | `string` | From `ConfigProvider` |
 | rootClassName | Extra class on the root div | `string` | - |
 | children | Display content, and the default copy text and ellipsis title | `ReactNode` | - |
-| ellipsis | Single-line ellipsis. Omitted or `false` disables it; `true` uses the text inside `children` as the native title; an object accepts only `title` | `boolean \| { title?: string }` | `false` |
-| type | Text tone, matching antd Typography `type` | `secondary \| success \| warning \| danger` | - |
+| ellipsis | Ellipsis. Omitted or `false` disables it; `true` is single-line; an object accepts `title` and `rows` | `boolean \| { title?: string; rows?: number }` | `false` |
+| type | Text tone. `primary` uses the theme color; the others match antd Typography `type` | `primary \| secondary \| success \| warning \| danger` | - |
 | strong | Wrap the text in `strong` | `boolean` | `false` |
 | copyable | Built-in copy action. An object configures text, icons, native title, and the callback | `boolean \| ActionTextCopyConfig` | - |
 | clickable | Link or button semantics. An object configures navigation and visited state | `boolean \| ActionTextClickableConfig` | - |

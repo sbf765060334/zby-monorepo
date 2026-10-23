@@ -57,25 +57,15 @@ export default () => (
 
 ### 多行省略
 
-组件不提供多行省略配置。需要多行时不要写 `ellipsis`，把截断样式写到 `styles.text`：
+`ellipsis.rows` 大于 1 时按行数截断，并仍然设置原生 `title`。不传 `rows` 或 `rows` 小于等于 1 时保持单行省略。
 
 ```tsx
-<ActionText
-  styles={{
-    text: {
-      display: '-webkit-box',
-      overflow: 'hidden',
-      whiteSpace: 'normal',
-      WebkitBoxOrient: 'vertical',
-      WebkitLineClamp: 2,
-    },
-  }}
->
+<ActionText ellipsis={{ rows: 2 }}>
   一段需要展示两行的较长文本
 </ActionText>
 ```
 
-不写 `ellipsis` 时不会叠加单行 `nowrap`，也不会设置原生 `title`。根节点的 `style` 作用在外层 flex 容器上，不能用来截断内部文本。如果同时写了 `ellipsis` 和 `styles.text.WebkitLineClamp`，行数样式会盖过单行 `nowrap`，`title` 仍按 `ellipsis` 生效。
+多行省略同样依赖父容器、表格列宽或 `styles.root` 提供可计算宽度。不写 `ellipsis` 时不会截断，也不会设置原生 `title`。根节点的 `style` 作用在外层 flex 容器上，不能用来截断内部文本。如果 `styles.text` 写了 `WebkitLineClamp`，组件不再叠加自己的省略样式，行数以这里为准；写了 `ellipsis` 时 `title` 仍会设置。
 
 ### 自定义复制内容和反馈
 
@@ -190,8 +180,8 @@ export default () => {
 | prefixCls | 自定义组件类名前缀 | `string` | 由 `ConfigProvider` 生成 |
 | rootClassName | 追加到最外层 div 的额外 className | `string` | - |
 | children | 展示内容，也是默认复制文本和省略 title 来源 | `ReactNode` | - |
-| ellipsis | 单行省略。不写或 `false` 关闭；`true` 用 children 中的文本作为原生 title；对象只接受 `title` | `boolean \| { title?: string }` | `false` |
-| type | 文本语义色，和 antd Typography 的 `type` 一致 | `secondary \| success \| warning \| danger` | - |
+| ellipsis | 省略。不写或 `false` 关闭；`true` 为单行；对象可指定 `title` 和 `rows` | `boolean \| { title?: string; rows?: number }` | `false` |
+| type | 文本语义色。`primary` 使用主题色，其余和 antd Typography 的 `type` 一致 | `primary \| secondary \| success \| warning \| danger` | - |
 | strong | 用 `strong` 加粗文本 | `boolean` | `false` |
 | copyable | 是否显示内置复制操作；对象形式可配置文本、图标、原生 title 和回调 | `boolean \| ActionTextCopyConfig` | - |
 | clickable | 是否让文本具备按钮/链接语义；对象形式配置链接和访问状态 | `boolean \| ActionTextClickableConfig` | - |

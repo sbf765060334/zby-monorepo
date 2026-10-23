@@ -6,18 +6,20 @@ import type { AnchorHTMLAttributes } from 'react'
 import useControllableValue from '../_util/hooks/useControllableValue'
 import { getTableCellHoverClassNames } from '../_util/tableCellHover'
 import ActionTextCopyAction from './ActionTextCopyAction'
-import useStyle from './style'
+import useStyle, { actionTextRowsVar } from './style'
 
 /** 操作区展示策略：跟随自身 hover、跟随表格行 hover，或始终展示。 */
 export type ActionTextVisibleOn = 'self-hover' | 'table-row-hover' | 'always'
 
-/** 文本语义色，取值和 antd Typography 的 type 一致。 */
-export type ActionTextType = 'secondary' | 'success' | 'warning' | 'danger'
+/** 文本语义色。primary 使用主题色，其余取值和 antd Typography 的 type 一致。 */
+export type ActionTextType = 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
 
-/** 单行省略配置。全文提示使用原生 title，只接受字符串。 */
+/** 省略配置。全文提示使用原生 title，只接受字符串。 */
 export interface ActionTextEllipsisConfig {
   /** 原生 title。未传时，从 children 中的文本节点拼接全文。 */
   title?: string
+  /** 最多展示的行数。不传或小于等于 1 时为单行省略。 */
+  rows?: number
 }
 
 export type ActionTextSemanticName = keyof ActionTextSemanticClassNames &
@@ -99,9 +101,9 @@ export interface ActionTextProps extends Omit<
   rootClassName?: string
   /** 展示内容，也是默认的复制文本来源。 */
   children?: React.ReactNode
-  /** 单行省略。不传或 false 关闭；true 用 children 中的文本作为原生 title；对象可指定 title。 */
+  /** 省略。不传或 false 关闭；true 为单行；对象可指定 title 和 rows。 */
   ellipsis?: boolean | ActionTextEllipsisConfig
-  /** 文本语义色。 */
+  /** 文本语义色。primary 使用主题色。 */
   type?: ActionTextType
   /** 用 strong 包裹文本。 */
   strong?: boolean
@@ -168,6 +170,16 @@ const getTextTitle = (children: React.ReactNode) => {
   const text = collectText(children)
 
   return text.trim() ? text : undefined
+}
+
+/** 解析省略行数。非法值和非正数回退为单行。 */
+const resolveEllipsisRows = (ellipsis: ActionTextProps['ellipsis']) => {
+  if (!ellipsis || ellipsis === true || ellipsis.rows == null) return 1
+
+  const rows = ellipsis.rows
+  if (!Number.isFinite(rows) || rows <= 1) return 1
+
+  return Math.floor(rows)
 }
 
 /** 省略开启时解析全文 title；空字符串不输出 title 属性。 */
@@ -250,8 +262,11 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
   }
   const mergedClassNames = resolveSemanticValue(classNames, mergedProps)
   const mergedStyles = resolveSemanticValue(styles, mergedProps)
-  // styles.text 已声明行数时，不再叠加单行 nowrap，让业务用同一处样式完成多行省略。
-  const singleLineEllipsis = Boolean(ellipsis) && mergedStyles.text?.WebkitLineClamp == null
+  const ellipsisRows = resolveEllipsisRows(ellipsis)
+  // styles.text 已声明行数时，不再叠加组件省略样式，让业务样式覆盖行数。
+  const ellipsisOwnedByStyles = mergedStyles.text?.WebkitLineClamp != null
+  const singleLineEllipsis = Boolean(ellipsis) && ellipsisRows <= 1 && !ellipsisOwnedByStyles
+  const multiLineEllipsis = Boolean(ellipsis) && ellipsisRows > 1 && !ellipsisOwnedByStyles
   const ellipsisTitle = resolveEllipsisTitle(ellipsis, children)
 
   // visited 只从 false 跳转一次；受控模式下最终视觉状态仍由调用方传入值决定。
@@ -325,11 +340,20 @@ const ActionText = React.forwardRef<HTMLDivElement, ActionTextProps>((props, ref
       <span
         className={clsx(
           `${prefixCls}-text`,
-          { [`${prefixCls}-text-ellipsis`]: singleLineEllipsis },
+          {
+            [`${prefixCls}-text-ellipsis`]: singleLineEllipsis,
+            [`${prefixCls}-text-ellipsis-multiple`]: multiLineEllipsis,
+          },
           type && `${prefixCls}-text-${type}`,
           mergedClassNames.text,
         )}
-        style={{ ...mergedStyles.text, margin: 0 }}
+        style={{
+          ...(multiLineEllipsis
+            ? ({ [actionTextRowsVar]: ellipsisRows } as React.CSSProperties)
+            : undefined),
+          ...mergedStyles.text,
+          margin: 0,
+        }}
         title={ellipsisTitle}
       >
         {textNode}

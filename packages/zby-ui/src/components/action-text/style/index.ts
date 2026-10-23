@@ -5,6 +5,9 @@ import * as React from 'react'
 
 type GlobalToken = ReturnType<typeof antdTheme.useToken>['token']
 
+/** 多行省略的行数变量，写在文本节点上，按钮通过继承读取。 */
+export const actionTextRowsVar = '--action-text-rows'
+
 /** 在 antd 全局 token 基础上补充当前组件根选择器。 */
 type ActionTextToken = GlobalToken & {
   /** 当前 ActionText 根选择器，例如 .ant-action-text。 */
@@ -59,8 +62,42 @@ function genActionTextStyle(token: ActionTextToken, tableRowHoverClass: string):
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis',
+
+        // button 会把 display:inline 算成 inline-block，外层省略管不到内部文字。
+        [`${componentCls}-text-button`]: {
+          display: 'inline-block',
+          maxWidth: '100%',
+          minWidth: 0,
+          overflow: 'hidden',
+          verticalAlign: 'bottom',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+        },
       },
 
+      // 选择器压过 text 的 inline-block，-webkit-line-clamp 才能生效。
+      [`${componentCls}-text${componentCls}-text-ellipsis-multiple`]: {
+        display: '-webkit-box',
+        overflow: 'hidden',
+        whiteSpace: 'normal',
+        WebkitBoxOrient: 'vertical',
+        WebkitLineClamp: `var(${actionTextRowsVar})`,
+
+        // button 是独立盒子，行数要写在按钮上，外层 clamp 截不断内部文字。
+        [`${componentCls}-text-button`]: {
+          display: '-webkit-box',
+          maxWidth: '100%',
+          minWidth: 0,
+          overflow: 'hidden',
+          whiteSpace: 'normal',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: `var(${actionTextRowsVar})`,
+        },
+      },
+
+      [`${componentCls}-text-primary`]: {
+        color: token.colorPrimaryText,
+      },
       [`${componentCls}-text-secondary`]: {
         color: token.colorTextDescription,
       },
@@ -76,6 +113,7 @@ function genActionTextStyle(token: ActionTextToken, tableRowHoverClass: string):
 
       // 可点击文本自带链接色，有 type 时改回继承，避免盖住语义色。
       [`
+        ${componentCls}-text-primary,
         ${componentCls}-text-secondary,
         ${componentCls}-text-success,
         ${componentCls}-text-warning,

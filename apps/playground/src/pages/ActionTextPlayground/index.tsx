@@ -23,7 +23,7 @@ export default function ActionTextPlayground() {
   return (
     <PlaygroundPage
       title="ActionText"
-      description="单行省略、复制、点击访问、自定义操作与主题兼容。"
+      description="单行和两行省略、复制、点击访问、自定义操作与主题兼容。"
     >
       <PlaygroundSection title="基础文本与省略">
         <PlaygroundGrid>

@@ -105,6 +105,28 @@ describe('ActionText', () => {
     expect(container.querySelector('.ant-typography')).toBeNull()
   })
 
+  it('clamps to the requested row count and keeps the native title', () => {
+    const { container } = render(
+      <ActionText ellipsis={{ rows: 2, title: 'Full shop name' }}>
+        Very very very long shop name
+      </ActionText>,
+    )
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(false)
+    expect(text.classList.contains('ant-action-text-text-ellipsis-multiple')).toBe(true)
+    expect(text.getAttribute('title')).toBe('Full shop name')
+    expect(text.style.getPropertyValue('--action-text-rows')).toBe('2')
+  })
+
+  it('keeps a single line when rows is 1 or less', () => {
+    const { container } = render(<ActionText ellipsis={{ rows: 1 }}>Shop name</ActionText>)
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(true)
+    expect(text.classList.contains('ant-action-text-text-ellipsis-multiple')).toBe(false)
+  })
+
   it('lets styles.text clamp multiple lines without the single-line class', () => {
     const { container } = render(
       <ActionText
@@ -148,6 +170,14 @@ describe('ActionText', () => {
     expect(text?.classList.contains('ant-action-text-text-success')).toBe(true)
     expect(text?.querySelector('strong')?.textContent).toBe('Shop name')
     expect(text?.querySelector('u')).toBeNull()
+  })
+
+  it('applies the theme color class for primary type', () => {
+    const { container } = render(<ActionText type="primary">Shop name</ActionText>)
+
+    expect(container.querySelector('.ant-action-text-text')?.classList.contains('ant-action-text-text-primary')).toBe(
+      true,
+    )
   })
 
   it('uses string children as the native title when ellipsis is enabled', () => {
@@ -313,6 +343,21 @@ describe('ActionText', () => {
     )
   })
 
+  it('keeps single-line ellipsis on a clickable button without href', () => {
+    const { container } = render(
+      <ActionText ellipsis clickable={{ onClick: () => undefined }} style={{ width: 120 }}>
+        Very very very long shop name
+      </ActionText>,
+    )
+    const text = container.querySelector<HTMLElement>('.ant-action-text-text')!
+    const button = container.querySelector('button.ant-action-text-text-button')
+
+    expect(text.classList.contains('ant-action-text-text-ellipsis')).toBe(true)
+    expect(text.getAttribute('title')).toBe('Very very very long shop name')
+    expect(button).not.toBeNull()
+    expect(container.querySelector('a')).toBeNull()
+  })
+
   it('supports clickable links and visited state', () => {
     const onClick = vi.fn((event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault()
@@ -410,8 +455,12 @@ describe('ActionText', () => {
     expect(styleText).toContain('display:inline-flex')
     expect(styleText).toContain('.ant-action-text-text')
     expect(styleText).toContain('.ant-action-text-actions-self-hover')
+    expect(styleText).toContain('.ant-action-text-text-primary')
     expect(styleText).toContain('.ant-action-text-text-ellipsis')
     expect(styleText).toContain('text-overflow:ellipsis')
     expect(styleText).toContain('display:inline-block')
+    expect(styleText).toContain('.ant-action-text-text-ellipsis .ant-action-text-text-button')
+    expect(styleText).toContain('.ant-action-text-text-ellipsis-multiple')
+    expect(styleText).toContain('-webkit-line-clamp:var(--action-text-rows)')
   })
 })

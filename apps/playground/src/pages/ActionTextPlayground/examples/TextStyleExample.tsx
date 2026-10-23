@@ -4,8 +4,9 @@ import { PlaygroundCase } from '../../../components/ComponentPlayground'
 
 export default function TextStyleExample() {
   return (
-    <PlaygroundCase title="语义色和加粗" description="type 使用 antd Typography 的四种语义色，strong 加粗文本。">
+    <PlaygroundCase title="语义色和加粗" description="primary 使用主题色，其余 type 沿用 antd Typography 的语义色。strong 加粗文本。">
       <Space orientation="vertical">
+        <ActionText type="primary">主题色文本</ActionText>
         <ActionText type="secondary">次要文本</ActionText>
         <ActionText type="success" strong>
           成功文本
