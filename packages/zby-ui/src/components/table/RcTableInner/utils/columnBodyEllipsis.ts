@@ -1,7 +1,7 @@
 import { TABLE_SKIP_BODY_ELLIPSIS } from '../interface';
 import type { CellEllipsisType } from '../interface';
 
-/** 表体多行省略的行数变量，写在截断节点上。 */
+/** 与 table/ellipsisRows.ts 中的变量名保持一致。 */
 export const TABLE_CELL_ROWS_VAR = '--table-cell-ellipsis-rows';
 
 /** 解析省略行数。非法值和非正数回退为单行。 */

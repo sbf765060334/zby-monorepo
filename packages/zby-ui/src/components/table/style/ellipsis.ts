@@ -2,7 +2,7 @@ import type { CSSObject } from '@ant-design/cssinjs'
 
 import { textEllipsis } from 'antd/es/style'
 import type { GenerateStyle } from 'antd/es/theme/internal'
-import { TABLE_CELL_ROWS_VAR } from '../RcTableInner/utils/columnBodyEllipsis'
+import { TABLE_CELL_ROWS_VAR } from '../ellipsisRows'
 import type { TableToken } from './index'
 
 const lineClampStyle: CSSObject = {
