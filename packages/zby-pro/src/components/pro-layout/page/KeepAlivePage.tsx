@@ -18,6 +18,7 @@ import type {
   ProLayoutRouteComponent,
 } from '../types'
 import { resetLazyPage } from '../lazyPage'
+import { ProLayoutPageActiveProvider } from '../metrics/ProLayoutMetricsContext'
 import { PageProgressFallback } from '../page-progress'
 import PageErrorBoundary from './PageErrorBoundary'
 
@@ -86,80 +87,82 @@ function KeepAlivePage(props: KeepAlivePageProps) {
 
   return (
     <RouterPageProvider page={page} active={active}>
-      <div
-        className={className}
-        onScroll={active && onScrollStateChange
-          ? (event) => {
-              const element = event.currentTarget
-              if (element.scrollTop > 0)
-                scrolledElementsRef.current.add(element)
-              else
-                scrolledElementsRef.current.delete(element)
+      <ProLayoutPageActiveProvider active={active}>
+        <div
+          className={className}
+          onScroll={active && onScrollStateChange
+            ? (event) => {
+                const element = event.currentTarget
+                if (element.scrollTop > 0)
+                  scrolledElementsRef.current.add(element)
+                else
+                  scrolledElementsRef.current.delete(element)
 
-              const scrolled = scrolledElementsRef.current.size > 0
-              if (lastReportedScrolledRef.current === scrolled)
-                return
+                const scrolled = scrolledElementsRef.current.size > 0
+                if (lastReportedScrolledRef.current === scrolled)
+                  return
 
-              lastReportedScrolledRef.current = scrolled
-              onScrollStateChange(scrolled)
-            }
-          : undefined}
-        onScrollCapture={active && onScrollStateChange
-          ? (event) => {
-              const element = event.target
-              if (!(element instanceof HTMLElement) || element === event.currentTarget)
-                return
-
-              if (element.scrollTop > 0)
-                scrolledElementsRef.current.add(element)
-              else
-                scrolledElementsRef.current.delete(element)
-
-              const scrolled = scrolledElementsRef.current.size > 0
-              if (lastReportedScrolledRef.current === scrolled)
-                return
-
-              lastReportedScrolledRef.current = scrolled
-              onScrollStateChange(scrolled)
-            }
-          : undefined}
-        style={{
-          width: '100%',
-          height: '100%',
-          minWidth: 0,
-          minHeight: 0,
-          overflow: 'auto',
-          ...style,
-          display: active ? (style?.display ?? 'block') : 'none',
-        }}
-      >
-        <PageErrorBoundary
-          prefixCls={prefixCls}
-          resetKeys={resetKeys}
-          onReset={() => resetLazyPage(page.route.element)}
-          onError={onPageError
-            ? (error, info) => onPageError(error, info, { pathname: page.pathname })
+                lastReportedScrolledRef.current = scrolled
+                onScrollStateChange(scrolled)
+              }
             : undefined}
+          onScrollCapture={active && onScrollStateChange
+            ? (event) => {
+                const element = event.target
+                if (!(element instanceof HTMLElement) || element === event.currentTarget)
+                  return
+
+                if (element.scrollTop > 0)
+                  scrolledElementsRef.current.add(element)
+                else
+                  scrolledElementsRef.current.delete(element)
+
+                const scrolled = scrolledElementsRef.current.size > 0
+                if (lastReportedScrolledRef.current === scrolled)
+                  return
+
+                lastReportedScrolledRef.current = scrolled
+                onScrollStateChange(scrolled)
+              }
+            : undefined}
+          style={{
+            width: '100%',
+            height: '100%',
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'auto',
+            ...style,
+            display: active ? (style?.display ?? 'block') : 'none',
+          }}
         >
-          <Suspense
-            fallback={(
-              <PageProgressFallback active={active}>
-                {pageLoading === false
-                  ? null
-                  : (
-                      <PageLoading
-                        prefixCls={prefixCls}
-                        pathname={page.pathname}
-                        config={pageLoading}
-                      />
-                    )}
-              </PageProgressFallback>
-            )}
+          <PageErrorBoundary
+            prefixCls={prefixCls}
+            resetKeys={resetKeys}
+            onReset={() => resetLazyPage(page.route.element)}
+            onError={onPageError
+              ? (error, info) => onPageError(error, info, { pathname: page.pathname })
+              : undefined}
           >
-            <StableRouteElement element={page.route.element} />
-          </Suspense>
-        </PageErrorBoundary>
-      </div>
+            <Suspense
+              fallback={(
+                <PageProgressFallback active={active}>
+                  {pageLoading === false
+                    ? null
+                    : (
+                        <PageLoading
+                          prefixCls={prefixCls}
+                          pathname={page.pathname}
+                          config={pageLoading}
+                        />
+                      )}
+                </PageProgressFallback>
+              )}
+            >
+              <StableRouteElement element={page.route.element} />
+            </Suspense>
+          </PageErrorBoundary>
+        </div>
+      </ProLayoutPageActiveProvider>
     </RouterPageProvider>
   )
 }

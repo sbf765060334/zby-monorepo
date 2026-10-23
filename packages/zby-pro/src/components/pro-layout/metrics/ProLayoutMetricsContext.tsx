@@ -1,4 +1,4 @@
-import { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createStore } from 'zustand/vanilla'
 
 import type { ReactNode } from 'react'
@@ -51,6 +51,9 @@ const EMPTY_STORE = createStore<ProLayoutStoreState>(() => ({
   breadcrumbRendered: false,
 }))
 const ProLayoutStoreContext = createContext<StoreApi<ProLayoutStoreState> | null>(null)
+/** KeepAlive 隐藏页默认不参与上报。布局外没有这个边界，按当前页处理。 */
+const ProLayoutPageActiveContext = createContext(true)
+const breadcrumbReports = new WeakMap<StoreApi<ProLayoutStoreState>, Map<string, boolean>>()
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 /** Synchronizes token and visibility inputs before the layout UI runs its layout effects. */
@@ -80,7 +83,7 @@ export function ProLayoutProvider(props: {
 }) {
   const [store] = useState(() => createStore<ProLayoutStoreState>(() => ({
     ...props.value,
-    breadcrumbRendered: props.value.showBreadcrumb,
+    breadcrumbRendered: false,
   })))
 
   return (
@@ -131,18 +134,33 @@ export function useProLayoutBreadcrumbEnabled() {
   return store !== null && enabled
 }
 
+/** 标记当前 KeepAlive 页是否正在显示。隐藏页里的内容容器不参与顶栏阴影判断。 */
+export function ProLayoutPageActiveProvider(props: {
+  active: boolean
+  children?: ReactNode
+}) {
+  return (
+    <ProLayoutPageActiveContext.Provider value={props.active}>
+      {props.children}
+    </ProLayoutPageActiveContext.Provider>
+  )
+}
+
 /** 内容容器上报本页是否渲染了面包屑，供顶栏滚动阴影判断。 */
 export function useReportProLayoutBreadcrumb(rendered: boolean) {
   const store = useContext(ProLayoutStoreContext)
+  const pageActive = useContext(ProLayoutPageActiveContext)
+  const id = useId()
 
   useBrowserLayoutEffect(() => {
-    if (!store)
+    if (!store || !pageActive)
       return
-    store.setState({ breadcrumbRendered: rendered })
+
+    writeBreadcrumbReport(store, id, rendered)
     return () => {
-      store.setState({ breadcrumbRendered: false })
+      writeBreadcrumbReport(store, id, null)
     }
-  }, [rendered, store])
+  }, [id, pageActive, rendered, store])
 }
 
 export function useProLayoutBreadcrumbRendered() {
@@ -174,6 +192,27 @@ export function useLocale(): UseLocaleReturn {
   if (!store)
     throw new Error('useLocale must be used within ProLayout')
   return locale
+}
+
+function writeBreadcrumbReport(
+  store: StoreApi<ProLayoutStoreState>,
+  id: string,
+  rendered: boolean | null,
+) {
+  let reports = breadcrumbReports.get(store)
+  if (!reports) {
+    reports = new Map()
+    breadcrumbReports.set(store, reports)
+  }
+
+  if (rendered === null)
+    reports.delete(id)
+  else
+    reports.set(id, rendered)
+
+  const next = Array.from(reports.values()).some(Boolean)
+  if (store.getState().breadcrumbRendered !== next)
+    store.setState({ breadcrumbRendered: next })
 }
 
 function identity(state: ProLayoutContextValue) {

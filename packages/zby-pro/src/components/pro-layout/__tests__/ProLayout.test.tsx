@@ -580,6 +580,47 @@ describe('ReactRouterProLayout', () => {
     expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(false)
   })
 
+  it('页签切换后顶栏阴影跟随当前页是否渲染面包屑', async () => {
+    const shadowRoutes: ProLayoutRoute[] = [
+      {
+        path: '/shadow/off',
+        title: '无面包屑',
+        element: BreadcrumbOffPage,
+      },
+      {
+        path: '/shadow/on',
+        title: '有面包屑',
+        element: BreadcrumbOnPage,
+      },
+    ]
+    const router = createRouterCore({
+      routes: shadowRoutes,
+      defaultRedirectPath: '/shadow/off',
+      storageAdapter: false,
+    })
+    const { container } = render(
+      <MemoryRouter initialEntries={['/shadow/off']}>
+        <ReactRouterProLayout router={router} title="数字化平台" />
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('breadcrumb-off-page')
+    const header = container.querySelector('.ant-pro-layout-header') as HTMLElement
+    fireEvent.scroll(screen.getByTestId('breadcrumb-off-page'), { target: { scrollTop: 24 } })
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(true)
+
+    act(() => router.jumpTo('/shadow/on'))
+    await screen.findByTestId('breadcrumb-on-page')
+    expect(screen.getAllByText('当前位置：').length).toBeGreaterThan(0)
+    fireEvent.scroll(screen.getByTestId('breadcrumb-on-page'), { target: { scrollTop: 24 } })
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(false)
+
+    act(() => router.jumpTo('/shadow/off'))
+    await screen.findByTestId('breadcrumb-off-page')
+    fireEvent.scroll(screen.getByTestId('breadcrumb-off-page'), { target: { scrollTop: 24 } })
+    expect(header.classList.contains('ant-pro-layout-header-scrolled')).toBe(true)
+  })
+
   it('通过图标栏和 Drawer 导航，并复用 KeepAlive 页面实例', async () => {
     const router = createTestRouter()
 
@@ -1618,6 +1659,22 @@ function preventExpectedWindowError(event: ErrorEvent) {
 function OrdersPage() {
   const active = useRouterPageSelector((state) => state.active)
   return <div data-testid="orders-page">{active ? 'active' : 'inactive'}</div>
+}
+
+function BreadcrumbOffPage() {
+  return (
+    <ProLayoutContentContainer showBreadcrumb={false}>
+      <div data-testid="breadcrumb-off-page">off</div>
+    </ProLayoutContentContainer>
+  )
+}
+
+function BreadcrumbOnPage() {
+  return (
+    <ProLayoutContentContainer>
+      <div data-testid="breadcrumb-on-page">on</div>
+    </ProLayoutContentContainer>
+  )
 }
 
 function ReportsPage() {

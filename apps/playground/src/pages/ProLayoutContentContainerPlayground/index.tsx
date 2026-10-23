@@ -1,10 +1,10 @@
 import { ProLayoutContentContainer } from '@zby/pro'
-import { Button, Space, Typography } from 'antd'
+import { Button, Space } from 'antd'
 
 export default function ProLayoutContentContainerPlayground() {
   return (
     <ProLayoutContentContainer
-      showBreadcrumb={false}
+      showBreadcrumb={true}
       mode="stack"
       // aside={(
       //   <ProLayoutContentContainer.Item>
