@@ -13,7 +13,7 @@ import ProRouteSearch from './search/RouteSearch'
 import { useLocalePreference } from './locale/useLocalePreference'
 import IconDrawerMenu from './menu'
 import { ProLayoutProvider } from './metrics/ProLayoutMetricsContext'
-import { Breadcrumb, PageContent } from './page'
+import { PageContent } from './page'
 import PageProgressProvider from './page-progress'
 import useProLayoutStyles from './styles'
 import { PRO_LAYOUT_THEME_VIEW_TRANSITION_NAME } from './theme/constants'
@@ -211,7 +211,6 @@ function ProLayoutView(props: ProLayoutViewProps) {
       )
     : ''
   const appTitle = resolveProLayoutTitle(intl, title)
-  const shouldShowBreadcrumb = Boolean(showBreadcrumb && currentRoute)
   const layoutContextValue = useMemo(
     () => ({
       breadcrumbHeight,
@@ -307,7 +306,7 @@ function ProLayoutView(props: ProLayoutViewProps) {
               height={headerHeight}
               extra={header?.extra}
               paddingLeft={siderWidth}
-              scrolled={!shouldShowBreadcrumb && pageScrolled}
+              scrolled={pageScrolled}
               classNames={classNames}
               styles={styles}
               tools={(
@@ -341,13 +340,6 @@ function ProLayoutView(props: ProLayoutViewProps) {
               ...styles?.content,
             }}
           >
-            {shouldShowBreadcrumb ? (
-              <Breadcrumb
-                prefixCls={prefixCls}
-                className={classNames?.breadcrumb}
-                style={styles?.breadcrumb}
-              />
-            ) : null}
             <PageProgressProvider>
               <PageContent
                 prefixCls={prefixCls}

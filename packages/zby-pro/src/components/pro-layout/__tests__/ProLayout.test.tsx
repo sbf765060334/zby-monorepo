@@ -19,6 +19,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { zbyProIntlResources } from '../../../locale/intl-resources'
+import ProLayoutContentContainer from '../content-container'
 import ReactRouterProLayout from '../ReactRouterProLayout'
 import PageContent from '../page/PageContent'
 import { ProRouteSearch } from '../search'
@@ -535,11 +536,11 @@ describe('ReactRouterProLayout', () => {
     )
 
     await screen.findByTestId('reports-page')
-    expect(screen.getByText('当前位置：')).toBeTruthy()
+    expect(screen.getAllByText('当前位置：').length).toBeGreaterThan(0)
 
     act(() => router.jumpTo('/breadcrumb/another'))
     await screen.findByTestId('report-detail-page')
-    expect(screen.getByText('当前位置：')).toBeTruthy()
+    expect(screen.getAllByText('当前位置：').length).toBeGreaterThan(0)
   })
 
   it('showBreadcrumb 总开关关闭时隐藏全局面包屑并在页面滚动时提升 Header', async () => {
@@ -951,11 +952,9 @@ describe('ReactRouterProLayout', () => {
           router={router}
           title="数字化平台"
           classNames={{
-            breadcrumb: 'custom-breadcrumb',
             content: 'custom-content',
             page: 'custom-page',
           }}
-          styles={{ breadcrumb: { backgroundColor: 'rgb(1, 2, 3)' } }}
           systemList={[{
             systemName: 'main',
             name: '主系统',
@@ -971,8 +970,7 @@ describe('ReactRouterProLayout', () => {
     await screen.findByTestId('dashboard-page')
     expect(container.querySelector('.custom-content')).toBeTruthy()
     expect(container.querySelector('.custom-page')).toBeTruthy()
-    expect((container.querySelector('.custom-breadcrumb') as HTMLElement).style.backgroundColor)
-      .toBe('rgb(1, 2, 3)')
+    expect(screen.getByText('当前位置：')).toBeTruthy()
     const tab = screen.getByRole('tab', { name: /工作台/ })
     const sortableNode = tab.closest('.ant-pro-layout-tab-node')
     expect(sortableNode?.getAttribute('role')).toBeNull()
@@ -1606,7 +1604,11 @@ function menuItemDisabled(name: string) {
 
 function DashboardPage() {
   const active = useRouterPageSelector((state) => state.active)
-  return <div data-testid="dashboard-page">{active ? 'active' : 'inactive'}</div>
+  return (
+    <ProLayoutContentContainer>
+      <div data-testid="dashboard-page">{active ? 'active' : 'inactive'}</div>
+    </ProLayoutContentContainer>
+  )
 }
 
 function preventExpectedWindowError(event: ErrorEvent) {
@@ -1619,11 +1621,19 @@ function OrdersPage() {
 }
 
 function ReportsPage() {
-  return <div data-testid="reports-page">reports</div>
+  return (
+    <ProLayoutContentContainer>
+      <div data-testid="reports-page">reports</div>
+    </ProLayoutContentContainer>
+  )
 }
 
 function ReportDetailPage() {
-  return <div data-testid="report-detail-page">report-detail</div>
+  return (
+    <ProLayoutContentContainer>
+      <div data-testid="report-detail-page">report-detail</div>
+    </ProLayoutContentContainer>
+  )
 }
 
 const routes: ProLayoutRoute[] = [

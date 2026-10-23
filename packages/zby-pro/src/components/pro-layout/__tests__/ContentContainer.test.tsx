@@ -158,7 +158,7 @@ describe('ProLayoutContentContainer', () => {
     expect(cardBody.style.backgroundColor).toBe('rgb(1, 2, 3)')
   })
 
-  it('renders an end aside with its own native scroll container and width contract', () => {
+  it('renders an end aside as a slot with an explicit width', () => {
     const { container } = render(
       <ProLayoutContentContainer
         mode="stack"
@@ -180,14 +180,11 @@ describe('ProLayoutContentContainer', () => {
     expect(aside.classList.contains('custom-aside')).toBe(true)
     expect(aside.style.width).toBe('280px')
     expect(aside.style.flexBasis).toBe('280px')
-    const asideScroll = aside.querySelector('.ant-pro-layout-content-container-aside-scroll')!
-
-    expect(asideScroll.tagName).toBe('DIV')
-    expect(asideScroll.classList.contains('ant-scroll-area')).toBe(false)
-    expect(aside.querySelector('[class*="aside-scroll-viewport"]')).toBeNull()
+    expect(aside.querySelector('.ant-pro-layout-content-container-aside-scroll')).toBeNull()
+    expect(aside.textContent).toBe('Filters')
   })
 
-  it('moves stack padding to native scroll panes without changing fill padding', () => {
+  it('keeps padding on the content row in both fill and stack', () => {
     const stackView = render(
       <ProLayoutContentContainer
         mode="stack"
@@ -209,12 +206,10 @@ describe('ProLayoutContentContainer', () => {
       '.ant-pro-layout-content-container-aside',
     )!
 
-    expect(stackContent.style.padding).toBe('0px')
+    expect(stackContent.style.padding).toBe('24px')
     expect(stackContent.style.gap).toBe('8px')
-    expect(stackBody.style.padding).toBe('24px')
-    expect(stackBody.style.paddingInlineEnd).toBe('0px')
-    expect(stackAside.style.padding).toBe('24px')
-    expect(stackAside.style.paddingInlineStart).toBe('0px')
+    expect(stackBody.style.padding).toBe('')
+    expect(stackAside.style.padding).toBe('')
 
     stackView.unmount()
 
@@ -281,9 +276,11 @@ describe('ProLayoutContentContainer', () => {
 
     expect(styleText).toContain('ant-pro-layout-content-container')
     expect(styleText).toContain('height:100%')
+    expect(styleText).toContain('height:auto')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
-    expect(styleText).toContain('overflow:auto')
+    expect(styleText).toContain('overflow:visible')
+    expect(styleText).not.toContain('overflow:auto')
     expect(styleText).not.toContain('scrollbar-gutter')
     expect(styleText).toMatch(
       /ant-pro-layout-content-container[^}]*background:var\(--zby-content-container-test-color-bg-layout\)/,

@@ -182,7 +182,7 @@ function PlatformLayout() {
 
 ## 页面内容容器
 
-`ProLayoutContentContainer` 用于统一页面内部的全高布局。`fill` 模式会把 children 包装为一个填满剩余空间的 Card；`stack` 模式适合纵向排列多个内容块，并由主体区域滚动。传入 `items` 时默认使用 `stack`。
+`ProLayoutContentContainer` 用于统一页面内部的全高布局。`fill` 模式会把 children 包装为一个填满剩余空间的 Card，主体不滚动。`stack` 模式按内容增高，页面滚动发生在 `page-body`。传入 `items` 时默认使用 `stack`。
 
 ```tsx
 import { ProLayoutContentContainer } from '@zby/pro/pro-layout'
@@ -207,7 +207,7 @@ export function OrderPage() {
 }
 ```
 
-全局面包屑由 ProLayout 统一渲染，不属于内容容器。页面要自行实现导航层级时，应设置 `showBreadcrumb={false}`。
+全局面包屑渲染在 `ProLayoutContentContainer` 顶部，并吸顶。`showBreadcrumb` 默认 true。`ProLayout.showBreadcrumb` 为 false 时，容器内也不会渲染。
 
 ## 页签右键菜单
 
@@ -260,7 +260,6 @@ export function OrderPage() {
 | `sider` / `siderLogo` / `siderMenu` | 左侧图标栏、Logo 和菜单 |
 | `menuDrawer` | 多级菜单 Drawer |
 | `header` / `tabs` / `headerExtra` | 顶部区域、全局页签和右侧扩展 |
-| `breadcrumb` | 全局面包屑 |
 | `content` / `page` | 内容区域和活动页面 |
 
 ### ProLayoutRoute
@@ -337,12 +336,14 @@ export function OrderPage() {
 | mode | 内容布局模式 | `'fill' \| 'stack'` | 有 `items` 时为 `stack`，否则为 `fill` |
 | header | 顶部固定内容 | `ReactNode` | - |
 | footer | 底部内容 | `ReactNode` | - |
-| aside | 独立滚动的侧栏 | `ReactNode` | - |
+| showBreadcrumb | 是否在容器顶部渲染面包屑。ProLayout 总开关为 false 时不渲染 | `boolean` | `true` |
+| breadcrumbClassName / breadcrumbStyle | 面包屑类名和样式 | `string / CSSProperties` | - |
+| aside | 侧栏插槽，不带默认背景、宽度和间距 | `ReactNode` | - |
 | asidePosition | 侧栏位置 | `'start' \| 'end'` | `'start'` |
-| asideWidth | 侧栏宽度 | `CSSProperties['width']` | `7 × controlHeightLG` |
+| asideWidth | 侧栏宽度 | `CSSProperties['width']` | - |
 | items | 配置式内容卡片 | `ProLayoutContentContainerItemConfig[]` | - |
 | padding | 内容内边距；`false` 表示 0 | `CSSProperties['padding'] \| false` | 主题默认值 |
-| gap | 内容块间距 | `CSSProperties['gap']` | 主题默认值 |
+| gap | 侧栏和主体之间的间距。不传则没有间距 | `CSSProperties['gap']` | - |
 | itemBodyPadding | 所有内容卡片的 body 内边距 | `CSSProperties['padding'] \| false` | - |
 | itemProps | 所有内容卡片的公共属性 | `ProLayoutContentContainerItemProps` | - |
 | contentClassName / contentStyle | 内容区域类名和样式 | `string / CSSProperties` | - |

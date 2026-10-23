@@ -88,10 +88,26 @@ function KeepAlivePage(props: KeepAlivePageProps) {
     <RouterPageProvider page={page} active={active}>
       <div
         className={className}
+        onScroll={active && onScrollStateChange
+          ? (event) => {
+              const element = event.currentTarget
+              if (element.scrollTop > 0)
+                scrolledElementsRef.current.add(element)
+              else
+                scrolledElementsRef.current.delete(element)
+
+              const scrolled = scrolledElementsRef.current.size > 0
+              if (lastReportedScrolledRef.current === scrolled)
+                return
+
+              lastReportedScrolledRef.current = scrolled
+              onScrollStateChange(scrolled)
+            }
+          : undefined}
         onScrollCapture={active && onScrollStateChange
           ? (event) => {
               const element = event.target
-              if (!(element instanceof HTMLElement))
+              if (!(element instanceof HTMLElement) || element === event.currentTarget)
                 return
 
               if (element.scrollTop > 0)

@@ -323,7 +323,9 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: styleToken.colorBgContainer,
           transition: `padding-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}, box-shadow ${styleToken.motionDurationMid} ${styleToken.motionEaseInOut}`,
         },
-        [`${componentCls}-header-scrolled`]: { boxShadow: surfaceShadow },
+        [`${componentCls}-header-scrolled`]: {
+          boxShadow: `0 6px 16px -8px ${styleToken.colorTextQuaternary}, ${surfaceShadow}`,
+        },
 
         [`${componentCls}-tabs`]: {
           display: 'flex',
@@ -635,6 +637,9 @@ export default function useProLayoutStyles(prefixCls: string) {
           background: styleToken.colorBgLayout,
         },
         [`${componentCls}-breadcrumb`]: {
+          position: 'sticky',
+          insetBlockStart: 0,
+          zIndex: 1,
           display: 'flex',
           minHeight: styleToken.controlHeight,
           flex: '0 0 auto',

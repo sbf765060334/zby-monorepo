@@ -41,8 +41,16 @@ const EMPTY_CONTEXT: ProLayoutContextValue = {
   setLocale: () => undefined,
 }
 
-const EMPTY_STORE = createStore<ProLayoutContextValue>(() => EMPTY_CONTEXT)
-const ProLayoutStoreContext = createContext<StoreApi<ProLayoutContextValue> | null>(null)
+interface ProLayoutStoreState extends ProLayoutContextValue {
+  /** 当前页面是否真的渲染了面包屑。由内容容器上报。 */
+  breadcrumbRendered: boolean
+}
+
+const EMPTY_STORE = createStore<ProLayoutStoreState>(() => ({
+  ...EMPTY_CONTEXT,
+  breadcrumbRendered: false,
+}))
+const ProLayoutStoreContext = createContext<StoreApi<ProLayoutStoreState> | null>(null)
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 /** Synchronizes token and visibility inputs before the layout UI runs its layout effects. */
@@ -70,7 +78,10 @@ export function ProLayoutProvider(props: {
   children?: ReactNode
   value: ProLayoutContextValue
 }) {
-  const [store] = useState(() => createStore<ProLayoutContextValue>(() => props.value))
+  const [store] = useState(() => createStore<ProLayoutStoreState>(() => ({
+    ...props.value,
+    breadcrumbRendered: props.value.showBreadcrumb,
+  })))
 
   return (
     <ProLayoutStoreContext.Provider value={store}>
@@ -107,6 +118,40 @@ export function useProLayoutHeaderHeight() {
 
 export function useProLayoutBreadcrumbHeight() {
   return useProLayoutContext((state) => state.breadcrumbHeight)
+}
+
+/** 布局总开关。布局外返回 false，避免内容容器在没有路由上下文时渲染面包屑。 */
+export function useProLayoutBreadcrumbEnabled() {
+  const store = useContext(ProLayoutStoreContext)
+  const enabled = useStoreSelector(
+    store ?? EMPTY_STORE,
+    (state) => state.showBreadcrumb,
+    Object.is,
+  )
+  return store !== null && enabled
+}
+
+/** 内容容器上报本页是否渲染了面包屑，供顶栏滚动阴影判断。 */
+export function useReportProLayoutBreadcrumb(rendered: boolean) {
+  const store = useContext(ProLayoutStoreContext)
+
+  useBrowserLayoutEffect(() => {
+    if (!store)
+      return
+    store.setState({ breadcrumbRendered: rendered })
+    return () => {
+      store.setState({ breadcrumbRendered: false })
+    }
+  }, [rendered, store])
+}
+
+export function useProLayoutBreadcrumbRendered() {
+  const store = useContext(ProLayoutStoreContext)
+  return useStoreSelector(
+    store ?? EMPTY_STORE,
+    (state) => state.breadcrumbRendered,
+    Object.is,
+  )
 }
 
 export function useProLayoutSiderWidth() {

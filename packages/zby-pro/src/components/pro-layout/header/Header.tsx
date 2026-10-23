@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import { memo } from 'react'
 
 import type { ReactNode } from 'react'
+import { useProLayoutBreadcrumbRendered } from '../metrics/ProLayoutMetricsContext'
 import type { ProLayoutClassNames, ProLayoutStyles } from '../types'
 import PageTabs from './PageTabs'
 
@@ -21,12 +22,14 @@ export interface HeaderProps {
 /** 顶部全局页签栏及业务扩展区域。 */
 const Header = (props: HeaderProps) => {
   const { classNames, extra, hashId, height, paddingLeft, prefixCls, scrolled, styles, tools } = props
+  const breadcrumbRendered = useProLayoutBreadcrumbRendered()
+  const showShadow = Boolean(scrolled) && !breadcrumbRendered
 
   return (
     <header
       className={clsx(
         `${prefixCls}-header`,
-        scrolled && `${prefixCls}-header-scrolled`,
+        showShadow && `${prefixCls}-header-scrolled`,
         classNames?.header,
       )}
       style={{

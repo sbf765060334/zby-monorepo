@@ -34,10 +34,15 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
           overflow: 'hidden',
           background: styleToken.colorBgLayout,
 
+          [`&${contentContainerCls}-stack`]: {
+            height: 'auto',
+            minHeight: '100%',
+            overflow: 'visible',
+          },
+
           [`${contentContainerCls}-header`]: {
             minWidth: 0,
             flex: '0 0 auto',
-            background: styleToken.colorBgContainer,
           },
 
           [`${contentContainerCls}-header-content`]: {
@@ -49,7 +54,6 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             minWidth: 0,
             minHeight: 0,
             flex: 1,
-            gap: styleToken.marginSM,
             boxSizing: 'border-box',
             padding: styleToken.paddingSM,
             overflow: 'hidden',
@@ -70,57 +74,25 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
           },
 
           [`&${contentContainerCls}-stack ${contentContainerCls}-content`]: {
-            padding: 0,
+            flex: '1 1 auto',
+            minHeight: 'auto',
+            overflow: 'visible',
           },
 
           [`&${contentContainerCls}-stack ${contentContainerCls}-body`]: {
-            padding: styleToken.paddingSM,
-            overflow: 'auto',
+            flex: '1 1 auto',
+            minHeight: 'auto',
+            overflow: 'visible',
           },
 
           [`&${contentContainerCls}-stack ${contentContainerItemCls}`]: {
+            width: '100%',
             flex: '0 0 auto',
           },
 
-          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside:not(${contentContainerCls}-aside-end) ${contentContainerCls}-body`]: {
-            paddingInlineStart: 0,
-          },
-
-          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside${contentContainerCls}-aside-end ${contentContainerCls}-body`]: {
-            paddingInlineEnd: 0,
-          },
-
           [`${contentContainerCls}-aside`]: {
-            display: 'flex',
-            width: token.controlHeightLG * 7,
             minWidth: 0,
-            minHeight: 0,
-            boxSizing: 'border-box',
-            flex: `0 0 ${unit(token.controlHeightLG * 7)}`,
-            flexDirection: 'column',
-            overflow: 'hidden',
-          },
-
-          [`${contentContainerCls}-aside-scroll`]: {
-            width: '100%',
-            height: '100%',
-            minWidth: 0,
-            minHeight: 0,
-            flex: 1,
-            overflow: 'auto',
-          },
-
-          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside ${contentContainerCls}-aside`]: {
-            boxSizing: 'content-box',
-            padding: styleToken.paddingSM,
-          },
-
-          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside:not(${contentContainerCls}-aside-end) ${contentContainerCls}-aside`]: {
-            paddingInlineEnd: 0,
-          },
-
-          [`&${contentContainerCls}-stack${contentContainerCls}-with-aside${contentContainerCls}-aside-end ${contentContainerCls}-aside`]: {
-            paddingInlineStart: 0,
+            flex: '0 0 auto',
           },
 
           [`${contentContainerCls}-footer`]: {
@@ -138,7 +110,7 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             paddingInline: styleToken.paddingMD,
             borderBlockStart: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
             background: styleToken.colorBgContainer,
-            boxShadow: surfaceShadow,
+            boxShadow: `0 -6px 16px -8px ${styleToken.colorTextQuaternary}, ${surfaceShadow}`,
           },
 
         },

@@ -105,7 +105,6 @@ export type ProLayoutSemanticName =
   | 'header'
   | 'tabs'
   | 'headerExtra'
-  | 'breadcrumb'
   | 'content'
   | 'page'
 

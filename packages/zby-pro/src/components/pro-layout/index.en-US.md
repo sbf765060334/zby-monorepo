@@ -181,7 +181,7 @@ When the header is visible, ProLayout renders the magnifying-glass button. Open 
 
 ## Page Content Container
 
-Use `ProLayoutContentContainer` for a consistent full-height page layout. `fill` wraps children in one Card that fills the remaining space. `stack` arranges multiple blocks vertically and lets the body scroll. Passing `items` selects `stack` by default.
+Use `ProLayoutContentContainer` for a consistent full-height page layout. `fill` wraps children in one Card that fills the remaining space and does not scroll. `stack` grows with its content, and page scrolling happens on `page-body`. Passing `items` selects `stack` by default.
 
 ```tsx
 import { ProLayoutContentContainer } from '@zby/pro/pro-layout'
@@ -206,7 +206,7 @@ export function OrderPage() {
 }
 ```
 
-The global breadcrumb is rendered by ProLayout, not by the content container. Set `showBreadcrumb={false}` when a page provides its own navigation hierarchy.
+The global breadcrumb renders at the top of `ProLayoutContentContainer` and stays sticky. `showBreadcrumb` defaults to true. It is not rendered when `ProLayout.showBreadcrumb` is false.
 
 ## Tab Context Menu
 
@@ -259,7 +259,6 @@ With only one tab, every action is disabled. On the rightmost tab, "Close tabs t
 | `sider` / `siderLogo` / `siderMenu` | Icon sider, logo, and menu |
 | `menuDrawer` | Multilevel menu drawer |
 | `header` / `tabs` / `headerExtra` | Header, global tabs, and right-side extensions |
-| `breadcrumb` | Global breadcrumb |
 | `content` / `page` | Content region and active page |
 
 ### ProLayoutRoute
@@ -336,12 +335,14 @@ The header theme menu contains system appearance, light, dark, default density, 
 | mode | Content layout mode | `'fill' \| 'stack'` | `stack` with `items`; otherwise `fill` |
 | header | Fixed header content | `ReactNode` | - |
 | footer | Footer content | `ReactNode` | - |
-| aside | Independently scrolling aside | `ReactNode` | - |
+| showBreadcrumb | Render the breadcrumb at the top of the container. Hidden when the ProLayout switch is false | `boolean` | `true` |
+| breadcrumbClassName / breadcrumbStyle | Breadcrumb class and style | `string / CSSProperties` | - |
+| aside | Aside slot. No default background, width, or gap | `ReactNode` | - |
 | asidePosition | Aside position | `'start' \| 'end'` | `'start'` |
-| asideWidth | Aside width | `CSSProperties['width']` | `7 × controlHeightLG` |
+| asideWidth | Aside width | `CSSProperties['width']` | - |
 | items | Configured content cards | `ProLayoutContentContainerItemConfig[]` | - |
 | padding | Content padding; `false` means 0 | `CSSProperties['padding'] \| false` | Theme default |
-| gap | Gap between content blocks | `CSSProperties['gap']` | Theme default |
+| gap | Gap between the aside and the body. Omitted means no gap | `CSSProperties['gap']` | - |
 | itemBodyPadding | Body padding shared by all content cards | `CSSProperties['padding'] \| false` | - |
 | itemProps | Props shared by all content cards | `ProLayoutContentContainerItemProps` | - |
 | contentClassName / contentStyle | Content-region class and style | `string / CSSProperties` | - |

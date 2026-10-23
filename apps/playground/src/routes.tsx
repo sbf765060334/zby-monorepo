@@ -12,6 +12,9 @@ const ProViewManagementPlayground = lazyPage(
   () => import('./pages/ProViewManagementPlayground'),
 )
 const ScrollAreaPlayground = lazyPage(() => import('./pages/ScrollAreaPlayground'))
+const ProLayoutContentContainerPlayground = lazyPage(
+  () => import('./pages/ProLayoutContentContainerPlayground'),
+)
 const ProTablePlayground = lazyPage(() => import('./pages/ProTablePlayground'))
 const TablePlayground = lazyPage(() => import('./pages/TablePlayground'))
 const WorkbenchMenuFixture = lazyPage(
@@ -296,6 +299,11 @@ export const appRouters: ProLayoutRoute[] = [
         path: '/demo/ui/table',
         title: menuTitle('demo.ui.table', '表格'),
         element: TablePlayground,
+      },
+      {
+        path: '/demo/ui/content-container',
+        title: menuTitle('demo.ui.contentContainer', '内容容器'),
+        element: ProLayoutContentContainerPlayground,
       },
       {
         path: '/demo/ui/pro-table',

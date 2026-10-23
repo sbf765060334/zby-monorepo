@@ -3,6 +3,8 @@ import { clsx } from 'clsx'
 import * as React from 'react'
 
 import type { CardProps } from 'antd'
+import { useProLayoutBreadcrumbEnabled, useReportProLayoutBreadcrumb } from '../metrics/ProLayoutMetricsContext'
+import Breadcrumb from '../page/Breadcrumb'
 import useStyle from './style'
 
 export type ProLayoutContentContainerItemBodyPadding =
@@ -54,6 +56,11 @@ export interface ProLayoutContentContainerProps extends Omit<
   asideWidth?: React.CSSProperties['width']
   /** 容器最小宽度。数字按像素处理，默认 960。`style.minWidth` 可覆盖。 */
   minWidth?: React.CSSProperties['minWidth']
+  /**
+   * 是否在容器顶部渲染面包屑。默认 true。
+   * ProLayout.showBreadcrumb 为 false 时不会渲染。
+   */
+  showBreadcrumb?: boolean
   items?: ProLayoutContentContainerItemConfig[]
   padding?: React.CSSProperties['padding'] | false
   gap?: React.CSSProperties['gap']
@@ -65,6 +72,8 @@ export interface ProLayoutContentContainerProps extends Omit<
   bodyStyle?: React.CSSProperties
   footerClassName?: string
   footerStyle?: React.CSSProperties
+  breadcrumbClassName?: string
+  breadcrumbStyle?: React.CSSProperties
   asideClassName?: string
   asideStyle?: React.CSSProperties
   itemProps?: ProLayoutContentContainerItemProps
@@ -167,6 +176,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
     asidePosition = 'start',
     asideWidth,
     minWidth = DEFAULT_CONTENT_CONTAINER_MIN_WIDTH,
+    showBreadcrumb = true,
     items,
     padding,
     gap,
@@ -180,6 +190,8 @@ const ProLayoutContentContainerInner = React.forwardRef<
     bodyStyle,
     footerClassName,
     footerStyle,
+    breadcrumbClassName,
+    breadcrumbStyle,
     asideClassName,
     asideStyle,
     itemProps,
@@ -187,51 +199,26 @@ const ProLayoutContentContainerInner = React.forwardRef<
     ...restProps
   } = props
   const [prefixCls, hashId] = useContentContainerStyle(customizePrefixCls)
+  const layoutBreadcrumbEnabled = useProLayoutBreadcrumbEnabled()
+  const shouldShowBreadcrumb = showBreadcrumb && layoutBreadcrumbEnabled
+  useReportProLayoutBreadcrumb(shouldShowBreadcrumb)
   const hasItems = Array.isArray(items)
   const mergedMode = resolveMode(mode, hasItems)
   const mergedPadding = padding === false ? 0 : padding
   const contentInlineStyle = React.useMemo<React.CSSProperties>(
     () => ({
-      ...(mergedMode === 'stack'
-        ? { padding: 0 }
-        : padding !== undefined
-          ? { padding: mergedPadding }
-          : null),
+      ...(padding !== undefined ? { padding: mergedPadding } : null),
       ...(gap !== undefined ? { gap } : null),
       ...contentStyle,
     }),
-    [contentStyle, gap, mergedMode, mergedPadding, padding],
-  )
-  const bodyInlineStyle = React.useMemo<React.CSSProperties>(
-    () => ({
-      ...(mergedMode === 'stack' && padding !== undefined
-        ? { padding: mergedPadding }
-        : null),
-      ...(mergedMode === 'stack' && aside && asidePosition === 'start'
-        ? { paddingInlineStart: 0 }
-        : null),
-      ...(mergedMode === 'stack' && aside && asidePosition === 'end'
-        ? { paddingInlineEnd: 0 }
-        : null),
-      ...bodyStyle,
-    }),
-    [aside, asidePosition, bodyStyle, mergedMode, mergedPadding, padding],
+    [contentStyle, gap, mergedPadding, padding],
   )
   const asideInlineStyle = React.useMemo<React.CSSProperties>(
     () => ({
       ...(asideWidth !== undefined ? { flexBasis: asideWidth, width: asideWidth } : null),
-      ...(mergedMode === 'stack' && padding !== undefined
-        ? { padding: mergedPadding }
-        : null),
-      ...(mergedMode === 'stack' && asidePosition === 'start'
-        ? { paddingInlineEnd: 0 }
-        : null),
-      ...(mergedMode === 'stack' && asidePosition === 'end'
-        ? { paddingInlineStart: 0 }
-        : null),
       ...asideStyle,
     }),
-    [asidePosition, asideStyle, asideWidth, mergedMode, mergedPadding, padding],
+    [asideStyle, asideWidth],
   )
   const bodyNode = hasItems
     ? items.map((item) => (
@@ -260,6 +247,13 @@ const ProLayoutContentContainerInner = React.forwardRef<
       )}
       style={{ minWidth, ...style }}
     >
+      {shouldShowBreadcrumb ? (
+        <Breadcrumb
+          prefixCls={prefixCls}
+          className={breadcrumbClassName}
+          style={breadcrumbStyle}
+        />
+      ) : null}
       {header ? (
         <div className={`${prefixCls}-content-container-header`}>
           <div className={`${prefixCls}-content-container-header-content`}>{header}</div>
@@ -272,7 +266,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
         {aside && asidePosition === 'start'
           ? renderAside(aside, prefixCls, asideClassName, asideInlineStyle)
           : null}
-        {renderBody(bodyNode, prefixCls, bodyClassName, bodyInlineStyle)}
+        {renderBody(bodyNode, prefixCls, bodyClassName, bodyStyle)}
         {aside && asidePosition === 'end'
           ? renderAside(aside, prefixCls, asideClassName, asideInlineStyle)
           : null}
@@ -346,9 +340,7 @@ function renderAside(
       className={clsx(`${prefixCls}-content-container-aside`, asideClassName)}
       style={asideStyle}
     >
-      <div className={`${prefixCls}-content-container-aside-scroll`}>
-        {aside}
-      </div>
+      {aside}
     </aside>
   )
 }
