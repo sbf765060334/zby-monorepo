@@ -1,5 +1,11 @@
 # @zby/ui
 
+## 0.3.2
+
+### Patch Changes
+
+- --- │ │ "@zby/ui": patch │ │ --- │ │ │ │ ActionText 增加 type="primary"，文案使用主题色。ellipsis.rows 大于 1 时按行数省略，无 href 的可点击文本同样生效。 │ │ │ │ Table 列 ellipsis.rows 大于 1 时，表体按行数省略并保留原生 title。表头仍是单行。列上有自定义 render 时，表体省略不 │ │ 生效。
+
 ## 0.3.1
 
 ### Patch Changes
