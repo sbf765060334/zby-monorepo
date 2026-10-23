@@ -12,6 +12,7 @@ import ActionIcon from '../action-icon'
 import useCopyAction from '../action-text/useCopyAction'
 import type { ActionTextCopyConfig } from '../action-text'
 import type { ColumnType } from './interface'
+import { resolveEllipsisRows, TABLE_CELL_ROWS_VAR } from './RcTableInner/utils/columnBodyEllipsis'
 
 export const TABLE_CELL_COPY_CLASS_NAME = 'cell-copy'
 export const TABLE_CELL_COPY_TEXT_CLASS_NAME = 'cell-copy-text'
@@ -53,6 +54,9 @@ const TableCellCopy: React.FC<TableCellCopyProps> = ({
     tooltips === false
       ? undefined
       : (Array.isArray(tooltips) ? tooltips : [tooltips])[copied ? 1 : 0] ?? systemStr
+  const ellipsisRows = resolveEllipsisRows(ellipsis)
+  const multiLineEllipsis = ellipsisRows > 1
+  const singleLineEllipsis = Boolean(ellipsis) && !multiLineEllipsis
   const showTitle = ellipsis === true || (typeof ellipsis === 'object' && ellipsis.showTitle !== false)
   const textTitle =
     showTitle && (typeof children === 'string' || typeof children === 'number')
@@ -63,8 +67,14 @@ const TableCellCopy: React.FC<TableCellCopyProps> = ({
     <span className={`${prefixCls}-${TABLE_CELL_COPY_CLASS_NAME}`}>
       <span
         className={clsx(`${prefixCls}-${TABLE_CELL_COPY_TEXT_CLASS_NAME}`, {
-          [`${prefixCls}-${TABLE_CELL_COPY_TEXT_CLASS_NAME}-ellipsis`]: Boolean(ellipsis),
+          [`${prefixCls}-${TABLE_CELL_COPY_TEXT_CLASS_NAME}-ellipsis`]: singleLineEllipsis,
+          [`${prefixCls}-${TABLE_CELL_COPY_TEXT_CLASS_NAME}-ellipsis-multiple`]: multiLineEllipsis,
         })}
+        style={
+          multiLineEllipsis
+            ? ({ [TABLE_CELL_ROWS_VAR]: ellipsisRows } as React.CSSProperties)
+            : undefined
+        }
         title={textTitle}
       >
         {children}

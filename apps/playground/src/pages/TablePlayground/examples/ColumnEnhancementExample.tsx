@@ -27,7 +27,8 @@ const enhanceColumns: TableColumnsType<OrderRecord> = [
     dataIndex: 'address',
     key: 'address',
     width: 180,
-    ellipsis: { rows: 1, tooltip: true },
+    ellipsis: { rows: 2 },
+    copyable: true,
   },
 ]
 
@@ -35,7 +36,7 @@ export default function ColumnEnhancementExample() {
   return (
     <PlaygroundCase
       title="列增强"
-      description="表头 tooltip 与原生 ellipsis；表体 copyable、renderText 和 CSS 省略。"
+      description="表头 tooltip 与单行省略；目的地列 ellipsis.rows 为 2，最多展示两行。"
     >
       <Table<OrderRecord>
         rowKey="id"

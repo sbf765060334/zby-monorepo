@@ -493,6 +493,48 @@ describe('Table', () => {
     expect(bodyCell?.getAttribute('title')).toBeNull()
   })
 
+  it('clamps body cells to ellipsis.rows and keeps the header on one line', () => {
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        pagination={false}
+        columns={[{ dataIndex: 'name', title: 'A very long header name', width: 80, ellipsis: { rows: 2 } }]}
+        dataSource={[{ id: 1, name: 'Alpha beta gamma delta epsilon' }]}
+      />,
+    )
+
+    const headerCell = container.querySelector('.ant-table-thead .ant-table-cell')
+    const bodyCell = container.querySelector('.ant-table-tbody .ant-table-cell')
+    const clamped = bodyCell?.querySelector<HTMLElement>('.ant-table-cell-ellipsis-multiple')
+
+    expect(headerCell?.classList.contains('ant-table-cell-ellipsis')).toBe(true)
+    expect(headerCell?.querySelector('.ant-table-cell-ellipsis-multiple')).toBeNull()
+    expect(bodyCell?.classList.contains('ant-table-cell-ellipsis')).toBe(false)
+    expect(clamped?.textContent).toBe('Alpha beta gamma delta epsilon')
+    expect(clamped?.style.getPropertyValue('--table-cell-ellipsis-rows')).toBe('2')
+    expect(bodyCell?.getAttribute('title')).toBe('Alpha beta gamma delta epsilon')
+  })
+
+  it('clamps copyable body text to ellipsis.rows', () => {
+    const { container } = render(
+      <ZbyIntlProvider locale="zh-CN" resources={zbyUiIntlResources}>
+        <Table<RowData>
+          rowKey="id"
+          pagination={false}
+          columns={[{ dataIndex: 'name', title: 'Name', copyable: true, ellipsis: { rows: 2 } }]}
+          dataSource={data.slice(0, 1)}
+        />
+      </ZbyIntlProvider>,
+    )
+
+    const text = container.querySelector<HTMLElement>('.ant-table-cell-copy-text')
+
+    expect(text?.classList.contains('ant-table-cell-copy-text-ellipsis')).toBe(false)
+    expect(text?.classList.contains('ant-table-cell-copy-text-ellipsis-multiple')).toBe(true)
+    expect(text?.style.getPropertyValue('--table-cell-ellipsis-rows')).toBe('2')
+    expect(text?.getAttribute('title')).toBe('Alpha')
+  })
+
   it('uses CSS ellipsis for virtual body cells', () => {
     const virtualData = Array.from({ length: 8 }, (_, index) => ({
       id: index + 1,

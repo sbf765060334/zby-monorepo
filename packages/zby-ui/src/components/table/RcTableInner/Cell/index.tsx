@@ -7,6 +7,7 @@ import {
   INTERNAL_COLUMN_RESIZE_FILLER,
   INTERNAL_COLUMN_RESIZE_META,
 } from '../interface';
+import { resolveEllipsisRows, TABLE_CELL_ROWS_VAR } from '../utils/columnBodyEllipsis';
 import type {
   AlignType,
   CellEllipsisType,
@@ -402,6 +403,11 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       children: childNode,
     });
 
+  // 表头保持单行。表体 rows 大于 1 时改走行数截断，避免单行 nowrap 把多行裁掉。
+  const ellipsisRows = rowType === 'header' ? 1 : resolveEllipsisRows(ellipsis);
+  const multiLineEllipsis = ellipsisRows > 1;
+  const singleLineEllipsis = Boolean(ellipsis) && !multiLineEllipsis;
+
   // >>>>> ClassName
   const mergedClassName = clsx(
     cellPrefixCls,
@@ -421,7 +427,7 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
       [`${cellPrefixCls}-fix-end-shadow`]: fixedEndShadow,
       [`${cellPrefixCls}-fix-end-shadow-show`]: fixedEndShadow && showFixEndShadow,
 
-      [`${cellPrefixCls}-ellipsis`]: ellipsis,
+      [`${cellPrefixCls}-ellipsis`]: singleLineEllipsis,
       [`${cellPrefixCls}-with-append`]: appendNode,
       [`${cellPrefixCls}-fix-sticky`]: (isFixStart || isFixEnd) && isSticky,
       [`${cellPrefixCls}-row-hover`]: !legacyCellProps && hovering,
@@ -458,7 +464,18 @@ const Cell = <RecordType,>(props: CellProps<RecordType>) => {
     mergedChildNode = null;
   }
 
-  if (ellipsis && (fixedStartShadow || fixedEndShadow)) {
+  if (multiLineEllipsis && !React.isValidElement(mergedChildNode)) {
+    mergedChildNode = (
+      <span
+        className={clsx(`${cellPrefixCls}-ellipsis-multiple`, {
+          [`${cellPrefixCls}-content`]: fixedStartShadow || fixedEndShadow,
+        })}
+        style={{ [TABLE_CELL_ROWS_VAR]: ellipsisRows } as React.CSSProperties}
+      >
+        {mergedChildNode}
+      </span>
+    );
+  } else if (ellipsis && (fixedStartShadow || fixedEndShadow)) {
     mergedChildNode = <span className={`${cellPrefixCls}-content`}>{mergedChildNode}</span>;
   }
 

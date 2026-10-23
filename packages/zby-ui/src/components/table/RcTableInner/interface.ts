@@ -134,7 +134,7 @@ export type SpecialString<T> = T | (string & NonNullable<unknown>);
 export type DataIndex<T = any> =
   DeepNamePath<T> | SpecialString<T> | number | (SpecialString<T> | number)[];
 
-export type CellEllipsisType = { showTitle?: boolean } | boolean;
+export type CellEllipsisType = { showTitle?: boolean; rows?: number } | boolean;
 
 export type ColScopeType = 'col' | 'colgroup';
 

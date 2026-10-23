@@ -40,8 +40,8 @@ When a column has no explicit `render`, Table applies the Shuzhi behavior:
 
 - `tooltip` adds a Tooltip to the header title;
 - `renderText` transforms the displayed value;
-- `copyable` shows a copy button to the right of the cell text on row hover. Without `ellipsis`, long text wraps and the icon stays beside the whole block. With `ellipsis`, the text stays on one line and the icon sits to the right of the ellipsis;
-- `ellipsis` uses AntD native single-line CSS ellipsis and `title` on both the header and the body. `ellipsis.showTitle === false` turns off the body `title`. `ellipsis.rows` and `ellipsis.tooltip` do not affect body rendering.
+- `copyable` shows a copy button to the right of the cell text on row hover. Without `ellipsis`, long text wraps and the icon stays beside the whole block. With `ellipsis`, `rows` above 1 clamps that many lines; otherwise the text stays on one line and the icon sits to the right of the ellipsis;
+- `ellipsis` keeps the header on one line. Body text is single-line when `rows` is omitted or 1 or less, and clamps to `rows` when it is above 1, with a native `title`. `ellipsis.showTitle === false` turns off the body `title`. `ellipsis.tooltip` does not affect rendering.
 
 An explicit `render` always wins. In that case `renderText` is not called and Table does not add a copy button, so body `ellipsis` and `copyable` have no effect. Header ellipsis still follows AntD whenever the column sets `ellipsis`. Combined with sorter or filter, header ellipsis has the same limitation as AntD because the title sits beside the icons.
 
@@ -164,7 +164,7 @@ All other props follow AntD 6.6.4 Table.
 | tooltip | `ReactNode | TooltipProps` | Header title tooltip |
 | renderText | `(value, record, index) => ReactNode` | Transform text when no explicit render exists |
 | copyable | `TableColumnCopyable<T>` | Add a copy action when no explicit render exists; see below |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | AntD native single-line CSS ellipsis and `title` on header and body. Body ellipsis is skipped when `render` is set. `rows` / `tooltip` do not affect the body |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Header stays single-line. Body clamps to `rows` when it is above 1; otherwise single-line. Body ellipsis is skipped when `render` is set. `tooltip` does not affect rendering |
 | minWidth | `number` | Auto-layout minimum; resize lower bound in resize mode |
 | maxWidth | `number` | Resize upper bound |
 | resizable | `boolean` | Whether the current leaf is resizable |

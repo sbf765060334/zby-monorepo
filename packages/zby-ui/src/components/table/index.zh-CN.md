@@ -41,8 +41,8 @@ const columns: TableColumnsType<Order> = [
 
 - `tooltip`：为表头增加 Tooltip；
 - `renderText`：转换显示文本；
-- `copyable`：在单元格文案右侧提供复制按钮，表格行 hover 时显示。只开复制时文案可以换行，图标保持在整段文案右侧；同时开 `ellipsis` 时文案单行省略，图标在省略号右侧；
-- `ellipsis`：表头和表体都走 AntD 原生单行 CSS 省略与 `title`。`ellipsis.showTitle === false` 关闭表体原生 `title`。`ellipsis.rows` / `ellipsis.tooltip` 不参与表体渲染。
+- `copyable`：在单元格文案右侧提供复制按钮，表格行 hover 时显示。只开复制时文案可以换行，图标保持在整段文案右侧；同时开 `ellipsis` 时，`rows` 大于 1 按行数截断，否则文案单行省略，图标在省略号右侧；
+- `ellipsis`：表头始终单行省略。表体不传 `rows` 或 `rows` 小于等于 1 时单行省略，`rows` 大于 1 时最多展示对应行数，并设置原生 `title`。`ellipsis.showTitle === false` 关闭表体原生 `title`。`ellipsis.tooltip` 不参与渲染。
 
 显式 `render` 始终优先。存在 `render` 时不会执行 `renderText`，也不会自动加复制按钮，表体 `ellipsis` 不生效。表头只要列上配置了 `ellipsis`，仍走 AntD 原生省略。表头若同时开启了排序或筛选，省略效果与 AntD 相同，受 `column-title` 与图标并排布局限制。
 
@@ -165,7 +165,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使�
 | tooltip | `ReactNode | TooltipProps` | 表头提示 |
 | renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
 | copyable | `TableColumnCopyable<T>` | 无显式 render 时提供复制操作，详见下文 |
-| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头和表体都走 AntD 原生单行 CSS 省略与 `title`。有 `render` 时表体省略不生效。`rows` / `tooltip` 不参与表体渲染 |
+| ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头单行省略。表体 `rows` 大于 1 时按行截断，否则单行省略。有 `render` 时表体省略不生效。`tooltip` 不参与渲染 |
 | minWidth | `number` | 普通 auto 布局最小宽度；resize 模式下为拖拽下限 |
 | maxWidth | `number` | resize 模式下的拖拽上限 |
 | resizable | `boolean` | 是否允许当前叶子列拖拽 |
