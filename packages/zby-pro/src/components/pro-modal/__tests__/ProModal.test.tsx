@@ -80,24 +80,18 @@ describe('ProModal', () => {
     expect(container.querySelector('.ant-pro-modal')).toBeNull()
   })
 
-  it('renders body content inside ScrollArea and forwards scrollAreaProps', () => {
+  it('renders body content directly so css on the modal body owns scrolling', () => {
     const { container } = renderModal(
-      <ProModal
-        open
-        getContainer={false}
-        title="Demo"
-        scrollAreaProps={{ className: 'custom-scroll', scrollbar: 'always' }}
-      >
+      <ProModal open getContainer={false} title="Demo">
         body
       </ProModal>,
     )
 
-    const viewport = container.querySelector('[data-zby-scroll-area-viewport]')
-    const scroll = container.querySelector('.ant-pro-modal-scroll')
+    const modalBody = container.querySelector('.ant-modal-body')
 
-    expect(viewport?.textContent).toContain('body')
-    expect(scroll?.className).toContain('custom-scroll')
-    expect(container.querySelector('.ant-modal-body')?.contains(scroll)).toBe(true)
+    expect(modalBody?.textContent).toContain('body')
+    expect(container.querySelector('[data-zby-scroll-area-viewport]')).toBeNull()
+    expect(container.querySelector('.ant-pro-modal-scroll')).toBeNull()
   })
 
   it('sets the viewport max-height variable from viewportMaxHeight', () => {

@@ -710,9 +710,9 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       display: 'flex',
       flexDirection: 'column',
       minWidth: 0,
-      minHeight: 360,
+      minHeight: 0,
       height: '100%',
-      flex: 1,
+      flex: '1 1 0%',
       padding: paddingSM,
 
       '&, *': {
@@ -722,13 +722,14 @@ function genProTableStyle(token: ProTableToken): CSSObject {
       [`${componentCls}-filters-panel-layout`]: {
         display: 'grid',
         gridTemplateColumns: 'minmax(260px, 1fr) auto minmax(260px, 1fr)',
+        gridTemplateRows: 'minmax(0, 1fr)',
         alignItems: 'stretch',
         gap: paddingSM,
         width: '100%',
         maxWidth: '100%',
         minHeight: 0,
         height: '100%',
-        flex: 1,
+        flex: '1 1 0%',
       },
 
       [`${componentCls}-filters-pane`]: {
@@ -736,6 +737,7 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         flexDirection: 'column',
         minWidth: 0,
         minHeight: 0,
+        height: '100%',
         overflow: 'hidden',
         background: colorBgContainer,
         border: line(colorBorder),

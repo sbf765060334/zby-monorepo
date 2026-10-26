@@ -1,4 +1,3 @@
-import { ScrollArea } from '@zby/ui'
 import { ConfigProvider, Modal } from 'antd'
 import { clsx } from 'clsx'
 import * as React from 'react'
@@ -12,10 +11,8 @@ function toCssSize(value: React.CSSProperties['maxHeight']) {
 
 export function ProModal({
   bodyHeightMode = 'max-height',
-  children,
   prefixCls: customizePrefixCls,
   rootClassName,
-  scrollAreaProps,
   style,
   viewportMaxHeight,
   ...rest
@@ -23,7 +20,6 @@ export function ProModal({
   const { getPrefixCls } = React.useContext(ConfigProvider.ConfigContext)
   const prefixCls = getPrefixCls('pro-modal', customizePrefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls)
-  const { className: scrollAreaClassName, ...scrollAreaRest } = scrollAreaProps ?? {}
   const maxHeightVar = `--${prefixCls}-max-height`
 
   return (
@@ -42,14 +38,7 @@ export function ProModal({
         cssVarCls,
         rootClassName,
       )}
-    >
-      <ScrollArea
-        {...scrollAreaRest}
-        className={clsx(`${prefixCls}-scroll`, scrollAreaClassName)}
-      >
-        {children}
-      </ScrollArea>
-    </Modal>
+    />
   )
 }
 
