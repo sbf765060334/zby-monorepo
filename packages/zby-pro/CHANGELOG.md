@@ -1,5 +1,16 @@
 # @zby/pro
 
+## 2.0.2
+
+### Patch Changes
+
+- interface.ts：columnEmptyText 改为传给 Table，列 emptyText 继承 Table
+- table-region/TableRegion.tsx：把 columnEmptyText 传给 Table
+- utils/columns.ts：列 emptyText 保留在传给 Table 的列定义上
+- `utils/__tests__/columns.test.ts`：断言列 emptyText 仍留在列定义上
+- Updated dependencies
+  - @zby/ui@0.4.0
+
 ## 2.0.1
 
 ### Patch Changes

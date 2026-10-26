@@ -1,5 +1,16 @@
 # @zby/ui
 
+## 0.4.0
+
+### Minor Changes
+
+- interface.ts：列增加 emptyText，表格增加 columnEmptyText，默认显示 -
+- InternalTable.tsx：接入 columnEmptyText，并避免把该属性传给底层表格
+- useColumnEnhance.tsx：空单元格显示空值文案；选择列和展开列保持原引用
+- index.zh-CN.md：说明单元格空值文案
+- index.en-US.md：说明单元格空值文案
+- `__tests__/index.test.tsx`：覆盖默认 -、列级覆盖和 false 保留原值
+
 ## 0.3.3
 
 ### Patch Changes
