@@ -403,6 +403,75 @@ describe('Table', () => {
     expect(firstRow.classList.contains('ant-table-row-current')).toBe(false)
   })
 
+  it('uses - as the default empty cell text', () => {
+    const { container } = render(
+      <Table<{ id: number, name?: string }>
+        rowKey="id"
+        pagination={false}
+        columns={[{ dataIndex: 'name', title: 'Name' }]}
+        dataSource={[{ id: 1 }]}
+      />,
+    )
+
+    expect(
+      container.querySelector('.ant-table-tbody .ant-table-row:not(.ant-table-measure-row) .ant-table-cell')
+        ?.textContent,
+    ).toBe('-')
+  })
+
+  it('lets column.emptyText override columnEmptyText and false keep the raw value', () => {
+    const { container } = render(
+      <Table<{ id: number, name?: string | null, note?: string, blank?: string }>
+        rowKey="id"
+        pagination={false}
+        columnEmptyText="空"
+        columns={[
+          { dataIndex: 'name', title: 'Name' },
+          { dataIndex: 'note', title: 'Note', emptyText: '无' },
+          { dataIndex: 'id', title: 'ID', emptyText: false },
+          { dataIndex: 'blank', title: 'Blank', emptyText: false },
+        ]}
+        dataSource={[
+          { id: 1, name: undefined, note: '', blank: '' },
+          { id: 0, name: null, note: 'kept', blank: undefined },
+        ]}
+      />,
+    )
+
+    const rows = container.querySelectorAll('.ant-table-tbody .ant-table-row:not(.ant-table-measure-row)')
+    const firstCells = rows[0]?.querySelectorAll('.ant-table-cell')
+    const secondCells = rows[1]?.querySelectorAll('.ant-table-cell')
+
+    expect(firstCells?.[0]?.textContent).toBe('空')
+    expect(firstCells?.[1]?.textContent).toBe('无')
+    expect(firstCells?.[2]?.textContent).toBe('1')
+    expect(firstCells?.[3]?.textContent).toBe('')
+    expect(secondCells?.[0]?.textContent).toBe('空')
+    expect(secondCells?.[1]?.textContent).toBe('kept')
+    expect(secondCells?.[2]?.textContent).toBe('0')
+    expect(secondCells?.[3]?.textContent).toBe('')
+  })
+
+  it('keeps a custom render and does not replace its empty result', () => {
+    const { container } = render(
+      <Table<{ id: number, name?: string }>
+        rowKey="id"
+        pagination={false}
+        columns={[
+          { dataIndex: 'name', title: 'Name', render: () => '' },
+          { dataIndex: 'name', title: 'Text', renderText: () => '' },
+        ]}
+        dataSource={[{ id: 1 }]}
+      />,
+    )
+
+    const cells = container.querySelectorAll(
+      '.ant-table-tbody .ant-table-row:not(.ant-table-measure-row) .ant-table-cell',
+    )
+    expect(cells[0]?.textContent).toBe('')
+    expect(cells[1]?.textContent).toBe('')
+  })
+
   it('enhances column title, display text and copyable beside ellipsis', () => {
     const renderText = vi.fn((value: unknown) => `Name: ${String(value)}`)
     const { container } = render(

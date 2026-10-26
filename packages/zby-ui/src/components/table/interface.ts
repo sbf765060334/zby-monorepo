@@ -182,6 +182,12 @@ export interface ColumnType<RecordType = AnyObject>
   title?: ColumnTitle<RecordType>;
   ellipsis?: boolean | TableColumnEllipsisConfig;
   tooltip?: TableColumnTooltip;
+  /**
+   * 单元格空值文案。`null`、`undefined`、`''` 时显示。
+   * 未设置时使用表格的 `columnEmptyText`，默认 `-`。`false` 保留原始空值。
+   * 列上有 `render` 或 `renderText` 时不生效。
+   */
+  emptyText?: React.ReactNode | false;
   renderText?: (value: unknown, record: RecordType, index: number) => React.ReactNode;
   copyable?: TableColumnCopyable<RecordType>;
   // Sorter

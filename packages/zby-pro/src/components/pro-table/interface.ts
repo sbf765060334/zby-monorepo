@@ -303,7 +303,6 @@ export type ProTableColumnType<
   fieldConfig?: false | ProTableColumnFieldConfig<Meta>
   children?: ProTableColumnType<RecordType, Meta>[]
   valueEnum?: ProTableColumnValueEnum
-  emptyText?: ReactNode | false
   renderText?: (value: unknown, record: RecordType, index: number) => ReactNode
   valueType?: ProTableColumnFieldValueType
   /** @deprecated use valueType */
@@ -661,6 +660,7 @@ type ProTableUiProps<
   heightMode?: 'fill' | 'content'
   layout?: ProTableLayoutConfig
   emptyState?: ProTableEmptyStateConfig
+  /** 传给 Table。缺省为 `-`，列上的 `emptyText` 优先，`false` 保留原始空值。 */
   columnEmptyText?: ReactNode | false
   onTableChange?: TableProps<RecordType>['onChange']
   pagination?: false | ProTablePaginationConfig

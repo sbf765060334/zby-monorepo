@@ -33,6 +33,7 @@ describe('normalizeTableColumns empty text', () => {
     }>
 
     expect(column.renderText?.(undefined, {}, 0)).toBe('无')
+    expect(column).toMatchObject({ emptyText: '无' })
   })
 
   it('keeps empty values when columnEmptyText is false', () => {

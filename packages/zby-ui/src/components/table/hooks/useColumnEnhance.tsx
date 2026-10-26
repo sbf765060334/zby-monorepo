@@ -5,7 +5,9 @@ import * as React from 'react'
 import type { AnyObject } from 'antd/es/_util/type'
 import Tooltip from 'antd/es/tooltip'
 import type { TooltipProps } from 'antd/es/tooltip'
+import { EXPAND_COLUMN } from '../RcTableInner'
 import { TABLE_SKIP_BODY_ELLIPSIS } from '../RcTableInner/interface'
+import { SELECTION_COLUMN } from './useSelection'
 import TableCellCopy, { TABLE_CELL_WITH_COPY_CLASS_NAME } from '../TableCellCopy'
 import type { ActionTextCopyConfig } from '../../action-text'
 import type {
@@ -81,6 +83,26 @@ function resolveCopyable<RecordType extends AnyObject>(
   }
 }
 
+const DEFAULT_COLUMN_EMPTY_TEXT = '-'
+
+function isEmptyCellValue(value: unknown) {
+  return value === undefined || value === null || value === ''
+}
+
+function resolveColumnEmptyText(
+  columnEmptyText: React.ReactNode | false | undefined,
+  tableColumnEmptyText: React.ReactNode | false | undefined,
+): React.ReactNode | false {
+  if (columnEmptyText !== undefined) return columnEmptyText
+  if (tableColumnEmptyText !== undefined) return tableColumnEmptyText
+  return DEFAULT_COLUMN_EMPTY_TEXT
+}
+
+function withColumnEmptyText(value: unknown, emptyText: React.ReactNode | false): React.ReactNode {
+  if (emptyText !== false && isEmptyCellValue(value)) return emptyText
+  return value as React.ReactNode
+}
+
 function getPath(dataIndex: ColumnType<any>['dataIndex']) {
   if (dataIndex === null || dataIndex === undefined || dataIndex === '') return []
   return Array.isArray(dataIndex) ? dataIndex : [dataIndex]
@@ -89,9 +111,21 @@ function getPath(dataIndex: ColumnType<any>['dataIndex']) {
 function enhanceColumn<RecordType extends AnyObject>(
   column: ColumnType<RecordType>,
   prefixCls: string,
+  tableColumnEmptyText: React.ReactNode | false | undefined,
 ): ColumnType<RecordType> {
-  const { copyable, dataIndex, ellipsis, onCell, render, renderText, tooltip, title, ...restColumn } =
-    column
+  const {
+    copyable,
+    dataIndex,
+    ellipsis,
+    emptyText,
+    onCell,
+    render,
+    renderText,
+    tooltip,
+    title,
+    ...restColumn
+  } = column
+  const resolvedEmptyText = resolveColumnEmptyText(emptyText, tableColumnEmptyText)
   const nextTitle = wrapTitleTooltip(title, tooltip, prefixCls)
 
   if (render) {
@@ -110,7 +144,8 @@ function enhanceColumn<RecordType extends AnyObject>(
   }
 
   const needCopy = Boolean(copyable)
-  const needRender = Boolean(renderText) || needCopy
+  const needEmptyText = !renderText && resolvedEmptyText !== false
+  const needRender = Boolean(renderText) || needCopy || needEmptyText
 
   if (!needRender) {
     return {
@@ -145,7 +180,9 @@ function enhanceColumn<RecordType extends AnyObject>(
     render: (value: unknown, record: RecordType, index: number) => {
       const rawValue =
         value !== undefined ? value : getValue(record, getPath(dataIndex) as (string | number)[])
-      const displayText = renderText ? renderText(rawValue, record, index) : rawValue
+      const displayText: React.ReactNode = renderText
+        ? renderText(rawValue, record, index)
+        : withColumnEmptyText(rawValue, resolvedEmptyText)
       const resolvedCopyable = resolveCopyable(copyable, rawValue, record, index, displayText)
 
       if (!resolvedCopyable) return displayText
@@ -159,11 +196,15 @@ function enhanceColumn<RecordType extends AnyObject>(
   }
 }
 
-const useColumnEnhance = <RecordType extends AnyObject = AnyObject>(prefixCls: string) => {
+const useColumnEnhance = <RecordType extends AnyObject = AnyObject>(
+  prefixCls: string,
+  columnEmptyText?: React.ReactNode | false,
+) => {
   const transformColumns = React.useCallback<TransformColumns<RecordType>>(
     (columns) => {
       const visit = (items: ColumnsType<RecordType>): ColumnsType<RecordType> =>
         items.map((column) => {
+          if (column === SELECTION_COLUMN || column === EXPAND_COLUMN) return column
           if (isColumnGroup(column)) {
             const { children, tooltip, title, ...restColumn } = column
             return {
@@ -174,12 +215,12 @@ const useColumnEnhance = <RecordType extends AnyObject = AnyObject>(prefixCls: s
             } as ColumnGroupType<RecordType>
           }
 
-          return enhanceColumn(column, prefixCls)
+          return enhanceColumn(column, prefixCls, columnEmptyText)
         })
 
       return visit(columns)
     },
-    [prefixCls],
+    [columnEmptyText, prefixCls],
   )
 
   return [transformColumns] as const

@@ -41,6 +41,7 @@ const columns: TableColumnsType<Order> = [
 
 - `tooltip`：为表头增加 Tooltip；
 - `renderText`：转换显示文本；
+- `emptyText`：`null`、`undefined`、`''` 时显示的单元格文案。未设置时用表格的 `columnEmptyText`，默认 `-`。`false` 保留原始空值。有 `render` 或 `renderText` 时不生效；
 - `copyable`：在单元格文案右侧提供复制按钮，表格行 hover 时显示。只开复制时文案可以换行，图标保持在整段文案右侧；同时开 `ellipsis` 时，`rows` 大于 1 按行数截断，否则文案单行省略，图标在省略号右侧；
 - `ellipsis`：表头始终单行省略。表体不传 `rows` 或 `rows` 小于等于 1 时单行省略，`rows` 大于 1 时最多展示对应行数，并设置原生 `title`。`ellipsis.showTitle === false` 关闭表体原生 `title`。`ellipsis.tooltip` 不参与渲染。
 
@@ -153,6 +154,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使�
 | 属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | height | `React.CSSProperties['height']` | - | Table 总高度；传入后自动计算 body 高度并忽略 `scroll.y` |
+| columnEmptyText | `ReactNode \| false` | `'-'` | 单元格空值文案。列上的 `emptyText` 优先，`false` 保留原始空值 |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | 开启 Shuzhi 列宽模型 |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | 开启 ZBY 当前行高亮；再次点击当前行取消 |
 
@@ -163,6 +165,7 @@ Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | tooltip | `ReactNode | TooltipProps` | 表头提示 |
+| emptyText | `ReactNode \| false` | 单元格空值文案，优先于 `columnEmptyText`。`false` 保留原始空值 |
 | renderText | `(value, record, index) => ReactNode` | 无显式 render 时转换显示文本 |
 | copyable | `TableColumnCopyable<T>` | 无显式 render 时提供复制操作，详见下文 |
 | ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | 表头单行省略。表体 `rows` 大于 1 时按行截断，否则单行省略。有 `render` 时表体省略不生效。`tooltip` 不参与渲染 |

@@ -394,6 +394,7 @@ function TableRegionInner<RecordType, Query extends ProTableQueryRecord, Summary
     >
       <Table<RecordType>
         {...(tableProps as TableProps<RecordType>)}
+        columnEmptyText={columnEmptyText}
         className={`${prefixCls}-table`}
         columns={sortedVisibleColumns}
         columnResize={mergedColumnResize}

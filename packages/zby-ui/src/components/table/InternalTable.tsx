@@ -168,6 +168,12 @@ export interface TableProps<RecordType = AnyObject> extends Omit<
   dataSource?: RcTableProps<RecordType>['data'];
   column?: Partial<ColumnType<RecordType>>;
   columns?: ColumnsType<RecordType>;
+  /**
+   * 单元格空值文案。`null`、`undefined`、`''` 时显示，默认 `-`。
+   * 列上的 `emptyText` 优先。`false` 保留原始空值。
+   * 列上有 `render` 或 `renderText` 时不生效。
+   */
+  columnEmptyText?: React.ReactNode | false;
   pagination?: false | TablePaginationConfig;
   loading?: boolean | SpinProps;
   size?: SizeType;
@@ -226,6 +232,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     rowClassName,
     column,
     columns,
+    columnEmptyText,
     children,
     childrenColumnName: legacyChildrenColumnName,
     onChange,
@@ -275,6 +282,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
     'style',
     'column',
     'columns',
+    'columnEmptyText',
     'height',
     'columnResize',
     'rowHighlight',
@@ -395,7 +403,7 @@ const InternalTable = <RecordType extends AnyObject = AnyObject>(
 
   const rootCls = useCSSVarCls(prefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls, rootCls)
-  const [transformEnhanceColumns] = useColumnEnhance<RecordType>(prefixCls)
+  const [transformEnhanceColumns] = useColumnEnhance<RecordType>(prefixCls, columnEmptyText)
 
   const mergedExpandable: ExpandableConfig<RecordType> = {
     childrenColumnName: legacyChildrenColumnName,

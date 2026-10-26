@@ -40,6 +40,7 @@ When a column has no explicit `render`, Table applies the Shuzhi behavior:
 
 - `tooltip` adds a Tooltip to the header title;
 - `renderText` transforms the displayed value;
+- `emptyText` replaces `null`, `undefined`, and `''`. When omitted, the table `columnEmptyText` is used, which defaults to `-`. `false` keeps the raw empty value. It does not apply when the column has `render` or `renderText`;
 - `copyable` shows a copy button to the right of the cell text on row hover. Without `ellipsis`, long text wraps and the icon stays beside the whole block. With `ellipsis`, `rows` above 1 clamps that many lines; otherwise the text stays on one line and the icon sits to the right of the ellipsis;
 - `ellipsis` keeps the header on one line. Body text is single-line when `rows` is omitted or 1 or less, and clamps to `rows` when it is above 1, with a native `title`. `ellipsis.showTitle === false` turns off the body `title`. `ellipsis.tooltip` does not affect rendering.
 
@@ -152,6 +153,7 @@ All other props follow AntD 6.6.4 Table.
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | height | `React.CSSProperties['height']` | - | Total Table height; derives body height and ignores `scroll.y` when provided |
+| columnEmptyText | `ReactNode \| false` | `'-'` | Empty-cell text. A column `emptyText` wins. `false` keeps the raw empty value |
 | columnResize | `boolean | ColumnResizeConfig<T>` | `false` | Enable the Shuzhi numeric width model |
 | rowHighlight | `boolean | TableRowHighlight<T>` | `false` | Enable ZBY current-row highlighting; click again to clear |
 
@@ -162,6 +164,7 @@ All other props follow AntD 6.6.4 Table.
 | Field | Type | Description |
 | --- | --- | --- |
 | tooltip | `ReactNode | TooltipProps` | Header title tooltip |
+| emptyText | `ReactNode \| false` | Empty-cell text. Overrides `columnEmptyText`. `false` keeps the raw empty value |
 | renderText | `(value, record, index) => ReactNode` | Transform text when no explicit render exists |
 | copyable | `TableColumnCopyable<T>` | Add a copy action when no explicit render exists; see below |
 | ellipsis | `boolean | { showTitle?, rows?, tooltip? }` | Header stays single-line. Body clamps to `rows` when it is above 1; otherwise single-line. Body ellipsis is skipped when `render` is set. `tooltip` does not affect rendering |

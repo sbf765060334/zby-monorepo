@@ -134,7 +134,6 @@ function normalizeColumn<RecordType>(
     dataRenderType: _dataRenderType,
     fieldProps: _fieldProps,
     valueEnum: _valueEnum,
-    emptyText: _emptyText,
     renderText,
     ...rest
   } = column
