@@ -56,15 +56,15 @@ describe('ProModal', () => {
     expect(screen.getByText('body')).toBeTruthy()
   })
 
-  it('applies height body mode class', () => {
+  it('applies fill body mode class', () => {
     const { container } = renderModal(
-      <ProModal open getContainer={false} bodyHeightMode="height" title="Demo">
+      <ProModal open getContainer={false} bodyHeightMode="fill" title="Demo">
         body
       </ProModal>,
     )
 
     const root = container.querySelector('.ant-pro-modal')
-    expect(root?.className).toContain('ant-pro-modal-body-height-mode-height')
+    expect(root?.className).toContain('ant-pro-modal-body-height-mode-fill')
   })
 
   it('inherits ConfigProvider prefixCls for the modal shell', () => {

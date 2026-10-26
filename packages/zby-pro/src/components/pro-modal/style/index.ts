@@ -72,20 +72,20 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
         maxHeight: '100%',
       },
 
-      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll`]: {
+      [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll`]: {
         height: '100%',
       },
 
-      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll > [data-zby-scroll-area-viewport]`]: {
+      [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll > [data-zby-scroll-area-viewport]`]: {
         height: '100%',
       },
 
-      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll > [data-zby-scroll-area-viewport] > *`]: {
+      [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll > [data-zby-scroll-area-viewport] > *`]: {
         height: '100%',
         minHeight: 0,
       },
 
-      [`&${componentCls}-body-height-mode-height`]: {
+      [`&${componentCls}-body-height-mode-fill`]: {
         [`${antCls}-modal`]: {
           height: `var(${modalMaxHeightVar})`,
 

@@ -134,7 +134,7 @@ export function ViewManagementModal<TSnapshot>({
       )}
       width={420}
       rootClassName={rootClassName}
-      bodyHeightMode="height"
+      bodyHeightMode="fill"
       okText={intl.getMessage('zby.pro.viewManagement.confirm', '确定')}
       cancelText={intl.getMessage('zby.pro.viewManagement.cancel', '取消')}
       onCancel={onCancel}

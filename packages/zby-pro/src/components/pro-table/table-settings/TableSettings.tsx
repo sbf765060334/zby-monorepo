@@ -141,7 +141,7 @@ export function TableSettings<Query extends ProTableQueryRecord>({
           closable: !resetConfirmOpen,
         }}
         width={800}
-        bodyHeightMode="height"
+        bodyHeightMode="fill"
         className={className}
         rootClassName={clsx(`${prefixCls}-columns-modal`, hashId, cssVarCls, rootClassName)}
         style={style}

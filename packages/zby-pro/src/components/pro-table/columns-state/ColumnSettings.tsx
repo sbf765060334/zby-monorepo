@@ -61,7 +61,7 @@ export function ColumnSettings({
       getContainer={getContainer}
       destroyOnHidden
       width="fit-content"
-      bodyHeightMode="height"
+      bodyHeightMode="fill"
       className={className}
       rootClassName={clsx(`${prefixCls}-columns-modal`, hashId, cssVarCls, rootClassName)}
       style={style}
