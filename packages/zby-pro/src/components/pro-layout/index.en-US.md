@@ -206,7 +206,7 @@ export function OrderPage() {
 }
 ```
 
-The global breadcrumb renders at the top of `ProLayoutContentContainer` and stays sticky. `showBreadcrumb` defaults to true. It is not rendered when `ProLayout.showBreadcrumb` is false.
+The global breadcrumb renders at the top of `ProLayoutContentContainer` and stays sticky. The container shows it unless `hideBreadcrumb` is set. It is not rendered when `ProLayout.showBreadcrumb` is false.
 
 ## Tab Context Menu
 
@@ -335,7 +335,7 @@ The header theme menu contains system appearance, light, dark, default density, 
 | mode | Content layout mode | `'fill' \| 'stack'` | `stack` with `items`; otherwise `fill` |
 | header | Fixed header content | `ReactNode` | - |
 | footer | Footer content | `ReactNode` | - |
-| showBreadcrumb | Render the breadcrumb at the top of the container. Hidden when the ProLayout switch is false | `boolean` | `true` |
+| hideBreadcrumb | Hide the breadcrumb at the top of the container. Also hidden when the ProLayout switch is false | `boolean` | `false` |
 | breadcrumbClassName / breadcrumbStyle | Breadcrumb class and style | `string / CSSProperties` | - |
 | aside | Aside slot. No default background, width, or gap | `ReactNode` | - |
 | asidePosition | Aside position | `'start' \| 'end'` | `'start'` |

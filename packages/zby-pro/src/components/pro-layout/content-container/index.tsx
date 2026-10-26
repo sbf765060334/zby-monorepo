@@ -57,10 +57,10 @@ export interface ProLayoutContentContainerProps extends Omit<
   /** 容器最小宽度。数字按像素处理，默认 960。`style.minWidth` 可覆盖。 */
   minWidth?: React.CSSProperties['minWidth']
   /**
-   * 是否在容器顶部渲染面包屑。默认 true。
-   * ProLayout.showBreadcrumb 为 false 时不会渲染。
+   * 隐藏容器顶部面包屑。默认 false。
+   * ProLayout.showBreadcrumb 为 false 时也不会渲染。
    */
-  showBreadcrumb?: boolean
+  hideBreadcrumb?: boolean
   items?: ProLayoutContentContainerItemConfig[]
   padding?: React.CSSProperties['padding'] | false
   gap?: React.CSSProperties['gap']
@@ -176,7 +176,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
     asidePosition = 'start',
     asideWidth,
     minWidth = DEFAULT_CONTENT_CONTAINER_MIN_WIDTH,
-    showBreadcrumb = true,
+    hideBreadcrumb = false,
     items,
     padding,
     gap,
@@ -200,7 +200,7 @@ const ProLayoutContentContainerInner = React.forwardRef<
   } = props
   const [prefixCls, hashId] = useContentContainerStyle(customizePrefixCls)
   const layoutBreadcrumbEnabled = useProLayoutBreadcrumbEnabled()
-  const shouldShowBreadcrumb = showBreadcrumb && layoutBreadcrumbEnabled
+  const shouldShowBreadcrumb = !hideBreadcrumb && layoutBreadcrumbEnabled
   useReportProLayoutBreadcrumb(shouldShowBreadcrumb)
   const hasItems = Array.isArray(items)
   const mergedMode = resolveMode(mode, hasItems)

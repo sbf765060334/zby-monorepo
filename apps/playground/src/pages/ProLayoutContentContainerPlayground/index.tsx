@@ -4,7 +4,6 @@ import { Button, Space } from 'antd'
 export default function ProLayoutContentContainerPlayground() {
   return (
     <ProLayoutContentContainer
-      showBreadcrumb={true}
       mode="stack"
       // aside={(
       //   <ProLayoutContentContainer.Item>

@@ -1663,7 +1663,7 @@ function OrdersPage() {
 
 function BreadcrumbOffPage() {
   return (
-    <ProLayoutContentContainer showBreadcrumb={false}>
+    <ProLayoutContentContainer hideBreadcrumb>
       <div data-testid="breadcrumb-off-page">off</div>
     </ProLayoutContentContainer>
   )

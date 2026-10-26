@@ -207,7 +207,7 @@ export function OrderPage() {
 }
 ```
 
-全局面包屑渲染在 `ProLayoutContentContainer` 顶部，并吸顶。`showBreadcrumb` 默认 true。`ProLayout.showBreadcrumb` 为 false 时，容器内也不会渲染。
+全局面包屑渲染在 `ProLayoutContentContainer` 顶部，并吸顶。容器默认显示面包屑，传 `hideBreadcrumb` 可隐藏。`ProLayout.showBreadcrumb` 为 false 时，容器内也不会渲染。
 
 ## 页签右键菜单
 
@@ -336,7 +336,7 @@ export function OrderPage() {
 | mode | 内容布局模式 | `'fill' \| 'stack'` | 有 `items` 时为 `stack`，否则为 `fill` |
 | header | 顶部固定内容 | `ReactNode` | - |
 | footer | 底部内容 | `ReactNode` | - |
-| showBreadcrumb | 是否在容器顶部渲染面包屑。ProLayout 总开关为 false 时不渲染 | `boolean` | `true` |
+| hideBreadcrumb | 隐藏容器顶部面包屑。ProLayout 总开关为 false 时也不渲染 | `boolean` | `false` |
 | breadcrumbClassName / breadcrumbStyle | 面包屑类名和样式 | `string / CSSProperties` | - |
 | aside | 侧栏插槽，不带默认背景、宽度和间距 | `ReactNode` | - |
 | asidePosition | 侧栏位置 | `'start' \| 'end'` | `'start'` |
