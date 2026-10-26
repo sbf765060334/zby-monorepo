@@ -1,6 +1,6 @@
 {
   "name": "@zby/router-core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Routing, tabs, keep-alive and persistence core used by @zby/pro ProLayout. Published to the internal registry as a companion package, not a general-purpose router.",
   "publishConfig": {
     "access": "restricted"
