@@ -72,6 +72,22 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
         maxHeight: '100%',
       },
 
+      // Radix 包裹层有行内样式 display:table; min-width:100%，不用 important 压不住，子元素会把滚动内容撑出 viewport。
+      [`${componentCls}-scroll > [data-zby-scroll-area-viewport] > *`]: {
+        boxSizing: 'border-box',
+        display: 'block !important',
+        width: '100% !important',
+        maxWidth: '100% !important',
+        minWidth: '0 !important',
+      },
+
+      [`${componentCls}-scroll > [data-zby-scroll-area-viewport] > * > [class*='-content']`]: {
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+      },
+
       [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll`]: {
         height: '100%',
       },
@@ -80,7 +96,18 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
         height: '100%',
       },
 
+      // fill 需要把确定高度传过包裹层和内容层，内部 height:100% / flex:1 才能撑满。
       [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll > [data-zby-scroll-area-viewport] > *`]: {
+        display: 'flex !important',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+      },
+
+      [`&${componentCls}-body-height-mode-fill ${componentCls}-scroll > [data-zby-scroll-area-viewport] > * > [class*='-content']`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 auto',
         height: '100%',
         minHeight: 0,
       },

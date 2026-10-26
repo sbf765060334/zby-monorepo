@@ -52,7 +52,7 @@ function mockScrollMetrics(
 }
 
 describe('ScrollArea', () => {
-  it('renders the semantic structure without mounting an inactive default hover track', () => {
+  it('renders the semantic structure and mounts the default always track', () => {
     const { container } = render(
       <ScrollArea>
         <div>content</div>
@@ -64,7 +64,7 @@ describe('ScrollArea', () => {
     expect(root).not.toBeNull()
     expect(container.querySelector('.ant-scroll-area-viewport')).not.toBeNull()
     expect(container.querySelector('.ant-scroll-area-content')).not.toBeNull()
-    expect(container.querySelector('.ant-scroll-area-track-vertical')).toBeNull()
+    expect(container.querySelector('.ant-scroll-area-track-vertical')).not.toBeNull()
   })
 
   it('styles tracks from Radix data-state without using :has', () => {
@@ -574,7 +574,7 @@ describe('ScrollArea', () => {
     expect(semanticProps).toHaveBeenLastCalledWith(
       expect.objectContaining({
         direction: 'horizontal',
-        scrollbar: 'hover',
+        scrollbar: 'always',
         scrollHideDelay: 350,
         wheelBehavior: 'native',
         dir: 'ltr',

@@ -115,7 +115,7 @@ export interface ScrollAreaProps
    * - 'scrolling'：滚动时显示，停止滚动 200ms 后隐藏；
    * - 'always'：始终显示；
    *
-   * @default 'hover'
+   * @default 'always'
    */
   scrollbar?: ScrollAreaScrollbar
 
@@ -263,7 +263,7 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>((props, ref
   const prefixCls = getPrefixCls('scroll-area', customizePrefixCls)
   const [hashId, cssVarCls, componentCSSVariables] = useStyle(prefixCls)
   const mergedDirection = customizeDirection ?? 'vertical'
-  const scrollbar = customizeScrollbar ?? 'hover'
+  const scrollbar = customizeScrollbar ?? 'always'
   const scrollHideDelay = customizeScrollHideDelay ?? SCROLLBAR_HIDE_DELAY
   const wheelBehavior = customizeWheelBehavior ?? 'native'
   const usesNativeScrollbar = scrollbar === 'native'
