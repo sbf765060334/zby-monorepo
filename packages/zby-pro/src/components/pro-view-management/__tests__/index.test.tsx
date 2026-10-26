@@ -499,7 +499,7 @@ describe('ProViewManagement component', () => {
     const styleText = extractStyle(cache)
     expect(styleText).toContain('.ant-pro-view-management')
     expect(styleText).toContain('pro-view-management-manager-list')
-    expect(styleText).toContain('overflow-y:auto')
+    expect(styleText).not.toContain('overflow-y:auto')
   })
 
   it('inherits ConfigProvider prefixCls for the root class', () => {

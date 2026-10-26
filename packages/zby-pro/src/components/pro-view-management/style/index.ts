@@ -112,13 +112,8 @@ const genProViewManagementStyle = (
       [`${componentCls}-manager-list`]: {
         display: 'flex',
         flexDirection: 'column',
-        flex: 1,
         gap: marginXS,
-        height: '100%',
         minWidth: 0,
-        minHeight: '100%',
-        overflowX: 'hidden',
-        overflowY: 'auto',
       },
 
       [`${componentCls}-manager-row`]: {
