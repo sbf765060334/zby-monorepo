@@ -581,6 +581,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           marginInlineStart: unfixedLabelOffset,
+          userSelect: 'none',
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
         [`${antCls}-tabs-tab:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
@@ -715,6 +716,7 @@ export default function useProLayoutStyles(prefixCls: string) {
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           marginInlineStart: unfixedLabelOffset,
+          userSelect: 'none',
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
         [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
