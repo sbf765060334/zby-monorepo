@@ -1,5 +1,18 @@
 # @zby/pro
 
+## 1.0.0
+
+### Major Changes
+
+- IconDrawerMenu.tsx：一级菜单停留阈值改为 100ms，短暂掠过不切换 Drawer
+- styles/index.ts：页签未固定图标在移入 100ms 后才露出，页签变色和点击仍立即生效
+- ProModal.tsx：内容区改由 ScrollArea 滚动，并支持 viewportMaxHeight
+- interface.ts：bodyHeightMode 的 height 改为 fill，新增 scrollAreaProps 和 viewportMaxHeight
+- style/index.ts：弹窗滚动交给 ScrollArea，fill 模式撑满视口预算
+- ColumnSettings.tsx：列设置弹窗改用 fill
+- TableSettings.tsx：表格设置弹窗改用 fill
+- ViewManagementModal.tsx：视图管理弹窗改用 fill
+
 ## 0.3.12
 
 ### Patch Changes
