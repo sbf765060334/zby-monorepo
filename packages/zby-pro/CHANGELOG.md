@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.11
+
+### Patch Changes
+
+- ProLayoutContentContainer.showBreadcrumb 改为 hideBreadcrumb
+
 ## 0.3.10
 
 ### Patch Changes
