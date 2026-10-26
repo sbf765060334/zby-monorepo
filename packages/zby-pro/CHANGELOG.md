@@ -1,5 +1,17 @@
 # @zby/pro
 
+## 2.0.0
+
+### Major Changes
+
+- ProModal.tsx：去掉内部 ScrollArea，内容直接交给 Modal，由内容区 CSS 滚动
+- interface.ts：删除 scrollAreaProps，保留 bodyHeightMode 和 viewportMaxHeight
+- pro-modal/style/index.ts：内容区改回 overflow auto，fill 模式用 flex-basis 0 传递剩余高度
+- ProModal.test.tsx：去掉 ScrollArea 断言，改为检查内容直接位于 modal body
+- pro-table/style/index.ts：筛选面板按 1fr 铺满 fill 内容区
+- pro-view-management/style/index.ts：去掉视图列表自己的 overflow，改由弹窗内容区滚动
+- `pro-view-management/__tests__/index.test.tsx`：断言列表样式不再包含 overflow-y:auto
+
 ## 1.0.1
 
 ### Patch Changes
