@@ -1,5 +1,14 @@
 # @zby/ui
 
+## 0.3.3
+
+### Patch Changes
+
+- ScrollArea.tsx：scrollbar 默认值改为 always
+- scroll-area/__tests__/index.test.tsx：默认滚动条断言改为 always
+- scroll-area/index.zh-CN.md：文档默认值改为 always
+- scroll-area/index.en-US.md：文档默认值改为 always
+
 ## 0.3.2
 
 ### Patch Changes

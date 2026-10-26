@@ -1,5 +1,13 @@
 # @zby/pro
 
+## 1.0.1
+
+### Patch Changes
+
+- pro-modal/style/index.ts：fill 模式把确定高度传过 ScrollArea，两种模式都把内容宽度限制在 viewport 内
+- Updated dependencies
+  - @zby/ui@0.3.3
+
 ## 1.0.0
 
 ### Major Changes
