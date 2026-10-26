@@ -79,4 +79,36 @@ describe('ProModal', () => {
     expect(container.querySelector('.zby-pro-modal')).toBeTruthy()
     expect(container.querySelector('.ant-pro-modal')).toBeNull()
   })
+
+  it('renders body content inside ScrollArea and forwards scrollAreaProps', () => {
+    const { container } = renderModal(
+      <ProModal
+        open
+        getContainer={false}
+        title="Demo"
+        scrollAreaProps={{ className: 'custom-scroll', scrollbar: 'always' }}
+      >
+        body
+      </ProModal>,
+    )
+
+    const viewport = container.querySelector('[data-zby-scroll-area-viewport]')
+    const scroll = container.querySelector('.ant-pro-modal-scroll')
+
+    expect(viewport?.textContent).toContain('body')
+    expect(scroll?.className).toContain('custom-scroll')
+    expect(container.querySelector('.ant-modal-body')?.contains(scroll)).toBe(true)
+  })
+
+  it('sets the viewport max-height variable from viewportMaxHeight', () => {
+    const { container } = renderModal(
+      <ProModal open getContainer={false} title="Demo" viewportMaxHeight={480}>
+        body
+      </ProModal>,
+    )
+
+    expect(container.querySelector('.ant-modal')?.getAttribute('style')).toContain(
+      '--ant-pro-modal-max-height: 480px',
+    )
+  })
 })

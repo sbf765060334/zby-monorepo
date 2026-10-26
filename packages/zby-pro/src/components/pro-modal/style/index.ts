@@ -18,36 +18,71 @@ const genProModalStyle = (token: ProModalToken): CSSObject => {
 
   return {
     [componentCls]: {
-        [`${antCls}-modal`]: {
-          [modalMaxHeightVar]: viewportBudget,
-          maxHeight: `var(${modalMaxHeightVar})`,
+      [`${antCls}-modal`]: {
+        [modalMaxHeightVar]: viewportBudget,
+        maxHeight: `var(${modalMaxHeightVar})`,
 
-          [`${antCls}-modal-render`]: {
-            maxHeight: 'inherit',
-            minHeight: 0,
-          },
+        [`${antCls}-modal-render`]: {
+          maxHeight: 'inherit',
+          minHeight: 0,
+        },
 
-          [`${antCls}-modal-container`]: {
-            display: 'flex',
-            flexDirection: 'column',
-            maxHeight: 'inherit',
-            minHeight: 0,
-          },
+        [`${antCls}-modal-container`]: {
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'inherit',
+          minHeight: 0,
+        },
 
         [`${antCls}-modal-header`]: {
           flexShrink: 0,
         },
 
         [`${antCls}-modal-body`]: {
+          display: 'flex',
+          flexDirection: 'column',
           flex: 'auto',
           minWidth: 0,
           minHeight: 0,
-          overflow: 'auto',
+          overflow: 'hidden',
         },
 
         [`${antCls}-modal-footer`]: {
           flexShrink: 0,
         },
+      },
+
+      [`${componentCls}-scroll`]: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 auto',
+        width: '100%',
+        minWidth: 0,
+        minHeight: 0,
+        maxHeight: '100%',
+        overflow: 'hidden',
+      },
+
+      // 覆盖 ScrollArea viewport 的 height:100%，否则百分比相对 auto 父级时会按内容撑开。
+      [`${componentCls}-scroll > [data-zby-scroll-area-viewport]`]: {
+        flex: '1 1 auto',
+        width: '100%',
+        minHeight: 0,
+        height: 'auto',
+        maxHeight: '100%',
+      },
+
+      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll`]: {
+        height: '100%',
+      },
+
+      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll > [data-zby-scroll-area-viewport]`]: {
+        height: '100%',
+      },
+
+      [`&${componentCls}-body-height-mode-height ${componentCls}-scroll > [data-zby-scroll-area-viewport] > *`]: {
+        height: '100%',
+        minHeight: 0,
       },
 
       [`&${componentCls}-body-height-mode-height`]: {
@@ -87,7 +122,7 @@ export default function useStyle(prefixCls: string) {
     ...styleToken,
     componentCls: `.${prefixCls}`,
     antCls: `.${getPrefixCls()}`,
-    // antd Modal 默认 top: 100，上下各留 100px
+    // 弹窗盒子的最大高度，与 top 偏移或是否居中无关。默认留出 200px，避免盒子贴齐视口边缘。
     viewportBudget: 'calc(100vh - 200px)',
     compactViewportBudget: `calc(100vh - ${unit(styleToken.marginXS)} * 2)`,
   }
