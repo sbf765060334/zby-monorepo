@@ -1,5 +1,11 @@
 # @zby/pro
 
+## 0.3.12
+
+### Patch Changes
+
+- 页签文案禁止选中
+
 ## 0.3.11
 
 ### Patch Changes
