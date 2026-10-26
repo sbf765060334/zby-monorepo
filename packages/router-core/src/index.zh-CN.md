@@ -365,7 +365,7 @@ const items = useMemo(() => buildMenuItems(router, locale), [router, locale])
 | `currentSelectedPath` | `readonly string[]` | `currentRoutes` 对应的真实层级路径，适合菜单选中。 |
 | `activeTabKey` | `string \| null` | UI 当前选中的页签身份；403/404 时可能仍保留旧页签选中。 |
 | `activePage` | `string \| null` | 当前实际显示的 KeepAlive 页面身份；403/404 时为 `null`。 |
-| `tabs` | `readonly RouterTab[]` | 本次会话已打开页签。 |
+| `tabs` | `readonly RouterTab[]` | 本次会话已打开页签，数组顺序即页签栏顺序。新页签插在当前活动页签右侧；活动页签已固定时，未固定的新页签插在固定组之后。再次进入已有页签不改变位置。 |
 | `pages` | `readonly RouterPage<Route>[]` | KeepAlive 仍然保留、应由 UI 渲染的页面描述。 |
 | `fixedSet` | `readonly string[]` | 有序固定页签 key。 |
 | `favoriteRoutePaths` | `readonly string[]` | 有序收藏 route path。 |

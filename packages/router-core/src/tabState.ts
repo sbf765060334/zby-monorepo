@@ -106,6 +106,37 @@ export function mergeTabsWithFixedSet<Route extends RouterRoute>(
   return sortTabs([...map.values()], fixedSet)
 }
 
+/**
+ * 新页签插到当前活动页签右侧。
+ * 未固定页签紧挨活动页签；活动页签已固定时，未固定的新页签不能插进固定组，放到固定组之后。
+ * 没有活动页签时追加到末尾。最终仍由 sortTabs 保证固定组在前。
+ */
+export function insertTabAfterActive(
+  tabs: readonly RouterTab[],
+  tab: RouterTab,
+  activeKey: string | null,
+  fixedSet: readonly string[],
+) {
+  const fixedKeySet = new Set(fixedSet)
+  const activeIndex = activeKey == null
+    ? -1
+    : tabs.findIndex((item) => item.key === activeKey)
+  let insertAt = tabs.length
+
+  if (activeIndex >= 0 && activeKey != null) {
+    if (fixedKeySet.has(activeKey)) {
+      const firstUnfixed = tabs.findIndex((item) => !fixedKeySet.has(item.key))
+      insertAt = firstUnfixed < 0 ? tabs.length : firstUnfixed
+    } else {
+      insertAt = activeIndex + 1
+    }
+  }
+
+  const next = tabs.slice()
+  next.splice(insertAt, 0, tab)
+  return sortTabs(next, fixedSet)
+}
+
 /** 固定组遵循 fixedSet 顺序，普通组保持 tabs 中的原始顺序。 */
 export function sortTabs(tabs: readonly RouterTab[], fixedSet: readonly string[]) {
   // 固定页签严格按 fixedSet 排列；Map 用来快速从 key 找回完整页签对象。

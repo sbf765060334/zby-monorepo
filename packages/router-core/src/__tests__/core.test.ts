@@ -1104,6 +1104,70 @@ describe('createRouterCore', () => {
     unsubscribe()
   })
 
+  /** 从中间页签打开新页时，新页签紧挨在活动页签右侧；已有页签再进入不挪位。 */
+  it('inserts a newly opened tab to the right of the active tab', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+
+    router.syncLocation({ pathname: '/task/2', search: '', hash: '' })
+
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/task/2',
+      '/project/:id',
+      '/task/1',
+    ])
+    expect(router.getState().activeTabKey).toBe('/task/2')
+
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/task/2',
+      '/project/:id',
+      '/task/1',
+    ])
+  })
+
+  /** 活动页签在固定组中间时，新的普通页签放到固定组后面，不能拆开固定组。 */
+  it('inserts a new unfixed tab after the fixed group when the active tab is fixed', () => {
+    const router = createRouterCore({ routes, storageAdapter: false })
+    router.syncLocation({ pathname: '/dashboard', search: '', hash: '' })
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/1', search: '', hash: '' })
+    expect(router.toggleFixed('/dashboard')).toBe(true)
+    expect(router.toggleFixed('/settings/profile')).toBe(true)
+    expect(router.toggleFixed('/project/:id')).toBe(true)
+
+    router.syncLocation({ pathname: '/settings/profile', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/2', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+      '/task/2',
+      '/task/1',
+    ])
+
+    router.syncLocation({ pathname: '/project/42', search: '', hash: '' })
+    router.syncLocation({ pathname: '/task/3', search: '', hash: '' })
+    expect(router.getState().tabs.map((tab) => tab.key)).toEqual([
+      '/dashboard',
+      '/settings/profile',
+      '/project/:id',
+      '/task/3',
+      '/task/2',
+      '/task/1',
+    ])
+  })
+
   /** 缺项、重复、未知 key 或跨越固定分组的排列都不能修改当前状态。 */
   it('rejects incomplete, duplicate, unknown and cross-group tab arrangements', () => {
     const router = createRouterCore({ routes, storageAdapter: false })

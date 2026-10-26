@@ -365,7 +365,7 @@ Every field in `RouterCoreState<Route>` is listed below:
 | `currentSelectedPath` | `readonly string[]` | Concrete hierarchy paths used for menu selection. |
 | `activeTabKey` | `string \| null` | Selected tab identity; a previous tab may remain selected on 403/404. |
 | `activePage` | `string \| null` | Actually displayed KeepAlive page identity; `null` on 403/404. |
-| `tabs` | `readonly RouterTab[]` | Every tab opened in this session. |
+| `tabs` | `readonly RouterTab[]` | Tabs opened in this session, in tab-bar order. A new tab is inserted to the right of the active tab. When the active tab is fixed, an unfixed new tab is inserted after the fixed group. Opening an existing tab does not move it. |
 | `pages` | `readonly RouterPage<Route>[]` | Retained pages that the UI should still render. |
 | `fixedSet` | `readonly string[]` | Ordered fixed-tab keys. |
 | `favoriteRoutePaths` | `readonly string[]` | Ordered favorite registered-route paths. |

@@ -10,6 +10,7 @@ import { enforceKeepAlive, shouldRefreshTouchedAt } from './keepAlive'
 import { normalizeRoutePath, type RouteRegistry } from './registry'
 import {
   areStringArraysEqual,
+  insertTabAfterActive,
   sanitizeFavoriteRoutePaths,
   sortTabs,
 } from './tabState'
@@ -152,13 +153,15 @@ export function createRouterTabs<Route extends RouterRoute>(
       let tabs = previous.tabs
       let pages = previous.pages
       if (!tabs.some((tab) => tab.key === tabKey)) {
-        // 新页签先加入，再由 sortTabs 保证固定组始终位于普通组前面。
-        tabs = sortTabs(
-          tabs.concat({
+        // 只在第一次创建时插入。再次进入已有页签保持原位，避免打乱拖拽后的顺序。
+        tabs = insertTabAfterActive(
+          tabs,
+          {
             key: tabKey,
             label: route.title,
             labelCustomized: false,
-          }),
+          },
+          previous.activeTabKey,
           previous.fixedSet,
         )
       }
