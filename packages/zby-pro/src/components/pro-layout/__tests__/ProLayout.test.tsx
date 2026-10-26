@@ -922,7 +922,7 @@ describe('ReactRouterProLayout', () => {
     vi.useFakeTimers()
     try {
       fireEvent.mouseEnter(reportMenu)
-      act(() => vi.advanceTimersByTime(199))
+      act(() => vi.advanceTimersByTime(99))
       expect(within(drawer).getByText('订单列表')).toBeTruthy()
       expect(within(drawer).queryByText('报表总览')).toBeNull()
 
@@ -931,7 +931,7 @@ describe('ReactRouterProLayout', () => {
       expect(within(drawer).getByText('订单列表')).toBeTruthy()
 
       fireEvent.mouseEnter(reportMenu)
-      act(() => vi.advanceTimersByTime(200))
+      act(() => vi.advanceTimersByTime(100))
       expect(within(drawer).getByText('报表总览')).toBeTruthy()
       expect(within(drawer).queryByText('订单列表')).toBeNull()
     } finally {

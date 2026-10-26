@@ -38,6 +38,8 @@ export default function useProLayoutStyles(prefixCls: string) {
   const fixedIconWidth = unit(styleToken.fontSize)
   const fixedIconTextMargin = unit(styleToken.marginXXS)
   const unfixedLabelOffset = `calc((${fixedIconWidth} + ${fixedIconTextMargin}) * -1)`
+  // 只延迟未固定图标露出。页签底色、文字色和点击不走这条过渡。
+  const tabPinRevealDelay = '100ms'
   // 固定页签宽按密度 token 推算：左右 padding、钉/关图标、四字标题，另留 paddingXXS 避免亚像素裁切。
   const tabWidth = alignToGrid(
     token.paddingSM * 2 +
@@ -584,7 +586,11 @@ export default function useProLayoutStyles(prefixCls: string) {
           userSelect: 'none',
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
-        [`${antCls}-tabs-tab:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+        [`${antCls}-tabs-tab:hover ${componentCls}-tab-label`]: {
+          marginInlineStart: 0,
+          transitionDelay: tabPinRevealDelay,
+        },
+        [`${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
           marginInlineStart: 0,
         },
         [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
@@ -610,7 +616,12 @@ export default function useProLayoutStyles(prefixCls: string) {
 
           '&:hover, &:focus-visible': { color: styleToken.colorTextSecondary },
         },
-        [`${antCls}-tabs-tab:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
+        [`${antCls}-tabs-tab:hover ${componentCls}-fixed-icon-unfixed`]: {
+          opacity: 1,
+          // opacity、color、transform 三条过渡里只延迟透明度，图标变色仍立即发生。
+          transitionDelay: `${tabPinRevealDelay}, 0s, 0s`,
+        },
+        [`${componentCls}-fixed-icon-unfixed:focus-visible`]: {
           opacity: 1,
         },
         [`${componentCls}-fixed-icon-active`]: {
@@ -719,7 +730,11 @@ export default function useProLayoutStyles(prefixCls: string) {
           userSelect: 'none',
           transition: `margin-inline-start ${styleToken.motionDurationMid} ${styleToken.motionEaseOut}`,
         },
-        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-tab-label, ${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
+        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-tab-label`]: {
+          marginInlineStart: 0,
+          transitionDelay: tabPinRevealDelay,
+        },
+        [`${componentCls}-fixed-icon:focus-visible + ${componentCls}-tab-label`]: {
           marginInlineStart: 0,
         },
         [`${componentCls}-tab-label-fixed`]: { marginInlineStart: 0 },
@@ -744,7 +759,11 @@ export default function useProLayoutStyles(prefixCls: string) {
 
           '&:hover, &:focus-visible': { color: styleToken.colorTextSecondary },
         },
-        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-fixed-icon-unfixed, ${componentCls}-fixed-icon-unfixed:focus-visible`]: {
+        [`${antCls}-tabs-dropdown-menu-item:hover ${componentCls}-fixed-icon-unfixed`]: {
+          opacity: 1,
+          transitionDelay: `${tabPinRevealDelay}, 0s, 0s`,
+        },
+        [`${componentCls}-fixed-icon-unfixed:focus-visible`]: {
           opacity: 1,
         },
         [`${componentCls}-fixed-icon-active`]: {

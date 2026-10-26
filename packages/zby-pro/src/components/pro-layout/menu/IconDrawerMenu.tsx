@@ -19,7 +19,7 @@ import MenuDrawer from './MenuDrawer'
 import SystemSwitcher from './SystemSwitcher'
 
 /** 一级菜单 hover intent 的停留阈值；短暂掠过不会切换已打开的 Drawer。 */
-const MENU_HOVER_DELAY = 200
+const MENU_HOVER_DELAY = 100
 
 export interface IconDrawerMenuProps {
   /** ProLayout 所有语义类名的前缀。 */
