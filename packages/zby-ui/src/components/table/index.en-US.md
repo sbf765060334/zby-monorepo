@@ -146,6 +146,22 @@ Returning `{ children, props: { rowSpan } }` from `render` is the deprecated Ant
 
 Table does not interpret KeepAlive, Tabs, or other application activity state. When an ancestor uses `display: none`, the browser reports a height of zero. If a positive fill height was already measured, Table keeps that value so a virtual body does not collapse. A table that first mounts while hidden may still start at 0 and remeasure when it becomes visible. Applications that need full control can omit `height` and pass a stable numeric `scroll.y`.
 
+## getTableScrollX
+
+Calculate a numeric `scroll.x` for a normal table. Do not use it when `columnResize` is enabled. A resizable table calculates its own horizontal width from dragged widths, minimum widths, and the filler column.
+
+```tsx
+import { getTableScrollX, Table } from '@zby/ui'
+
+<Table
+  columns={columns}
+  dataSource={data}
+  scroll={{ x: getTableScrollX(columns, 160) }}
+/>
+```
+
+The function sums leaf columns only. A group column's own `width` is ignored. Columns with `hidden` or `colSpan === 0` are skipped, as are `Table.SELECTION_COLUMN` and `Table.EXPAND_COLUMN`. Add selection and expand widths separately. A missing width, or a width that is not a finite non-negative number or a `px` string, uses the second argument. Percentages, `rem`, and other widths that cannot be resolved without a container use that default too.
+
 ## Additional Table Props
 
 All other props follow AntD 6.6.4 Table.

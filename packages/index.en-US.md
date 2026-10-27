@@ -51,7 +51,7 @@ Extension means the visuals and interactions line up with antd. Components consu
 | `@zby/router-core` | Routing, tabs, and KeepAlive used by `ProLayout`. Applications should not depend on it directly | `router-core/src/index.en-US.md` |
 | `@zby/request` | Business request client keyed by `errCode`, plus a TanStack Query adapter | `request/src/index.en-US.md` |
 
-`@zby/ui` currently exports `ActionIcon`, `ActionText`, `ActionReveal`, `InputNumberRange`, `ScrollArea`, `Table`, and `mergeLocales`.
+`@zby/ui` currently exports `ActionIcon`, `ActionText`, `ActionReveal`, `InputNumberRange`, `ScrollArea`, `Table`, `getTableScrollX`, and `mergeLocales`.
 
 `@zby/pro` adds admin components such as `ReactRouterProLayout`, `ProTable`, `ProModal`, and `ProViewManagement`. Layout and table behavior stay in those components' own docs.
 

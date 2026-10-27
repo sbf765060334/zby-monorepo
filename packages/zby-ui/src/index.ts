@@ -61,7 +61,7 @@ export type {
   ScrollAreaViewportProps,
   ScrollAreaWheelBehavior,
 } from './components/scroll-area'
-export { default as Table } from './components/table'
+export { default as Table, getTableScrollX } from './components/table'
 export type {
   ColumnProps as TableColumnProps,
   TableColumnGroupType,

@@ -147,6 +147,22 @@ const [widths, setWidths] = useState<ColumnResizeWidths>({
 
 Table 不识别 KeepAlive、Tabs 或其他业务激活状态。祖先节点使用 `display: none` 时浏览器会测得高度 0：若此前已有大于 0 的填充高度，Table 会保持该值，避免虚拟表塌掉；若一开始就在隐藏容器中挂载，高度仍可为 0，显示后再测量。需要完全自己控制虚拟高度时，可不传 `height` 并提供稳定的 `scroll.y`。
 
+## getTableScrollX
+
+给普通列表计算数字 `scroll.x`。这不是给开启 `columnResize` 的表格用的，那种表格会按拖拽列宽自行计算横向宽度。
+
+```tsx
+import { getTableScrollX, Table } from '@zby/ui'
+
+<Table
+  columns={columns}
+  dataSource={data}
+  scroll={{ x: getTableScrollX(columns, 160) }}
+/>
+```
+
+函数只累加叶子列。分组列不计自身 `width`。`hidden` 和 `colSpan === 0` 的列跳过。`Table.SELECTION_COLUMN`、`Table.EXPAND_COLUMN` 也跳过，选择列和展开列宽度由调用方另加。未写 `width`，或宽度不是有限非负数字、`px` 字符串时，使用第二个参数。百分比、`rem` 等无法在无容器时换算的宽度同样使用该默认宽度。
+
 ## 新增 Table Props
 
 其余属性遵循 AntD 6.6.4 Table。

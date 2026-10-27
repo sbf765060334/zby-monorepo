@@ -51,7 +51,7 @@
 | `@zby/router-core` | `ProLayout` 使用的路由、页签和 KeepAlive 核心。业务不要单独依赖 | `router-core/src/index.zh-CN.md` |
 | `@zby/request` | 按 `errCode` 处理的业务请求客户端，以及 TanStack Query 适配 | `request/src/index.zh-CN.md` |
 
-`@zby/ui` 当前导出 `ActionIcon`、`ActionText`、`ActionReveal`、`InputNumberRange`、`ScrollArea`、`Table`，以及 `mergeLocales`。
+`@zby/ui` 当前导出 `ActionIcon`、`ActionText`、`ActionReveal`、`InputNumberRange`、`ScrollArea`、`Table`、`getTableScrollX`，以及 `mergeLocales`。
 
 `@zby/pro` 在此之上提供 `ReactRouterProLayout`、`ProTable`、`ProModal`、`ProViewManagement` 等后台组件。布局和表格文档以各组件自己的说明为准。
 
