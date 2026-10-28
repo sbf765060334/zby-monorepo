@@ -106,8 +106,9 @@ export default function useStyle(prefixCls: string, cardPrefixCls: string) {
             justifyContent: 'flex-end',
             flex: '0 0 auto',
             gap: styleToken.marginXS,
-            paddingBlock: styleToken.paddingSM,
-            paddingInline: styleToken.paddingMD,
+            // 内边距与 Drawer footer 一致：上下 paddingXS，左右 padding。
+            paddingBlock: styleToken.paddingXS,
+            paddingInline: styleToken.padding,
             borderBlockStart: `${unit(styleToken.lineWidth)} ${styleToken.lineType} ${styleToken.colorBorderSecondary}`,
             background: styleToken.colorBgContainer,
             boxShadow: `0 -6px 16px -8px ${styleToken.colorTextQuaternary}, ${surfaceShadow}`,

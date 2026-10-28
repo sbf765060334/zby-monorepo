@@ -279,6 +279,8 @@ describe('ProLayoutContentContainer', () => {
     expect(styleText).toContain('height:auto')
     expect(styleText).toContain('min-height:0')
     expect(styleText).toContain('position:sticky')
+    expect(styleText).toContain('padding-block:var(--zby-content-container-test-padding-xs)')
+    expect(styleText).toContain('padding-inline:var(--zby-content-container-test-padding)')
     expect(styleText).toContain('overflow:visible')
     expect(styleText).not.toContain('overflow:auto')
     expect(styleText).not.toContain('scrollbar-gutter')
