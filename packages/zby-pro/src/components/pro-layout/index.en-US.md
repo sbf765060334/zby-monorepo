@@ -292,7 +292,7 @@ Shared by `title`, `tag.text`, and any `prompt` other than `true`. All of them a
 
 ### lazyPage
 
-`lazyPage(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element`. The module request starts on first render. It deduplicates in-flight requests and reuses successful results. A failed request is cleared so an error-boundary retry or a later visit can fetch again. The returned component still exposes `preload(): Promise<void>` for callers that want to prefetch themselves; ProLayout does not call it from menu or tab hover.
+`lazyPage(loader)` accepts `() => Promise<{ default: ComponentType<Record<string, never>> }>` and returns a lazy component suitable for `route.element`. The module request starts on first render. It deduplicates in-flight requests and reuses successful results. A failed request is cleared so an error-boundary retry or a later visit can fetch again. A `preload()` started after that render failure does not block the retry; a successful or still in-flight preload is reused. The returned component still exposes `preload(): Promise<void>` for callers that want to prefetch themselves; ProLayout does not call it from menu or tab hover.
 
 ### ProLayoutPageLoading
 

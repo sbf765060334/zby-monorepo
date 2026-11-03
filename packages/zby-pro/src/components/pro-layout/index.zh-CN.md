@@ -293,7 +293,7 @@ export function OrderPage() {
 
 ### lazyPage
 
-`lazyPage(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件。首次渲染时开始加载模块；同一组件会去重进行中的请求并复用成功结果。加载失败后会清理失败缓存，错误边界重试或再次进入时可以重新请求。组件上仍有 `preload(): Promise<void>`，供业务自行提前加载，ProLayout 默认不会在菜单或页签悬停时调用。
+`lazyPage(loader)` 接收 `() => Promise<{ default: ComponentType<Record<string, never>> }>`，返回可直接用于 `route.element` 的懒组件。首次渲染时开始加载模块；同一组件会去重进行中的请求并复用成功结果。加载失败后会清理失败缓存，错误边界重试或再次进入时可以重新请求。渲染已经失败后再调用 `preload()`，不会挡住这次重试；预取成功或仍在进行时，重试会复用该请求。组件上仍有 `preload(): Promise<void>`，供业务自行提前加载，ProLayout 默认不会在菜单或页签悬停时调用。
 
 ### ProLayoutPageLoading
 

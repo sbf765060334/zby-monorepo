@@ -13,7 +13,7 @@ import PageContent from '../page/PageContent'
 import PageProgressProvider from '../page-progress'
 import { zbyProIntlResources } from '../../../locale/intl-resources'
 import type { ProLayoutLazyPageModule } from '../lazyPage'
-import type { ProLayoutRoute } from '../types'
+import type { ProLayoutPageLoading, ProLayoutRoute } from '../types'
 
 vi.mock('nprogress', () => ({
   default: {
@@ -226,6 +226,207 @@ describe('lazyPage', () => {
     consoleError.mockRestore()
   })
 
+  it('reuses a successful preload when retrying a poisoned lazy page', async () => {
+    const error = new Error('first render failed')
+    const module = createPageModule('preloaded-retry-page', 'Preloaded retry page')
+    let rejectFirst!: (error: Error) => void
+    let resolvePreload!: (value: ProLayoutLazyPageModule) => void
+    let attempt = 0
+    const loader = vi.fn(() => {
+      attempt += 1
+      return new Promise<ProLayoutLazyPageModule>((resolve, reject) => {
+        if (attempt === 1)
+          rejectFirst = reject
+        else
+          resolvePreload = resolve
+      })
+    })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    const LazyPage = lazyPage(loader)
+    const router = createPageRouter('/preload-retry', LazyPage)
+    router.syncLocation({ pathname: '/preload-retry', search: '', hash: '' })
+
+    render(renderRecoverablePage(router))
+    await flushMicrotasks()
+
+    await act(async () => {
+      rejectFirst(error)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByRole('alert')).toBeTruthy()
+    expect(loader).toHaveBeenCalledOnce()
+
+    const preload = LazyPage.preload()
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(2)
+    await act(async () => {
+      resolvePreload(module)
+      await preload
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('preloaded-retry-page').textContent).toBe('Preloaded retry page')
+    consoleError.mockRestore()
+  })
+
+  it('joins an in-flight preload when retrying a poisoned lazy page', async () => {
+    const error = new Error('first render failed')
+    const module = createPageModule('inflight-retry-page', 'Inflight retry page')
+    let rejectFirst!: (error: Error) => void
+    let resolvePreload!: (value: ProLayoutLazyPageModule) => void
+    let attempt = 0
+    const loader = vi.fn(() => {
+      attempt += 1
+      return new Promise<ProLayoutLazyPageModule>((resolve, reject) => {
+        if (attempt === 1)
+          rejectFirst = reject
+        else
+          resolvePreload = resolve
+      })
+    })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    const LazyPage = lazyPage(loader)
+    const router = createPageRouter('/inflight-retry', LazyPage)
+    router.syncLocation({ pathname: '/inflight-retry', search: '', hash: '' })
+
+    render(renderRecoverablePage(router))
+    await flushMicrotasks()
+
+    await act(async () => {
+      rejectFirst(error)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByRole('alert')).toBeTruthy()
+
+    const preload = LazyPage.preload()
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(2)
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    await flushMicrotasks()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByTestId('inflight-retry-page')).toBeNull()
+
+    await act(async () => {
+      resolvePreload(module)
+      await preload
+    })
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('inflight-retry-page').textContent).toBe('Inflight retry page')
+    consoleError.mockRestore()
+  })
+
+  it('still retries when a later preload also fails on a poisoned lazy page', async () => {
+    const renderError = new Error('first render failed')
+    const preloadError = new Error('later preload failed')
+    const module = createPageModule('failed-preload-retry-page', 'Failed preload retry page')
+    let rejectFirst!: (error: Error) => void
+    let resolveRetry!: (value: ProLayoutLazyPageModule) => void
+    let attempt = 0
+    const loader = vi.fn(() => {
+      attempt += 1
+      return new Promise<ProLayoutLazyPageModule>((resolve, reject) => {
+        if (attempt === 1)
+          rejectFirst = reject
+        else if (attempt === 2)
+          reject(preloadError)
+        else
+          resolveRetry = resolve
+      })
+    })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    const LazyPage = lazyPage(loader)
+    const router = createPageRouter('/failed-preload-retry', LazyPage)
+    router.syncLocation({ pathname: '/failed-preload-retry', search: '', hash: '' })
+
+    render(renderRecoverablePage(router))
+    await flushMicrotasks()
+
+    await act(async () => {
+      rejectFirst(renderError)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByRole('alert')).toBeTruthy()
+
+    await expect(LazyPage.preload()).rejects.toBe(preloadError)
+    expect(loader).toHaveBeenCalledTimes(2)
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    await flushMicrotasks()
+    expect(loader).toHaveBeenCalledTimes(3)
+
+    await act(async () => {
+      resolveRetry(module)
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByTestId('failed-preload-retry-page').textContent).toBe('Failed preload retry page')
+    consoleError.mockRestore()
+  })
+
+  it('does not suspend again when retrying a render error after a failed preload', async () => {
+    const preloadError = new Error('preload failed')
+    const renderError = new Error('page render failed')
+    let shouldThrow = true
+    let attempt = 0
+    let resolveModule!: (value: ProLayoutLazyPageModule) => void
+    const loader = vi.fn(() => {
+      attempt += 1
+      if (attempt === 1)
+        return Promise.reject(preloadError)
+      return new Promise<ProLayoutLazyPageModule>((resolve) => {
+        resolveModule = resolve
+      })
+    })
+    const renderLoading = vi.fn(({ pathname }: { pathname: string }) => (
+      <div data-testid="render-error-loading">Loading {pathname}</div>
+    ))
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    window.addEventListener('error', preventExpectedWindowError)
+    const LazyPage = lazyPage(loader)
+
+    await expect(LazyPage.preload()).rejects.toBe(preloadError)
+    expect(loader).toHaveBeenCalledOnce()
+
+    const router = createPageRouter('/render-error-retry', LazyPage)
+    router.syncLocation({ pathname: '/render-error-retry', search: '', hash: '' })
+    render(renderRecoverablePage(router, { render: renderLoading }))
+    expect(await screen.findByTestId('render-error-loading')).toBeTruthy()
+
+    await act(async () => {
+      resolveModule({
+        default: () => {
+          if (shouldThrow)
+            throw renderError
+          return <div data-testid="stable-page">Stable page</div>
+        },
+      })
+      await Promise.resolve()
+    })
+    await flushMicrotasks()
+    expect(screen.getByRole('alert')).toBeTruthy()
+    expect(loader).toHaveBeenCalledTimes(2)
+
+    renderLoading.mockClear()
+    shouldThrow = false
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    await flushMicrotasks()
+
+    expect(renderLoading).not.toHaveBeenCalled()
+    expect(screen.getByTestId('stable-page').textContent).toBe('Stable page')
+    expect(loader).toHaveBeenCalledTimes(2)
+    consoleError.mockRestore()
+  })
+
   it('uses the configured Suspense fallback and retains a loaded page across navigation', async () => {
     const module = createPageModule('retained-page', 'Retained page')
     let resolveModule!: (value: ProLayoutLazyPageModule) => void
@@ -414,6 +615,30 @@ function createPageRouter(path: string, element: ProLayoutRoute['element']) {
     routes: [{ path, title: path, element }],
     storageAdapter: false,
   })
+}
+
+function renderRecoverablePage(
+  router: ReturnType<typeof createPageRouter>,
+  pageLoading?: ProLayoutPageLoading,
+) {
+  return (
+    <ZbyIntlProvider
+      locale="zh-CN"
+      fallbackLocale="zh-CN"
+      resources={zbyProIntlResources}
+    >
+      <PageProgressProvider>
+        <MemoryRouter initialEntries={[router.getState().currentPathname]}>
+          <RouterCoreProvider router={router}>
+            <PageContent
+              prefixCls="test-layout"
+              pageLoading={pageLoading}
+            />
+          </RouterCoreProvider>
+        </MemoryRouter>
+      </PageProgressProvider>
+    </ZbyIntlProvider>
+  )
 }
 
 function OtherPage() {
