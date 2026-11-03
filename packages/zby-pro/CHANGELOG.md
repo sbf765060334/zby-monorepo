@@ -1,5 +1,14 @@
 # @zby/pro
 
+## 2.0.5
+
+### Patch Changes
+
+- pro-layout/lazyPage.ts：区分请求失败和 lazy 实例报废，渲染失败后的 preload 不再挡住错误边界重试
+- `pro-layout/__tests__/LazyRoutes.test.tsx`：覆盖预取成功、进行中、再次失败后的重试，以及预取失败后的渲染错误重试
+- pro-layout/index.zh-CN.md：补充渲染失败后 preload 不阻挡重试，并复用进行中的预取
+- pro-layout/index.en-US.md：补充渲染失败后 preload 不阻挡重试，并复用进行中的预取
+
 ## 2.0.4
 
 ### Patch Changes
