@@ -10,7 +10,6 @@
  * 单独失败，或错误页还在时另起一次请求，都不能清掉它。
  */
 import { createElement, lazy } from 'react'
-
 import type { ComponentType } from 'react'
 
 export interface ProLayoutLazyPageModule {
