@@ -1,5 +1,23 @@
 # @zby/pro
 
+## 3.0.0
+
+### Major Changes
+
+- components/pro-table/interface.ts：移除 ProTableActions 顶层 visibleCount、showAll，改用互斥的 layout 数量/网格配置，新增整体 width。
+- components/pro-table/table-actions/ProTableActions.tsx：支持按行或列排列、自然列宽、受限宽度下文案省略及极窄收纳，修复 padding 测量、动态文案更新和异步确认 Promise 透传；按模式展示省略号或更多文案与向下箭头。
+- components/pro-table/table-actions/layout.ts：新增短按钮按需占用、长按钮反复均分剩余空间的宽度分配算法。
+- `components/pro-table/table-actions/__tests__/ProTableActions.test.tsx`：覆盖网格容量、尺寸变化、异步确认、定制入口及四种语言在明暗主题下的表现。
+- `components/pro-table/table-actions/__tests__/layout.test.ts`：覆盖宽度分配、空间充足和零空间边界。
+- components/pro-table/table-actions/README.md：补充新配置用法、旧 API 迁移说明和异步确认示例。
+- components/pro-table/table-actions/index.ts：导出 ProTableActionsLayout 类型。
+- components/pro-table/index.ts：导出 ProTableActionsLayout 类型。
+- index.ts：从包入口导出 ProTableActionsLayout 类型。
+- locales/zh_CN.ts：增加更多入口的简体中文文案。
+- locales/en_US.ts：增加更多入口的英文文案。
+- locales/vi_VN.ts：增加更多入口的越南文文案。
+- locales/my_MM.ts：增加更多入口的缅甸文文案。
+
 ## 2.0.5
 
 ### Patch Changes
