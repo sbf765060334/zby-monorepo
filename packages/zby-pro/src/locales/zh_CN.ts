@@ -86,6 +86,7 @@ const zhCN = {
         search: '查询',
         resetSearch: '重置',
         moreActions: '更多操作',
+        more: '更多',
         batchActions: '批量操作（已选 {{count}} 个）',
         booleanTrue: '是',
         booleanFalse: '否',

@@ -81,6 +81,7 @@ const viVN = {
         search: 'Truy vấn',
         resetSearch: 'Đặt lại',
         moreActions: 'Thao tác khác',
+        more: 'Thêm',
         batchActions: 'Thao tác hàng loạt (đã chọn {{count}})',
         booleanTrue: 'Có',
         booleanFalse: 'Không',

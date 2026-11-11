@@ -38,6 +38,7 @@ export type {
   ProTableActionItem,
   ProTableActionTooltip,
   ProTableActionsProps,
+  ProTableActionsLayout,
   ProTableColumnCapabilities,
   ProTableColumnDefaultPreference,
   ProTableColumnFieldConfig,

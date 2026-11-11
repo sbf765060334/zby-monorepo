@@ -1,2 +1,2 @@
 export { ProTableActions } from './ProTableActions'
-export type { ProTableActionInfo, ProTableActionItem, ProTableActionsProps } from '../interface'
+export type { ProTableActionInfo, ProTableActionItem, ProTableActionsProps, ProTableActionsLayout } from '../interface'

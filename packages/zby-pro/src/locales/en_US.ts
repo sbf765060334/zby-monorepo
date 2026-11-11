@@ -81,6 +81,7 @@ const enUS = {
         search: 'Search',
         resetSearch: 'Reset',
         moreActions: 'More actions',
+        more: 'More',
         batchActions: 'Batch actions ({{count}} selected)',
         booleanTrue: 'Yes',
         booleanFalse: 'No',

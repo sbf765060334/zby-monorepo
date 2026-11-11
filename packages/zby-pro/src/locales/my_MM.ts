@@ -81,6 +81,7 @@ const myMM = {
         search: 'မေးမြန်းမည်',
         resetSearch: 'ပြန်လည်သတ်မှတ်မည်',
         moreActions: 'နောက်ထပ်လုပ်ဆောင်ချက်',
+        more: 'နောက်ထပ်',
         batchActions: 'အစုလိုက်လုပ်ဆောင်ချက် ({{count}} ခု ရွေးထားသည်)',
         booleanTrue: 'ဟုတ်သည်',
         booleanFalse: 'မဟုတ်ပါ',

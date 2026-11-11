@@ -78,6 +78,7 @@ export type {
   ProTableActionItem,
   ProTableActionTooltip,
   ProTableActionsProps,
+  ProTableActionsLayout,
   ProTableBatchActionInfo,
   ProTableBatchActionItem,
   ProTableBatchActionsProps,

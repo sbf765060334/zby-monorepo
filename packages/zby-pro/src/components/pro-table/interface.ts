@@ -36,13 +36,22 @@ export interface ProTableActionItem<RecordType = Record<string, unknown>>
   onClick?: (info: ProTableActionInfo<RecordType>) => void | Promise<void>
 }
 
+export type ProTableActionsLayout = {
+  direction?: 'horizontal' | 'vertical'
+} & (
+  | { visibleCount?: number | 'all'; rows?: never; columns?: never }
+  | { rows: number; columns: number; visibleCount?: never }
+)
+
 export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   actions: Array<ProTableActionItem<RecordType> | false | null | undefined>
   record?: RecordType
   index?: number
-  visibleCount?: number
-  /** 全量展示。为 true 或对象时忽略 visibleCount。true 时横向排列。 */
-  showAll?: boolean | { direction?: 'horizontal' | 'vertical' }
+  /** 数量模式默认全部收起；网格容量包含溢出时的更多入口。 */
+  layout?: ProTableActionsLayout
+  /** 整体宽度。数字为 px；优先于 style.width。 */
+  width?: CSSProperties['width']
+  /** 自定义更多入口文字。默认收起模式无文字，外露数量/网格模式显示本地化的“更多”。 */
   moreText?: ReactNode
   moreButtonProps?: Omit<ButtonProps, 'children' | 'onClick'>
   dropdownProps?: Omit<DropdownProps, 'children' | 'menu'>
