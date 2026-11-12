@@ -1,5 +1,13 @@
 # @zby/pro
 
+## 3.0.1
+
+### Patch Changes
+
+- components/pro-table/table-actions/ProTableActions.tsx：修复网格及普通纵向布局中按钮铺满槽位导致右侧留白可点击的问题，按钮默认按内容收缩并限制最大宽度，保留显式 width/block 配置。
+- `components/pro-table/table-actions/__tests__/ProTableActions.test.tsx`：增加短按钮槽位留白、确认框触发边界和显式按钮宽度的回归测试。
+- components/pro-table/table-actions/README.md：补充槽位宽度与按钮点击区域的说明。
+
 ## 3.0.0
 
 ### Major Changes
