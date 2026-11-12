@@ -49,6 +49,58 @@ function renderActions(ui: React.ReactElement) {
 }
 
 describe('ProTableActions', () => {
+  it.each([
+    { rows: 2, columns: 2, direction: 'horizontal' },
+    { rows: 2, columns: 2, direction: 'vertical' },
+    { visibleCount: 'all', direction: 'vertical' },
+  ] as const)('keeps actions and popconfirm on the content-sized button inside %j slots', async (layout) => {
+    const onClick = vi.fn()
+    const onConfirm = vi.fn()
+    const longLabel = '这是一段必须在列宽内省略的长操作文案'
+    const { container } = renderActions(
+      <ProTableActions
+        width={320}
+        layout={layout}
+        actions={[
+          { key: 'view', label: '查看', onClick, tooltip: '查看说明' },
+          { key: 'long', label: longLabel },
+          { key: 'delete', label: '删除', popconfirm: { title: '确定删除吗？', onConfirm } },
+        ]}
+      />,
+    )
+    const slots = container.querySelectorAll<HTMLElement>('[data-action-slot]')
+    const view = screen.getByRole('button', { name: '查看' })
+    expect(view.style.width).toBe('fit-content')
+    expect(view.style.maxWidth).toBe('100%')
+    fireEvent.click(slots[0])
+    expect(onClick).not.toHaveBeenCalled()
+    fireEvent.click(view)
+    expect(onClick).toHaveBeenCalledTimes(1)
+    fireEvent.click(slots[2])
+    expect(screen.queryByText('确定删除吗？')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '删除' }))
+    fireEvent.click(await screen.findByRole('button', { name: /OK|确\s*定/ }))
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+    const longButton = screen.getByRole('button', { name: longLabel })
+    expect(longButton.title).toBe(longLabel)
+    expect((longButton.firstElementChild as HTMLElement).style.textOverflow).toBe('ellipsis')
+  })
+
+  it('preserves an explicitly expanded button in grid mode', () => {
+    renderActions(
+      <ProTableActions
+        width={320}
+        layout={{ rows: 1, columns: 2 }}
+        actions={[
+          { key: 'width', label: '指定宽度', style: { width: 80 } },
+          { key: 'block', label: '整列按钮', block: true },
+        ]}
+      />,
+    )
+    expect(screen.getByRole('button', { name: '指定宽度' }).style.width).toBe('80px')
+    expect(screen.getByRole('button', { name: '整列按钮' }).style.width).toBe('100%')
+  })
+
   it.each([undefined, {}, { visibleCount: 0 }])('keeps the compact ellipsis entry for %j', (layout) => {
     const { container } = renderActions(<ProTableActions actions={actions} layout={layout} />)
     expect(container.querySelector('.anticon-ellipsis')).toBeTruthy()

@@ -259,7 +259,20 @@ export function ProTableActions<RecordType>({
               type={buttonProps.type ?? 'link'}
               size={buttonProps.size ?? 'small'}
               title={buttonProps.title ?? ((constrained || grid) ? collectText(label) || undefined : undefined)}
-              style={{ ...EXPOSED_BUTTON_STYLE, ...buttonProps.style, ...(constrained && !collapsed ? { width: '100%', minWidth: 0, justifyContent: 'flex-start' } : {}) }}
+              style={{
+                ...EXPOSED_BUTTON_STYLE,
+                ...buttonProps.style,
+                ...(constrained && !collapsed ? {
+                  // 槽位负责列宽和对齐；按钮仅占内容宽度，槽位留白不参与按钮点击或弹层触发。
+                  // 普通横向模式仍沿用已分配的槽位宽度；显式 width/block 保留业务的扩展意图。
+                  width: grid || direction === 'vertical'
+                    ? buttonProps.style?.width ?? (buttonProps.block ? '100%' : 'fit-content')
+                    : '100%',
+                  maxWidth: buttonProps.style?.maxWidth ?? '100%',
+                  minWidth: 0,
+                  justifyContent: 'flex-start',
+                } : {}),
+              }}
               onClick={popconfirm ? undefined : () => executeClick(item)}
             >
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
