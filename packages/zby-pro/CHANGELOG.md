@@ -1,5 +1,15 @@
 # @zby/pro
 
+## 3.1.0
+
+### Minor Changes
+
+- components/pro-table/interface.ts：新增筛选项 disabled 可选属性，明确禁用优先级及自定义控件透传约定。
+- components/pro-table/search-region/components/SearchFields.tsx：将筛选项禁用状态传给控件，保留当前值，阻止禁用项通过 setValue 编辑，并展示锁图标及禁用语义。
+- components/pro-table/search-region/search-control-layout.ts：补充控件 disabled 类型，兼容日期和时间范围的单端禁用配置。
+- components/pro-table/style/index.ts：使用主题 token 展示胶囊禁用背景、虚线边框、禁用光标与占位符颜色，保留控件自身禁用和筛选项禁用的区别。
+- `components/pro-table/__tests__/ProTable.test.tsx`：覆盖保留筛选值、动态恢复编辑、控件独立禁用及更多筛选中的日期范围禁用。
+
 ## 3.0.1
 
 ### Patch Changes
