@@ -386,6 +386,8 @@ export type ProTableFilter<Query extends ProTableQueryRecord = Record<string, un
   [Key in Extract<keyof Query, string>]: {
     key: Key
     label: ReactNode
+    /** 禁用整个筛选项，保留当前值；优先于 render 返回控件的 disabled。 */
+    disabled?: boolean
     /**
      * 默认收进「更多筛选」。用户可在筛选设置里改到筛选行；仍参与查询和视图快照。
      */
@@ -397,7 +399,7 @@ export type ProTableFilter<Query extends ProTableQueryRecord = Record<string, un
     ) => ReactNode
     /** 是否展示该字段的条件 Tag。不传时有文案就展示。 */
     tagVisible?: (value: Query[Key] | undefined, query: Query) => boolean
-    /** 必须返回单一根元素，筛选行才能按 width / placeholder / 默认宽合入尺寸。 */
+    /** 必须返回单一根元素，筛选行才能合入尺寸与 disabled；自定义控件需透传 disabled。 */
     render: (context: ProTableFilterRenderContext<Query, Key>) => ReactNode
   }
 }[Extract<keyof Query, string>]

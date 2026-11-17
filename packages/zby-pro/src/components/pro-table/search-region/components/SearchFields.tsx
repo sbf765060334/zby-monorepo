@@ -5,7 +5,9 @@ import {
   useState,
 } from 'react'
 import type { ReactElement, ReactNode } from 'react'
+import { LockOutlined } from '@ant-design/icons'
 import { Cascader, DatePicker, Drawer, Flex, Input, Select, theme as antdTheme, TimePicker, TreeSelect } from 'antd'
+import { clsx } from 'clsx'
 
 import { shallow, useControllerSelector } from '../../hooks'
 import type { ProTableController, ProTableFilter, ProTableFilterRenderContext, ProTableQueryRecord } from '../../interface'
@@ -58,10 +60,12 @@ function resolveControlMeta(type: ReactElement['type']) {
 function applySearchControlLayout(
   node: ReactNode,
   {
+    disabled,
     labelId,
     token,
     value,
   }: {
+    disabled?: boolean
     labelId: string
     token: SearchSizeToken
     value: unknown
@@ -72,16 +76,17 @@ function applySearchControlLayout(
   }
 
   const element = node as ReactElement<SearchControlProps>
-  const labelled = {
+  const controlProps: SearchControlProps = {
     'aria-labelledby': element.props['aria-labelledby'] ?? labelId,
+    ...(disabled ? { disabled: true } : {}),
   }
   const { kind, name: elementName } = resolveControlMeta(element.type)
   if (!kind) {
-    return cloneElement(element, labelled)
+    return cloneElement(element, controlProps)
   }
 
   const nextProps: SearchControlProps = {
-    ...labelled,
+    ...controlProps,
     style: resolveInlineSearchControlStyle(kind, element.props, value, token, elementName),
   }
 
@@ -113,6 +118,7 @@ function SearchFieldControl<Query extends ProTableQueryRecord>({
   return applySearchControlLayout(
     field.render({ query, setValue, value } as Parameters<ProTableFilter<Query>['render']>[0]),
     {
+      disabled: field.disabled,
       labelId,
       token,
       value,
@@ -135,13 +141,21 @@ function SearchFieldItem<RecordType, Query extends ProTableQueryRecord, Summary>
   const key = field.key
   const value = query[key]
   const setValue: ProTableFilterRenderContext<Query>['setValue'] = (next) => {
-    controller.setQueryField(key, next as Query[typeof key])
+    if (!field.disabled) {
+      controller.setQueryField(key, next as Query[typeof key])
+    }
   }
   const labelId = `${prefixCls}-search-field-${String(key)}`
 
   return (
-    <span className={`${prefixCls}-search-field`}>
+    <span
+      aria-disabled={field.disabled || undefined}
+      className={clsx(`${prefixCls}-search-field`, {
+        [`${prefixCls}-search-field-disabled`]: field.disabled,
+      })}
+    >
       <span id={labelId} className={`${prefixCls}-search-field-label`}>
+        {field.disabled ? <LockOutlined aria-hidden className={`${prefixCls}-search-field-lock`} /> : null}
         {field.label}
         ：
       </span>

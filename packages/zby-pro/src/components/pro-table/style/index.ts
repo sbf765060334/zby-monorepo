@@ -19,10 +19,12 @@ function genProTableStyle(token: ProTableToken): CSSObject {
     borderRadius,
     borderRadiusLG,
     colorBgContainer,
+    colorBgContainerDisabled,
     colorBgTextHover,
     colorBorder,
     colorText,
     colorTextDescription,
+    colorTextDisabled,
     colorTextHeading,
     colorTextTertiary,
     componentCls,
@@ -122,6 +124,10 @@ function genProTableStyle(token: ProTableToken): CSSObject {
         color: colorTextTertiary,
       },
 
+      [`${componentCls}-search-field-lock`]: {
+        marginInlineEnd: token.marginXXS,
+      },
+
       [`${componentCls}-search-field-control`]: {
         display: 'inline-flex',
         alignItems: 'center',
@@ -214,6 +220,33 @@ function genProTableStyle(token: ProTableToken): CSSObject {
 
         [`${antCls}-picker-active-bar`]: {
           display: 'none',
+        },
+
+        // 占位符有独立颜色，不会自动跟随控件的禁用文字色。
+        'input:disabled::placeholder, textarea:disabled::placeholder': {
+          color: colorTextDisabled,
+          opacity: 1,
+        },
+
+        [`${antCls}-select-disabled ${antCls}-select-placeholder`]: {
+          color: colorTextDisabled,
+        },
+      },
+
+      [`${componentCls}-search-field-disabled`]: {
+        color: colorTextDisabled,
+        backgroundColor: colorBgContainerDisabled,
+        borderColor: colorBorder,
+        borderStyle: 'dashed',
+        cursor: 'not-allowed',
+
+        [`${componentCls}-search-field-label, ${componentCls}-search-field-control`]: {
+          color: colorTextDisabled,
+          cursor: 'not-allowed',
+        },
+
+        [`${antCls}-input`]: {
+          borderColor: 'transparent',
         },
       },
 

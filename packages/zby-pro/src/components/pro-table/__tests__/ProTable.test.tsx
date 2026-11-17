@@ -4,7 +4,7 @@ import * as React from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ZbyIntlProvider } from '@zby/intl'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, DatePicker, Input, Select } from 'antd'
 import type * as ZbyUi from '@zby/ui'
 
 import { zbyProIntlResources } from '../../../locale/intl-resources'
@@ -515,6 +515,97 @@ describe('ProTable', () => {
     expect(screen.queryByRole('button', { name: '更多筛选' })).toBeNull()
     expect(screen.getByRole('button', { name: /查\s*询/ })).toBeTruthy()
     expect(document.querySelector('.ant-pro-table-search-row')).toBeTruthy()
+  })
+
+  it('disables a filter without clearing its value and restores interaction when enabled', () => {
+    const controller = createProTableController<Row, Query>({
+      defaultQuery: { status: 'open' },
+      rowKey: 'id',
+    })
+    const table = (disabled: boolean) => (
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        views={false}
+        filters={[{
+          key: 'status',
+          label: '状态',
+          disabled,
+          render: ({ value, setValue }) => (
+            <Input disabled={false} value={value} onChange={(event) => setValue(event.target.value)} />
+          ),
+        }]}
+      />
+    )
+    const { rerender } = render(table(true), {
+      wrapper: ({ children }) => (
+        <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+          <ConfigProvider>{children}</ConfigProvider>
+        </ZbyIntlProvider>
+      ),
+    })
+    const input = screen.getByRole<HTMLInputElement>('textbox', { name: /状态/ })
+    const capsule = input.closest('.ant-pro-table-search-field')
+
+    expect(input.disabled).toBe(true)
+    expect(input.value).toBe('open')
+    expect(capsule?.getAttribute('aria-disabled')).toBe('true')
+    expect(capsule?.querySelector('.ant-pro-table-search-field-lock')).toBeTruthy()
+    fireEvent.change(input, { target: { value: 'closed' } })
+    expect(controller.getState().query.status).toBe('open')
+
+    rerender(table(false))
+    expect(input.disabled).toBe(false)
+    expect(capsule?.hasAttribute('aria-disabled')).toBe(false)
+    expect(capsule?.querySelector('.ant-pro-table-search-field-lock')).toBeNull()
+    fireEvent.change(input, { target: { value: 'closed' } })
+    expect(controller.getState().query.status).toBe('closed')
+  })
+
+  it('keeps control-only disabling separate from filter disabling', () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{ rowKey: 'id' }}
+        columns={[]}
+        views={false}
+        filters={[
+          { key: 'status', label: '状态', disabled: false, render: () => <Select disabled placeholder="请选择" /> },
+          { key: 'owner', label: '日期', render: () => <DatePicker.RangePicker disabled={[true, false]} /> },
+        ]}
+      />,
+    )
+
+    expect(document.querySelector('.ant-select-disabled')).toBeTruthy()
+    const dates = document.querySelectorAll<HTMLInputElement>('.ant-picker input')
+    expect(dates[0]?.disabled).toBe(true)
+    expect(dates[1]?.disabled).toBe(false)
+    expect(document.querySelector('.ant-pro-table-search-field-disabled')).toBeNull()
+    expect(document.querySelector('.ant-pro-table-search-field-lock')).toBeNull()
+  })
+
+  it('disables both range endpoints in more filters when the filter is disabled', async () => {
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{ rowKey: 'id' }}
+        columns={[]}
+        views={false}
+        filters={[{
+          key: 'status',
+          label: '日期',
+          disabled: true,
+          hidden: true,
+          render: () => <DatePicker.RangePicker disabled={[true, false]} />,
+        }]}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
+    const capsule = document.querySelector('.ant-pro-table-search-overlay .ant-pro-table-search-field-disabled')
+    expect(capsule).toBeTruthy()
+    expect(capsule?.querySelector('.ant-pro-table-search-field-lock')).toBeTruthy()
+    const dates = capsule?.querySelectorAll<HTMLInputElement>('input')
+    expect(dates?.length).toBe(2)
+    expect(Array.from(dates ?? []).every((input) => input.disabled)).toBe(true)
   })
 
   it('submits the draft only from the search button and keeps hidden fields in more filters', async () => {

@@ -16,9 +16,9 @@ import {
   type ProTableFilter,
   type ProTableQueryRequest,
 } from '@zby/pro'
-import { App, Button, Cascader, DatePicker, Input, Select, Switch, Tag, TimePicker, TreeSelect } from 'antd'
+import { App, Button, Cascader, DatePicker, Input, Select, Space, Switch, Tag, TimePicker, TreeSelect } from 'antd'
 import dayjs from 'dayjs'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 type OrderStatus = 'pending' | 'shipping' | 'done'
 type OrderPriority = 'low' | 'normal' | 'high'
@@ -459,7 +459,7 @@ function createColumns(intl: IntlShape): ProTableColumnType<PlaygroundRow>[] {
   ]
 }
 
-function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
+function createFilters(intl: IntlShape, disabled: boolean): ProTableFilter<PlaygroundQuery>[] {
   return [
     {
       key: 'customer',
@@ -477,6 +477,7 @@ function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
     {
       key: 'status',
       label: filterLabel(intl, 'status', '状态'),
+      disabled,
       tagTextFormatter: createSelectTagTextResolver({ options: STATUS_OPTIONS }),
       render: ({ value, setValue }) => (
         <Select
@@ -528,6 +529,7 @@ function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
     {
       key: 'createdAt',
       label: filterLabel(intl, 'createdAt', '创建时间'),
+      disabled,
       tagTextFormatter: createDateRangeTagTextResolver(),
       render: ({ value, setValue }) => {
         const start = value?.[0]
@@ -536,6 +538,7 @@ function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
         return (
           <DatePicker.RangePicker
             allowClear
+            allowEmpty={disabled ? [true, true] : undefined}
             placeholder={['开始日期', '结束日期']}
             value={start && end ? [dayjs(start), dayjs(end)] : null}
             onChange={(_dates, dateStrings) => {
@@ -566,6 +569,8 @@ function createFilters(intl: IntlShape): ProTableFilter<PlaygroundQuery>[] {
       render: ({ value, setValue }) => (
         <Input
           allowClear
+          // 对照：只禁用控件，不触发整颗筛选胶囊的禁用样式。
+          disabled={disabled}
           placeholder="负责人"
           value={value ?? ''}
           onChange={(event) => setValue(event.target.value)}
@@ -653,6 +658,7 @@ export default function ProTablePlayground() {
   const intl = useIntl()
   const locale = intl.locale
   const { message } = App.useApp()
+  const [filtersDisabled, setFiltersDisabled] = useState(true)
   const tableColumns = useMemo(() => {
     const actionColumn: ProTableColumnType<PlaygroundRow> = {
       key: 'actions',
@@ -699,7 +705,7 @@ export default function ProTablePlayground() {
     }
     return [...createColumns(intl), actionColumn]
   }, [intl, locale, message])
-  const tableFilters = useMemo(() => createFilters(intl), [intl, locale])
+  const tableFilters = useMemo(() => createFilters(intl, filtersDisabled), [intl, locale, filtersDisabled])
 
   return (
     <ProLayoutContentContainer mode="fill">
@@ -724,6 +730,14 @@ export default function ProTablePlayground() {
         toolbar={{
           actions: (
             <>
+              <Space>
+                <span>禁用筛选示例</span>
+                <Switch
+                  aria-label="禁用筛选示例"
+                  checked={filtersDisabled}
+                  onChange={setFiltersDisabled}
+                />
+              </Space>
               <Button
                 type="primary"
                 onClick={() => {

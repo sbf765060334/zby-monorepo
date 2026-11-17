@@ -15,6 +15,7 @@ export type SearchControlFieldNames = {
 
 export type SearchControlProps = {
   'aria-labelledby'?: string
+  disabled?: boolean | [boolean, boolean]
   allowClear?: unknown
   fieldNames?: SearchControlFieldNames
   maxTagCount?: unknown
