@@ -19,6 +19,7 @@ type SearchViewManagementMountProps<RecordType, Query extends ProTableQueryRecor
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   controller: ProTableController<RecordType, Query, Summary>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
+  normalizeSnapshotForCurrentSchema: (snapshot: ProTableViewSnapshot<Query>) => ProTableViewSnapshot<Query>
   filters: ProTableFilter<Query>[]
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onResetManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
@@ -40,6 +41,7 @@ const SearchViewManagementMountInner = <
   buildSystemDefaultSnapshot,
   controller,
   createCurrentSnapshot,
+  normalizeSnapshotForCurrentSchema,
   filters,
   onApplyManagedView,
   onResetManagedView,
@@ -116,6 +118,7 @@ const SearchViewManagementMountInner = <
       filters={filters}
       loading={viewManagementLoading}
       loadError={viewManagementLoadError}
+      normalizeSnapshotForCurrentSchema={normalizeSnapshotForCurrentSchema}
       onApplyView={onApplyManagedView}
       onRetryLoad={onRetryViewManagementLoad}
       onResetView={onResetManagedView}

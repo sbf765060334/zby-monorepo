@@ -370,6 +370,7 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
               onRetryViewManagementLoad={handleRetryViewInitialization}
               buildSystemDefaultSnapshot={viewPersistence.buildSystemDefaultSnapshot}
               createCurrentSnapshot={viewPersistence.createCurrentSnapshot}
+              normalizeSnapshotForCurrentSchema={viewPersistence.normalizeSnapshotForCurrentSchema}
               onApplyManagedView={handleApplyManagedView}
               onResetManagedView={handleResetManagedView}
               onSaveManagedView={viewPersistence.handleSaveManagedView}
@@ -498,6 +499,7 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
       viewLoadingVisible,
       viewPersistence.buildSystemDefaultSnapshot,
       viewPersistence.createCurrentSnapshot,
+      viewPersistence.normalizeSnapshotForCurrentSchema,
       viewPersistence.handleSaveManagedView,
       viewPersistence.viewManagementAdapter,
       viewPersistence.viewManagementInstanceId,

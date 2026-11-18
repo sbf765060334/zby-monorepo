@@ -43,6 +43,7 @@ export type SearchRegionProps<RecordType, Query extends ProTableQueryRecord, Sum
   onRetryViewManagementLoad?: () => void | Promise<void>
   buildSystemDefaultSnapshot: () => ProTableViewSnapshot<Query>
   createCurrentSnapshot: () => ProTableViewSnapshot<Query>
+  normalizeSnapshotForCurrentSchema: (snapshot: ProTableViewSnapshot<Query>) => ProTableViewSnapshot<Query>
   onApplyManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onResetManagedView: (view: ProViewManagementView<ProTableViewSnapshot<Query>>) => Promise<void>
   onSaveManagedView: () => Promise<void>

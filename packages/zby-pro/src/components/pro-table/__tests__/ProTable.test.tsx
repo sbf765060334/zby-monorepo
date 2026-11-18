@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import * as React from 'react'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider, DatePicker, Input, Select } from 'antd'
@@ -1494,6 +1494,263 @@ describe('ProTable', () => {
     expect(screen.getByText('待处理')).toBeTruthy()
   })
 
+  it('preserves a cached controller across repeated mounts and recomputes view dirty state', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async (params: { status?: string; page: number }) => ({
+      data: [{ id: `${params.status}-${params.page}`, name: 'Order' }],
+      total: 30,
+    }))
+    const controller = createProTableController<Row, Query>({
+      rowKey: 'id',
+      defaultQuery: { status: 'all' },
+      queryRequest,
+    })
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />
+    )
+    let mounted = renderProTable(table())
+    await waitFor(() => expect(screen.getByTestId('row-ids').textContent).toBe('pending-1'))
+    expect(viewActionRoot()).toBeNull()
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), { target: { value: 'done' } })
+    await act(async () => {
+      await controller.submitQuery()
+      await controller.setPage(2)
+    })
+    expect(screen.getByTestId('row-ids').textContent).toBe('done-2')
+    const requestCount = queryRequest.mock.calls.length
+
+    for (let reopen = 0; reopen < 2; reopen += 1) {
+      mounted.unmount()
+      mounted = renderProTable(table())
+      await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+      expect(controller.getState().query.status).toBe('done')
+      expect(controller.getState().committedQuery.status).toBe('done')
+      expect(screen.getByTestId('row-ids').textContent).toBe('done-2')
+      expect(controller.getState().currentPage).toBe(2)
+      expect(viewActionRoot()).toBeTruthy()
+    }
+    expect(adapter.load).toHaveBeenCalledTimes(1)
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+
+    mounted.unmount()
+    act(() => controller.setQuery({ status: 'pending' }))
+    mounted = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: /状态/ }).value).toBe('pending')
+    expect(viewActionRoot()).toBeNull()
+    expect(controller.getState().committedQuery.status).toBe('done')
+    expect(screen.getByTestId('row-ids').textContent).toBe('done-2')
+    expect(queryRequest).toHaveBeenCalledTimes(requestCount)
+
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), { target: { value: 'done' } })
+    const actions = viewActionRoot()
+    expect(actions).toBeTruthy()
+    fireEvent.click(within(actions!).getByRole('button', { name: /重\s*置/ }))
+    await waitFor(() => expect(screen.getByTestId('row-ids').textContent).toBe('pending-1'))
+    await waitFor(() => expect(viewActionRoot()).toBeNull())
+  })
+
+  it.each(['controller', 'scope', 'adapter'])('initializes views again when the %s changes', async (change) => {
+    const adapter = createPendingCustomViewAdapter()
+    let activeAdapter = adapter
+    let persistenceKey = 'orders'
+    let controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={false}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        persistenceKey={persistenceKey}
+        views={{ adapter: activeAdapter }}
+      />
+    )
+    const mounted = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    mounted.unmount()
+    controller.resetQuery()
+    if (change === 'controller') controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    if (change === 'scope') persistenceKey = 'other-orders'
+    if (change === 'adapter') activeAdapter = createPendingCustomViewAdapter()
+    renderProTable(table())
+    await waitFor(() => expect(controller.getState().query.status).toBe('pending'))
+    expect(activeViewSelectorTitle()).toBe('待处理')
+    expect(viewActionRoot()).toBeNull()
+    expect(activeAdapter.load).toHaveBeenLastCalledWith(`${persistenceKey}:views`)
+    expect(activeAdapter.load).toHaveBeenCalledTimes(change === 'adapter' ? 1 : 2)
+  })
+
+  it('retains transient custom views and their unsaved query on controller reuse', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    let persistenceKey = 'orders'
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={false}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        persistenceKey={persistenceKey}
+        views={{ adapter: false }}
+      />
+    )
+    const mounted = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('默认视图'))
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), { target: { value: 'pending' } })
+    fireEvent.click(viewActionRoot()!.querySelector('button')!)
+    fireEvent.click(await screen.findByRole('menuitem', { name: '另存为' }))
+    fireEvent.change(await screen.findByPlaceholderText('请输入视图名称'), { target: { value: '临时订单' } })
+    fireEvent.click(screen.getByRole('button', { name: /创\s*建/ }))
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('临时订单'))
+    await waitFor(() => expect(viewActionRoot()).toBeNull())
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), { target: { value: 'done' } })
+    mounted.unmount()
+    const reopened = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('临时订单'))
+    expect(controller.getState().query.status).toBe('done')
+    expect(controller.getState().committedQuery.status).toBe('pending')
+    expect(viewActionRoot()).toBeTruthy()
+    reopened.unmount()
+    persistenceKey = 'other-orders'
+    renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('默认视图'))
+    expect(screen.queryByText('临时订单')).toBeNull()
+  })
+
+  it('waits for the new controller view before making an automatic request', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const original = createProTableController<Row, Query>({ rowKey: 'id' })
+    const table = (controller: typeof original) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(original))
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    const storage = await adapter.load('orders:views')
+    let finishLoad!: (value: typeof storage) => void
+    vi.mocked(adapter.load).mockReturnValueOnce(new Promise((resolve) => {
+      finishLoad = resolve
+    }))
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const replacement = createProTableController<Row, Query>({
+      rowKey: 'id',
+      defaultQuery: { status: 'all' },
+      queryRequest,
+    })
+    mounted.rerender(table(replacement))
+    expect(queryRequest).not.toHaveBeenCalled()
+    await act(async () => finishLoad(storage))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'pending' }),
+      expect.anything(),
+    )
+  })
+
+  it('retains saved view fields while the filter schema loads asynchronously', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const table = (withStatus: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            autoRequest={false}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={withStatus ? [searchInputField('status', '状态')] : []}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(false))
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    mounted.rerender(table(true))
+    act(() => controller.setQuery({ status: 'done' }))
+    await waitFor(() => expect(viewActionRoot()).toBeTruthy())
+    fireEvent.click(within(viewActionRoot()!).getByRole('button', { name: /重\s*置/ }))
+    await waitFor(() => expect(controller.getState().query.status).toBe('pending'))
+    await waitFor(() => expect(viewActionRoot()).toBeNull())
+  })
+
+  it.each(['cancelled', 'failed'])('does not reuse a %s view initialization', async (outcome) => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    vi.mocked(adapter.load).mockClear()
+    let finishLoad!: (value: typeof storage) => void
+    let failLoad!: (error: Error) => void
+    vi.mocked(adapter.load).mockReturnValueOnce(new Promise((resolve, reject) => {
+      finishLoad = resolve
+      failLoad = reject
+    }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={false}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />
+    )
+    const mounted = renderProTable(table())
+    if (outcome === 'failed') {
+      await act(async () => failLoad(new Error('storage unavailable')))
+      await waitFor(() => expect(activeViewSelectorTitle()).toBe('默认视图'))
+    }
+    mounted.unmount()
+    controller.setQuery({ status: 'open' })
+    renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    expect(adapter.load).toHaveBeenCalledTimes(2)
+    expect(controller.getState().committedQuery.status).toBe('open')
+    if (outcome === 'cancelled') {
+      act(() => controller.setQuery({ status: 'done' }))
+      await act(async () => finishLoad(storage))
+      expect(controller.getState().query.status).toBe('done')
+      expect(controller.getState().committedQuery.status).toBe('open')
+    }
+  })
+
+  it('initializes views again after they are disabled and re-enabled', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const table = (enabled: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            autoRequest={false}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={enabled ? { adapter } : false}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(true))
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    act(() => controller.setQuery({ status: 'done' }))
+    mounted.rerender(table(false))
+    expect(controller.getState().query.status).toBe('done')
+    mounted.rerender(table(true))
+    await waitFor(() => expect(controller.getState().query.status).toBe('pending'))
+    expect(adapter.load).toHaveBeenCalledTimes(2)
+    expect(viewActionRoot()).toBeNull()
+  })
+
   it('keeps the active custom view after entering fullscreen', async () => {
     const adapter = createPendingCustomViewAdapter()
 
@@ -2255,6 +2512,9 @@ describe('ProTable', () => {
     )
 
     await waitFor(() => expect(controller.getState().committedQuery.status).toBe('pending'))
+    fireEvent.change(screen.getByRole('textbox', { name: /状态/ }), {
+      target: { value: 'done' },
+    })
     fireEvent.click(screen.getByRole('button', { name: '更多筛选' }))
     expect(document.querySelector('.ant-pro-table-search-overlay.ant-drawer-open')).toBeTruthy()
     await waitFor(() => expect(viewActionRoot()).toBeTruthy())

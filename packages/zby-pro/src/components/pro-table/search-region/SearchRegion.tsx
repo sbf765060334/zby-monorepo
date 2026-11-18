@@ -29,6 +29,7 @@ function SearchRegionInner<RecordType, Query extends ProTableQueryRecord, Summar
   onRetryViewManagementLoad,
   buildSystemDefaultSnapshot,
   createCurrentSnapshot,
+  normalizeSnapshotForCurrentSchema,
   onApplyManagedView,
   onResetManagedView,
   onSaveManagedView,
@@ -41,6 +42,7 @@ function SearchRegionInner<RecordType, Query extends ProTableQueryRecord, Summar
           buildSystemDefaultSnapshot={buildSystemDefaultSnapshot}
           controller={controller}
           createCurrentSnapshot={createCurrentSnapshot}
+          normalizeSnapshotForCurrentSchema={normalizeSnapshotForCurrentSchema}
           filters={searchFilters ?? filters}
           onApplyManagedView={onApplyManagedView}
           onResetManagedView={onResetManagedView}
@@ -58,6 +60,7 @@ function SearchRegionInner<RecordType, Query extends ProTableQueryRecord, Summar
       buildSystemDefaultSnapshot,
       controller,
       createCurrentSnapshot,
+      normalizeSnapshotForCurrentSchema,
       filters,
       onApplyManagedView,
       onResetManagedView,

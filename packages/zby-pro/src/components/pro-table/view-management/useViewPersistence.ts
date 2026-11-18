@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react'
 import {
   createIndexedDBProViewManagementAdapter,
   type ProViewManagementAdapter,
+  type ProViewManagementStorageState,
   type ProViewManagementView,
 } from '../../pro-view-management'
 import type {
@@ -44,26 +45,30 @@ type ViewPersistenceParams<RecordType, Query extends ProTableQueryRecord, Summar
 }
 
 function createTransientViewManagementAdapter<TSnapshot>(): ProViewManagementAdapter<TSnapshot> {
-  let views: ProViewManagementView<TSnapshot>[] = []
-  let activeViewId: string | undefined
+  const states = new Map<string, ProViewManagementStorageState<TSnapshot>>()
+  const readState = (instanceId: string): ProViewManagementStorageState<TSnapshot> => {
+    const state = states.get(instanceId)
+    return {
+      views: (state?.views ?? []).map((view) => ({ ...view })),
+      activeViewId: state?.activeViewId,
+    }
+  }
 
   return {
-    async load() {
-      return {
-        views: views.map((view) => ({ ...view })),
-        activeViewId,
-      }
+    async load(instanceId) {
+      return readState(instanceId)
     },
-    async update(_instanceId, recipe) {
-      const next = recipe({
-        views: views.map((view) => ({ ...view })),
-        activeViewId,
+    async update(instanceId, recipe) {
+      const next = recipe(readState(instanceId))
+      states.set(instanceId, {
+        views: next.views.map((view) => ({ ...view })),
+        activeViewId: next.activeViewId,
       })
-      views = next.views.map((view) => ({ ...view }))
-      activeViewId = next.activeViewId
     },
   }
 }
+
+const transientAdapters = new WeakMap<object, ProViewManagementAdapter<ProTableViewSnapshot<any>>>()
 
 export function useViewPersistence<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
@@ -98,8 +103,15 @@ export function useViewPersistence<RecordType, Query extends ProTableQueryRecord
   )
 
   const transientViewManagementAdapter = useMemo(
-    () => createTransientViewManagementAdapter<ProTableViewSnapshot<Query>>(),
-    [],
+    () => {
+      let adapter = transientAdapters.get(controller)
+      if (!adapter) {
+        adapter = createTransientViewManagementAdapter<ProTableViewSnapshot<Query>>()
+        transientAdapters.set(controller, adapter)
+      }
+      return adapter as ProViewManagementAdapter<ProTableViewSnapshot<Query>>
+    },
+    [controller],
   )
   const viewManagementAdapter = useMemo(() => {
     if (views === false) {
