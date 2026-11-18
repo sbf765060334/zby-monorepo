@@ -1,5 +1,12 @@
 # @zby/pro
 
+## 3.1.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @zby/ui@0.5.1
+
 ## 3.1.0
 
 ### Minor Changes

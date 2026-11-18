@@ -1,5 +1,12 @@
 # @zby/ui
 
+## 0.5.1
+
+### Patch Changes
+
+- components/table/hooks/useTableFillLayout.ts：修复 fill 模式固定合计行高度重复扣除造成的底部留白，排除已包含在合计容器或表头内的合计节点，保留普通合计及尺寸监听行为。
+- `components/table/__tests__/index.test.tsx`：补充空数据、有数据、虚拟滚动、顶部和底部固定合计、合计高度变化、自定义前缀、嵌套表格及合计模式切换的回归测试。
+
 ## 0.5.0
 
 ### Minor Changes
