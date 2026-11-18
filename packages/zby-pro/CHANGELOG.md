@@ -1,5 +1,12 @@
 # @zby/pro
 
+## 3.1.2
+
+### Patch Changes
+
+- components/pro-table/search-region/search-control-layout.ts：将 Select 的 tags 模式纳入多选宽度测量，修复多个自由输入标签被当作单选文本计算导致的裁切。
+- `components/pro-table/search-region/__tests__/search-control-layout.test.ts`：覆盖自由输入标签、标签折叠、占位符、标签增删、紧凑主题和显式宽度的回归测试。
+
 ## 3.1.1
 
 ### Patch Changes
