@@ -1768,6 +1768,231 @@ describe('Table', () => {
     expect(body?.style.height).toBe('352px')
   })
 
+  it.each([
+    { name: 'empty', rows: [], virtual: false },
+    { name: 'populated', rows: data, virtual: false },
+    { name: 'virtual', rows: data, virtual: true },
+  ])('counts the fixed bottom summary once in a $name fill table', ({ rows, virtual }) => {
+    vi.useFakeTimers()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        height={480}
+        virtual={virtual}
+        columns={columns}
+        dataSource={rows}
+        pagination={false}
+        scroll={{ x: 600 }}
+        summary={() => (
+          <Table.Summary fixed="bottom">
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
+      />,
+    )
+
+    const wrapper = container.querySelector('.ant-table-wrapper')
+    setElementSize(wrapper, 'clientHeight', 480)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const header = container.querySelector('.ant-table-header')
+    const summaryHolder = container.querySelector('div.ant-table-summary')
+    const summary = container.querySelector('tfoot.ant-table-summary')
+    setElementSize(header, 'offsetHeight', 56)
+    setElementSize(summaryHolder, 'offsetHeight', 44)
+    setElementSize(summary, 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const body = container.querySelector<HTMLElement>(
+      virtual ? '.ant-table-tbody-virtual-holder' : '.ant-table-body',
+    )
+    expect(body?.style.height).toBe('380px')
+    expect(body?.contains(summary)).toBe(false)
+
+    setElementSize(summaryHolder, 'offsetHeight', 80)
+    setElementSize(summary, 'offsetHeight', 80)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+    expect(body?.style.height).toBe('344px')
+  })
+
+  it('counts a top fixed summary as part of the fill header', () => {
+    vi.useFakeTimers()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        height={480}
+        columns={columns}
+        dataSource={[]}
+        pagination={false}
+        summary={() => (
+          <Table.Summary fixed="top">
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
+      />,
+    )
+
+    setElementSize(container.querySelector('.ant-table-wrapper'), 'clientHeight', 480)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const header = container.querySelector('.ant-table-header')
+    const summary = container.querySelector('tfoot.ant-table-summary')
+    expect(header?.contains(summary)).toBe(true)
+    setElementSize(header, 'offsetHeight', 100)
+    setElementSize(summary, 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.height).toBe('380px')
+  })
+
+  it('keeps an ordinary summary inside the fill body without deducting its height', () => {
+    vi.useFakeTimers()
+    const { container } = render(
+      <Table<RowData>
+        rowKey="id"
+        height={480}
+        columns={columns}
+        dataSource={[]}
+        pagination={false}
+        summary={() => (
+          <Table.Summary>
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+            </Table.Summary.Row>
+          </Table.Summary>
+        )}
+      />,
+    )
+
+    setElementSize(container.querySelector('.ant-table-wrapper'), 'clientHeight', 480)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const summary = container.querySelector('tfoot.ant-table-summary')
+    setElementSize(container.querySelector('.ant-table-header'), 'offsetHeight', 56)
+    setElementSize(summary, 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    const body = container.querySelector<HTMLElement>('.ant-table-body')
+    expect(body?.contains(summary)).toBe(true)
+    expect(body?.style.height).toBe('424px')
+  })
+
+  it('preserves other fill regions with a custom prefix and a nested summary table', () => {
+    vi.useFakeTimers()
+    const summaryRow = (
+      <Table.Summary.Row>
+        <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+      </Table.Summary.Row>
+    )
+    const { container } = render(
+      <ConfigProvider prefixCls="custom">
+        <Table<RowData>
+          rowKey="id"
+          height={600}
+          columns={columns}
+          dataSource={data}
+          pagination={{ pageSize: 1 }}
+          title={() => 'Title'}
+          footer={() => 'Footer'}
+          summary={() => (
+            <Table.Summary fixed="bottom">
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={2}>
+                  <Table<RowData>
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={data}
+                    pagination={false}
+                    summary={() => <Table.Summary>{summaryRow}</Table.Summary>}
+                  />
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
+            </Table.Summary>
+          )}
+        />
+      </ConfigProvider>,
+    )
+
+    const wrapper = container.querySelector('.custom-table-wrapper')
+    setElementSize(wrapper, 'clientHeight', 600)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    setElementSize(container.querySelector('.custom-table-title'), 'offsetHeight', 32)
+    setElementSize(container.querySelector('.custom-table-header'), 'offsetHeight', 56)
+    setElementSize(container.querySelector('.custom-table-footer'), 'offsetHeight', 40)
+    const pagination = container.querySelector<HTMLElement>('.custom-table-pagination')!
+    setElementSize(pagination, 'offsetHeight', 32)
+    pagination.style.marginBlock = '0'
+    pagination.style.marginTop = '10px'
+    pagination.style.marginBottom = '10px'
+    setElementSize(container.querySelector('div.custom-table-summary'), 'offsetHeight', 120)
+    const summaries = container.querySelectorAll('tfoot.custom-table-summary')
+    expect(summaries).toHaveLength(2)
+    setElementSize(summaries[0], 'offsetHeight', 120)
+    setElementSize(summaries[1], 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    expect(container.querySelector<HTMLElement>('.custom-table-body')?.style.height).toBe('300px')
+  })
+
+  it('recalculates fill height when a bottom summary becomes ordinary or is removed', () => {
+    vi.useFakeTimers()
+    const summary = (fixed: boolean) => (
+      <Table.Summary fixed={fixed}>
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={2}>Total</Table.Summary.Cell>
+        </Table.Summary.Row>
+      </Table.Summary>
+    )
+    const table = (fixed: boolean, showSummary = true) => (
+      <Table<RowData>
+        rowKey="id"
+        height={480}
+        columns={columns}
+        dataSource={[]}
+        pagination={false}
+        showHeader={false}
+        summary={showSummary ? () => summary(fixed) : undefined}
+      />
+    )
+    const { container, rerender } = render(table(true))
+    setElementSize(container.querySelector('.ant-table-wrapper'), 'clientHeight', 480)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+
+    setElementSize(container.querySelector('div.ant-table-summary'), 'offsetHeight', 44)
+    setElementSize(container.querySelector('tfoot.ant-table-summary'), 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.height).toBe('436px')
+
+    rerender(table(false))
+    setElementSize(container.querySelector('tfoot.ant-table-summary'), 'offsetHeight', 44)
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+    const body = container.querySelector<HTMLElement>('.ant-table-body')
+    expect(body?.contains(container.querySelector('tfoot.ant-table-summary'))).toBe(true)
+    expect(body?.style.height).toBe('480px')
+
+    rerender(table(false, false))
+    flushResizeObservers()
+    act(() => vi.runOnlyPendingTimers())
+    expect(container.querySelector('.ant-table-summary')).toBeNull()
+    expect(container.querySelector<HTMLElement>('.ant-table-body')?.style.height).toBe('480px')
+  })
+
   it('passes the measured fill height to rc-table VirtualList', () => {
     vi.useFakeTimers()
     const virtualData = Array.from({ length: 100 }, (_, index) => ({

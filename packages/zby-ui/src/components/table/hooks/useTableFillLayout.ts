@@ -77,12 +77,16 @@ function getOwnedNonBodyNodes(
   prefixCls: string,
   bodyNode: HTMLElement | null,
 ) {
-  return getOwnedElements(root, prefixCls, NON_BODY_SELECTORS).filter((node) => {
+  return getOwnedElements(root, prefixCls, NON_BODY_SELECTORS).filter((node, _index, nodes) => {
     if (!node.classList.contains(`${prefixCls}-summary`)) {
       return true
     }
 
-    return !bodyNode?.contains(node)
+    // 固定合计的 tfoot 已包含在合计容器或表头的高度中，不能重复扣除。
+    return (
+      !bodyNode?.contains(node) &&
+      !nodes.some((parent) => parent !== node && parent.contains(node))
+    )
   })
 }
 
