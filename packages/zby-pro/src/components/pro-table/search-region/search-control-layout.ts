@@ -259,7 +259,7 @@ export function resolveAutoWidthMaxTagCount(props: SearchControlProps, value: un
 }
 
 function isMultipleControl(props: SearchControlProps) {
-  return props.mode === 'multiple' || props.multiple === true
+  return props.mode === 'multiple' || props.mode === 'tags' || props.multiple === true
 }
 
 function collectOptions(props: SearchControlProps) {

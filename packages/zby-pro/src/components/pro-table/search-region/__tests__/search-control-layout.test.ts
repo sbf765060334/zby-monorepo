@@ -90,6 +90,25 @@ describe('getAutoWidthKind', () => {
 })
 
 describe('getSelectMeasurePlan', () => {
+  it('measures tags as separate labels including freely entered values', () => {
+    expect(
+      getSelectMeasurePlan(
+        { mode: 'tags', options: [{ value: '12', label: '订单12' }] },
+        ['12', '232323'],
+        'Select',
+      ),
+    ).toEqual({ labels: ['订单12', '232323'], mode: 'tags', restCount: 0 })
+  })
+
+  it.each([
+    { maxTagCount: 0, labels: [], restCount: 2 },
+    { maxTagCount: 1, labels: ['12'], restCount: 1 },
+    { maxTagCount: 'responsive', labels: ['12', '232323'], restCount: 0 },
+  ])('respects maxTagCount=$maxTagCount when measuring tags', ({ maxTagCount, labels, restCount }) => {
+    expect(getSelectMeasurePlan({ mode: 'tags', maxTagCount }, ['12', '232323'], 'Select'))
+      .toEqual({ labels, mode: 'tags', restCount })
+  })
+
   it('joins cascader single value as a full path', () => {
     expect(
       getSelectMeasurePlan({ options: REGION_OPTIONS }, ['east', 'sh'], 'Cascader'),
@@ -209,6 +228,20 @@ describe('getSelectMeasurePlan', () => {
 })
 
 describe('resolveInlineSearchControlStyle', () => {
+  it.each([TOKEN, COMPACT_TOKEN])('sizes tags like multiple selections at fontSize=$fontSize', (token) => {
+    for (const value of [[], ['12'], ['12', '232323']]) {
+      const props = { placeholder: '请输入采购订单' }
+      const tags = resolveInlineSearchControlStyle('select', { ...props, mode: 'tags' }, value, token, 'Select')
+      const multiple = resolveInlineSearchControlStyle('select', { ...props, mode: 'multiple' }, value, token, 'Select')
+      expect(tags).toEqual(multiple)
+    }
+
+    const measure = (value: string[]) => resolveInlineSearchControlStyle('select', { mode: 'tags' }, value, token, 'Select')
+    expect(measure(['12', '232323']).width).toBeGreaterThan(measure(['12']).width as number)
+    expect(resolveInlineSearchControlStyle('select', { mode: 'tags', style: { width: 280 } }, ['12'], token, 'Select'))
+      .toEqual({ width: 280 })
+  })
+
   it('sizes every auto-width control and caps it at the container', () => {
     const selectStyle = resolveInlineSearchControlStyle(
       'select',
@@ -457,10 +490,10 @@ describe('resolveInlineSearchControlStyle', () => {
 })
 
 describe('resolveAutoWidthMaxTagCount', () => {
-  it('turns responsive into the selected count so overflow does not reserve a rest tag', () => {
+  it.each(['multiple', 'tags'])('turns responsive into the selected count for mode=%s', (mode) => {
     expect(
       resolveAutoWidthMaxTagCount(
-        { maxTagCount: 'responsive', mode: 'multiple', options: LABEL_OPTIONS },
+        { maxTagCount: 'responsive', mode, options: LABEL_OPTIONS },
         ['east', 'urgent', 'bonded', 'fragile'],
       ),
     ).toBe(4)
