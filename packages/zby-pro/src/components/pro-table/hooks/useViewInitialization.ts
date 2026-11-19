@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   ProViewManagementAdapter,
@@ -13,7 +13,7 @@ import type { ProTableController, ProTableQueryRecord, ProTableViewSnapshot } fr
 import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewState, ProTableViewStore } from '../store'
 import { mergeViewQueryWithOverlay, PRO_TABLE_DEFAULT_VIEW_ID } from '../utils'
-import { consumeProTableQueryOverlay, ignoreProTableRequestError } from '../controller'
+import { consumeProTableQueryOverlay } from '../controller'
 
 type ViewInitializationParams<RecordType, Query extends ProTableQueryRecord, Summary> = {
   controller: ProTableController<RecordType, Query, Summary>
@@ -31,6 +31,7 @@ type ViewInitializationResult = {
   error?: unknown
   loading: boolean
   ready: boolean
+  refetch?: boolean
 }
 
 const EMPTY_STORAGE_STATE = {
@@ -45,6 +46,7 @@ type ViewSession = {
 
 // 页面可以缓存外部 controller；视图运行状态跟随它存活，不持有页面 DOM 或弹窗状态。
 const viewSessions = new WeakMap<object, ViewSession>()
+const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 export function useViewInitialization<RecordType, Query extends ProTableQueryRecord, Summary>({
   controller,
@@ -55,23 +57,21 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
   viewManagementAdapter,
   viewManagementInstanceId,
 }: ViewInitializationParams<RecordType, Query, Summary>) {
-  const applyContextRef = useRef({
-    buildSystemDefaultSnapshot,
-    controller,
-    normalizeSnapshotForCurrentSchema,
-    viewStore,
-  })
-  applyContextRef.current = {
-    buildSystemDefaultSnapshot,
-    controller,
-    normalizeSnapshotForCurrentSchema,
-    viewStore,
-  }
   const [retryVersion, setRetryVersion] = useState(0)
   const initializationScope = useMemo(
-    () => ({ controller, viewManagementAdapter, viewManagementInstanceId, viewsEnabled }),
-    [controller, viewManagementAdapter, viewManagementInstanceId, viewsEnabled],
+    () => ({ controller, viewManagementAdapter, viewManagementInstanceId, viewsEnabled, retryVersion }),
+    [controller, retryVersion, viewManagementAdapter, viewManagementInstanceId, viewsEnabled],
   )
+  const applyContext = {
+    scope: initializationScope,
+    buildSystemDefaultSnapshot,
+    normalizeSnapshotForCurrentSchema,
+  }
+  const applyContextRef = useRef(applyContext)
+  useBrowserLayoutEffect(() => {
+    // 异步完成时使用最新已提交的字段配置；Suspense 中未提交的渲染不能改变应用目标。
+    applyContextRef.current = applyContext
+  })
   const [initialization, setInitialization] = useState<
     ViewInitializationResult & { scope: typeof initializationScope }
   >({
@@ -84,6 +84,7 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
       ...current,
       error: undefined,
       loading: true,
+      ready: false,
     }))
     setRetryVersion((version) => version + 1)
   }, [])
@@ -94,11 +95,10 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
       setInitialization({ ...result, scope: initializationScope })
     }
     const {
-      buildSystemDefaultSnapshot: buildDefaultSnapshot,
-      controller: tableController,
       normalizeSnapshotForCurrentSchema: normalizeSnapshot,
-      viewStore: store,
     } = applyContextRef.current
+    const tableController = controller
+    const store = viewStore
 
     let rememberSession = false
     const saveSession = () => {
@@ -146,11 +146,12 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
       storageState: ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
       error?: unknown,
     ) => {
-      if (cancelled) {
+      const context = applyContextRef.current
+      if (cancelled || context.scope !== initializationScope) {
         return
       }
 
-      const defaultSnapshot = buildDefaultSnapshot()
+      const defaultSnapshot = context.buildSystemDefaultSnapshot()
       const normalizedSystemViews = normalizeSystemViews([
         {
           id: PRO_TABLE_DEFAULT_VIEW_ID,
@@ -168,7 +169,7 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
             normalizedCustomViews,
           )
         : normalizedSystemViews[0]
-      const initialSnapshot = normalizeSnapshot(activeView?.snapshot ?? defaultSnapshot)
+      const initialSnapshot = context.normalizeSnapshotForCurrentSchema(activeView?.snapshot ?? defaultSnapshot)
       const overlay = consumeProTableQueryOverlay(tableController)
       const controllerState = tableController.getState()
       const actions = store.getState()
@@ -194,9 +195,6 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
           ...(hasCustomSort ? {} : { sorter: initialSnapshot.sorter ?? null }),
           committed: true,
         })
-        if (controllerState.requested === true) {
-          ignoreProTableRequestError(tableController.submitQuery({ resetPage: true }))
-        }
       }
       actions.setColumnsReady(true)
       rememberSession = viewsEnabled && error === undefined
@@ -205,6 +203,8 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
         error,
         loading: false,
         ready: true,
+        // 只记录补查意图，先让状态提交并通知 onReady，再由统一请求入口执行。
+        refetch: viewsEnabled && controllerState.requested === true,
       })
     }
 
@@ -221,26 +221,30 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
       return cleanup
     }
 
-    void viewManagementAdapter
-      .load(viewManagementInstanceId)
+    void Promise.resolve()
+      .then(() => viewManagementAdapter.load(viewManagementInstanceId))
       .then((storageState) => {
         applyLoadedStorageState(storageState)
       })
       .catch((error) => {
+        // Promise 可以用 undefined 等假值拒绝，仍必须保留失败状态并提供重试入口。
+        const loadError = error || new Error('Failed to load ProTable views.')
         applyLoadedStorageState(
           EMPTY_STORAGE_STATE as ProViewManagementStorageState<ProTableViewSnapshot<Query>>,
-          error,
+          loadError,
         )
       })
 
     return cleanup
-  }, [initializationScope, retryVersion])
+  }, [initializationScope])
 
   const matchesScope = initialization.scope === initializationScope
   return {
     error: matchesScope ? initialization.error : undefined,
     loading: matchesScope ? initialization.loading : viewsEnabled,
     ready: matchesScope && initialization.ready,
+    refetch: matchesScope && initialization.refetch === true,
+    key: initializationScope,
     retry,
   }
 }

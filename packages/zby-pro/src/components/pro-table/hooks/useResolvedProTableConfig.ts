@@ -182,7 +182,7 @@ export function useResolvedProTableConfig<
   const mergedPagination = pagination
   const mergedScroll = scroll
   const mergedHeightMode = heightMode ?? 'content'
-  const mergedAutoRequest = autoRequest ?? true
+  const mergedAutoRequest = autoRequest ?? false
   const mergedStyle = React.useMemo(() => mergeInlineStyles(style), [style])
   const prefixCls = getPrefixCls('pro-table', customizePrefixCls)
   const [hashId, cssVarCls] = useStyle(prefixCls)

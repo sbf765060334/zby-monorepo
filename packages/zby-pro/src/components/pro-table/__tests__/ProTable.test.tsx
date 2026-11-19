@@ -112,6 +112,16 @@ function createPendingCustomViewAdapter() {
   return adapter
 }
 
+function createDeferred<Value>() {
+  let resolve!: (value: Value) => void
+  let reject!: (error: Error) => void
+  const promise = new Promise<Value>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
 function viewActionRoot() {
   return document.querySelector('.ant-pro-view-management-actions') as HTMLElement | null
 }
@@ -170,11 +180,509 @@ describe('ProTable', () => {
   beforeEach(() => vi.clearAllMocks())
   afterEach(() => cleanup())
 
+  it.each([undefined, false])('does not automatically query with autoRequest=%s and still supports manual query', async (autoRequest) => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={autoRequest}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    expect(queryRequest).not.toHaveBeenCalled()
+    expect(controller.getState().requested).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: /查\s*询/ }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+  })
+
+  it.each([undefined, false])('does not automatically refetch a submitted controller with autoRequest=%s', async (autoRequest) => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    controller.setQuery({ status: 'done' })
+    await controller.submitQuery()
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={autoRequest}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([true, false])('uses controller request history when reopening a cached controller requested=%s', async (requested) => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const table = (autoRequest?: boolean) => (
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest={autoRequest}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />
+    )
+    const mounted = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    expect(queryRequest).not.toHaveBeenCalled()
+    if (requested) await act(async () => controller.submitQuery())
+    mounted.unmount()
+    renderProTable(table(true))
+    await act(async () => {})
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(adapter.load).toHaveBeenCalledTimes(1)
+  })
+
+  it('can opt into the first request after mounting without autoRequest', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const table = (autoRequest?: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query> controller={controller} autoRequest={autoRequest} columns={[]} />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table())
+    expect(queryRequest).not.toHaveBeenCalled()
+    mounted.rerender(table(true))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    mounted.rerender(table(false))
+    mounted.rerender(table(true))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('notifies onReady after defaults are committed without waiting for a request function', async () => {
+    const events: string[] = []
+    const onReady = vi.fn(({ controller }: { controller: ReturnType<typeof createProTableController<Row, Query>> }) => {
+      events.push('ready')
+      expect(controller.getState().query).toEqual({ status: 'all' })
+      expect(screen.getByRole<HTMLInputElement>('textbox', { name: /状态/ }).value).toBe('all')
+      expect(controller.getState().requestReady).toBe(false)
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controllerConfig={{ rowKey: 'id', defaultQuery: { status: 'all' } }}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        onControllerReady={() => events.push('controller')}
+        onReady={onReady}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(events).toEqual(['controller', 'ready'])
+  })
+
+  it('notifies onReady after restoring a view and before automatic query', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const events: string[] = []
+    const queryRequest = vi.fn(async () => {
+      events.push('query')
+      return { data: [], total: 0 }
+    })
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onReady = vi.fn(() => {
+      events.push('ready')
+      expect(activeViewSelectorTitle()).toBe('待处理')
+      expect(controller.getState().query.status).toBe('pending')
+      expect(queryRequest).not.toHaveBeenCalled()
+      controller.setQuery({ status: 'done' })
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(events).toEqual(['ready', 'query'])
+    expect(queryRequest).toHaveBeenCalledWith(expect.objectContaining({ status: 'done' }), expect.anything())
+  })
+
+  it.each([false, true])('does not duplicate a synchronous onReady query when controller requested=%s', async (requested) => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    if (requested) await controller.submitQuery()
+    const before = queryRequest.mock.calls.length
+    const onReady = vi.fn(() => {
+      controller.resetQuery({ status: 'done' })
+      void controller.submitQuery()
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(before + 1)
+    expect(controller.getState().query.status).toBe('done')
+    expect(controller.getState().committedQuery.status).toBe('done')
+  })
+
+  it('does not duplicate an onReady request that throws synchronously', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(() => {
+      throw new Error('query failed')
+    })
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    await expect(controller.submitQuery()).rejects.toThrow('query failed')
+    const onReady = vi.fn(() => {
+      void controller.submitQuery().catch(() => undefined)
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(2)
+  })
+
+  it('notifies onReady for cached remounts without reloading views or reacting to callback changes', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const firstReady = vi.fn()
+    const nextReady = vi.fn()
+    const table = (onReady: typeof firstReady) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            onReady={onReady}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(firstReady))
+    await waitFor(() => expect(firstReady).toHaveBeenCalledTimes(1))
+    act(() => controller.setQuery({ status: 'done' }))
+    mounted.rerender(table(nextReady))
+    expect(nextReady).not.toHaveBeenCalled()
+    mounted.unmount()
+    render(table(nextReady))
+    await waitFor(() => expect(nextReady).toHaveBeenCalledTimes(1))
+    expect(controller.getState().query.status).toBe('done')
+    expect(adapter.load).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['controller', 'scope', 'adapter'])('notifies onReady again when the %s changes', async (change) => {
+    let adapter = createPendingCustomViewAdapter()
+    let controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    let persistenceKey = 'orders'
+    const onReady = vi.fn()
+    const table = () => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            onReady={onReady}
+            persistenceKey={persistenceKey}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    if (change === 'controller') controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    if (change === 'scope') persistenceKey = 'other-orders'
+    if (change === 'adapter') adapter = createPendingCustomViewAdapter()
+    mounted.rerender(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+    expect(onReady).toHaveBeenLastCalledWith({ controller })
+  })
+
+  it.each([false, true])('notifies onReady once per mount under StrictMode with views=%s', async (views) => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onReady = vi.fn(() => {
+      void controller.submitQuery()
+    })
+    const table = () => (
+      <React.StrictMode>
+        <ProTable<Row, Query>
+          controller={controller}
+          onReady={onReady}
+          autoRequest
+          columns={[{ key: 'id', title: 'ID' }]}
+          filters={[searchInputField('status', '状态')]}
+          views={views ? { adapter } : false}
+        />
+      </React.StrictMode>
+    )
+    const mounted = renderProTable(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    mounted.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+    expect(queryRequest).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not notify onReady or query after a failed view load until retry succeeds', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    const loading = createDeferred<typeof storage>()
+    vi.mocked(adapter.load).mockReset().mockRejectedValueOnce(new Error('views unavailable')).mockReturnValueOnce(loading.promise)
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onLoadError = vi.fn()
+    const onReady = vi.fn(() => {
+      void controller.submitQuery()
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter, onLoadError }}
+      />,
+    )
+    await waitFor(() => expect(onLoadError).toHaveBeenCalledTimes(1))
+    expect(onReady).not.toHaveBeenCalled()
+    expect(queryRequest).not.toHaveBeenCalled()
+    act(() => onLoadError.mock.calls[0][1].retry())
+    expect(onReady).not.toHaveBeenCalled()
+    await act(async () => loading.resolve(storage))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(controller.getState().query.status).toBe('pending')
+  })
+
+  it('does not notify onReady for a cancelled load after the same controller remounts', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    const loading = createDeferred<typeof storage>()
+    vi.mocked(adapter.load).mockReturnValueOnce(loading.promise)
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const onReady = vi.fn()
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+      />
+    )
+    const mounted = renderProTable(table())
+    expect(onReady).not.toHaveBeenCalled()
+    mounted.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    await act(async () => loading.resolve(storage))
+    expect(onReady).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not await an asynchronous onReady callback before automatic query', async () => {
+    const gate = createDeferred<void>()
+    const events: string[] = []
+    const queryRequest = vi.fn(async () => {
+      events.push('query')
+      return { data: [], total: 0 }
+    })
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onReady = vi.fn(async () => {
+      events.push('ready')
+      await gate.promise
+      events.push('finished')
+    })
+    renderProTable(
+      <ProTable<Row, Query> controller={controller} autoRequest onReady={onReady} columns={[]} />,
+    )
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(events).toEqual(['ready', 'query'])
+    await act(async () => {
+      gate.resolve()
+      await onReady.mock.results[0].value
+    })
+    expect(events).toEqual(['ready', 'query', 'finished'])
+    expect(onReady).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([false, true])('uses the committed autoRequest=%s after a slow view initialization', async (autoRequest) => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    const loading = createDeferred<typeof storage>()
+    vi.mocked(adapter.load).mockReturnValueOnce(loading.promise)
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    await controller.submitQuery()
+    const onReady = vi.fn()
+    const table = (enabled: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            autoRequest={enabled}
+            onReady={onReady}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(!autoRequest))
+    mounted.rerender(table(autoRequest))
+    await act(async () => loading.resolve(storage))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(autoRequest ? 2 : 1)
+  })
+
+  it('waits for a request implementation when onReady submitted without one', async () => {
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const onReady = vi.fn(() => {
+      void controller.submitQuery()
+    })
+    renderProTable(
+      <ProTable<Row, Query> controller={controller} autoRequest onReady={onReady} columns={[]} />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    act(() => controller.configure({ queryRequest }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(onReady).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retain a disabled initialization refetch after onReady', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    await controller.submitQuery()
+    const onReady = vi.fn()
+    const table = (autoRequest: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            autoRequest={autoRequest}
+            onReady={onReady}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(false))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    mounted.rerender(table(true))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses the committed filter schema when a slow view becomes ready', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    const loading = createDeferred<typeof storage>()
+    vi.mocked(adapter.load).mockReturnValueOnce(loading.promise)
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onReady = vi.fn()
+    const table = (withStatus: boolean) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            controller={controller}
+            autoRequest
+            onReady={onReady}
+            columns={[{ key: 'id', title: 'ID' }]}
+            filters={withStatus ? [searchInputField('status', '状态')] : []}
+            views={{ adapter }}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(false))
+    mounted.rerender(table(true))
+    await act(async () => loading.resolve(storage))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(controller.getState().query.status).toBe('pending')
+    expect(queryRequest).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending' }), expect.anything())
+  })
+
+  it.each([undefined, null, false])('does not notify onReady when a view load rejects with %s', async (reason) => {
+    const adapter = createPendingCustomViewAdapter()
+    vi.mocked(adapter.load).mockRejectedValueOnce(reason)
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+    const onReady = vi.fn()
+    const onLoadError = vi.fn()
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        autoRequest
+        onReady={onReady}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter, onLoadError }}
+      />,
+    )
+    await waitFor(() => expect(onLoadError).toHaveBeenCalledTimes(1))
+    expect(onReady).not.toHaveBeenCalled()
+    expect(queryRequest).not.toHaveBeenCalled()
+  })
+
+  it('reports a synchronous view load error without notifying onReady', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    vi.mocked(adapter.load).mockImplementationOnce(() => {
+      throw new Error('synchronous view error')
+    })
+    const controller = createProTableController<Row, Query>({ rowKey: 'id' })
+    const onReady = vi.fn()
+    const onLoadError = vi.fn()
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        onReady={onReady}
+        columns={[]}
+        views={{ adapter, onLoadError }}
+      />,
+    )
+    await waitFor(() => expect(onLoadError).toHaveBeenCalledTimes(1))
+    expect(onReady).not.toHaveBeenCalled()
+  })
+
   it('creates an internal controller and performs the automatic request', async () => {
     const queryRequest = vi.fn(async () => ({ data: [{ id: '1', name: 'A' }], total: 1 }))
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[]}
       />,
@@ -193,6 +701,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controllerConfig={{
           rowKey: 'id',
           queryRequest,
@@ -223,6 +732,7 @@ describe('ProTable', () => {
     try {
       renderProTable(
         <ProTable<Row, Query>
+          autoRequest
           controllerConfig={{ rowKey: 'id', queryRequest }}
           columns={[]}
           toolbar
@@ -357,6 +867,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         ref={ref}
         columns={[]}
         rowSelection={{}}
@@ -389,6 +900,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[
           {
@@ -613,6 +1125,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controllerConfig={{
           rowKey: 'id',
           defaultQuery: { status: 'all' },
@@ -682,6 +1195,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[{ key: 'id', title: 'ID' }]}
         toolbar
@@ -928,6 +1442,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[]}
         filters={[
@@ -1035,6 +1550,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[]}
         filters={[searchInputField('status', '状态')]}
@@ -1481,6 +1997,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: '名称' }]}
         filters={[searchInputField('status', '状态')]}
@@ -1507,6 +2024,7 @@ describe('ProTable', () => {
     })
     const table = () => (
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -1628,6 +2146,7 @@ describe('ProTable', () => {
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
         <ConfigProvider>
           <ProTable<Row, Query>
+            autoRequest
             controller={controller}
             columns={[{ key: 'id', title: 'ID' }]}
             filters={[searchInputField('status', '状态')]}
@@ -1780,6 +2299,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -1813,6 +2333,7 @@ describe('ProTable', () => {
 
     const { rerender } = renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -1828,6 +2349,7 @@ describe('ProTable', () => {
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
         <ConfigProvider>
           <ProTable<Row, Query>
+            autoRequest
             controller={controller}
             columns={[{ key: 'id', title: 'ID' }]}
             filters={[searchInputField('status', '状态')]}
@@ -1874,6 +2396,7 @@ describe('ProTable', () => {
 
     const { rerender } = renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -1889,6 +2412,7 @@ describe('ProTable', () => {
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
         <ConfigProvider>
           <ProTable<Row, Query>
+            autoRequest
             controller={controller}
             columns={[{ key: 'id', title: 'ID' }]}
             filters={[searchInputField('status', '状态')]}
@@ -1914,6 +2438,7 @@ describe('ProTable', () => {
 
     const { rerender } = renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         views={{ adapter }}
@@ -1926,6 +2451,7 @@ describe('ProTable', () => {
       <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
         <ConfigProvider>
           <ProTable<Row, Query>
+            autoRequest
             controller={controller}
             columns={[
               { key: 'id', title: 'ID' },
@@ -1971,6 +2497,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -1999,6 +2526,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -2037,6 +2565,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2083,6 +2612,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2126,6 +2656,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2168,6 +2699,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2217,6 +2749,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2233,6 +2766,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controllerConfig={{ rowKey: 'id', queryRequest }}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -2255,6 +2789,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2306,6 +2841,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态'), searchInputField('owner', '负责人')]}
@@ -2353,6 +2889,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -2385,6 +2922,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[searchInputField('status', '状态')]}
@@ -2416,6 +2954,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: '名称' }]}
         filters={[searchInputField('status', '状态')]}
@@ -2456,6 +2995,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[
           { key: 'id', title: 'ID' },
@@ -2501,6 +3041,7 @@ describe('ProTable', () => {
 
     renderProTable(
       <ProTable<Row, Query>
+        autoRequest
         controller={controller}
         columns={[{ key: 'id', title: 'ID' }]}
         filters={[

@@ -30,6 +30,7 @@ import { TableSettingsMount } from './table-settings'
 import {
   useAutoRequest,
   useProTableFullscreen,
+  useProTableReady,
   useResolvedProTableConfig,
   useViewInitialization,
   useViewStoreSelector,
@@ -70,6 +71,7 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     controller: controllerProp,
     controllerConfig,
     onControllerReady,
+    onReady,
     columns,
     views,
     toolbar,
@@ -203,12 +205,6 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     viewManagementInstanceId: viewPersistence.viewManagementInstanceId,
   })
 
-  useAutoRequest({
-    autoRequest: resolvedConfig.mergedAutoRequest,
-    controller,
-    ready: viewInitialization.ready,
-  })
-
   const columnsStateActions = useColumnsState({
     columnSetting: resolvedConfig.mergedSetting === false
       ? false
@@ -222,6 +218,21 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     filters,
     viewStore,
     viewInitializationReady: viewInitialization.ready,
+  })
+  const initializationSucceeded = viewInitialization.ready && viewInitialization.error === undefined
+  const canAutoRequest = useProTableReady({
+    controller,
+    initializationKey: viewInitialization.key,
+    ready: initializationSucceeded,
+    onReady,
+  })
+  useAutoRequest({
+    autoRequest: resolvedConfig.mergedAutoRequest,
+    controller,
+    ready: initializationSucceeded,
+    requestKey: viewInitialization.key,
+    refetch: viewInitialization.refetch,
+    canRequest: canAutoRequest,
   })
   const viewsEnabled = resolvedConfig.mergedViews !== false
   const settingEnabled = resolvedConfig.mergedSetting !== false

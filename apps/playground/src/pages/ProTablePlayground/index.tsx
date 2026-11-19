@@ -710,6 +710,7 @@ export default function ProTablePlayground() {
   return (
     <ProLayoutContentContainer mode="fill">
       <ProTable<PlaygroundRow, PlaygroundQuery>
+        autoRequest
         controllerConfig={{
           rowKey: 'id',
           queryRequest: queryOrders,

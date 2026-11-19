@@ -340,6 +340,7 @@ function PageSample(props: { prefixCls: string }) {
       >
         <ProLayoutContentContainer mode="fill" style={{ flex: 1, minHeight: 0 }}>
           <ProTable<PreviewRow, PreviewQuery>
+            autoRequest
             columnResize={false}
             columns={columns}
             controllerConfig={controllerConfig}

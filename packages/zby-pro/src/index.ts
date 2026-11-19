@@ -100,6 +100,7 @@ export type {
   ProTableExpandable,
   ProTableProps,
   ProTableRef,
+  ProTableReadyInfo,
   ProTableRowSelection,
   ProTableTableChange,
   ProTableColumnState,
