@@ -11,7 +11,7 @@ import type { ActionSize } from './layout'
 
 const DEFAULT_MORE_ARROW = <DownOutlined aria-hidden />
 const EXPOSED_BUTTON_STYLE = { paddingInline: 0, marginInline: 0 }
-const MIN_VISIBLE_TEXT_EM = 2
+const MIN_VISIBLE_TEXT_EM = 3
 
 function isTooltipProps(tooltip: ProTableActionTooltip): tooltip is Omit<TooltipProps, 'children'> {
   return (

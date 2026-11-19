@@ -57,6 +57,41 @@ function renderActions(ui: React.ReactElement) {
 }
 
 describe('ProTableActions', () => {
+  it.each([
+    { fontSize: 14, layout: undefined },
+    { fontSize: 16, layout: undefined },
+    { fontSize: 14, layout: { maxRows: 3, maxColumns: 2 } },
+    { fontSize: 16, layout: { maxRows: 3, maxColumns: 2 } },
+  ])('collapses below 3em of label space and recovers for %j', ({ fontSize, layout }) => {
+    const minimum = fontSize * 3
+    // 网格两列各保留 3em；数量模式给更多预留 20px 及 4px 间距。
+    const threshold = layout ? minimum * 2 + 8 : minimum + 20 + 4
+    let available = threshold
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => available)
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.textContent === '入口' ? 20 : 100
+    })
+    const { container } = renderActions(
+      <ProTableActions
+        width="100%"
+        maxVisibleCount={1}
+        layout={layout}
+        actions={Array.from({ length: 6 }, (_, key) => ({ key, label: `较长操作${key}`, style: { fontSize, borderWidth: 0 } }))}
+        moreText="入口"
+        moreButtonProps={{ icon: null, style: { borderWidth: 0 } }}
+      />,
+    )
+    const exposed = () => container.querySelectorAll('[data-action-slot]:not([aria-hidden])').length
+    expect(exposed()).toBe(layout ? 6 : 1)
+    available--
+    TestResizeObserver.resize()
+    expect(exposed()).toBe(layout ? 2 : 0)
+    if (layout) expect((container.querySelector('.ant-pro-table-actions')!.firstElementChild as HTMLElement).style.gridTemplateColumns).toBe('repeat(1, minmax(0, 1fr))')
+    available = threshold
+    TestResizeObserver.resize()
+    expect(exposed()).toBe(layout ? 6 : 1)
+  })
+
   it('prioritizes layout over maxVisibleCount and filters hidden actions before counting', () => {
     const { container } = renderActions(
       <ProTableActions
@@ -89,11 +124,11 @@ describe('ProTableActions', () => {
     )
     const exposed = () => screen.getAllByRole('button').filter((button) => button.textContent !== '更多入口')
     expect(exposed()).toHaveLength(5)
-    available = 120
+    available = 160
     TestResizeObserver.resize()
     expect(exposed()).toHaveLength(layout ? 3 : 1)
     expect(exposed()[0].textContent).toBe('操作0')
-    available = 80
+    available = 100
     TestResizeObserver.resize()
     expect(exposed()).toHaveLength(1)
     available = 30
