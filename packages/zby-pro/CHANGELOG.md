@@ -1,5 +1,23 @@
 # @zby/pro
 
+## 4.1.0
+
+### Minor Changes
+
+- components/pro-table/ProTable.tsx：接入挂载时恢复所选视图策略，并向 ref 和 onReady 暴露同一个 restoreActiveView 方法。
+- components/pro-table/interface.ts：新增 views.restoreOnMount、autoRequest="onMount" 及 restoreActiveView 类型，补充默认行为、调用时机与异常约定。
+- components/pro-table/hooks/useResolvedProTableConfig.ts：解析新增的自动查询策略，保持默认不查询。
+- components/pro-table/hooks/useAutoRequest.ts：支持每轮成功初始化后自动查询一次，覆盖缓存重挂，保留原首次查询及补查规则。
+- components/pro-table/hooks/useProTableReady.ts：在就绪通知中提供 restoreActiveView，继续避免回调同步查询与自动查询重复执行。
+- components/pro-table/hooks/useRestoreActiveView.ts：提供稳定的恢复入口，读取最新已提交上下文，在未就绪、视图关闭或卸载后拒绝调用。
+- components/pro-table/hooks/useViewInitialization.ts：显式开启恢复时应用所选视图的完整保存快照，缓存重挂丢弃临时条件及旧 queryOverlay。
+- components/pro-table/hooks/index.ts：导出内部主动恢复 hook。
+- components/pro-table/view-management/useViewPersistence.ts：统一快照恢复逻辑，主动恢复只还原条件、排序及列和筛选偏好，不隐式查询或保存。
+- components/pro-table/controller.ts：恢复视图时立即作废在途请求，防止忽略 AbortSignal 的旧请求晚返回后覆盖或回滚新状态。
+- components/pro-table/store/view-store.ts：增加临时恢复轮次标识，通知表格清除未写入视图偏好的拖拽列宽。
+- components/pro-table/table-region/useProTableColumnResize.ts：恢复视图时清除非受控临时列宽，同时保留业务受控列宽的优先级。
+- `components/pro-table/__tests__/ProTable.test.tsx`：覆盖缓存重挂恢复、默认视图、主动恢复、初始化及卸载边界、请求失败和竞态、StrictMode 去重与临时列宽恢复。
+
 ## 4.0.0
 
 ### Major Changes
