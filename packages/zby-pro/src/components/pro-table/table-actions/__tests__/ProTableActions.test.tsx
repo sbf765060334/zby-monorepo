@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { ZbyIntlProvider } from '@zby/intl'
 import { ConfigProvider, theme } from 'antd'
 import * as React from 'react'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { zbyProIntlResources } from '../../../../locale/intl-resources'
 import { ProTableActions } from '..'
@@ -30,6 +30,14 @@ afterAll(() => {
   vi.stubGlobal('ResizeObserver', originalResizeObserver)
 })
 
+beforeEach(() => {
+  // jsdom 不执行布局；没有单独模拟尺寸的交互测试使用稳定的可用宽度。
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+    const width = Number.parseFloat(this.style.width)
+    return Number.isFinite(width) ? width : 320
+  })
+})
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
@@ -49,10 +57,77 @@ function renderActions(ui: React.ReactElement) {
 }
 
 describe('ProTableActions', () => {
+  it('prioritizes layout over maxVisibleCount and filters hidden actions before counting', () => {
+    const { container } = renderActions(
+      <ProTableActions
+        layout={{ maxRows: 2, maxColumns: 1 }}
+        maxVisibleCount={0}
+        actions={[{ key: 'hidden', label: '隐藏', show: false }, ...actions, { key: 'third', label: '第三项' }]}
+      />,
+    )
+    expect(screen.getByRole('button', { name: '查看' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '编辑' })).toBeNull()
+    expect(screen.getByRole('button', { name: '更多操作' })).toBeTruthy()
+    expect(container.querySelector('.ant-pro-table-actions')?.firstElementChild?.getAttribute('style')).toContain('repeat(1, max-content)')
+  })
+
+  it.each([undefined, { maxRows: 2, maxColumns: 3 }])('shrinks, collapses and recovers the ordered prefix for %j', (layout) => {
+    let available = 400
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => available)
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.textContent === '更多入口' ? 36 : 100
+    })
+    const { container } = renderActions(
+      <ProTableActions
+        width="100%"
+        maxVisibleCount={5}
+        layout={layout}
+        actions={Array.from({ length: 7 }, (_, key) => ({ key, label: `操作${key}`, style: { fontSize: 20, borderWidth: 0 } }))}
+        moreText="更多入口"
+        moreButtonProps={{ icon: null, style: { borderWidth: 0 } }}
+      />,
+    )
+    const exposed = () => screen.getAllByRole('button').filter((button) => button.textContent !== '更多入口')
+    expect(exposed()).toHaveLength(5)
+    available = 120
+    TestResizeObserver.resize()
+    expect(exposed()).toHaveLength(layout ? 3 : 1)
+    expect(exposed()[0].textContent).toBe('操作0')
+    available = 80
+    TestResizeObserver.resize()
+    expect(exposed()).toHaveLength(1)
+    available = 30
+    TestResizeObserver.resize()
+    expect(exposed()).toHaveLength(0)
+    const more = screen.getByRole('button', { name: '更多入口' })
+    expect((more.parentElement as HTMLElement).style.width).toBe('30px')
+    expect(more.style.maxWidth).toBe('100%')
+    expect(more.style.overflow).toBe('hidden')
+    available = 400
+    TestResizeObserver.resize()
+    expect(exposed()).toHaveLength(5)
+    if (layout) expect((container.querySelector('.ant-pro-table-actions')!.firstElementChild as HTMLElement).style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))')
+  })
+
+  it('bounds an oversized custom more node and retains its title and accessibility label', () => {
+    const { container } = renderActions(
+      <ProTableActions
+        width={10}
+        actions={actions}
+        moreText={<span style={{ width: 500, display: 'inline-block' }}>很长的自定义入口</span>}
+        moreButtonProps={{ icon: null, title: '完整说明', 'aria-label': '展开全部操作', style: { minWidth: 500, maxWidth: 500 } }}
+      />,
+    )
+    const more = screen.getByRole('button', { name: '展开全部操作' })
+    expect(more.title).toBe('完整说明')
+    expect(more.style.minWidth).toBe('0px')
+    expect(more.style.maxWidth).toBe('100%')
+    expect((container.querySelector('[data-more-slot]') as HTMLElement).style.maxWidth).toBe('100%')
+  })
+
   it.each([
-    { rows: 2, columns: 2, direction: 'horizontal' },
-    { rows: 2, columns: 2, direction: 'vertical' },
-    { visibleCount: 'all', direction: 'vertical' },
+    { maxRows: 2, maxColumns: 2 },
+    { maxRows: 3, maxColumns: 1 },
   ] as const)('keeps actions and popconfirm on the content-sized button inside %j slots', async (layout) => {
     const onClick = vi.fn()
     const onConfirm = vi.fn()
@@ -90,7 +165,7 @@ describe('ProTableActions', () => {
     renderActions(
       <ProTableActions
         width={320}
-        layout={{ rows: 1, columns: 2 }}
+        layout={{ maxRows: 1, maxColumns: 2 }}
         actions={[
           { key: 'width', label: '指定宽度', style: { width: 80 } },
           { key: 'block', label: '整列按钮', block: true },
@@ -101,17 +176,17 @@ describe('ProTableActions', () => {
     expect(screen.getByRole('button', { name: '整列按钮' }).style.width).toBe('100%')
   })
 
-  it.each([undefined, {}, { visibleCount: 0 }])('keeps the compact ellipsis entry for %j', (layout) => {
-    const { container } = renderActions(<ProTableActions actions={actions} layout={layout} />)
-    expect(container.querySelector('.anticon-ellipsis')).toBeTruthy()
-    expect(container.querySelector('.anticon-down')).toBeNull()
-    expect(screen.queryByText('更多')).toBeNull()
+  it.each([undefined, 0])('uses text and an arrow with maxVisibleCount %s', (maxVisibleCount) => {
+    const { container } = renderActions(<ProTableActions actions={actions} maxVisibleCount={maxVisibleCount} />)
+    expect(container.querySelector('.anticon-ellipsis')).toBeNull()
+    expect(container.querySelector('.anticon-down')).toBeTruthy()
+    expect(screen.getByText('更多')).toBeTruthy()
   })
 
-  it.each([{ visibleCount: 1 }, { rows: 1, columns: 1 }] as const)('uses text and a trailing arrow for %j even after collapsing', (layout) => {
+  it.each([undefined, { maxRows: 1, maxColumns: 1 }])('uses text and a trailing arrow for %j even after collapsing', (layout) => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => 0)
     vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(() => 20)
-    const { container } = renderActions(<ProTableActions actions={actions} layout={layout} width={0} />)
+    const { container } = renderActions(<ProTableActions actions={actions} layout={layout} maxVisibleCount={1} width={0} />)
     const more = screen.getByRole('button', { name: '更多操作' })
     expect(screen.getAllByRole('button')).toHaveLength(1)
     expect(more.textContent).toBe('更多')
@@ -124,7 +199,7 @@ describe('ProTableActions', () => {
     const { container, rerender } = renderActions(
       <ProTableActions
         actions={actions}
-        layout={{ visibleCount: 1 }}
+        maxVisibleCount={1}
         moreText={<span>其他操作</span>}
         moreButtonProps={{ icon: <span data-testid="custom-more-icon">+</span>, iconPlacement: 'start' }}
       />,
@@ -133,7 +208,7 @@ describe('ProTableActions', () => {
     expect(screen.getByTestId('custom-more-icon')).toBeTruthy()
     expect(container.querySelector('.anticon-down')).toBeNull()
     expect(container.querySelector('.ant-pro-table-actions-more')?.classList.contains('ant-btn-icon-end')).toBe(false)
-    rerender(<ProTableActions actions={actions} layout={{ visibleCount: 1 }} moreText="其他操作" moreButtonProps={{ icon: null }} />)
+    rerender(<ProTableActions actions={actions} maxVisibleCount={1} moreText="其他操作" moreButtonProps={{ icon: null }} />)
     expect(screen.getByRole('button', { name: '其他操作' })).toBeTruthy()
     expect(container.querySelector('.ant-btn-icon')).toBeNull()
   })
@@ -151,7 +226,7 @@ describe('ProTableActions', () => {
       <ProTableActions
         width={width}
         style={{ boxSizing, paddingLeft: 8, paddingRight: 12, border: '2px solid transparent' }}
-        layout={{ visibleCount: 2 }}
+        maxVisibleCount={2}
         moreText={null}
         moreButtonProps={{ style: { borderWidth: 0 } }}
         actions={['A', 'B', 'C'].map((label) => ({ key: label, label, style: { borderWidth: 0 } }))}
@@ -171,7 +246,7 @@ describe('ProTableActions', () => {
       <ProTableActions
         width={140}
         style={{ padding: 10, boxSizing: 'border-box' }}
-        layout={{ rows: 1, columns: 2 }}
+        layout={{ maxRows: 1, maxColumns: 2 }}
         moreText="自定义更多"
         moreButtonProps={{ icon: null, style: { borderWidth: 0 } }}
         actions={items}
@@ -181,7 +256,7 @@ describe('ProTableActions', () => {
     rerender(
       <ProTableActions
         width={140}
-        layout={{ rows: 1, columns: 2 }}
+        layout={{ maxRows: 1, maxColumns: 2 }}
         moreText="自定义更多"
         moreButtonProps={{ icon: null, style: { borderWidth: 0 } }}
         actions={items}
@@ -205,7 +280,7 @@ describe('ProTableActions', () => {
     const onOpenChange = vi.fn()
     renderActions(
       <ProTableActions
-        layout={{ visibleCount }}
+        maxVisibleCount={visibleCount}
         record={{ id: 'order-1' }}
         index={2}
         dropdownProps={{ trigger: ['click'] }}
@@ -271,17 +346,17 @@ describe('ProTableActions', () => {
     expect(onConfirm).toHaveBeenCalledTimes(2)
   })
 
-  it.each(['horizontal', 'vertical'] as const)('fills a six-slot grid in %s order and reserves more only on overflow', (direction) => {
+  it('fills a six-slot grid in row order and reserves more only on overflow', () => {
     const gridActions = Array.from({ length: 7 }, (_, i) => ({ key: i, label: `操作${i + 1}` }))
-    const { container, rerender } = renderActions(<ProTableActions actions={gridActions} layout={{ rows: 3, columns: 2, direction }} />)
+    const { container, rerender } = renderActions(<ProTableActions actions={gridActions} layout={{ maxRows: 3, maxColumns: 2 }} />)
     expect(screen.getAllByRole('button')).toHaveLength(6)
     const slots = container.querySelectorAll<HTMLElement>('[data-action-slot]')
-    expect(slots[1].style.gridColumn).toBe(direction === 'vertical' ? '1' : '2')
-    expect(slots[1].style.gridRow).toBe(direction === 'vertical' ? '2' : '1')
+    expect(slots[1].style.gridColumn).toBe('2')
+    expect(slots[1].style.gridRow).toBe('1')
     const more = container.querySelector<HTMLElement>('[data-more-slot]')
     expect(more?.style.gridColumn).toBe('2')
     expect(more?.style.gridRow).toBe('3')
-    rerender(<ProTableActions actions={gridActions.slice(0, 6)} layout={{ rows: 3, columns: 2, direction }} />)
+    rerender(<ProTableActions actions={gridActions.slice(0, 6)} layout={{ maxRows: 3, maxColumns: 2 }} />)
     expect(screen.getAllByRole('button')).toHaveLength(6)
     expect(container.querySelector('[data-more-slot]')).toBeNull()
   })
@@ -296,7 +371,7 @@ describe('ProTableActions', () => {
       return natural[this.textContent ?? ''] ?? (this.classList.contains('ant-btn-icon') ? 16 : 0)
     })
     const items = ['A', 'B', 'C', 'D'].map((label) => ({ key: label, label, style: { borderWidth: 0 } }))
-    const { container } = renderActions(<ProTableActions width="100%" actions={items} layout={{ visibleCount: 3 }} moreText={null} moreButtonProps={{ style: { borderWidth: 0 } }} />)
+    const { container } = renderActions(<ProTableActions width="100%" actions={items} maxVisibleCount={3} moreText={null} moreButtonProps={{ style: { borderWidth: 0 } }} />)
     const slots = () => Array.from(container.querySelectorAll<HTMLElement>('[data-action-slot]'))
     expect(slots().map((slot) => slot.style.width)).toEqual(['60px', '30px', '30px'])
     expect(screen.getByRole('button', { name: 'A' }).title).toBe('A')
@@ -317,7 +392,7 @@ describe('ProTableActions', () => {
     vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.textContent === '自定义更多' ? 60 : 20
     })
-    const { container } = renderActions(<ProTableActions width={160} style={{ width: 999 }} actions={[...actions, { key: 'third', label: '第三项' }]} moreText="自定义更多" moreButtonProps={{ icon: null }} layout={{ rows: 1, columns: 2 }} />)
+    const { container } = renderActions(<ProTableActions width={160} style={{ width: 999 }} actions={[...actions, { key: 'third', label: '第三项' }]} moreText="自定义更多" moreButtonProps={{ icon: null }} layout={{ maxRows: 1, maxColumns: 2 }} />)
     const root = container.querySelector<HTMLElement>('.ant-pro-table-actions')!
     expect(root.style.width).toBe('160px')
     expect((root.firstElementChild as HTMLElement).style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))')
@@ -343,7 +418,7 @@ describe('ProTableActions', () => {
     const { container } = renderActions(
       <ProTableActions
         width={124}
-        layout={{ visibleCount: 2 }}
+        maxVisibleCount={2}
         moreText={null}
         moreButtonProps={{ style: { borderWidth: 0 } }}
         actions={[
@@ -369,7 +444,7 @@ describe('ProTableActions', () => {
     renderActions(
       <ProTableActions
         width={15}
-        layout={{ visibleCount: 'all' }}
+        maxVisibleCount={2}
         actions={[
           { key: 'a', label: 'A', style: { borderWidth: 0 } },
           { key: 'b', label: 'B', style: { borderWidth: 0 } },
@@ -383,7 +458,7 @@ describe('ProTableActions', () => {
   it('takes layout spacing from theme tokens', () => {
     const { container } = render(
       <ConfigProvider theme={{ token: { marginXXS: 6, marginXS: 12 }, algorithm: theme.darkAlgorithm }}>
-        <ProTableActions actions={actions} layout={{ rows: 2, columns: 2 }} />
+        <ProTableActions actions={actions} layout={{ maxRows: 2, maxColumns: 2 }} />
       </ConfigProvider>,
     )
     const grid = container.querySelector('.ant-pro-table-actions')!.firstElementChild as HTMLElement
@@ -402,20 +477,20 @@ describe('ProTableActions', () => {
         <ZbyIntlProvider locale={locale} resources={zbyProIntlResources}>
           <ConfigProvider theme={{ algorithm }}>
             <ProTableActions actions={actions} />
-            <ProTableActions actions={actions} layout={{ visibleCount: 1 }} />
+            <ProTableActions actions={actions} maxVisibleCount={1} />
           </ConfigProvider>
         </ZbyIntlProvider>,
       )
       expect(screen.getAllByRole('button', { name: label })).toHaveLength(2)
-      expect(screen.getByText(text)).toBeTruthy()
+      expect(screen.getAllByText(text)).toHaveLength(2)
       unmount()
     }
   })
 
-  it('renders a horizontal ellipsis more trigger without copy by default', () => {
+  it('renders more text and a trailing arrow by default', () => {
     renderActions(<ProTableActions actions={actions} />)
 
-    expect(screen.queryByText('更多')).toBeNull()
+    expect(screen.getByText('更多')).toBeTruthy()
     const moreButton = screen.getByRole('button', { name: '更多操作' })
     expect(moreButton).toBeTruthy()
     expect(moreButton.getAttribute('title')).toBeNull()
@@ -495,7 +570,7 @@ describe('ProTableActions', () => {
     ))
     renderActions(
       <ProTableActions
-        layout={{ visibleCount: 1 }}
+        maxVisibleCount={1}
         record={{ status: 'open' }}
         index={2}
         dropdownProps={{ open: true }}
@@ -518,7 +593,7 @@ describe('ProTableActions', () => {
   it('removes horizontal padding and margin from exposed buttons', () => {
     renderActions(
       <ProTableActions
-        layout={{ visibleCount: 1 }}
+        maxVisibleCount={1}
         actions={[
           { key: 'view', label: '查看' },
           { key: 'edit', label: '编辑' },
@@ -533,10 +608,10 @@ describe('ProTableActions', () => {
     }
   })
 
-  it('shows every action horizontally with the all count', () => {
+  it('shows every action horizontally up to maxVisibleCount', () => {
     const { container } = renderActions(
       <ProTableActions
-        layout={{ visibleCount: 'all' }}
+        maxVisibleCount={2}
         actions={[
           { key: 'view', label: '查看' },
           { key: 'edit', label: '编辑' },
@@ -555,10 +630,10 @@ describe('ProTableActions', () => {
     expect(space?.getAttribute('style') ?? '').not.toContain('overflow')
   })
 
-  it('stacks every action vertically with the all count', () => {
+  it('stacks actions vertically with a single grid column', () => {
     const { container } = renderActions(
       <ProTableActions
-        layout={{ visibleCount: 'all', direction: 'vertical' }}
+        layout={{ maxRows: 2, maxColumns: 1 }}
         actions={[
           { key: 'view', label: '查看' },
           { key: 'edit', label: '编辑' },
@@ -570,7 +645,7 @@ describe('ProTableActions', () => {
     expect(screen.getByRole('button', { name: '查看' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '编辑' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: '更多操作' })).toBeNull()
-    expect(space?.firstElementChild?.getAttribute('style')).toContain('flex-direction: column')
+    expect(space?.firstElementChild?.getAttribute('style')).toContain('grid-template-columns: repeat(1, max-content)')
   })
 
   it('hides an action and the more trigger when show returns false', () => {

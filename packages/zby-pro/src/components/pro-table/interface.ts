@@ -37,21 +37,23 @@ export interface ProTableActionItem<RecordType = Record<string, unknown>>
 }
 
 export type ProTableActionsLayout = {
-  direction?: 'horizontal' | 'vertical'
-} & (
-  | { visibleCount?: number | 'all'; rows?: never; columns?: never }
-  | { rows: number; columns: number; visibleCount?: never }
-)
+  /** 最多行数；溢出时容量包含更多入口。 */
+  maxRows: number
+  /** 最多列数；宽度不足时允许减少列数，始终按行填充。 */
+  maxColumns: number
+}
 
 export interface ProTableActionsProps<RecordType = Record<string, unknown>> {
   actions: Array<ProTableActionItem<RecordType> | false | null | undefined>
   record?: RecordType
   index?: number
-  /** 数量模式默认全部收起；网格容量包含溢出时的更多入口。 */
+  /** 网格行列上限；配置后忽略 maxVisibleCount。maxColumns: 1 表示纵向排列。 */
   layout?: ProTableActionsLayout
+  /** 外露操作数量上限，未传或为 0 时全部收纳；宽度不足时从末尾逐项收纳。 */
+  maxVisibleCount?: number
   /** 整体宽度。数字为 px；优先于 style.width。 */
   width?: CSSProperties['width']
-  /** 自定义更多入口文字。默认收起模式无文字，外露数量/网格模式显示本地化的“更多”。 */
+  /** 自定义更多入口内容，默认显示本地化的“更多”和向下图标。受约束时文字省略或裁剪。 */
   moreText?: ReactNode
   moreButtonProps?: Omit<ButtonProps, 'children' | 'onClick'>
   dropdownProps?: Omit<DropdownProps, 'children' | 'menu'>

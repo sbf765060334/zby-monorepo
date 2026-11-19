@@ -1,16 +1,17 @@
 import * as React from 'react'
-import { DownOutlined, EllipsisOutlined } from '@ant-design/icons'
+import { DownOutlined } from '@ant-design/icons'
 import { useIntl } from '@zby/intl'
 import { Button, ConfigProvider, Dropdown, Popconfirm, theme, Tooltip } from 'antd'
 import type { MenuProps, TooltipProps } from 'antd'
 import { clsx } from 'clsx'
 
 import type { ProTableActionInfo, ProTableActionItem, ProTableActionsProps, ProTableActionTooltip } from '../interface'
-import { distributeActionWidths, normalizeActionCount } from './layout'
+import { normalizeActionCount, resolveActionLayout } from './layout'
+import type { ActionSize } from './layout'
 
-const DEFAULT_MORE_ICON = <EllipsisOutlined />
 const DEFAULT_MORE_ARROW = <DownOutlined aria-hidden />
 const EXPOSED_BUTTON_STYLE = { paddingInline: 0, marginInline: 0 }
+const MIN_VISIBLE_TEXT_EM = 2
 
 function isTooltipProps(tooltip: ProTableActionTooltip): tooltip is Omit<TooltipProps, 'children'> {
   return (
@@ -52,15 +53,19 @@ function collectText(node: React.ReactNode): string {
 
 // 文案被压缩后，scrollWidth 仍保留其完整宽度；图标、gap、padding 和边框也计入需求。
 // 这里按 Button 的直接子元素估算自然宽度，不通过克隆 DOM 测量。
-function naturalButtonWidth(slot: HTMLElement): number {
+function measureButton(slot: HTMLElement): ActionSize {
   const button = slot.querySelector('button')
-  if (!button) return 0
+  if (!button) return { natural: 0, minimum: 0 }
   const css = getComputedStyle(button)
   const children = Array.from(button.children) as HTMLElement[]
   const content = children.reduce((sum, child) => sum + Math.max(child.scrollWidth, child.getBoundingClientRect().width), 0)
-  return content + Math.max(0, children.length - 1) * (Number.parseFloat(css.columnGap) || 0) +
+  const natural = content + Math.max(0, children.length - 1) * (Number.parseFloat(css.columnGap) || 0) +
     (Number.parseFloat(css.paddingLeft) || 0) + (Number.parseFloat(css.paddingRight) || 0) +
     (Number.parseFloat(css.borderLeftWidth) || 0) + (Number.parseFloat(css.borderRightWidth) || 0)
+  const label = button.querySelector<HTMLElement>('[data-action-label]')
+  const textWidth = label ? Math.max(label.scrollWidth, label.getBoundingClientRect().width) : 0
+  const fontSize = Number.parseFloat(label ? getComputedStyle(label).fontSize : css.fontSize) || Number.parseFloat(css.fontSize) || 14
+  return { natural, minimum: natural - textWidth + Math.min(textWidth, fontSize * MIN_VISIBLE_TEXT_EM) }
 }
 
 export function ProTableActions<RecordType>({
@@ -68,6 +73,7 @@ export function ProTableActions<RecordType>({
   record,
   index,
   layout,
+  maxVisibleCount,
   width,
   moreText,
   moreButtonProps,
@@ -86,43 +92,33 @@ export function ProTableActions<RecordType>({
     if (!item) return false
     return isActionShown(item, record, index)
   })
-  const grid = layout?.rows !== undefined && layout.columns !== undefined
-  const rows = grid ? normalizeActionCount(layout.rows, 1) : 1
-  const columns = grid ? normalizeActionCount(layout.columns, 1) : 1
-  const direction = layout?.direction ?? 'horizontal'
-  const capacity = rows * columns
+  const grid = layout?.maxRows !== undefined && layout.maxColumns !== undefined
+  const maxRows = grid ? normalizeActionCount(layout.maxRows, 1) : 1
+  const maxColumns = grid ? normalizeActionCount(layout.maxColumns, 1) : 1
+  const capacity = maxRows * maxColumns
   // 数量模式只计算业务操作；网格容量包含更多入口，确有溢出时才预留最后一格。
   const visibleLimit = grid
     ? (items.length > capacity ? capacity - 1 : items.length)
-    : layout?.visibleCount === 'all' ? items.length : normalizeActionCount(layout?.visibleCount)
-  // 入口外观由配置模式决定，极窄收起时仍保持同一种入口，避免测量宽度反复切换。
-  const useTextMore = grid || layout?.visibleCount === 'all' || visibleLimit > 0
-  const resolvedMoreText = moreText === undefined && useTextMore
+    : Math.min(items.length, normalizeActionCount(maxVisibleCount))
+  const resolvedMoreText = moreText === undefined
     ? intl.getMessage('zby.pro.table.more', '更多')
     : moreText
   const candidates = items.slice(0, visibleLimit)
   const rootRef = React.useRef<HTMLDivElement>(null)
-  const [measurement, setMeasurement] = React.useState<{ available: number; widths: number[]; more: number }>({ available: 0, widths: [], more: 0 })
+  const [measurement, setMeasurement] = React.useState<{ available: number; sizes: ActionSize[]; more: number }>()
   const constrained = (width ?? style?.width) !== undefined
   const gap = grid ? token.marginXS : token.marginXXS
-  const cellWidth = (measurement.available - (columns - 1) * gap) / columns
-  const hasOverflow = items.length > candidates.length
-  const measured = measurement.more > 0
-  const naturalTotal = measurement.widths.reduce((sum, value) => sum + value, 0) +
-    (hasOverflow ? measurement.more : 0) + Math.max(0, candidates.length + Number(hasOverflow) - 1) * gap
-  // 普通模式需先判断是否真的放不下，避免隐藏的更多入口挤掉本来能完整显示的操作。
-  // 极窄时整组收进菜单；网格则要求更多入口能完整放入所在列。
-  const collapsed = constrained && measured && items.length > 0 && (grid
-    ? hasOverflow && cellWidth < measurement.more
-    : direction === 'horizontal' && naturalTotal > measurement.available && measurement.available <= measurement.more + candidates.length * gap)
-  const visible = collapsed ? [] : candidates
-  const overflow = collapsed ? items : items.slice(visibleLimit)
-  // 扣除实际存在的更多入口和所有间距后，再公平分配业务按钮的空间。
-  // 没有溢出操作时，不为仅用于测量的隐藏入口预留宽度。
-  const widths = constrained && !grid && direction === 'horizontal' && measured
-    ? distributeActionWidths(measurement.widths, measurement.available - (hasOverflow ? measurement.more : 0) -
-        Math.max(0, candidates.length + Number(hasOverflow) - 1) * gap)
-    : undefined
+  const resolved = resolveActionLayout({
+    actionCount: items.length,
+    limit: visibleLimit,
+    grid: grid ? { maxRows, maxColumns } : undefined,
+    available: constrained && measurement?.sizes.length === candidates.length ? measurement.available : undefined,
+    sizes: measurement?.sizes ?? [],
+    more: measurement?.more ?? 0,
+    gap,
+  })
+  const overflow = items.slice(resolved.visibleCount)
+  const activeGrid = grid && resolved.visibleCount > 0
 
   // 首帧绘制前测量；每次提交后重新读取，覆盖 props、语言和主题切换。
   // ResizeObserver 负责盒子尺寸变化；MutationObserver 补充盒子未变时的内部文案更新。
@@ -138,12 +134,12 @@ export function ProTableActions<RecordType>({
         // clientWidth 已排除边框，但包含 padding；两种盒模型都需扣除实际内边距。
         available: Math.max(0, root.clientWidth - (Number.parseFloat(rootStyle.paddingLeft) || 0) -
           (Number.parseFloat(rootStyle.paddingRight) || 0)),
-        widths: slots.map(naturalButtonWidth),
-        more: more ? Math.max(naturalButtonWidth(more), more.querySelector('button')?.getBoundingClientRect().width ?? 0) : 0,
+        sizes: slots.map(measureButton),
+        more: more ? measureButton(more).natural : 0,
       }
       // 宽度不变时复用状态，避免“测量 → setState → 测量”的重复渲染。
-      setMeasurement((prev) => prev.available === next.available && prev.more === next.more &&
-        prev.widths.length === next.widths.length && prev.widths.every((w, i) => w === next.widths[i]) ? prev : next)
+      setMeasurement((prev) => prev?.available === next.available && prev.more === next.more &&
+        prev.sizes.length === next.sizes.length && prev.sizes.every((size, i) => size.natural === next.sizes[i].natural && size.minimum === next.sizes[i].minimum) ? prev : next)
     }
     measure()
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure)
@@ -221,17 +217,22 @@ export function ProTableActions<RecordType>({
       {...moreButtonProps}
       type={moreButtonProps?.type ?? 'link'}
       size={moreButtonProps?.size ?? 'small'}
-      style={{ ...EXPOSED_BUTTON_STYLE, ...moreButtonProps?.style }}
+      style={{
+        ...EXPOSED_BUTTON_STYLE,
+        ...moreButtonProps?.style,
+        ...(constrained ? { maxWidth: '100%', minWidth: 0, overflow: 'hidden' } : {}),
+      }}
       className={clsx(`${prefixCls}-actions-more`, moreButtonProps?.className)}
-      icon={moreButtonProps?.icon !== undefined ? moreButtonProps.icon
-        : useTextMore ? DEFAULT_MORE_ARROW : moreText === undefined ? DEFAULT_MORE_ICON : undefined}
-      iconPlacement={moreButtonProps?.iconPlacement ?? moreButtonProps?.iconPosition ?? (useTextMore ? 'end' : 'start')}
+      icon={moreButtonProps?.icon !== undefined ? moreButtonProps.icon : DEFAULT_MORE_ARROW}
+      iconPlacement={moreButtonProps?.iconPlacement ?? moreButtonProps?.iconPosition ?? 'end'}
       aria-label={
         moreButtonProps?.['aria-label'] ??
         (moreText === undefined ? moreHint : undefined)
       }
     >
-      {resolvedMoreText}
+      {resolvedMoreText !== null && resolvedMoreText !== false && (
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolvedMoreText}</span>
+      )}
     </Button>
   )
 
@@ -242,16 +243,17 @@ export function ProTableActions<RecordType>({
       style={{ display: 'inline-block', ...style, width: width ?? style?.width, minWidth: 0 }}
     >
       <div style={{
-        display: grid && !collapsed ? 'inline-grid' : 'inline-flex',
-        flexDirection: direction === 'vertical' && !grid ? 'column' : 'row',
+        display: activeGrid ? 'inline-grid' : 'inline-flex',
+        flexDirection: 'row',
         alignItems: 'start',
         columnGap: gap,
         rowGap: token.marginXXS,
-        width: constrained && !collapsed && (grid || direction === 'vertical') ? '100%' : undefined,
-        gridTemplateColumns: grid && !collapsed ? `repeat(${columns}, ${constrained ? 'minmax(0, 1fr)' : 'max-content'})` : undefined,
+        width: constrained ? '100%' : undefined,
+        gridTemplateColumns: activeGrid ? `repeat(${resolved.columns}, ${constrained ? 'minmax(0, 1fr)' : 'max-content'})` : undefined,
       }}
       >
         {candidates.map((item, position) => {
+          const hidden = position >= resolved.visibleCount
           const { key, label, show: _show, tooltip: _tooltip, popconfirm, onClick: _onClick, ...buttonProps } = item
           const button = (
             <Button
@@ -262,36 +264,35 @@ export function ProTableActions<RecordType>({
               style={{
                 ...EXPOSED_BUTTON_STYLE,
                 ...buttonProps.style,
-                ...(constrained && !collapsed ? {
+                ...(constrained ? {
                   // 槽位负责列宽和对齐；按钮仅占内容宽度，槽位留白不参与按钮点击或弹层触发。
-                  // 普通横向模式仍沿用已分配的槽位宽度；显式 width/block 保留业务的扩展意图。
-                  width: grid || direction === 'vertical'
+                  // 普通横向模式沿用分配宽度；网格保留显式 width/block 的扩展意图。
+                  width: grid
                     ? buttonProps.style?.width ?? (buttonProps.block ? '100%' : 'fit-content')
                     : '100%',
-                  maxWidth: buttonProps.style?.maxWidth ?? '100%',
+                  maxWidth: '100%',
                   minWidth: 0,
                   justifyContent: 'flex-start',
                 } : {}),
               }}
               onClick={popconfirm ? undefined : () => executeClick(item)}
             >
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+              <span data-action-label="" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
             </Button>
           )
           return (
             <div
               key={String(key)}
               data-action-slot=""
-              aria-hidden={collapsed || undefined}
+              aria-hidden={hidden || undefined}
               style={{
                 minWidth: 0,
                 flex: 'none',
-                width: constrained && !grid && direction === 'vertical' ? '100%' : widths?.[position],
-                // 显式定位保证 DOM/键盘顺序与 actions 一致；vertical 按列填充，horizontal 按行填充。
-                gridColumn: grid ? (direction === 'vertical' ? Math.floor(position / rows) : position % columns) + 1 : undefined,
-                gridRow: grid ? (direction === 'vertical' ? position % rows : Math.floor(position / columns)) + 1 : undefined,
-                // 收起时保留候选项用于测量，容器变宽后可恢复；隐藏项不占正常布局空间。
-                ...(collapsed ? { position: 'absolute', visibility: 'hidden', pointerEvents: 'none' } : {}),
+                width: constrained && !grid ? resolved.widths?.[position] : undefined,
+                gridColumn: activeGrid && !hidden ? position % resolved.columns + 1 : undefined,
+                gridRow: activeGrid && !hidden ? Math.floor(position / resolved.columns) + 1 : undefined,
+                // 保留被收纳的候选项供测量和恢复，零尺寸槽位不参与布局或触发交互。
+                ...(hidden ? { position: 'absolute', visibility: 'hidden', pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' } : {}),
               }}
             >{wrapAction(item, button)}
             </div>
@@ -303,10 +304,14 @@ export function ProTableActions<RecordType>({
             aria-hidden={!overflow.length || undefined}
             style={{
               flex: 'none',
-              gridColumn: grid && !collapsed ? (direction === 'vertical' ? Math.floor(visible.length / rows) : visible.length % columns) + 1 : undefined,
-              gridRow: grid && !collapsed ? (direction === 'vertical' ? visible.length % rows : Math.floor(visible.length / columns)) + 1 : undefined,
+              minWidth: 0,
+              maxWidth: constrained ? '100%' : undefined,
+              overflow: constrained ? 'hidden' : undefined,
+              width: constrained ? resolved.moreWidth : undefined,
+              gridColumn: activeGrid ? resolved.visibleCount % resolved.columns + 1 : undefined,
+              gridRow: activeGrid ? Math.floor(resolved.visibleCount / resolved.columns) + 1 : undefined,
               // 即使没有溢出，也保留一个不参与布局的入口以测量极窄兜底所需的最小宽度。
-              ...(!overflow.length ? { position: 'absolute', visibility: 'hidden', pointerEvents: 'none' } : {}),
+              ...(!overflow.length ? { position: 'absolute', visibility: 'hidden', pointerEvents: 'none', width: 0, height: 0, overflow: 'hidden' } : {}),
             }}
           >
             {overflow.length > 0 ? (

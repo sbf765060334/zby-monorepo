@@ -670,6 +670,7 @@ export default function ProTablePlayground() {
       fieldConfig: false,
       render: (_value, record, index) => (
         <ProTableActions
+          width="100%"
           record={record}
           index={index}
           actions={[

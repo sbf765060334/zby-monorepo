@@ -1,4 +1,10 @@
+---
+status: superseded by ADR-0002
+---
+
 # ProTableActions 统一展示布局配置
+
+本记录为历史决策，当前配置与收纳策略见 [ADR-0002](./0002-pro-table-actions-simplified-layout.md)。
 
 ProTableActions 使用 `layout` 统一管理操作数量、全部展示与网格排列，直接移除顶层 `visibleCount` 和 `showAll`，不保留过渡属性，避免并行维护两套配置。数量模式使用 `layout.visibleCount`（非负整数或 `'all'`）；网格模式使用 `rows` 与 `columns`，两种数量规则互斥。
 
