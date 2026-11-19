@@ -324,13 +324,18 @@ export type ProTableColumnValueEnum =
   | Record<string, ProTableColumnValueEnumItem>
   | Map<unknown, ProTableColumnValueEnumItem>
 
+type ProTableColumnFieldOptions = Record<string, unknown> & {
+  /** 数字、金额的 Intl 格式化选项。金额的显式小数位优先于 precision；币种和符号仍由 valueType/fieldProps 控制。 */
+  intlProps?: Intl.NumberFormatOptions
+}
+
 export type ProTableColumnFieldProps<RecordType = Record<string, unknown>> =
-  | Record<string, unknown>
+  | ProTableColumnFieldOptions
   | ((
     value: unknown,
     record: RecordType,
     index: number,
-  ) => Record<string, unknown>)
+  ) => ProTableColumnFieldOptions)
 
 export type ProTableColumnType<
   RecordType = Record<string, unknown>,

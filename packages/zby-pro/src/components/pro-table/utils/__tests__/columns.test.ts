@@ -11,6 +11,18 @@ import {
 } from '..'
 
 describe('normalizeTableColumns empty text', () => {
+  it('resolves money Intl options per row before formatting', () => {
+    const [column] = normalizeTableColumns<{ digits: number }>([{
+      dataIndex: 'amount',
+      valueType: { type: 'money', moneySymbol: false },
+      fieldProps: (_value, record) => ({ intlProps: { minimumFractionDigits: record.digits } }),
+    }]) as Array<{
+      renderText?: (value: unknown, record: { digits: number }, index: number) => unknown
+    }>
+    expect(column.renderText?.(1.2, { digits: 4 }, 0)).toBe('1.2000')
+    expect(column.renderText?.(1.2, { digits: 0 }, 1)).toBe('1.2')
+  })
+
   it('renders "-" for undefined, null and empty string', () => {
     const [column] = normalizeTableColumns([{ dataIndex: 'name', title: '名称' }]) as Array<{
       renderText?: (value: unknown, record: Record<string, unknown>, index: number) => unknown

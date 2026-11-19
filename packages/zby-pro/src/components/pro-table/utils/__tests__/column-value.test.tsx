@@ -18,6 +18,71 @@ function textOf(node: React.ReactNode) {
 }
 
 describe('formatColumnValue', () => {
+  it.each([
+    [1, '1.00'],
+    [1.2, '1.20'],
+    [1.234, '1.234'],
+    [1.23456, '1.2346'],
+    [0, '0.00'],
+    [-1.234, '-1.234'],
+    ['1.2', '1.20'],
+  ])('supports independent money fraction bounds for %s', (value, expected) => {
+    expect(formatColumnValue(value, {
+      valueType: { type: 'money', moneySymbol: false },
+      fieldProps: { intlProps: { minimumFractionDigits: 2, maximumFractionDigits: 4 } },
+    })).toBe(expected)
+  })
+
+  it.each([
+    { showSymbol: true, expected: '$1,234.567' },
+    { showSymbol: false, expected: '1,234.567' },
+    { showSymbol: false, customSymbol: 'USD ', expected: 'USD 1,234.567' },
+  ])('passes money intlProps through all symbol modes: %j', ({ showSymbol, customSymbol, expected }) => {
+    expect(formatColumnValue(1234.567, {
+      valueType: { type: 'money', currency: 'USD', locale: 'en-US', showSymbol },
+      fieldProps: { customSymbol, intlProps: { minimumFractionDigits: 2, maximumFractionDigits: 4 } },
+    })).toBe(expected)
+  })
+
+  it.each([
+    { intlProps: { minimumFractionDigits: 4 }, expected: '1.2000' },
+    { intlProps: { maximumFractionDigits: 0 }, expected: '1' },
+    { intlProps: { minimumFractionDigits: 0 }, expected: '1.2' },
+    { intlProps: { maximumFractionDigits: 4 }, expected: '1.20' },
+    { intlProps: { minimumFractionDigits: undefined, maximumFractionDigits: undefined }, expected: '1.20' },
+  ])('adjusts only implicit fraction bounds for %j', ({ intlProps, expected }) => {
+    expect(formatColumnValue(1.2, {
+      valueType: { type: 'money', moneySymbol: false },
+      fieldProps: { intlProps },
+    })).toBe(expected)
+  })
+
+  it('prioritizes explicit Intl digits over precision and retains the existing precision precedence', () => {
+    const valueType = { type: 'money', precision: 4, moneySymbol: false } as const
+    expect(formatColumnValue(1.23456, { valueType, fieldProps: { precision: 1 } })).toBe('1.2346')
+    expect(formatColumnValue(1.23456, {
+      valueType,
+      fieldProps: { precision: 1, intlProps: { minimumFractionDigits: 1, maximumFractionDigits: 3 } },
+    })).toBe('1.235')
+  })
+
+  it('passes grouping options through while keeping currency and symbol controls authoritative', () => {
+    expect(formatColumnValue(1234.5, {
+      valueType: { type: 'money', currency: 'USD', locale: 'en-US' },
+      fieldProps: { intlProps: { useGrouping: false, currency: 'EUR', style: 'percent' } },
+    })).toBe('$1234.50')
+    expect(formatColumnValue(1234.5, {
+      valueType: { type: 'money', currency: 'USD', moneySymbol: false },
+      fieldProps: { intlProps: { useGrouping: false, style: 'currency', currency: 'EUR' } },
+    })).toBe('1234.50')
+  })
+
+  it('reports explicitly conflicting or invalid fraction bounds', () => {
+    for (const intlProps of [{ minimumFractionDigits: 4, maximumFractionDigits: 2 }, { minimumFractionDigits: -1 }]) {
+      expect(() => formatColumnValue(1, { valueType: 'money', fieldProps: { intlProps } })).toThrow(RangeError)
+    }
+  })
+
   it('formats money, percent, dates and boolean like sz read mode', () => {
     expect(
       formatColumnValue(128600, {

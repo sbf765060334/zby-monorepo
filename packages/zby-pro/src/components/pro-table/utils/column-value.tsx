@@ -1,5 +1,6 @@
 import * as React from 'react'
 import type { ReactNode } from 'react'
+import { formatNumber } from '@zby/intl'
 import { Badge, Space, theme } from 'antd'
 import type { BadgeProps } from 'antd'
 import dayjs from 'dayjs'
@@ -206,23 +207,19 @@ function formatMoneyValue(
     typeConfig.showSymbol !== false &&
     fieldProps.moneySymbol !== false &&
     fieldProps.showSymbol !== false
-  const grouped = value.toLocaleString(locale, {
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
-  })
-
-  if (customSymbol) {
-    return `${customSymbol}${grouped}`
-  }
-  if (!showSymbol) {
-    return grouped
-  }
-  return value.toLocaleString(locale, {
-    style: 'currency',
+  const intlProps: Intl.NumberFormatOptions = fieldProps.intlProps ?? {}
+  // 显式位数优先于 precision；仅传一侧时调整另一侧的默认值，显式冲突交由 Intl 报错。
+  const minimumFractionDigits = intlProps.minimumFractionDigits ?? Math.min(precision, intlProps.maximumFractionDigits ?? precision)
+  const maximumFractionDigits = intlProps.maximumFractionDigits ?? Math.max(precision, minimumFractionDigits)
+  const formatted = formatNumber(locale, value, {
+    ...intlProps,
+    minimumFractionDigits,
+    maximumFractionDigits,
+    // 金额币种和符号仍由现有配置控制，避免 intlProps 将金额变成百分比等其他类型。
+    style: customSymbol || !showSymbol ? 'decimal' : 'currency',
     currency: typeConfig.currency ?? fieldProps.currency ?? 'CNY',
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
   })
+  return customSymbol ? `${customSymbol}${formatted}` : formatted
 }
 
 function PercentValue({
