@@ -12,6 +12,7 @@ import type {
   ProTableQueryRecord,
 } from '../interface'
 import type { ProTableViewStore } from '../store'
+import { useViewStoreSelector } from '../hooks/useStoreSelector'
 import { extractColumnKey, flattenColumnLeaves } from '../utils'
 import type { ProTableColumnDefinition } from '../utils/columns'
 import { updateColumnPreference } from '../utils/field-config'
@@ -153,17 +154,24 @@ export function useProTableColumnResize<
     [resizeDefaultWidths],
   )
   const lastResizeDefaultWidthsSignatureRef = useRef<string | null>(null)
+  const viewRestoreVersion = useViewStoreSelector(viewStore, (state) => state.viewRestoreVersion)
+  const lastViewRestoreVersionRef = useRef(viewRestoreVersion)
   const resizeBaselineVersionRef = useRef(0)
   const [uncontrolledResizeState, setUncontrolledResizeState] = useState<{
     baselineVersion: number
     widths: ProTableColumnWidthMap
   } | null>(null)
 
-  if (lastResizeDefaultWidthsSignatureRef.current !== resizeDefaultWidthsSignature) {
+  if (
+    lastResizeDefaultWidthsSignatureRef.current !== resizeDefaultWidthsSignature ||
+    lastViewRestoreVersionRef.current !== viewRestoreVersion
+  ) {
     lastResizeDefaultWidthsSignatureRef.current = resizeDefaultWidthsSignature
+    lastViewRestoreVersionRef.current = viewRestoreVersion
     resizeBaselineVersionRef.current += 1
   }
 
+  const resizeBaselineVersion = resizeBaselineVersionRef.current
   const hasControlledWidths = Boolean(columnResizeConfig?.widths)
   const resizeWidths = useMemo<ProTableColumnWidthMap | undefined>(() => {
     if (!columnResizeConfig || !resizeDefaultWidths) {
@@ -172,11 +180,11 @@ export function useProTableColumnResize<
     if (columnResizeConfig.widths) {
       return columnResizeConfig.widths
     }
-    if (uncontrolledResizeState?.baselineVersion === resizeBaselineVersionRef.current) {
+    if (uncontrolledResizeState?.baselineVersion === resizeBaselineVersion) {
       return uncontrolledResizeState.widths
     }
     return resizeDefaultWidths
-  }, [columnResizeConfig, resizeDefaultWidths, uncontrolledResizeState])
+  }, [columnResizeConfig, resizeBaselineVersion, resizeDefaultWidths, uncontrolledResizeState])
   const resizedVisibleColumns = useMemo(() => {
     if (!columnResizeConfig || !resizeDefaultWidths) {
       return visibleColumns

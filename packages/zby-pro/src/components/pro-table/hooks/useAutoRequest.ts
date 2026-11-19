@@ -5,7 +5,7 @@ import type { ProTableController, ProTableQueryRecord } from '../interface'
 import { shallow, useControllerSelector } from './useStoreSelector'
 
 type UseAutoRequestParams<RecordType, Query extends ProTableQueryRecord, Summary> = {
-  autoRequest: boolean
+  autoRequest: boolean | 'onMount'
   controller: ProTableController<RecordType, Query, Summary>
   ready: boolean
   requestKey?: object
@@ -38,7 +38,10 @@ export function useAutoRequest<RecordType, Query extends ProTableQueryRecord, Su
     if (!ready || canRequest?.() === false) return
     if (refetchDecisionRef.current?.key !== requestIdentity) {
       // 补查只在这轮就绪时决定；当时关闭自动查询，之后开启不能重放一条旧补查。
-      refetchDecisionRef.current = { key: requestIdentity, enabled: autoRequest && refetch }
+      refetchDecisionRef.current = {
+        key: requestIdentity,
+        enabled: autoRequest !== false && (refetch || autoRequest === 'onMount'),
+      }
     }
     const shouldRefetch = refetchDecisionRef.current.enabled
     // onReady 可在前面的 effect 中同步提交查询，这里必须读取最新状态，不能用渲染时的旧快照。

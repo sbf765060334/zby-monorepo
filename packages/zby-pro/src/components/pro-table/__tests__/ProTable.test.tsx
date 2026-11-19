@@ -9,7 +9,7 @@ import type * as ZbyUi from '@zby/ui'
 
 import { zbyProIntlResources } from '../../../locale/intl-resources'
 import { ProTable, createProTableController } from '..'
-import type { ProTableRef } from '..'
+import type { ProTableReadyInfo, ProTableRef } from '..'
 import type { ProViewManagementAdapter } from '../../pro-view-management'
 
 vi.mock('@zby/ui', async (importOriginal) => {
@@ -22,9 +22,26 @@ vi.mock('@zby/ui', async (importOriginal) => {
         <span data-testid="row-ids">{(props.dataSource ?? []).map((row: { id?: string }) => row.id).join(',')}</span>
         <span data-testid="loading">{String(Boolean(props.loading))}</span>
         <span data-testid="columns">{props.columns?.length ?? 0}</span>
+        <span data-testid="first-column-width">{props.columns?.[0]?.width}</span>
         <span data-testid="height">{props.height === undefined ? 'none' : String(props.height)}</span>
         <span data-testid="selected-keys">{(props.rowSelection?.selectedRowKeys ?? []).join(',')}</span>
         <span data-testid="expanded-keys">{(props.expandable?.expandedRowKeys ?? []).join(',')}</span>
+        <button
+          data-testid="resize-column"
+          onClick={() => {
+            const info = {
+              key: 'name',
+              width: 240,
+              previousWidth: props.columns?.[0]?.width,
+              delta: 120,
+              widths: { name: 240 },
+              column: props.columns?.[0],
+              nativeEvent: new Event('pointerup'),
+            }
+            props.columnResize?.onWidthsChange?.(info.widths, info)
+            props.columnResize?.onResizeEnd?.(info)
+          }}
+        />
         <button
           data-testid="page"
           onClick={() =>
@@ -179,6 +196,421 @@ afterAll(() => {
 describe('ProTable', () => {
   beforeEach(() => vi.clearAllMocks())
   afterEach(() => cleanup())
+
+  it.each([false, true, 'onMount'] as const)(
+    'combines saved-view restoration with autoRequest=%s on cached remounts',
+    async (autoRequest) => {
+      const adapter = createPendingCustomViewAdapter()
+      const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+      const controller = createProTableController<Row, Query>({ rowKey: 'id', queryRequest })
+      const onReady = vi.fn()
+      const table = () => (
+        <ProTable<Row, Query>
+          controller={controller}
+          columns={[{ key: 'id', title: 'ID' }]}
+          filters={[searchInputField('status', '状态'), searchInputField('owner', '货号')]}
+          views={{ adapter, restoreOnMount: true }}
+          autoRequest={autoRequest}
+          onReady={onReady}
+        />
+      )
+      controller.setQuery({ owner: 'entry-overlay' })
+      const first = renderProTable(table())
+      await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+      expect(controller.getState().query).toEqual({ status: 'pending' })
+      act(() => controller.setQuery({ owner: 'ABC' }))
+      await act(async () => controller.submitQuery())
+      const requestsBeforeRemount = queryRequest.mock.calls.length
+      first.unmount()
+
+      const second = renderProTable(table())
+      await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+      expect(controller.getState().query).toEqual({ status: 'pending' })
+      expect(activeViewSelectorTitle()).toBe('待处理')
+      expect(viewActionRoot()).toBeNull()
+      expect(adapter.load).toHaveBeenCalledTimes(1)
+      expect(adapter.update).not.toHaveBeenCalled()
+      expect(queryRequest).toHaveBeenCalledTimes(requestsBeforeRemount + (autoRequest === 'onMount' ? 1 : 0))
+      if (autoRequest === 'onMount') {
+        expect(queryRequest).toHaveBeenLastCalledWith(
+          expect.objectContaining({ status: 'pending', page: 1 }),
+          expect.anything(),
+        )
+      }
+      act(() => controller.setQuery({ owner: 'new-draft' }))
+      second.rerender(
+        <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+          <ConfigProvider>{table()}</ConfigProvider>
+        </ZbyIntlProvider>,
+      )
+      expect(controller.getState().query.owner).toBe('new-draft')
+      expect(onReady).toHaveBeenCalledTimes(2)
+    },
+  )
+
+  it.each([{}, { status: 'all' }])('restores the system view from defaultQuery=%j', async (defaultQuery) => {
+    const adapter = createTestAdapter<any>()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ defaultQuery, queryRequest })
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '货号')]}
+        views={{ adapter, restoreOnMount: true }}
+        autoRequest="onMount"
+      />
+    )
+    const first = renderProTable(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    act(() => controller.setQuery({ status: 'done', owner: 'ABC' }))
+    first.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(controller.getState().query).toEqual(defaultQuery)
+    expect(activeViewSelectorTitle()).toBe('默认视图')
+    expect(viewActionRoot()).toBeNull()
+  })
+
+  it('queries the preserved draft on every mount without restoring views', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    const table = () => (
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态'), searchInputField('owner', '货号')]}
+        views={{ adapter }}
+        autoRequest="onMount"
+      />
+    )
+    const first = renderProTable(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    act(() => controller.setQuery({ owner: 'ABC' }))
+    first.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(queryRequest).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'pending', owner: 'ABC' }),
+      expect.anything(),
+    )
+    expect(viewActionRoot()).toBeTruthy()
+  })
+
+  it('exposes the same restoration method through ref and onReady without querying', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [{ id: 'done', name: 'Done' }], total: 1 }))
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    const mounted = renderProTable(
+      <ProTable<Row, Query>
+        ref={ref}
+        controller={controller}
+        columns={[{ key: 'id', title: 'ID' }]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter }}
+        onReady={onReady}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(onReady).toHaveBeenCalledWith({ controller, restoreActiveView: ref.current?.restoreActiveView })
+    act(() => controller.setQuery({ status: 'done' }))
+    await act(async () => controller.submitQuery())
+    const restore = ref.current!.restoreActiveView
+    await act(async () => restore())
+    expect(controller.getState()).toMatchObject({
+      query: { status: 'pending' },
+      committedQuery: { status: 'done' },
+      dataSource: [{ id: 'done', name: 'Done' }],
+    })
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    expect(viewActionRoot()).toBeNull()
+    expect(adapter.update).not.toHaveBeenCalled()
+    mounted.unmount()
+    await expect(restore()).rejects.toThrow('not ready')
+  })
+
+  it('supports awaiting restoration then submitting in onReady with autoRequest disabled', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    const onReady = vi.fn(async ({ restoreActiveView }: ProTableReadyInfo<Row, Query, unknown>) => {
+      controller.setQuery({ status: 'done' })
+      await restoreActiveView()
+      await controller.submitQuery()
+    })
+    renderProTable(
+      <ProTable<Row, Query>
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter: createPendingCustomViewAdapter() }}
+        onReady={onReady}
+      />,
+    )
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    expect(queryRequest).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending' }), expect.anything())
+  })
+
+  it('restores saved columns, filter placement and sort together and clears the old overlay', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const storage = await adapter.load('orders:views')
+    storage.views[0].snapshot.columnPreferences = [
+      { key: 'id', visible: false, order: 0 },
+      { key: 'name', visible: true, order: 1 },
+    ]
+    storage.views[0].snapshot.filterPreferences = [
+      { key: 'status', placement: 'more', order: 0 },
+    ]
+    storage.views[0].snapshot.sorter = [{ field: 'name', order: 'ascend' }]
+    vi.mocked(adapter.load).mockResolvedValue(storage)
+    const controller = createProTableController<Row, Query>({})
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    const table = (viewAdapter: typeof adapter) => (
+      <ZbyIntlProvider locale="zh-CN" resources={zbyProIntlResources}>
+        <ConfigProvider>
+          <ProTable<Row, Query>
+            ref={ref}
+            controller={controller}
+            columns={[{ key: 'id', title: 'ID' }, { key: 'name', title: 'Name' }]}
+            filters={[searchInputField('status', '状态')]}
+            views={{ adapter: viewAdapter }}
+            onReady={onReady}
+          />
+        </ConfigProvider>
+      </ZbyIntlProvider>
+    )
+    const mounted = render(table(adapter))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    act(() => controller.setViewState({ query: { status: 'done' }, sorter: null }))
+    act(() => controller.setQuery({ status: 'done' }))
+    await act(async () => ref.current!.restoreActiveView())
+    expect(controller.getState().sort).toEqual([{ field: 'name', order: 'ascend' }])
+    expect(screen.getByTestId('columns').textContent).toBe('1')
+    expect(screen.queryByRole('textbox', { name: /状态/ })).toBeNull()
+    expect(viewActionRoot()).toBeNull()
+
+    // 更换作用域会重新消费 overlay；旧的 done 不应再次覆盖保存的 pending。
+    const replacement = createPendingCustomViewAdapter()
+    mounted.rerender(table(replacement))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+    expect(controller.getState().query.status).toBe('pending')
+  })
+
+  it('does not replay a skipped onMount query when the policy changes after readiness', async () => {
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    await controller.submitQuery()
+    const onReady = vi.fn()
+    const table = (autoRequest: false | 'onMount') => (
+      <ProTable<Row, Query> controller={controller} columns={[]} autoRequest={autoRequest} onReady={onReady} />
+    )
+    const mounted = render(table(false))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    mounted.rerender(table('onMount'))
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    mounted.unmount()
+    render(table('onMount'))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+  })
+
+  it('rejects restoration before view loading completes and when views are disabled', async () => {
+    const deferred = createDeferred<any>()
+    const adapter = createTestAdapter<any>()
+    vi.mocked(adapter.load).mockReturnValue(deferred.promise)
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const mounted = renderProTable(
+      <ProTable<Row, Query> ref={ref} columns={[]} views={{ adapter }} />,
+    )
+    await expect(ref.current!.restoreActiveView()).rejects.toThrow('not ready')
+    await act(async () => deferred.resolve({ views: [] }))
+    await act(async () => ref.current!.restoreActiveView())
+    mounted.unmount()
+    const onReady = vi.fn()
+    renderProTable(<ProTable<Row, Query> ref={ref} columns={[]} onReady={onReady} />)
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    await expect(ref.current!.restoreActiveView()).rejects.toThrow('not enabled')
+  })
+
+  it.each(['resolve', 'reject'] as const)('ignores a cancelled request that later %ss after restoring a view', async (outcome) => {
+    const deferred = createDeferred<{ data: Row[]; total: number }>()
+    const queryRequest = vi.fn(() => deferred.promise)
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    renderProTable(
+      <ProTable<Row, Query>
+        ref={ref}
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter: createPendingCustomViewAdapter() }}
+        onReady={onReady}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    let request!: Promise<void>
+    act(() => {
+      controller.setQuery({ status: 'done' })
+      request = controller.submitQuery()
+    })
+    await act(async () => ref.current!.restoreActiveView())
+    expect(controller.getState().loading).toBe(false)
+    await act(async () => {
+      if (outcome === 'resolve') deferred.resolve({ data: [{ id: 'old', name: 'Old' }], total: 1 })
+      else deferred.reject(new Error('late failure'))
+      await request
+    })
+    expect(controller.getState().query.status).toBe('pending')
+    expect(controller.getState().dataSource).toEqual([])
+    expect(controller.getState().loading).toBe(false)
+  })
+
+  it.each([false, true])('queries once per mount in StrictMode with views=%s and waits for queryRequest', async (views) => {
+    const controller = createProTableController<Row, Query>({})
+    const adapter = createPendingCustomViewAdapter()
+    const queryRequest = vi.fn(async () => ({ data: [], total: 0 }))
+    const onReady = vi.fn()
+    const table = () => (
+      <React.StrictMode>
+        <ProTable<Row, Query>
+          controller={controller}
+          columns={[]}
+          filters={[searchInputField('status', '状态')]}
+          views={views ? { adapter, restoreOnMount: true } : false}
+          autoRequest="onMount"
+          onReady={onReady}
+        />
+      </React.StrictMode>
+    )
+    const first = renderProTable(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    act(() => controller.configure({ queryRequest }))
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(1))
+    first.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(onReady).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not duplicate a synchronous onReady request in onMount mode', async () => {
+    const controller = createProTableController<Row, Query>({
+      queryRequest: vi.fn(async () => ({ data: [], total: 0 })),
+    })
+    const query = vi.spyOn(controller, 'submitQuery')
+    const onReady = vi.fn(() => {
+      void controller.submitQuery()
+    })
+    renderProTable(
+      <ProTable<Row, Query> controller={controller} columns={[]} autoRequest="onMount" onReady={onReady} />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it('restores the currently selected system view after switching away from the initial custom view', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const controller = createProTableController<Row, Query>({ defaultQuery: { status: 'all' } })
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    const table = () => (
+      <ProTable<Row, Query>
+        ref={ref}
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态')]}
+        views={{ adapter, restoreOnMount: true }}
+        onReady={onReady}
+      />
+    )
+    const first = renderProTable(table())
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('待处理'))
+    fireEvent.mouseDown(document.querySelector('.ant-pro-view-management-selector [role="combobox"]')!)
+    fireEvent.click(document.querySelector('.ant-pro-view-management-selector-option-name[title="默认视图"]')!)
+    await waitFor(() => expect(activeViewSelectorTitle()).toBe('默认视图'))
+    act(() => controller.setQuery({ status: 'done' }))
+    await act(async () => ref.current!.restoreActiveView())
+    expect(controller.getState().query).toEqual({ status: 'all' })
+    act(() => controller.setQuery({ status: 'done' }))
+    first.unmount()
+    renderProTable(table())
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+    expect(controller.getState().query).toEqual({ status: 'all' })
+    expect(activeViewSelectorTitle()).toBe('默认视图')
+    expect(adapter.load).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not loop after a failed onMount query and retries on the next real mount', async () => {
+    const queryRequest = vi.fn().mockRejectedValue(new Error('request failed'))
+    const controller = createProTableController<Row, Query>({ queryRequest })
+    const onReady = vi.fn()
+    const table = () => (
+      <ProTable<Row, Query> controller={controller} columns={[]} autoRequest="onMount" onReady={onReady} />
+    )
+    const mounted = render(table())
+    await waitFor(() => expect(controller.getState()).toMatchObject({ requested: true, loading: false }))
+    mounted.rerender(table())
+    expect(queryRequest).toHaveBeenCalledTimes(1)
+    mounted.unmount()
+    render(table())
+    await waitFor(() => expect(queryRequest).toHaveBeenCalledTimes(2))
+    expect(controller.getState().loading).toBe(false)
+    expect(onReady).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects a retained restoration method during scope loading and uses the new scope after readiness', async () => {
+    const adapter = createPendingCustomViewAdapter()
+    const newStorage = createDeferred<any>()
+    const controller = createProTableController<Row, Query>({})
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    const table = (persistenceKey: string, viewsEnabled = true) => (
+      <ProTable<Row, Query>
+        ref={ref}
+        controller={controller}
+        columns={[]}
+        filters={[searchInputField('status', '状态')]}
+        views={viewsEnabled ? { adapter } : false}
+        persistenceKey={persistenceKey}
+        onReady={onReady}
+      />
+    )
+    const mounted = render(table('first'))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    const restore = ref.current!.restoreActiveView
+    vi.mocked(adapter.load).mockReturnValueOnce(newStorage.promise)
+    mounted.rerender(table('second'))
+    await expect(restore()).rejects.toThrow('not ready')
+    await act(async () => newStorage.resolve({ views: [] }))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
+    act(() => controller.setQuery({ status: 'done' }))
+    await act(async () => restore())
+    expect(controller.getState().query).toEqual({})
+    mounted.rerender(table('second', false))
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(3))
+    await expect(restore()).rejects.toThrow('not enabled')
+  })
+
+  it.each([false, true])('restores transient column widths while respecting controlled widths=%s', async (controlled) => {
+    const ref = React.createRef<ProTableRef<Row, Query, unknown>>()
+    const onReady = vi.fn()
+    renderProTable(
+      <ProTable<Row, Query>
+        ref={ref}
+        columns={[{ key: 'name', title: 'Name', width: 120 }]}
+        columnResize={{ persist: false, ...(controlled ? { widths: { name: 180 } } : {}) }}
+        views
+        onReady={onReady}
+      />,
+    )
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByTestId('resize-column'))
+    expect(screen.getByTestId('first-column-width').textContent).toBe(controlled ? '180' : '240')
+    await act(async () => ref.current!.restoreActiveView())
+    expect(screen.getByTestId('first-column-width').textContent).toBe(controlled ? '180' : '120')
+  })
 
   it.each([undefined, false])('does not automatically query with autoRequest=%s and still supports manual query', async (autoRequest) => {
     const adapter = createPendingCustomViewAdapter()
@@ -419,7 +851,7 @@ describe('ProTable', () => {
     if (change === 'adapter') adapter = createPendingCustomViewAdapter()
     mounted.rerender(table())
     await waitFor(() => expect(onReady).toHaveBeenCalledTimes(2))
-    expect(onReady).toHaveBeenLastCalledWith({ controller })
+    expect(onReady).toHaveBeenLastCalledWith({ controller, restoreActiveView: expect.any(Function) })
   })
 
   it.each([false, true])('notifies onReady once per mount under StrictMode with views=%s', async (views) => {

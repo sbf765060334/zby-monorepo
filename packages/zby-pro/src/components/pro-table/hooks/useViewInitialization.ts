@@ -22,6 +22,9 @@ type ViewInitializationParams<RecordType, Query extends ProTableQueryRecord, Sum
   normalizeSnapshotForCurrentSchema: (
     snapshot: ProTableViewSnapshot<Query> | null | undefined,
   ) => ProTableViewSnapshot<Query>
+  restoreSnapshot: (snapshot: ProTableViewSnapshot<Query>) => void
+  restoreActiveView: () => void
+  restoreOnMount: boolean
   viewsEnabled: boolean
   viewManagementAdapter?: ProViewManagementAdapter<ProTableViewSnapshot<Query>>
   viewManagementInstanceId: string
@@ -53,6 +56,9 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
   viewStore,
   buildSystemDefaultSnapshot,
   normalizeSnapshotForCurrentSchema,
+  restoreSnapshot,
+  restoreActiveView,
+  restoreOnMount,
   viewsEnabled,
   viewManagementAdapter,
   viewManagementInstanceId,
@@ -66,6 +72,9 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
     scope: initializationScope,
     buildSystemDefaultSnapshot,
     normalizeSnapshotForCurrentSchema,
+    restoreSnapshot,
+    restoreActiveView,
+    restoreOnMount,
   }
   const applyContextRef = useRef(applyContext)
   useBrowserLayoutEffect(() => {
@@ -134,6 +143,10 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
       actions.setMergedColumnsPreferences(preferences.columnPreferences)
       actions.setMergedFilterPreferences(preferences.filterPreferences)
       actions.setViewStorage(cached.state.viewStorage)
+      if (applyContextRef.current.restoreOnMount) {
+        // 缓存保存运行现场；只有显式恢复时才替换临时条件和偏好，不重新消费旧 overlay。
+        applyContextRef.current.restoreActiveView()
+      }
       actions.setColumnsReady(true)
       rememberSession = true
       saveSession()
@@ -185,7 +198,9 @@ export function useViewInitialization<RecordType, Query extends ProTableQueryRec
             }
           : undefined,
       )
-      if (viewsEnabled) {
+      if (viewsEnabled && context.restoreOnMount && error === undefined) {
+        context.restoreSnapshot(initialSnapshot)
+      } else if (viewsEnabled) {
         tableController.setViewState({
           query: mergeViewQueryWithOverlay(
             controllerState.defaultQuery,

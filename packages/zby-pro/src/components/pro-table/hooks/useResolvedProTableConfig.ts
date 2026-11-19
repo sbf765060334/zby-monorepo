@@ -123,7 +123,7 @@ export interface ResolvedProTableConfig<
   mergedPagination: ProTableProps<RecordType, Query, Summary>['pagination']
   mergedScroll: ProTableProps<RecordType, Query, Summary>['scroll']
   mergedHeightMode: NonNullable<ProTableProps<RecordType, Query, Summary>['heightMode']>
-  mergedAutoRequest: boolean
+  mergedAutoRequest: NonNullable<ProTableProps<RecordType, Query, Summary>['autoRequest']>
   mergedClassName: string | undefined
   mergedRootClassName: string | undefined
   mergedStyle: React.CSSProperties

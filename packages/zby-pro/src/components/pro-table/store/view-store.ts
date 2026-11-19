@@ -11,6 +11,7 @@ import { isFilterPreferencesEqual } from '../utils/filter-config'
 export type ProTableViewStorage = ProViewManagementStorageState<ProTableViewSnapshot>
 
 export interface ProTableViewState {
+  viewRestoreVersion: number
   columnsReady: boolean
   mergedColumnsPreferences: ProTableColumnPreference[]
   settingsModalOpen: boolean
@@ -20,6 +21,7 @@ export interface ProTableViewState {
 }
 
 export interface ProTableViewActions {
+  markViewRestored: () => void
   setColumnsReady: (ready: boolean) => void
   setMergedColumnsPreferences: (items: ProTableColumnPreference[]) => void
   setSettingsModalOpen: (open: boolean) => void
@@ -62,12 +64,14 @@ function isFieldPreferencesEqual(left: ProTableColumnPreference[], right: ProTab
 
 export function createProTableViewStore(): ProTableViewStore {
   return createStore<ProTableViewState & ProTableViewActions>((set) => ({
+    viewRestoreVersion: 0,
     columnsReady: false,
     mergedColumnsPreferences: [],
     settingsModalOpen: false,
     mergedFilterPreferences: [],
     fullscreenActive: false,
     viewStorage: undefined,
+    markViewRestored: () => set((state) => ({ viewRestoreVersion: state.viewRestoreVersion + 1 })),
     setColumnsReady: (ready) => set(setBooleanValue('columnsReady')(ready)),
     setMergedColumnsPreferences: (items) =>
       set((state) =>

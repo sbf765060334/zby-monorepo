@@ -483,6 +483,8 @@ export interface ProTableViewSnapshot<Query extends ProTableQueryRecord = Record
 }
 
 export interface ProTableViewsConfig<Query extends ProTableQueryRecord = Record<string, unknown>> {
+  /** 每轮初始化（含缓存 controller 重挂）恢复所选视图的完整保存快照，丢弃临时修改及 queryOverlay；默认 false。恢复本身不查询。 */
+  restoreOnMount?: boolean
   /** 视图存储适配器。默认有 persistenceKey 时使用 IndexedDB，否则使用内存；false 强制使用内存。 */
   adapter?: false | ProViewManagementAdapter<ProTableViewSnapshot<Query>>
   /** 视图初始化失败时通知；retry 重新加载，成功前不触发 onReady 或自动查询。 */
@@ -729,11 +731,15 @@ export interface ProTableRef<
 > {
   /** 表格实际使用的 controller，可主动查询、更新草稿和管理行状态。 */
   controller: ProTableController<RecordType, Query, Summary>
+  /** 恢复当前所选视图的完整保存快照，不查询、不保存；仅在开启 views 且初始化成功后可用，否则 Promise 拒绝。 */
+  restoreActiveView: () => Promise<void>
 }
 
 export interface ProTableReadyInfo<RecordType, Query extends ProTableQueryRecord, Summary> {
   /** 初始查询与视图配置已恢复的 controller；列表请求可能尚未开始。 */
   controller: ProTableController<RecordType, Query, Summary>
+  /** 与 ref 上的方法相同；恢复完成后可调用 controller.submitQuery()。异步业务查询建议关闭 autoRequest。 */
+  restoreActiveView: () => Promise<void>
 }
 
 type ProTableUiProps<
@@ -758,10 +764,11 @@ type ProTableUiProps<
   | 'rowKey'
 > & {
   /**
-   * 自动发起首次请求及视图初始化补查，默认 false；等待初始化成功和请求函数就绪。
-   * 同一视图作用域复用已请求的 controller 不自动重查；不限制用户操作或业务主动查询。
+   * 默认 false；true 保持首次请求及视图初始化补查，'onMount' 每轮初始化（含缓存重挂）自动查询一次。
+   * 等待初始化成功和请求函数就绪；不清理条件，不限制用户或业务主动查询。KeepAlive 激活不属于重新挂载。
+   * 每轮就绪时决定重查策略；普通重渲染或稍后切换策略不会重放已跳过的重查。
    */
-  autoRequest?: boolean
+  autoRequest?: boolean | 'onMount'
   /**
    * controller 可用时通知，此时视图可能尚未加载；controller 更换或真实重挂会再次通知。
    * 普通重渲染及回调引用变化不重复通知；开发环境 StrictMode 可能重放 effect。

@@ -48,7 +48,7 @@ type AbortableProTableController<
   Query extends ProTableQueryRecord,
   Summary,
 > = ProTableController<RecordType, Query, Summary> & {
-  [CANCEL_REQUESTS]?: () => void
+  [CANCEL_REQUESTS]?: (options?: { invalidate?: boolean }) => void
 }
 
 function toRecordKey(value: unknown): Key | undefined {
@@ -334,8 +334,9 @@ function isAbortError(error: unknown, signal: AbortSignal) {
 
 export function cancelProTableControllerRequests(
   controller: ProTableController<any, any, any>,
+  options?: { invalidate?: boolean },
 ): void {
-  (controller as AbortableProTableController<any, any, any>)[CANCEL_REQUESTS]?.()
+  (controller as AbortableProTableController<any, any, any>)[CANCEL_REQUESTS]?.(options)
 }
 
 export function ignoreProTableRequestError(task: Promise<unknown>) {
@@ -938,7 +939,14 @@ export function createProTableController<
     },
   };
   (controller as AbortableProTableController<RecordType, Query, Summary>)[CANCEL_REQUESTS] =
-    abortAllRequests
+    (options) => {
+      abortAllRequests()
+      if (options?.invalidate && store.getState().loading) {
+        // 显式恢复视图时立即作废旧请求；即使请求忽略 AbortSignal，也不能回写或回滚恢复后的状态。
+        store.setState((state) => ({ requestSeq: state.requestSeq + 1 }))
+        restoreSettledIdentity()
+      }
+    }
   ;(controller as OverlayableProTableController<RecordType, Query, Summary>)[QUERY_OVERLAY] = {
     consume: () => {
       const overlay = cloneQuery(store.getState().queryOverlay)

@@ -31,6 +31,7 @@ import {
   useAutoRequest,
   useProTableFullscreen,
   useProTableReady,
+  useRestoreActiveView,
   useResolvedProTableConfig,
   useViewInitialization,
   useViewStoreSelector,
@@ -147,14 +148,6 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
   )
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      controller,
-    }),
-    [controller],
-  )
-
   useEffect(() => {
     if (controllerProp || !controllerConfig) {
       return
@@ -200,6 +193,9 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     viewStore,
     buildSystemDefaultSnapshot: viewPersistence.buildSystemDefaultSnapshot,
     normalizeSnapshotForCurrentSchema: viewPersistence.normalizeSnapshotForCurrentSchema,
+    restoreSnapshot: viewPersistence.restoreSnapshot,
+    restoreActiveView: viewPersistence.restoreActiveView,
+    restoreOnMount: resolvedConfig.mergedViews !== false && resolvedConfig.mergedViews.restoreOnMount === true,
     viewsEnabled: resolvedConfig.mergedViews !== false,
     viewManagementAdapter: viewPersistence.viewManagementAdapter,
     viewManagementInstanceId: viewPersistence.viewManagementInstanceId,
@@ -220,11 +216,21 @@ function ProTableInner<RecordType extends object, Query extends ProTableQueryRec
     viewInitializationReady: viewInitialization.ready,
   })
   const initializationSucceeded = viewInitialization.ready && viewInitialization.error === undefined
+  const restoreActiveView = useRestoreActiveView({
+    ready: initializationSucceeded,
+    viewsEnabled: resolvedConfig.mergedViews !== false,
+    restore: () => {
+      setMoreFiltersOpen(false)
+      viewPersistence.restoreActiveView()
+    },
+  })
+  useImperativeHandle(ref, () => ({ controller, restoreActiveView }), [controller, restoreActiveView])
   const canAutoRequest = useProTableReady({
     controller,
     initializationKey: viewInitialization.key,
     ready: initializationSucceeded,
     onReady,
+    restoreActiveView,
   })
   useAutoRequest({
     autoRequest: resolvedConfig.mergedAutoRequest,

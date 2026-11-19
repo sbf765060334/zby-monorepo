@@ -6,6 +6,7 @@ type UseProTableReadyParams<RecordType, Query extends ProTableQueryRecord, Summa
   controller: ProTableController<RecordType, Query, Summary>
   initializationKey: object
   ready: boolean
+  restoreActiveView: () => Promise<void>
   onReady?: (info: ProTableReadyInfo<RecordType, Query, Summary>) => void
 }
 
@@ -15,6 +16,7 @@ export function useProTableReady<RecordType, Query extends ProTableQueryRecord, 
   controller,
   initializationKey,
   ready,
+  restoreActiveView,
   onReady,
 }: UseProTableReadyParams<RecordType, Query, Summary>) {
   const onReadyRef = useRef(onReady)
@@ -38,12 +40,12 @@ export function useProTableReady<RecordType, Query extends ProTableQueryRecord, 
       }
     })
     try {
-      onReadyRef.current?.({ controller })
+      onReadyRef.current?.({ controller, restoreActiveView })
     } finally {
       // onReady 是通知，不等待业务 Promise；只识别回调同步发起的请求。
       unsubscribe()
     }
-  }, [controller, initializationKey, ready])
+  }, [controller, initializationKey, ready, restoreActiveView])
 
   return useCallback(
     () => notifiedRef.current.has(initializationKey) && !requestedRef.current.has(initializationKey),

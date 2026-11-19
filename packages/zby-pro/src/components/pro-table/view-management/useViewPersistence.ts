@@ -14,7 +14,9 @@ import type {
   ProTableViewSnapshot,
   ProTableViewsConfig,
 } from '../interface'
-import { clearProTableQueryOverlay } from '../controller'
+import { cancelProTableControllerRequests, clearProTableQueryOverlay } from '../controller'
+import { resolveActiveView } from '../../pro-view-management/utils'
+import { DEFAULT_VIEW_LABEL } from '../search-region/constants'
 import type { ProTableViewStore } from '../store'
 import {
   buildDefaultColumnPreferences,
@@ -27,6 +29,7 @@ import {
   mergeSearchQuery,
   normalizeViewSnapshot,
   pickSearchQuery,
+  PRO_TABLE_DEFAULT_VIEW_ID,
 } from '../utils'
 import type { ProTableColumnDefinition } from '../utils/columns'
 
@@ -132,19 +135,42 @@ export function useViewPersistence<RecordType, Query extends ProTableQueryRecord
     ? getViewsScopeKey(persistenceKey)
     : UNPERSISTED_VIEW_MANAGEMENT_INSTANCE_ID
 
-  const applySnapshotToTable = useCallback(
-    async (snapshot: ProTableViewSnapshot<Query>, options?: { submit?: boolean }) => {
+  const restoreSnapshot = useCallback(
+    (snapshot: ProTableViewSnapshot<Query>, options?: { committed?: boolean }) => {
       const actions = viewStore.getState()
       const nextQuery = mergeSearchQuery(controller.getState().defaultQuery, snapshot.query)
 
+      cancelProTableControllerRequests(controller, { invalidate: true })
       clearProTableQueryOverlay(controller)
       actions.setMergedColumnsPreferences(snapshot.columnPreferences)
       actions.setMergedFilterPreferences(snapshot.filterPreferences)
       controller.setViewState({
         query: nextQuery,
         sorter: snapshot.sorter ?? null,
-        committed: true,
+        committed: options?.committed ?? false,
       })
+      // 快照值相同也算一次恢复，让未写入列偏好的临时拖拽宽度失效。
+      actions.markViewRestored()
+    },
+    [controller, viewStore],
+  )
+
+  const restoreActiveView = useCallback(() => {
+    // viewStore 不保留 Query 泛型；会话已按 controller 和存储作用域隔离，在此恢复当前查询类型。
+    const storage = viewStore.getState().viewStorage as
+      ProViewManagementStorageState<ProTableViewSnapshot<Query>> | undefined
+    const defaultSnapshot = buildSystemDefaultSnapshot()
+    const activeView = resolveActiveView(
+      storage?.activeViewId ?? null,
+      [{ id: PRO_TABLE_DEFAULT_VIEW_ID, name: DEFAULT_VIEW_LABEL, scope: 'system', order: 0, snapshot: defaultSnapshot }],
+      storage?.views ?? [],
+    )
+    restoreSnapshot(normalizeSnapshotForCurrentSchema(activeView?.snapshot ?? defaultSnapshot))
+  }, [buildSystemDefaultSnapshot, normalizeSnapshotForCurrentSchema, restoreSnapshot, viewStore])
+
+  const applySnapshotToTable = useCallback(
+    async (snapshot: ProTableViewSnapshot<Query>, options?: { submit?: boolean }) => {
+      restoreSnapshot(snapshot, { committed: true })
       if (options?.submit !== false) {
         try {
           await controller.submitQuery({ resetPage: true })
@@ -153,7 +179,7 @@ export function useViewPersistence<RecordType, Query extends ProTableQueryRecord
         }
       }
     },
-    [controller, viewStore],
+    [controller, restoreSnapshot],
   )
 
   const createCurrentSnapshot = useCallback(() => {
@@ -215,6 +241,8 @@ export function useViewPersistence<RecordType, Query extends ProTableQueryRecord
     normalizeSnapshotForCurrentSchema,
     buildSystemDefaultSnapshot,
     applySnapshotToTable,
+    restoreSnapshot,
+    restoreActiveView,
     createCurrentSnapshot,
     viewManagementAdapter,
     viewManagementInstanceId,
