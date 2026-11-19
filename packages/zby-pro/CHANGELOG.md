@@ -1,5 +1,26 @@
 # @zby/pro
 
+## 4.0.0
+
+### Major Changes
+
+- components/pro-table/hooks/useResolvedProTableConfig.ts：将 autoRequest 默认值由 true 改为 false，属于破坏性行为变更；依赖进入页面自动查询的用法须显式传入 autoRequest，手动查询可在 onReady 中调用 controller.submitQuery()。
+- components/pro-table/ProTable.tsx：新增 onReady 就绪通知，在默认或视图状态提交后、首次自动查询及初始化补查前执行，保留 onControllerReady 的原有时机。
+- components/pro-table/hooks/useProTableReady.ts：每轮成功初始化仅通知一次，支持缓存重挂与 StrictMode，并识别回调同步发起的请求以避免重复自动查询。
+- components/pro-table/hooks/useAutoRequest.ts：统一调度首次查询与视图初始化补查，读取最新请求状态，按初始化作用域去重，避免重新开启开关时重放已关闭的补查。
+- components/pro-table/hooks/useViewInitialization.ts：按 controller、适配器及作用域保留视图运行态，缓存复用不再重复消费 queryOverlay 或覆盖查询；就绪后再调度补查，重试使用独立轮次，异步加载采用最新已提交字段配置，并正确处理加载失败及同步异常。
+- components/pro-table/view-management/useViewPersistence.ts：临时视图随 controller 存活并按作用域隔离，避免卸载后丢失或切换作用域时串用。
+- components/pro-table/search-region/components/ProTableViewManagement.tsx：比较脏态时按当前字段配置规范化双方快照，避免默认偏好差异导致误脏，同时保留原始保存快照。
+- components/pro-table/search-region/components/SearchViewManagementMount.tsx：传递当前字段配置的快照规范化函数。
+- components/pro-table/search-region/SearchRegion.tsx：接入视图快照规范化函数并补齐记忆化依赖。
+- components/pro-table/search-region/types.ts：补充视图快照规范化函数的内部类型。
+- components/pro-table/interface.ts：导出 ProTableReadyInfo 并声明 onReady，补齐组件属性及嵌套配置的默认值、生命周期和 controller 管理约定注释。
+- components/pro-table/hooks/index.ts：导出内部就绪通知 hook。
+- components/pro-table/index.ts：导出 ProTableReadyInfo 类型。
+- index.ts：从包入口导出 ProTableReadyInfo 类型。
+- `components/pro-table/__tests__/ProTable.test.tsx`：覆盖默认关闭自动查询、缓存复用、视图脏态、就绪通知、请求去重、失败重试、异步字段配置和 StrictMode 等回归场景。
+- components/pro-layout/theme/ThemeSeedPreview.tsx：显式开启自动查询，保持主题预览的初始数据展示。
+
 ## 3.1.2
 
 ### Patch Changes
